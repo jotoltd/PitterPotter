@@ -316,7 +316,7 @@ export default function ContactView({ initialPainters = 1 }: ContactViewProps) {
         </div>
 
         {/* Booking Link Card - Right */}
-        <div className="lg:col-span-8 bg-white p-6 md:p-8 border-2 border-[#1B2D3C]  space-y-6 rounded-2xl">
+        <div id="booking-form-section" className="lg:col-span-8 bg-white p-6 md:p-8 border-2 border-[#1B2D3C]  space-y-6 rounded-2xl">
           <div className="border-b-2 border-[#1B2D3C]/20 pb-4">
             <h2 className="font-heading text-2xl font-black italic text-[#1B2D3C]">Book Your Studio Session</h2>
             <p className="text-xs text-stone-500 mt-1 leading-normal font-semibold">
@@ -333,14 +333,15 @@ export default function ContactView({ initialPainters = 1 }: ContactViewProps) {
               <p className="text-xs text-[#1B2D3C] leading-relaxed font-medium">
                 For the quickest booking experience, use our online booking system to select your preferred date, time, and studio location.
               </p>
-              <a
-                href="https://bookwhen.com/pitterpotter"
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => {
+                  const el = document.getElementById('booking-form-section');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                }}
                 className="inline-block w-full py-3.5 bg-[#74919e] text-white font-bold text-xs uppercase tracking-widest border-2 border-[#1B2D3C] hover:translate-x-[2px] hover:translate-y-[2px] transition-all text-center cursor-pointer"
               >
                 Book Online Now
-              </a>
+              </button>
             </div>
 
             <div className="bg-[#F0F4F8] p-6 border-2 border-[#1B2D3C] space-y-4">
