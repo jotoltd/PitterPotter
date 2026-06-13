@@ -1,0 +1,6 @@
+{
+  "name": "Pitter Potter",
+  "description": "An independent 'paint your own pottery' studio set in the heart of Putney and Wimbledon.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

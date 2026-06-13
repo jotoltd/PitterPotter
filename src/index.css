@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@200;300;400;500&family=Plus+Jakarta+Sans:wght@200;300;400;500&family=Space+Grotesk:wght@300;400;500&display=swap');
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Central Light';
+  src: url('https://db.onlinewebfonts.com/t/2c88fdeb29231364ceb3664d6e9bcfe9.woff2') format('woff2'),
+       url('https://db.onlinewebfonts.com/t/2c88fdeb29231364ceb3664d6e9bcfe9.woff') format('woff'),
+       url('https://db.onlinewebfonts.com/t/2c88fdeb29231364ceb3664d6e9bcfe9.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Arquitecta Standard Light';
+  src: url('https://db.onlinewebfonts.com/t/cf6dfd35b91cfb5faacaebe8de235b2e.woff2') format('woff2'),
+       url('https://db.onlinewebfonts.com/t/cf6dfd35b91cfb5faacaebe8de235b2e.woff') format('woff'),
+       url('https://db.onlinewebfonts.com/t/cf6dfd35b91cfb5faacaebe8de235b2e.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-heading: "Montserrat", "Outfit", "Plus Jakarta Sans", "Space Grotesk", "Inter", sans-serif;
+  --font-sans: "Arquitecta Standard Light", "Arquitecta", "Outfit", "Plus Jakarta Sans", "Inter", sans-serif;
+  
+  --color-clay-50: #F0F4F8;
+  --color-clay-100: #D9E2EC;
+  --color-clay-200: #BCCCDC;
+  --color-clay-300: #9FB3C8;
+  --color-terracotta-50: #F0F4F8;
+  --color-terracotta-100: #D9E2EC;
+  --color-terracotta-400: #486581;
+  --color-terracotta-500: #74919e;
+  --color-terracotta-600: #243B53;
+  --color-clay-charcoal: #1B2D3C;
+}
+
+body {
+  background-color: var(--color-clay-50);
+  color: var(--color-clay-charcoal);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  line-height: 1.6;
+  font-size: 18px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Force light weight for central light heading aesthetic */
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: var(--font-heading);
+  font-weight: 500 !important;
+  line-height: 1.2;
+}
+
+h1 {
+  line-height: 1.1;
+}
+
+h2 {
+  line-height: 1.15;
+}
+
+h3 {
+  line-height: 1.2;
+}
+
+p {
+  line-height: 1.7;
+}
