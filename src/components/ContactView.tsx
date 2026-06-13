@@ -335,7 +335,7 @@ export default function ContactView({ initialPainters = 1 }: ContactViewProps) {
               </p>
               <button
                 onClick={() => {
-                  const el = document.getElementById('booking-form-section');
+                  const el = document.getElementById('phone-booking-section');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className="inline-block w-full py-3.5 bg-[#74919e] text-white font-bold text-xs uppercase tracking-widest border-2 border-[#1B2D3C] hover:translate-x-[2px] hover:translate-y-[2px] transition-all text-center cursor-pointer"
@@ -344,7 +344,7 @@ export default function ContactView({ initialPainters = 1 }: ContactViewProps) {
               </button>
             </div>
 
-            <div className="bg-[#F0F4F8] p-6 border-2 border-[#1B2D3C] space-y-4">
+            <div id="phone-booking-section" className="bg-[#F0F4F8] p-6 border-2 border-[#1B2D3C] space-y-4">
               <div className="flex items-center gap-3">
                 <Phone className="w-6 h-6 text-[#74919e]" />
                 <h3 className="font-heading text-lg font-black text-[#1B2D3C]">Book by Phone</h3>
