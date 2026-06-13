@@ -335,7 +335,7 @@ export default function ContactView({ initialPainters = 1 }: ContactViewProps) {
               </p>
               <button
                 onClick={() => {
-                  const el = document.getElementById('phone-booking-section');
+                  const el = document.getElementById('booking-form-section');
                   el?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className="inline-block w-full py-3.5 bg-[#74919e] text-white font-bold text-xs uppercase tracking-widest border-2 border-[#1B2D3C] hover:translate-x-[2px] hover:translate-y-[2px] transition-all text-center cursor-pointer"
@@ -362,9 +362,305 @@ export default function ContactView({ initialPainters = 1 }: ContactViewProps) {
               </div>
             </div>
           </div>
+
+          {/* Multi-Step Booking Form */}
+          <form onSubmit={handleSubmit} className="space-y-6 pt-6 border-t-2 border-[#1B2D3C]/20">
+            {/* Step 1: Studio & Session Type */}
+            {currentStep === 1 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">
+                    1. Select Studio *
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setStudio('Putney')}
+                      className={`py-3 px-4 border-2 text-xs font-bold uppercase tracking-wider transition-all ${
+                        studio === 'Putney'
+                          ? 'bg-[#74919e] text-white border-[#1B2D3C]'
+                          : 'bg-white text-[#1B2D3C] border-[#1B2D3C] hover:bg-[#D9E2EC]/30'
+                      }`}
+                    >
+                      Putney
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStudio('Wimbledon')}
+                      className={`py-3 px-4 border-2 text-xs font-bold uppercase tracking-wider transition-all ${
+                        studio === 'Wimbledon'
+                          ? 'bg-[#74919e] text-white border-[#1B2D3C]'
+                          : 'bg-white text-[#1B2D3C] border-[#1B2D3C] hover:bg-[#D9E2EC]/30'
+                      }`}
+                    >
+                      Wimbledon
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">
+                    2. Session Type *
+                  </label>
+                  <select
+                    value={sessionType}
+                    onChange={(e) => setSessionType(e.target.value as any)}
+                    className="w-full py-3 px-4 border-2 border-[#1B2D3C] bg-white text-xs font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D9E2EC]/20"
+                  >
+                    <option value="painting">Painting Session</option>
+                    <option value="birthday-party">Birthday Party</option>
+                    <option value="baby-shower-hen">Baby Shower / Hen Party</option>
+                    <option value="clay-imprints">Clay Imprints</option>
+                    <option value="corporate">Corporate Event</option>
+                  </select>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(2)}
+                  disabled={!canProceedToStep(2)}
+                  className="w-full py-3 bg-[#74919e] text-white font-bold text-xs uppercase tracking-widest border-2 border-[#1B2D3C] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Continue to Contact Details
+                </button>
+              </div>
+            )}
+
+            {/* Step 2: Contact Details */}
+            {currentStep === 2 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">
+                    3. Your Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your full name"
+                    className="w-full py-3 px-4 border-2 border-[#1B2D3C] bg-white text-xs font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D9E2EC]/20"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">
+                    4. Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full py-3 px-4 border-2 border-[#1B2D3C] bg-white text-xs font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D9E2EC]/20"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">
+                    5. Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="07xxx xxx xxx"
+                    className="w-full py-3 px-4 border-2 border-[#1B2D3C] bg-white text-xs font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D9E2EC]/20"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(1)}
+                    className="flex-1 py-3 bg-white text-[#1B2D3C] font-bold text-xs uppercase tracking-widest border-2 border-[#1B2D3C] hover:bg-[#D9E2EC]/30 transition-all"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(3)}
+                    disabled={!canProceedToStep(3)}
+                    className="flex-1 py-3 bg-[#74919e] text-white font-bold text-xs uppercase tracking-widest border-2 border-[#1B2D3C] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Continue to Date
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Date & Time */}
+            {currentStep === 3 && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">
+                    6. Select Date *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowCalendar(!showCalendar)}
+                    className="w-full py-3 px-4 border-2 border-[#1B2D3C] bg-white text-xs font-bold text-[#1B2D3C] text-left focus:outline-none focus:bg-[#D9E2EC]/20 flex justify-between items-center"
+                  >
+                    {date ? format(date, 'PPP') : 'Click to select date'}
+                    <CalendarIcon className="w-4 h-4" />
+                  </button>
+                  {showCalendar && (
+                    <div className="absolute z-50 bg-white border-2 border-[#1B2D3C] p-4 shadow-lg">
+                      <DayPicker
+                        mode="single"
+                        selected={date}
+                        onSelect={handleDateSelect}
+                        disabled={{ dayOfWeek: [1] }}
+                        className="rdp"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">
+                    7. Select Time *
+                  </label>
+                  <select
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    className="w-full py-3 px-4 border-2 border-[#1B2D3C] bg-white text-xs font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D9E2EC]/20"
+                  >
+                    <option value="10:00">10:00am</option>
+                    <option value="11:30">11:30am</option>
+                    <option value="13:00">1:00pm</option>
+                    <option value="14:30">2:30pm</option>
+                    <option value="16:00">4:00pm</option>
+                  </select>
+                  {date && (
+                    <p className={`text-xs font-semibold ${availability.available ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {availability.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">
+                    8. Number of Painters *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={paintersCount}
+                    onChange={(e) => setPaintersCount(parseInt(e.target.value) || 1)}
+                    className="w-full py-3 px-4 border-2 border-[#1B2D3C] bg-white text-xs font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D9E2EC]/20"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(2)}
+                    className="flex-1 py-3 bg-white text-[#1B2D3C] font-bold text-xs uppercase tracking-widest border-2 border-[#1B2D3C] hover:bg-[#D9E2EC]/30 transition-all"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(4)}
+                    disabled={!canProceedToStep(4)}
+                    className="flex-1 py-3 bg-[#74919e] text-white font-bold text-xs uppercase tracking-widest border-2 border-[#1B2D3C] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Review & Submit
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Review & Submit */}
+            {currentStep === 4 && (
+              <div className="space-y-4">
+                <div className="bg-[#D9E2EC]/50 p-4 border-2 border-[#1B2D3C] space-y-2">
+                  <h4 className="font-heading text-sm font-black text-[#1B2D3C] uppercase tracking-wider">Booking Summary</h4>
+                  <div className="text-xs text-[#1B2D3C] space-y-1 font-semibold">
+                    <p><strong>Studio:</strong> {studio}</p>
+                    <p><strong>Session:</strong> {sessionType.replace('-', ' ')}</p>
+                    <p><strong>Date:</strong> {date ? format(date, 'PPP') : 'Not selected'}</p>
+                    <p><strong>Time:</strong> {time}</p>
+                    <p><strong>Painters:</strong> {paintersCount}</p>
+                    <p><strong>Name:</strong> {name}</p>
+                    <p><strong>Email:</strong> {email}</p>
+                    <p><strong>Phone:</strong> {phone}</p>
+                    {currentEstimate > 0 && (
+                      <p className="text-[#74919e] font-black"><strong>Estimated Total:</strong> £{currentEstimate.toFixed(2)}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">
+                    Additional Notes (Optional)
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Any special requests or dietary requirements..."
+                    rows={3}
+                    className="w-full py-3 px-4 border-2 border-[#1B2D3C] bg-white text-xs font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D9E2EC]/20"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(3)}
+                    className="flex-1 py-3 bg-white text-[#1B2D3C] font-bold text-xs uppercase tracking-widest border-2 border-[#1B2D3C] hover:bg-[#D9E2EC]/30 transition-all"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-3 bg-[#74919e] text-white font-bold text-xs uppercase tracking-widest border-2 border-[#1B2D3C] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                  >
+                    Submit Booking Request
+                  </button>
+                </div>
+              </div>
+            )}
+          </form>
         </div>
 
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && submittedInquiry && (
+        <div className="fixed inset-0 bg-[#1B2D3C]/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white border-2 border-[#1B2D3C] p-8 max-w-md w-full space-y-4">
+            <div className="text-center">
+              <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
+              <h3 className="font-heading text-2xl font-black italic text-[#1B2D3C] mb-2">Booking Received!</h3>
+              <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed">
+                Thank you {name}! Your booking request for {format(new Date(submittedInquiry.date), 'PPP')} at {submittedInquiry.time} has been received.
+              </p>
+              <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed mt-2">
+                Reference: <span className="font-black text-[#74919e]">{submittedInquiry.id}</span>
+              </p>
+              <p className="text-xs text-stone-500 font-semibold leading-relaxed mt-2">
+                We'll confirm your table within 24 hours via email.
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setShowSuccessModal(false);
+                setCurrentStep(1);
+                setName('');
+                setEmail('');
+                setPhone('');
+                setDate(undefined);
+                setNotes('');
+              }}
+              className="w-full py-3 bg-[#74919e] text-white font-bold text-xs uppercase tracking-widest border-2 border-[#1B2D3C] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
