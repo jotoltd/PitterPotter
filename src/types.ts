@@ -1,4 +1,4 @@
-export type Page = 'home' | 'parties' | 'pricing' | 'faqs' | 'gallery' | 'contact' | 'admin' | 'putney' | 'wimbledon';
+export type Page = 'home' | 'parties' | 'pricing' | 'faqs' | 'gallery' | 'contact' | 'admin' | 'putney' | 'wimbledon' | 'book';
 
 export interface PotteryItem {
   id: string;
@@ -8,6 +8,7 @@ export interface PotteryItem {
   category: 'tableware' | 'decor' | 'kids' | 'seasonal';
   description?: string;
   isPartyEligible?: boolean;
+  imageUrl?: string;
 }
 
 export interface FAQItem {
@@ -31,6 +32,7 @@ export interface BookingInquiry {
   status: 'pending' | 'confirmed';
   requestDate: string;
   estimatedPrice?: number;
+  source?: 'online' | 'walk-in';
 }
 
 export interface GalleryItem {

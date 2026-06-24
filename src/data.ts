@@ -1,24 +1,25 @@
+import { Images } from './images';
 import { PotteryItem, FAQItem, GalleryItem } from './types';
 
 export const POTTERY_ITEMS: PotteryItem[] = [
-  { id: '1', name: 'Egg Cup', price: '£8.95', basePrice: 8.95, category: 'tableware', description: 'A cute little addition to any breakfast table. Very popular with children as a starter piece!', isPartyEligible: true },
-  { id: '2', name: 'Standard Plate', price: 'from £18.95', basePrice: 18.95, category: 'tableware', description: 'Perfect for dinner plates, decorative display plates, or customized birthday signature plates.', isPartyEligible: true },
-  { id: '3', name: 'Pasta & Cereal Bowls', price: 'from £15.95', basePrice: 15.95, category: 'tableware', description: 'Available in various profiles, including cereal, soup, and wide salad bowls.', isPartyEligible: true },
-  { id: '4', name: 'Cosy Mugs & Teacups', price: 'from £11.95', basePrice: 11.95, category: 'tableware', description: 'Our highest demand item. From tiny espresso cups to massive builder mugs.', isPartyEligible: true },
-  { id: '5', name: 'Grand Teapot', price: '£42.95', basePrice: 42.95, category: 'tableware', description: 'A gorgeous centerpiece that holds up to 4 cups. Perfect for a personalized family keepsake.' },
-  { id: '6', name: 'Teacup and Saucer Set', price: '£25.95', basePrice: 25.95, category: 'tableware', description: 'Classic afternoon tea styling. Paint individual patterns on both the cup and saucer.' },
-  { id: '7', name: 'Creamer Jug', price: '£15.95', basePrice: 15.95, category: 'tableware', description: 'A lovely miniature pouring jug for cream or milk, excellent for practicing fine details.' },
-  { id: '8', name: 'Spoon Rest', price: '£19.95', basePrice: 19.95, category: 'tableware', description: 'Keep your kitchen counters clean with a stylized resting spot for cooking spoons.' },
-  { id: '9', name: 'Pitchers & Water Jugs', price: 'from £19.95', basePrice: 19.95, category: 'tableware', description: 'Classic water and flower jugs, available in medieval, slim, and traditional round shapes.' },
-  { id: '10', name: 'Party Animals', price: '£16.95', basePrice: 16.95, category: 'kids', description: 'Over 30 different designs including lions, puppies, unicorns, dragons, and kittens!', isPartyEligible: true },
-  { id: '11', name: 'Money Banks', price: '£22.95', basePrice: 22.95, category: 'kids', description: 'Over 20 different designs including rockets, cars, pigs, and footballs. Complete with rubber stopper.', isPartyEligible: true },
-  { id: '12', name: 'Trinket Boxes', price: 'from £18.95', basePrice: 18.95, category: 'kids', description: 'Small and medium chest, heart, and star-shaped boxes with removable custom lids.' },
-  { id: '13', name: 'Coaster Tiles', price: 'from £8.95', basePrice: 8.95, category: 'kids', description: 'Square and circular tiles. Perfect for practice, custom hot-plate stands, or family handprint collections.', isPartyEligible: true },
-  { id: '14', name: 'Elegant Vases', price: 'from £39.95', basePrice: 39.95, category: 'decor', description: 'Tall fluted, bubble, and geometric modern bud vases to showcase fresh flowers.' },
-  { id: '15', name: 'Flowerpots', price: 'from £22.95', basePrice: 22.95, category: 'decor', description: 'Bring garden green inside with customized terracotta-style fired planters. Drainage hole included!' },
-  { id: '16', name: 'Tea Light Lanterns', price: 'from £17.95', basePrice: 17.95, category: 'decor', description: 'Carved with delicate holes that let candlelight cast beautiful dancing patterns across your room.' },
-  { id: '17', name: 'Pet Food Bowls', price: 'from £19.95', basePrice: 19.95, category: 'tableware', description: 'Treat your furry companions to customized food or water bowls with their names!' },
-  { id: '18', name: 'Christmas Baubles', price: '£18.95', basePrice: 18.95, category: 'seasonal', description: 'Spanning multiple spheres and shapes, complete with metallic hanging loops. A treasured annual craft.' }
+  { id: '1', name: 'Egg Cup', price: '£8.95', basePrice: 8.95, category: 'tableware', description: 'A cute little addition to any breakfast table. Very popular with children as a starter piece!', isPartyEligible: true , imageUrl: Images.potteryGallery },
+  { id: '2', name: 'Standard Plate', price: 'from £18.95', basePrice: 18.95, category: 'tableware', description: 'Perfect for dinner plates, decorative display plates, or customized birthday signature plates.', isPartyEligible: true , imageUrl: Images.potteryGallery },
+  { id: '3', name: 'Pasta & Cereal Bowls', price: 'from £15.95', basePrice: 15.95, category: 'tableware', description: 'Available in various profiles, including cereal, soup, and wide salad bowls.', isPartyEligible: true , imageUrl: Images.potteryGallery },
+  { id: '4', name: 'Cosy Mugs & Teacups', price: 'from £11.95', basePrice: 11.95, category: 'tableware', description: 'Our highest demand item. From tiny espresso cups to massive builder mugs.', isPartyEligible: true , imageUrl: Images.potteryGallery },
+  { id: '5', name: 'Grand Teapot', price: '£42.95', basePrice: 42.95, category: 'tableware', description: 'A gorgeous centerpiece that holds up to 4 cups. Perfect for a personalized family keepsake.' , imageUrl: Images.potteryGallery },
+  { id: '6', name: 'Teacup and Saucer Set', price: '£25.95', basePrice: 25.95, category: 'tableware', description: 'Classic afternoon tea styling. Paint individual patterns on both the cup and saucer.' , imageUrl: Images.potteryGallery },
+  { id: '7', name: 'Creamer Jug', price: '£15.95', basePrice: 15.95, category: 'tableware', description: 'A lovely miniature pouring jug for cream or milk, excellent for practicing fine details.' , imageUrl: Images.potteryGallery },
+  { id: '8', name: 'Spoon Rest', price: '£19.95', basePrice: 19.95, category: 'tableware', description: 'Keep your kitchen counters clean with a stylized resting spot for cooking spoons.' , imageUrl: Images.potteryGallery },
+  { id: '9', name: 'Pitchers & Water Jugs', price: 'from £19.95', basePrice: 19.95, category: 'tableware', description: 'Classic water and flower jugs, available in medieval, slim, and traditional round shapes.' , imageUrl: Images.potteryGallery },
+  { id: '10', name: 'Party Animals', price: '£16.95', basePrice: 16.95, category: 'kids', description: 'Over 30 different designs including lions, puppies, unicorns, dragons, and kittens!', isPartyEligible: true , imageUrl: Images.birthdayParties },
+  { id: '11', name: 'Money Banks', price: '£22.95', basePrice: 22.95, category: 'kids', description: 'Over 20 different designs including rockets, cars, pigs, and footballs. Complete with rubber stopper.', isPartyEligible: true , imageUrl: Images.birthdayParties },
+  { id: '12', name: 'Trinket Boxes', price: 'from £18.95', basePrice: 18.95, category: 'kids', description: 'Small and medium chest, heart, and star-shaped boxes with removable custom lids.' , imageUrl: Images.birthdayParties },
+  { id: '13', name: 'Coaster Tiles', price: 'from £8.95', basePrice: 8.95, category: 'kids', description: 'Square and circular tiles. Perfect for practice, custom hot-plate stands, or family handprint collections.', isPartyEligible: true , imageUrl: Images.birthdayParties },
+  { id: '14', name: 'Elegant Vases', price: 'from £39.95', basePrice: 39.95, category: 'decor', description: 'Tall fluted, bubble, and geometric modern bud vases to showcase fresh flowers.' , imageUrl: Images.potteryGallery },
+  { id: '15', name: 'Flowerpots', price: 'from £22.95', basePrice: 22.95, category: 'decor', description: 'Bring garden green inside with customized terracotta-style fired planters. Drainage hole included!' , imageUrl: Images.potteryGallery },
+  { id: '16', name: 'Tea Light Lanterns', price: 'from £17.95', basePrice: 17.95, category: 'decor', description: 'Carved with delicate holes that let candlelight cast beautiful dancing patterns across your room.' , imageUrl: Images.potteryGallery },
+  { id: '17', name: 'Pet Food Bowls', price: 'from £19.95', basePrice: 19.95, category: 'tableware', description: 'Treat your furry companions to customized food or water bowls with their names!' , imageUrl: Images.potteryGallery },
+  { id: '18', name: 'Christmas Baubles', price: '£18.95', basePrice: 18.95, category: 'seasonal', description: 'Spanning multiple spheres and shapes, complete with metallic hanging loops. A treasured annual craft.' , imageUrl: Images.potteryGallery }
 ];
 
 export const FAQ_ITEMS: FAQItem[] = [

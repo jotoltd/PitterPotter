@@ -25,14 +25,14 @@
   --font-heading: "Montserrat", "Outfit", "Plus Jakarta Sans", "Space Grotesk", "Inter", sans-serif;
   --font-sans: "Arquitecta Standard Light", "Arquitecta", "Outfit", "Plus Jakarta Sans", "Inter", sans-serif;
   
-  --color-clay-50: #F0F4F8;
-  --color-clay-100: #D9E2EC;
+  --color-clay-50: #FFFFFF;
+  --color-clay-100: #D6E2E9;
   --color-clay-200: #BCCCDC;
   --color-clay-300: #9FB3C8;
-  --color-terracotta-50: #F0F4F8;
-  --color-terracotta-100: #D9E2EC;
-  --color-terracotta-400: #486581;
-  --color-terracotta-500: #74919e;
+  --color-terracotta-50: #FFFFFF;
+  --color-terracotta-100: #D6E2E9;
+  --color-terracotta-400: #D6E2E9;
+  --color-terracotta-500: #DBE7E4;
   --color-terracotta-600: #243B53;
   --color-clay-charcoal: #1B2D3C;
 }

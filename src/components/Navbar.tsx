@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Palette, Menu, X, Phone, MapPin } from 'lucide-react';
+import { Menu, X, Phone, Calendar } from 'lucide-react';
 import { Page } from '../types';
 import { Images } from '../images';
 
@@ -10,14 +10,14 @@ interface NavbarProps {
 
 export default function Navbar({ currentPage, setCurrentPage }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showCallOptions, setShowCallOptions] = useState(false);
 
   const navItems: { label: string; value: Page }[] = [
     { label: 'Home', value: 'home' },
-    { label: 'Parties', value: 'parties' },
-    { label: 'Price List', value: 'pricing' },
+    { label: 'Prices', value: 'pricing' },
+    { label: 'Parties & Events', value: 'parties' },
+    { label: 'FAQ', value: 'faqs' },
     { label: 'Gallery', value: 'gallery' },
-    { label: 'FAQs', value: 'faqs' },
-    { label: 'Contact', value: 'contact' },
   ];
 
   const handleNavClick = (page: Page) => {
@@ -26,117 +26,156 @@ export default function Navbar({ currentPage, setCurrentPage }: NavbarProps) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const isActive = (page: Page) => currentPage === page;
+
   return (
-    <nav id="pp-navbar" className="sticky top-0 z-50 bg-[#F0F4F8]/95 backdrop-blur-md border-b-2 border-[#1B2D3C]">
-      {/* Quick top band for contact details */}
-      <div className="hidden sm:block bg-[#74919e] text-[#F0F4F8] py-1.5 text-xs font-semibold tracking-wider border-b border-[#1B2D3C]">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 flex justify-between items-center">
-          <div className="flex gap-6">
-            <span className="flex items-center gap-1.5">
-              <MapPin size={13} />
-              Putney & Wimbledon Studios
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Phone size={13} />
-              Putney: 020 87881635 | Wimbledon: 020 37704499
-            </span>
-          </div>
-          <div className="flex items-center gap-1 text-[#D9E2EC]">
-            <span>Creative Paint Your Own Pottery Studio</span>
-          </div>
-        </div>
-      </div>
+    <>
+      <nav id="pp-navbar" className="sticky top-0 z-50 bg-[#FFFFFF]/95 backdrop-blur-md border-b border-[#1B2D3C]/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+          <div className="flex items-center justify-between h-20">
+            {/* Logo */}
+            <button
+              onClick={() => handleNavClick('home')}
+              className="flex items-center gap-2.5 text-left group transition-transform focus:outline-none"
+            >
+              <img
+                src={Images.logo}
+                alt="Pitter Potter Logo"
+                className="h-10 w-auto object-contain rounded-lg"
+              />
+            </button>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo */}
-          <button
-            onClick={() => handleNavClick('home')}
-            className="flex items-center gap-2.5 text-left group transition-transform focus:outline-none"
-          >
-            <img
-              src={Images.logo}
-              alt="Pitter Potter Logo"
-              className="h-12 w-auto object-contain"
-            />
-          </button>
-
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-2">
-            {navItems.map((item) => {
-              const isActive = currentPage === item.value;
-              return (
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center">
+              {navItems.map((item) => (
                 <button
                   key={item.value}
                   id={`nav-link-${item.value}`}
                   onClick={() => handleNavClick(item.value)}
                   className={`group px-3.5 py-2 text-[11px] font-bold uppercase tracking-widest transition-all relative ${
-                    isActive
-                      ? 'text-[#74919e] '
-                      : 'text-[#1B2D3C] hover:text-[#74919e]'
+                    isActive(item.value)
+                      ? 'text-[#1B2D3C]'
+                      : 'text-[#1B2D3C] hover:text-[#1B2D3C]'
                   }`}
                 >
                   {item.label}
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-[#74919e] transition-all duration-300 w-0 group-hover:w-full"></span>
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-[#DBE7E4] transition-all duration-300 w-0 group-hover:w-full"></span>
                 </button>
-              );
-            })}
-            <button
-              id="cta-book-session"
-              onClick={() => handleNavClick('contact')}
-              className="ml-4 px-5 py-2.5 bg-[#74919e] text-white font-bold text-[11px] uppercase tracking-widest border-2 border-[#1B2D3C]  hover:translate-x-[-1px] hover:translate-y-[-1px]  active:translate-x-0 active:translate-y-0 transition-all"
-            >
-              Booking
-            </button>
-          </div>
+              ))}
+              <button
+                id="cta-book-session"
+                onClick={() => handleNavClick('book')}
+                className="ml-4 px-5 py-2.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-[11px] uppercase tracking-widest border border-[#1B2D3C] hover:bg-[#D6E2E9] transition-all cursor-pointer"
+              >
+                Booking
+              </button>
+            </div>
 
-          {/* Mobile menu button */}
-          <div className="flex md:hidden">
-            <button
-              id="mobile-menu-toggle"
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2 border-2 border-[#1B2D3C] text-[#1B2D3C] hover:bg-[#D9E2EC] transition-colors focus:outline-none"
-              aria-label="Toggle menu"
-            >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+            {/* Mobile menu button */}
+            <div className="flex md:hidden">
+              <button
+                id="mobile-menu-toggle"
+                onClick={() => setIsOpen(!isOpen)}
+                className="p-2 border border-[#1B2D3C] text-[#1B2D3C] hover:bg-[#D6E2E9] transition-colors focus:outline-none"
+              >
+                {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Navigation Panel */}
-      {isOpen && (
-        <div id="mobile-nav-panel" className="md:hidden border-b-2 border-[#1B2D3C] bg-[#F0F4F8] p-4 absolute top-20 left-0 w-full transition-transform duration-300 origin-top">
-          <div className="space-y-2">
-            {navItems.map((item) => {
-              const isActive = currentPage === item.value;
-              return (
+        {/* Mobile Menu Dropdown */}
+        {isOpen && (
+          <div className="md:hidden bg-[#FFFFFF] border-b border-[#1B2D3C]/10">
+            <div className="px-4 py-3 space-y-1">
+              {navItems.map((item) => (
                 <button
                   key={item.value}
                   id={`mobile-nav-link-${item.value}`}
                   onClick={() => handleNavClick(item.value)}
                   className={`w-full text-left px-5 py-4 text-lg font-black uppercase tracking-widest transition-all ${
-                    isActive
-                      ? 'bg-[#D9E2EC] text-[#74919e] border-2 border-[#1B2D3C] pl-6'
-                      : 'text-[#1B2D3C] hover:bg-[#D9E2EC]/20 pl-5'
+                    isActive(item.value)
+                      ? 'bg-[#D6E2E9] text-[#1B2D3C] border border-[#1B2D3C] pl-6'
+                      : 'text-[#1B2D3C] hover:bg-[#D6E2E9]/20 pl-5'
                   }`}
                 >
                   {item.label}
                 </button>
-              );
-            })}
-            <div className="pt-2">
+              ))}
+              <div className="pt-2">
+                <button
+                  id="mobile-cta-book"
+                  onClick={() => handleNavClick('book')}
+                  className="w-full py-4 bg-[#DBE7E4] text-[#1B2D3C] font-black text-lg uppercase tracking-widest text-center border border-[#1B2D3C] transition-all cursor-pointer"
+                >
+                  Book Studio
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* Mobile Bottom Sticky Toolbar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#1B2D3C]/10 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center justify-around px-4 pb-safe">
+          <button
+            onClick={() => setShowCallOptions(true)}
+            className="flex flex-col items-center justify-center py-3 px-4 flex-1 min-w-0 text-[#1B2D3C] transition-all cursor-pointer active:bg-[#FFFFFF]"
+          >
+            <Phone className="w-5 h-5 mb-1" />
+            <span className="text-[9px] font-bold uppercase tracking-wider truncate w-full text-center">Call us</span>
+          </button>
+          <div className="w-px h-8 bg-[#1B2D3C]/10" />
+          <button
+            onClick={() => handleNavClick('book')}
+            className="flex flex-col items-center justify-center py-3 px-4 flex-1 min-w-0 bg-[#DBE7E4] text-[#1B2D3C] transition-all cursor-pointer active:bg-[#D6E2E9]"
+          >
+            <Calendar className="w-5 h-5 mb-1" />
+            <span className="text-[9px] font-bold uppercase tracking-wider truncate w-full text-center">Book</span>
+          </button>
+        </div>
+      </div>
+      {/* Call Options Modal */}
+      {showCallOptions && (
+        <div className="md:hidden fixed inset-0 z-[60] bg-[#1B2D3C]/60 flex items-end justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-t-lg overflow-hidden shadow-lg animate-in slide-in-from-bottom-10">
+            <div className="p-4 border-b border-[#1B2D3C]/10 flex justify-between items-center">
+              <p className="font-heading text-lg font-black text-[#1B2D3C]">Call us</p>
               <button
-                id="mobile-cta-book"
-                onClick={() => handleNavClick('contact')}
-                className="w-full py-4 bg-[#74919e] text-white font-black text-lg uppercase tracking-widest text-center border-2 border-[#1B2D3C]  transition-all"
+                onClick={() => setShowCallOptions(false)}
+                className="p-2 hover:bg-[#FFFFFF] transition-colors cursor-pointer"
               >
-                Book Studio
+                <X className="w-5 h-5 text-[#1B2D3C]" />
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              <a
+                href="tel:02087881635"
+                onClick={() => setShowCallOptions(false)}
+                className="block w-full py-3 px-4 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-sm border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all"
+              >
+                <span className="block text-[10px] text-[#1B2D3C] uppercase tracking-wider mb-1">Putney Studio</span>
+                020 8788 1635
+              </a>
+              <a
+                href="tel:02037704499"
+                onClick={() => setShowCallOptions(false)}
+                className="block w-full py-3 px-4 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-sm border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all"
+              >
+                <span className="block text-[10px] text-[#1B2D3C] uppercase tracking-wider mb-1">Wimbledon Studio</span>
+                020 3770 4499
+              </a>
+              <button
+                onClick={() => setShowCallOptions(false)}
+                className="w-full py-3 text-[#1B2D3C] font-bold text-xs uppercase tracking-wider hover:bg-[#FFFFFF] transition-all cursor-pointer"
+              >
+                Cancel
               </button>
             </div>
           </div>
         </div>
       )}
-    </nav>
+    </>
   );
 }

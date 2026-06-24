@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, Users, Mail, Phone, MapPin, LogOut, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { BookingInquiry } from '../types';
@@ -14,10 +14,22 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed'>('all');
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [showCalendar, setShowCalendar] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingBooking, setEditingBooking] = useState<BookingInquiry | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newBooking, setNewBooking] = useState<Partial<BookingInquiry>>({
+    studio: 'Putney',
+    name: '',
+    email: '',
+    phone: '',
+    date: format(new Date(), 'yyyy-MM-dd'),
+    time: '10:00',
+    paintersCount: 1,
+    sessionType: 'painting',
+    status: 'confirmed',
+  });
 
   useEffect(() => {
     loadInquiries();
@@ -49,7 +61,7 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
   const filteredInquiries = inquiries.filter((inq) => {
     const statusMatch = filter === 'all' || inq.status === filter;
     const studioMatch = studioFilter === 'all' || inq.studio === studioFilter;
-    const searchMatch = searchTerm === '' || 
+    const searchMatch = searchTerm === '' ||
       inq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       inq.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       inq.phone.includes(searchTerm);
@@ -67,29 +79,14 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
 
   const bookingsForSelectedDate = selectedDate ? getBookingsForDate(selectedDate) : [];
 
-  // Get modifiers for calendar (days with bookings)
-  const modifiers = {
-    hasPending: inquiries
-      .filter((inq) => (studioFilter === 'all' || inq.studio === studioFilter) && inq.status === 'pending')
-      .map((inq) => parseISO(inq.date)),
-    hasConfirmed: inquiries
-      .filter((inq) => (studioFilter === 'all' || inq.studio === studioFilter) && inq.status === 'confirmed')
-      .map((inq) => parseISO(inq.date)),
+  const stats = {
+    total: inquiries.length,
+    pending: inquiries.filter((i) => i.status === 'pending').length,
+    confirmed: inquiries.filter((i) => i.status === 'confirmed').length,
   };
 
-  // Get booking count per day
-  const getBookingCountForDay = (date: Date) => {
-    return inquiries.filter((inq) => {
-      const bookingDate = parseISO(inq.date);
-      const dateMatch = isSameDay(bookingDate, date);
-      const studioMatch = studioFilter === 'all' || inq.studio === studioFilter;
-      return dateMatch && studioMatch;
-    }).length;
-  };
-
-  // Export to CSV
   const exportToCSV = () => {
-    const headers = ['ID', 'Name', 'Email', 'Phone', 'Studio', 'Date', 'Time', 'Painters', 'Session Type', 'Status', 'Notes', 'Request Date'];
+    const headers = ['ID', 'Name', 'Email', 'Phone', 'Studio', 'Date', 'Time', 'Painters', 'Session Type', 'Status', 'Request Date'];
     const csvContent = [
       headers.join(','),
       ...filteredInquiries.map(inq => [
@@ -103,7 +100,6 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
         inq.paintersCount,
         inq.sessionType,
         inq.status,
-        inq.notes || '',
         inq.requestDate
       ].join(','))
     ].join('\n');
@@ -117,7 +113,6 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
     window.URL.revokeObjectURL(url);
   };
 
-  // Edit booking
   const handleEditBooking = (booking: BookingInquiry) => {
     setEditingBooking(booking);
     setShowEditModal(true);
@@ -131,24 +126,55 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
     setEditingBooking(null);
   };
 
-  const stats = {
-    total: inquiries.length,
-    pending: inquiries.filter((i) => i.status === 'pending').length,
-    confirmed: inquiries.filter((i) => i.status === 'confirmed').length,
+  const saveNewBooking = () => {
+    if (!newBooking.name || !newBooking.email || !newBooking.phone || !newBooking.date || !newBooking.time || !newBooking.studio) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    const booking: BookingInquiry = {
+      id: `PP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+      studio: newBooking.studio as 'Putney' | 'Wimbledon',
+      name: newBooking.name,
+      email: newBooking.email,
+      phone: newBooking.phone,
+      date: newBooking.date,
+      time: newBooking.time,
+      paintersCount: newBooking.paintersCount || 1,
+      sessionType: newBooking.sessionType as any,
+      status: 'confirmed',
+      source: 'walk-in',
+      requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+      estimatedPrice: (newBooking.paintersCount || 1) * 5.95,
+    };
+    const updated = [booking, ...inquiries];
+    setInquiries(updated);
+    localStorage.setItem('pp_inquiries', JSON.stringify(updated));
+    setShowAddModal(false);
+    setNewBooking({
+      studio: 'Putney',
+      name: '',
+      email: '',
+      phone: '',
+      date: format(new Date(), 'yyyy-MM-dd'),
+      time: '10:00',
+      paintersCount: 1,
+      sessionType: 'painting',
+      status: 'confirmed',
+    });
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F4F8]">
+    <div className="min-h-screen bg-[#FFFFFF]">
       {/* Header */}
-      <div className="bg-[#1B2D3C] text-white py-4 px-6 border-b-2 border-[#1B2D3C]">
+      <div className="bg-[#1B2D3C] text-white py-4 px-6">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div>
-            <h1 className="font-heading text-2xl font-black italic">Admin Dashboard</h1>
+            <h1 className="font-heading text-2xl font-black">Admin Dashboard</h1>
             <p className="text-xs text-white/60 mt-1">Pitter Potter Booking Management</p>
           </div>
           <button
             onClick={onLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/30 text-xs font-bold uppercase tracking-wider transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/30 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
             Logout
@@ -159,16 +185,16 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white p-4 sm:p-6 border-2 border-[#1B2D3C]">
+          <div className="bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] sm:text-xs text-stone-500 font-bold uppercase tracking-wider">Total Bookings</p>
                 <p className="text-2xl sm:text-3xl font-black text-[#1B2D3C] mt-2">{stats.total}</p>
               </div>
-              <Users className="w-6 h-6 sm:w-8 sm:h-8 text-[#74919e]" />
+              <Users className="w-6 h-6 sm:w-8 sm:h-8 text-[#1B2D3C]" />
             </div>
           </div>
-          <div className="bg-white p-4 sm:p-6 border-2 border-[#1B2D3C]">
+          <div className="bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] sm:text-xs text-stone-500 font-bold uppercase tracking-wider">Pending</p>
@@ -177,7 +203,7 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
               <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-amber-600" />
             </div>
           </div>
-          <div className="bg-white p-4 sm:p-6 border-2 border-[#1B2D3C]">
+          <div className="bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] sm:text-xs text-stone-500 font-bold uppercase tracking-wider">Confirmed</p>
@@ -198,10 +224,10 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value as any)}
-              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border-2 transition-all cursor-pointer ${
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
                 filter === tab.value
-                  ? 'bg-[#74919e] border-[#1B2D3C] text-white'
-                  : 'bg-white border-[#1B2D3C] text-[#1B2D3C] hover:bg-[#D9E2EC]/40'
+                  ? 'bg-[#DBE7E4] border-[#DBE7E4] text-[#1B2D3C]'
+                  : 'bg-white border-[#1B2D3C]/20 text-[#1B2D3C] hover:border-[#DBE7E4]'
               }`}
             >
               {tab.label}
@@ -216,10 +242,10 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
             <button
               key={tab.value}
               onClick={() => setStudioFilter(tab.value as any)}
-              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border-2 transition-all cursor-pointer ${
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
                 studioFilter === tab.value
-                  ? 'bg-[#74919e] border-[#1B2D3C] text-white'
-                  : 'bg-white border-[#1B2D3C] text-[#1B2D3C] hover:bg-[#D9E2EC]/40'
+                  ? 'bg-[#DBE7E4] border-[#DBE7E4] text-[#1B2D3C]'
+                  : 'bg-white border-[#1B2D3C]/20 text-[#1B2D3C] hover:border-[#DBE7E4]'
               }`}
             >
               {tab.label}
@@ -235,12 +261,18 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
               placeholder="Search by name, email, or phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border-2 border-[#1B2D3C] text-xs text-[#1B2D3C] font-bold rounded-none focus:outline-none focus:bg-[#D9E2EC]/20"
+              className="w-full px-4 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
             />
           </div>
           <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> Add Walk-in
+          </button>
+          <button
             onClick={exportToCSV}
-            className="px-4 py-2 bg-[#74919e] text-white font-bold text-xs uppercase tracking-wider border-2 border-[#1B2D3C] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
+            className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
           >
             Export CSV
           </button>
@@ -248,14 +280,14 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
 
         {/* Calendar View */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
-          <div className="lg:col-span-1 bg-white p-4 sm:p-6 border-2 border-[#1B2D3C]">
+          <div className="lg:col-span-1 bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-heading text-base sm:text-lg font-black italic text-[#1B2D3C]">
+              <h3 className="font-heading text-base sm:text-lg font-black text-[#1B2D3C]">
                 Booking Calendar {studioFilter !== 'all' && `- ${studioFilter}`}
               </h3>
               <button
                 onClick={() => setSelectedDate(new Date())}
-                className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#74919e] hover:text-[#1B2D3C] transition-colors"
+                className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#1B2D3C] hover:text-[#1B2D3C] transition-colors"
               >
                 Today
               </button>
@@ -264,35 +296,7 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
-              modifiers={modifiers}
-              modifiersStyles={{
-                hasPending: {
-                  backgroundColor: '#f59e0b',
-                  color: 'white',
-                  fontWeight: 'bold',
-                },
-                hasConfirmed: {
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  fontWeight: 'bold',
-                },
-              }}
-              components={{
-                Day: ({ date, modifiers, ...props }) => {
-                  const bookingCount = getBookingCountForDay(date);
-                  return (
-                    <div {...props} className="relative">
-                      <span>{format(date, 'd')}</span>
-                      {bookingCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-[#1B2D3C] text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                          {bookingCount}
-                        </span>
-                      )}
-                    </div>
-                  );
-                },
-              }}
-              className="rdp rdp-mobile"
+              className="rdp"
             />
             {selectedDate && (
               <div className="mt-4 pt-4 border-t border-[#1B2D3C]/20">
@@ -307,8 +311,8 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
           </div>
 
           {/* Bookings for Selected Date */}
-          <div className="lg:col-span-2 bg-white p-4 sm:p-6 border-2 border-[#1B2D3C]">
-            <h3 className="font-heading text-base sm:text-lg font-black italic text-[#1B2D3C] mb-4">
+          <div className="lg:col-span-2 bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
+            <h3 className="font-heading text-base sm:text-lg font-black text-[#1B2D3C] mb-4">
               {selectedDate ? `Bookings for ${format(selectedDate, 'PPP')}` : 'Select a date to view bookings'}
             </h3>
             {selectedDate && bookingsForSelectedDate.length === 0 ? (
@@ -318,13 +322,13 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
             ) : selectedDate ? (
               <div className="space-y-3 sm:space-y-4">
                 {bookingsForSelectedDate.map((inq) => (
-                  <div key={inq.id} className="bg-[#F0F4F8] p-3 sm:p-4 border-2 border-[#1B2D3C]/30">
+                  <div key={inq.id} className="bg-[#FFFFFF] p-3 sm:p-4 border border-[#1B2D3C]/10">
                     <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
                       <div className="space-y-1.5 sm:space-y-2 flex-1">
                         <p className="font-bold text-[#1B2D3C] text-sm sm:text-base">{inq.name}</p>
                         <p className="text-[10px] sm:text-xs text-stone-600">
-                          <span className="font-semibold">Studio:</span> {inq.studio} | 
-                          <span className="font-semibold ml-2">Time:</span> {inq.time} | 
+                          <span className="font-semibold">Studio:</span> {inq.studio} |
+                          <span className="font-semibold ml-2">Time:</span> {inq.time} |
                           <span className="font-semibold ml-2">Painters:</span> {inq.paintersCount}
                         </p>
                         <p className="text-[10px] sm:text-xs text-stone-600">
@@ -337,16 +341,16 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEditBooking(inq)}
-                          className="p-1.5 hover:bg-white border border-[#1B2D3C]/20 transition-all"
+                          className="p-1.5 hover:bg-white border border-[#1B2D3C]/20 transition-all cursor-pointer"
                           title="Edit booking"
                         >
-                          <svg className="w-4 h-4 text-[#74919e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 text-[#1B2D3C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
                         <button
                           onClick={() => updateStatus(inq.id, inq.status === 'confirmed' ? 'pending' : 'confirmed')}
-                          className="p-1.5 hover:bg-white border border-[#1B2D3C]/20 transition-all"
+                          className="p-1.5 hover:bg-white border border-[#1B2D3C]/20 transition-all cursor-pointer"
                           title={inq.status === 'confirmed' ? 'Mark as pending' : 'Mark as confirmed'}
                         >
                           {inq.status === 'confirmed' ? (
@@ -357,7 +361,7 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
                         </button>
                         <button
                           onClick={() => deleteInquiry(inq.id)}
-                          className="p-1.5 hover:bg-red-50 border border-[#1B2D3C]/20 transition-all"
+                          className="p-1.5 hover:bg-red-50 border border-[#1B2D3C]/20 transition-all cursor-pointer"
                           title="Delete booking"
                         >
                           <Trash2 className="w-4 h-4 text-red-600" />
@@ -376,7 +380,7 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
         </div>
 
         {/* Bookings Table */}
-        <div className="bg-white border-2 border-[#1B2D3C] overflow-hidden">
+        <div className="bg-white border border-[#1B2D3C]/20 shadow-sm overflow-hidden">
           {filteredInquiries.length === 0 ? (
             <div className="p-8 sm:p-12 text-center">
               <p className="text-sm text-stone-500 font-semibold">No bookings found</p>
@@ -384,7 +388,7 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px]">
-                <thead className="bg-[#D9E2EC] border-b-2 border-[#1B2D3C]">
+                <thead className="bg-[#D6E2E9] border-b border-[#1B2D3C]/20">
                   <tr>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Date</th>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Time</th>
@@ -393,13 +397,14 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Contact</th>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Session</th>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Painters</th>
+                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Source</th>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Status</th>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredInquiries.map((inq) => (
-                    <tr key={inq.id} className="border-b border-[#1B2D3C]/10 hover:bg-[#F0F4F8]/50">
+                    <tr key={inq.id} className="border-b border-[#1B2D3C]/10 hover:bg-[#FFFFFF]/50">
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">{inq.date}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">{inq.time}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">{inq.studio}</td>
@@ -419,6 +424,9 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">{inq.sessionType}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">{inq.paintersCount}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">
+                        {inq.source === 'walk-in' ? 'Walk-in' : 'Online'}
+                      </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <span
                           className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border ${
@@ -439,16 +447,16 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
                         <div className="flex gap-1 sm:gap-2">
                           <button
                             onClick={() => handleEditBooking(inq)}
-                            className="p-1 sm:p-1.5 hover:bg-[#D9E2EC] border border-[#1B2D3C]/20 transition-all"
+                            className="p-1 sm:p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 transition-all cursor-pointer"
                             title="Edit booking"
                           >
-                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#74919e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1B2D3C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                           </button>
                           <button
                             onClick={() => updateStatus(inq.id, inq.status === 'confirmed' ? 'pending' : 'confirmed')}
-                            className="p-1 sm:p-1.5 hover:bg-[#D9E2EC] border border-[#1B2D3C]/20 transition-all"
+                            className="p-1 sm:p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 transition-all cursor-pointer"
                             title={inq.status === 'confirmed' ? 'Mark as pending' : 'Mark as confirmed'}
                           >
                             {inq.status === 'confirmed' ? (
@@ -459,7 +467,7 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
                           </button>
                           <button
                             onClick={() => deleteInquiry(inq.id)}
-                            className="p-1 sm:p-1.5 hover:bg-red-50 border border-[#1B2D3C]/20 transition-all"
+                            className="p-1 sm:p-1.5 hover:bg-red-50 border border-[#1B2D3C]/20 transition-all cursor-pointer"
                             title="Delete booking"
                           >
                             <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600" />
@@ -475,11 +483,107 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
         </div>
       </div>
 
+      {/* Add Walk-in Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg max-h-[90vh] overflow-y-auto">
+            <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Add Walk-in Booking</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Studio *</label>
+                <select
+                  value={newBooking.studio}
+                  onChange={(e) => setNewBooking({ ...newBooking, studio: e.target.value as 'Putney' | 'Wimbledon' })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                >
+                  <option value="Putney">Putney</option>
+                  <option value="Wimbledon">Wimbledon</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Name *</label>
+                <input
+                  type="text"
+                  value={newBooking.name}
+                  onChange={(e) => setNewBooking({ ...newBooking, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Email *</label>
+                <input
+                  type="email"
+                  value={newBooking.email}
+                  onChange={(e) => setNewBooking({ ...newBooking, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Phone *</label>
+                <input
+                  type="tel"
+                  value={newBooking.phone}
+                  onChange={(e) => setNewBooking({ ...newBooking, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Date *</label>
+                <input
+                  type="date"
+                  value={newBooking.date}
+                  onChange={(e) => setNewBooking({ ...newBooking, date: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Time *</label>
+                <select
+                  value={newBooking.time}
+                  onChange={(e) => setNewBooking({ ...newBooking, time: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                >
+                  <option value="10:00">10:00 am</option>
+                  <option value="12:00">12:00 pm</option>
+                  <option value="14:00">2:00 pm</option>
+                  <option value="16:00">4:00 pm</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Painters *</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={newBooking.paintersCount}
+                  onChange={(e) => setNewBooking({ ...newBooking, paintersCount: parseInt(e.target.value) || 1 })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="flex-1 px-4 py-2 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveNewBooking}
+                className="flex-1 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
+              >
+                Add Booking
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Booking Modal */}
       {showEditModal && editingBooking && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white p-6 border-2 border-[#1B2D3C] max-w-md w-full space-y-4">
-            <h3 className="font-heading text-xl font-black italic text-[#1B2D3C]">Edit Booking</h3>
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg">
+            <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Edit Booking</h3>
             <div className="space-y-3">
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Name</label>
@@ -487,7 +591,7 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
                   type="text"
                   value={editingBooking.name}
                   onChange={(e) => setEditingBooking({ ...editingBooking, name: e.target.value })}
-                  className="w-full px-3 py-2 border-2 border-[#1B2D3C] text-xs text-[#1B2D3C] font-bold rounded-none focus:outline-none focus:bg-[#D9E2EC]/20"
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
               </div>
               <div>
@@ -496,7 +600,7 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
                   type="email"
                   value={editingBooking.email}
                   onChange={(e) => setEditingBooking({ ...editingBooking, email: e.target.value })}
-                  className="w-full px-3 py-2 border-2 border-[#1B2D3C] text-xs text-[#1B2D3C] font-bold rounded-none focus:outline-none focus:bg-[#D9E2EC]/20"
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
               </div>
               <div>
@@ -505,7 +609,7 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
                   type="tel"
                   value={editingBooking.phone}
                   onChange={(e) => setEditingBooking({ ...editingBooking, phone: e.target.value })}
-                  className="w-full px-3 py-2 border-2 border-[#1B2D3C] text-xs text-[#1B2D3C] font-bold rounded-none focus:outline-none focus:bg-[#D9E2EC]/20"
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
               </div>
               <div>
@@ -514,7 +618,7 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
                   type="date"
                   value={editingBooking.date}
                   onChange={(e) => setEditingBooking({ ...editingBooking, date: e.target.value })}
-                  className="w-full px-3 py-2 border-2 border-[#1B2D3C] text-xs text-[#1B2D3C] font-bold rounded-none focus:outline-none focus:bg-[#D9E2EC]/20"
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
               </div>
               <div>
@@ -522,12 +626,11 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
                 <select
                   value={editingBooking.time}
                   onChange={(e) => setEditingBooking({ ...editingBooking, time: e.target.value })}
-                  className="w-full px-3 py-2 border-2 border-[#1B2D3C] text-xs text-[#1B2D3C] font-bold rounded-none focus:outline-none focus:bg-[#D9E2EC]/20"
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 >
                   <option value="10:00">10:00 am</option>
-                  <option value="11:30">11:30 am</option>
-                  <option value="13:00">1:00 pm</option>
-                  <option value="14:30">2:30 pm</option>
+                  <option value="12:00">12:00 pm</option>
+                  <option value="14:00">2:00 pm</option>
                   <option value="16:00">4:00 pm</option>
                 </select>
               </div>
@@ -539,29 +642,20 @@ export default function AdminDashboardView({ onLogout }: AdminDashboardProps) {
                   max="50"
                   value={editingBooking.paintersCount}
                   onChange={(e) => setEditingBooking({ ...editingBooking, paintersCount: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border-2 border-[#1B2D3C] text-xs text-[#1B2D3C] font-bold rounded-none focus:outline-none focus:bg-[#D9E2EC]/20"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Notes</label>
-                <textarea
-                  rows={3}
-                  value={editingBooking.notes || ''}
-                  onChange={(e) => setEditingBooking({ ...editingBooking, notes: e.target.value })}
-                  className="w-full px-3 py-2 border-2 border-[#1B2D3C] text-xs text-[#1B2D3C] font-bold rounded-none focus:outline-none focus:bg-[#D9E2EC]/20"
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
               </div>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowEditModal(false)}
-                className="flex-1 px-4 py-2 bg-[#F0F4F8] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border-2 border-[#1B2D3C] hover:bg-[#D9E2EC] transition-all cursor-pointer"
+                className="flex-1 px-4 py-2 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={() => saveBookingEdit(editingBooking)}
-                className="flex-1 px-4 py-2 bg-[#74919e] text-white font-bold text-xs uppercase tracking-wider border-2 border-[#1B2D3C] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
+                className="flex-1 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
                 Save
               </button>
