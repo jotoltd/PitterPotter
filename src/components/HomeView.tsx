@@ -40,8 +40,8 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  <EditableText
  key="hero_title"
  page="home"
- defaultValue="Paint your own Pottery Studio<br />Putney & Wimbledon"
- className="font-heading text-xl sm:text-2xl md:text-3xl text-[#1B2D3C] mb-6 font-light leading-relaxed"
+ defaultValue="Paint your own Pottery Studio&#10;Putney & Wimbledon"
+ className="font-heading text-xl sm:text-2xl md:text-3xl text-[#1B2D3C] mb-6 font-light leading-relaxed whitespace-pre-line"
  adminMode={adminMode}
  />
  <EditableText
