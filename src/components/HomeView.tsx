@@ -37,20 +37,22 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
             alt="Pitter Potter Logo"
             className="h-20 sm:h-24 w-auto object-contain mb-6"
           />
+ <div className="mb-6">
  <EditableText
  key="hero_title"
  page="home"
  defaultValue="Paint your own Pottery Studio"
- className="font-heading text-xl sm:text-2xl md:text-3xl text-[#1B2D3C] mb-2 font-light leading-relaxed"
+ className="font-heading text-xl sm:text-2xl md:text-3xl text-[#1B2D3C] font-light leading-relaxed block"
  adminMode={adminMode}
  />
  <EditableText
  key="hero_locations"
  page="home"
  defaultValue="Putney & Wimbledon"
- className="font-heading text-xl sm:text-2xl md:text-3xl text-[#1B2D3C] mb-6 font-light leading-relaxed"
+ className="font-heading text-xl sm:text-2xl md:text-3xl text-[#1B2D3C] font-light leading-relaxed block"
  adminMode={adminMode}
  />
+ </div>
  <EditableText
  key="hero_subtitle"
  page="home"
