@@ -1,7 +1,10 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { Mail, Phone, MapPin, Clock, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { BookingInquiry, Page } from '../types';
+import { BookingInquiry, GiftCard } from '../types';
+import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import { getRemainingCapacity, createBooking } from '../lib/bookings';
+
 
 interface ContactViewProps {
   initialPainters?: number;
@@ -22,8 +25,11 @@ export default function ContactView({ initialPainters = 1 }: ContactViewProps) {
   const [paintersCount, setPaintersCount] = useState<number>(initialPainters);
 
   const [submittedInquiry, setSubmittedInquiry] = useState<BookingInquiry | null>(null);
-  const [storedInquiries, setStoredInquiries] = useState<BookingInquiry[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const [giftCardCode, setGiftCardCode] = useState('');
+  const [appliedGiftCard, setAppliedGiftCard] = useState<GiftCard | null>(null);
+  const [giftCardError, setGiftCardError] = useState('');
 
   // Load draft from localStorage on mount
   useEffect(() => {
@@ -43,14 +49,6 @@ export default function ContactView({ initialPainters = 1 }: ContactViewProps) {
       }
     }
 
-    const saved = localStorage.getItem('pp_inquiries');
-    if (saved) {
-      try {
-        setStoredInquiries(JSON.parse(saved));
-      } catch (err) {
-        console.error('Error parsing inquiries', err);
-      }
-    }
   }, []);
 
   const saveDraft = () => {
@@ -71,14 +69,88 @@ export default function ContactView({ initialPainters = 1 }: ContactViewProps) {
     localStorage.removeItem('pp_booking_draft');
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const estimatedPrice = paintersCount * 5.95;
+  const giftCardDiscount = appliedGiftCard ? Math.min(appliedGiftCard.balance, estimatedPrice) : 0;
+  const finalPrice = Math.max(0, estimatedPrice - giftCardDiscount);
+
+  const applyGiftCard = async () => {
+    setGiftCardError('');
+    setAppliedGiftCard(null);
+    if (!giftCardCode.trim()) return;
+
+    const code = giftCardCode.trim();
+
+    if (isSupabaseEnabled()) {
+      try {
+        const { data, error } = await supabase!
+          .from('gift_cards')
+          .select('*')
+          .eq('code', code)
+          .eq('status', 'active')
+          .gt('balance', 0)
+          .single();
+
+        if (error || !data) {
+          setGiftCardError('Invalid or expired gift card code.');
+          return;
+        }
+
+        if (data.expiry_date && new Date(data.expiry_date) < new Date()) {
+          setGiftCardError('This gift card has expired.');
+          return;
+        }
+
+        setAppliedGiftCard({
+          id: data.id,
+          code: data.code,
+          amount: Number(data.amount),
+          balance: Number(data.balance),
+          recipientName: data.recipient_name,
+          recipientEmail: data.recipient_email,
+          senderName: data.sender_name,
+          message: data.message,
+          purchaseDate: new Date(data.purchase_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+          status: data.status,
+        });
+        return;
+      } catch (err) {
+        console.error('Supabase gift card lookup failed:', err);
+      }
+    }
+
+    const cards: GiftCard[] = JSON.parse(localStorage.getItem('pp_gift_cards') || '[]');
+    const card = cards.find((c) => c.code === code && c.status === 'active' && c.balance > 0);
+
+    if (!card) {
+      setGiftCardError('Invalid or expired gift card code.');
+      return;
+    }
+
+    setAppliedGiftCard(card);
+  };
+
+  const removeGiftCard = () => {
+    setAppliedGiftCard(null);
+    setGiftCardError('');
+    setGiftCardCode('');
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name || !email || !phone || !date) {
       alert('Please fill out all required fields');
       return;
     }
 
-    const estimatedPrice = paintersCount * 5.95;
+    const remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time);
+    if (paintersCount > remaining) {
+      alert(`This session only has room for ${remaining} more painter${remaining === 1 ? '' : 's'}. Please choose a different time or reduce the number of painters.`);
+      return;
+    }
+
+    const currentEstimatedPrice = paintersCount * 5.95;
+    const currentGiftCardDiscount = appliedGiftCard ? Math.min(appliedGiftCard.balance, currentEstimatedPrice) : 0;
+    const currentFinalPrice = Math.max(0, currentEstimatedPrice - currentGiftCardDiscount);
 
     const newInquiry: BookingInquiry = {
       id: `PP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
@@ -93,37 +165,62 @@ export default function ContactView({ initialPainters = 1 }: ContactViewProps) {
       status: 'pending',
       source: 'online',
       requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-      estimatedPrice: estimatedPrice > 0 ? estimatedPrice : undefined,
+      estimatedPrice: currentEstimatedPrice > 0 ? currentEstimatedPrice : undefined,
+      giftCardCode: appliedGiftCard ? appliedGiftCard.code : undefined,
+      giftCardDiscount: currentGiftCardDiscount > 0 ? currentGiftCardDiscount : undefined,
+      finalPrice: currentFinalPrice > 0 ? currentFinalPrice : undefined,
     };
 
-    const updated = [newInquiry, ...storedInquiries];
-    setStoredInquiries(updated);
-    localStorage.setItem('pp_inquiries', JSON.stringify(updated));
-    setSubmittedInquiry(newInquiry);
-    setShowSuccessModal(true);
-    clearDraft();
+    if (appliedGiftCard && currentGiftCardDiscount > 0) {
+      if (isSupabaseEnabled()) {
+        try {
+          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redeem-gift-card`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              code: appliedGiftCard.code,
+              amount: currentEstimatedPrice,
+            }),
+          });
+
+          const data = await response.json();
+          if (!response.ok || data.error) {
+            console.error('Gift card redeem error:', data.error);
+          }
+        } catch (err) {
+          console.error('Gift card redeem failed:', err);
+        }
+      }
+
+      const newBalance = Math.max(0, appliedGiftCard.balance - currentGiftCardDiscount);
+      const newStatus = newBalance <= 0 ? 'redeemed' : 'active';
+      const cards: GiftCard[] = JSON.parse(localStorage.getItem('pp_gift_cards') || '[]');
+      const updatedCards = cards.map((c) => {
+        if (c.code === appliedGiftCard.code) {
+          return { ...c, balance: newBalance, status: newStatus };
+        }
+        return c;
+      });
+      localStorage.setItem('pp_gift_cards', JSON.stringify(updatedCards));
+    }
+
+    try {
+      await createBooking(newInquiry);
+      setSubmittedInquiry(newInquiry);
+      setShowSuccessModal(true);
+      clearDraft();
+    } catch {
+      alert('Failed to save booking. Please try again.');
+      return;
+    }
 
     console.log('📧 Confirmation Email Sent:');
     console.log(`To: ${email}`);
     console.log(`Subject: Booking Confirmation - Reference: ${newInquiry.id}`);
     console.log(`Body: Thank you ${name}! Your booking for ${format(date, 'PPP')} at ${time} has been received. We'll confirm your table within 24 hours.`);
-  };
-
-  const deleteInquiry = (id: string) => {
-    const updated = storedInquiries.filter(i => i.id !== id);
-    setStoredInquiries(updated);
-    localStorage.setItem('pp_inquiries', JSON.stringify(updated));
-  };
-
-  const simulateConfirmation = (id: string) => {
-    const updated = storedInquiries.map(i => {
-      if (i.id === id) {
-        return { ...i, status: 'confirmed' as const };
-      }
-      return i;
-    });
-    setStoredInquiries(updated);
-    localStorage.setItem('pp_inquiries', JSON.stringify(updated));
   };
 
   return (
@@ -163,6 +260,19 @@ export default function ContactView({ initialPainters = 1 }: ContactViewProps) {
                   {studio === 'Putney' ? '020 87881635' : '020 37704499'}
                 </a>
               </div>
+            </div>
+
+            <div className="aspect-video w-full bg-[#D6E2E9]/50 overflow-hidden rounded-lg">
+              <iframe
+                title={`${studio} Studio Location`}
+                src={studio === 'Putney'
+                  ? 'https://maps.google.com/maps?q=234+Upper+Richmond+Road%2C+Putney+SW15+6TG&t=&z=15&ie=UTF8&iwloc=&output=embed'
+                  : 'https://maps.google.com/maps?q=52+Wimbledon+Hill+Road%2C+Wimbledon+SW19+7PA&t=&z=15&ie=UTF8&iwloc=&output=embed'
+                }
+                className="w-full h-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
             </div>
           </div>
 
@@ -219,6 +329,62 @@ export default function ContactView({ initialPainters = 1 }: ContactViewProps) {
                 <p><strong>Time:</strong> {time} - {parseInt(time.split(':')[0], 10) + 2}:00</p>
                 <p><strong>Painters:</strong> {paintersCount}</p>
                 <p><strong>Session:</strong> Painting Session</p>
+              </div>
+
+              <div className="border-t border-[#1B2D3C]/10 pt-3 mt-3 space-y-1">
+                <div className="flex justify-between">
+                  <span>Estimated price:</span>
+                  <span>£{estimatedPrice.toFixed(2)}</span>
+                </div>
+                {appliedGiftCard && (
+                  <div className="flex justify-between text-emerald-700">
+                    <span>Gift card ({appliedGiftCard.code}):</span>
+                    <span>-£{giftCardDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm font-black pt-1">
+                  <span>Total due:</span>
+                  <span>£{finalPrice.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                {appliedGiftCard ? (
+                  <div className="flex items-center justify-between bg-emerald-50 p-2 rounded-lg border border-emerald-200">
+                    <div className="text-xs text-emerald-800 font-semibold">
+                      Applied: {appliedGiftCard.code}
+                      <span className="block text-[10px] font-normal">Balance after use: £{Math.max(0, appliedGiftCard.balance - giftCardDiscount).toFixed(2)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeGiftCard}
+                      className="text-[10px] font-black uppercase text-emerald-800 hover:text-emerald-900 underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Gift Card Code</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={giftCardCode}
+                        onChange={(e) => setGiftCardCode(e.target.value)}
+                        placeholder="PP-XXXX-XXXX-XXXX"
+                        className="flex-1 py-2.5 px-3 border border-[#1B2D3C]/20 rounded-lg text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C] uppercase"
+                      />
+                      <button
+                        type="button"
+                        onClick={applyGiftCard}
+                        className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-[10px] uppercase tracking-widest rounded-lg border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                    {giftCardError && <p className="text-[10px] text-red-600 font-semibold">{giftCardError}</p>}
+                  </div>
+                )}
               </div>
             </div>
 

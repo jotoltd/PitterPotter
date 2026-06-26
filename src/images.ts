@@ -6,6 +6,20 @@ import birthdayParties from './assets/images/PP_Putney_Images/Unknown-10.jpg';
 import clayImprint from './assets/images/PP_Putney_Images/Unknown-11.jpg';
 import logo from './assets/images/pp_logo.png';
 
+import putney1 from './assets/images/PP_Putney_Images/Unknown-8.jpg';
+import putney2 from './assets/images/PP_Putney_Images/Unknown-9.jpg';
+import putney3 from './assets/images/PP_Putney_Images/Unknown-10.jpg';
+import putney4 from './assets/images/PP_Putney_Images/Unknown-11.jpg';
+import putney5 from './assets/images/PP_Putney_Images/Unknown-12.jpg';
+import putney6 from './assets/images/PP_Putney_Images/Unknown-14.jpg';
+
+import wimbledon1 from './assets/images/PP_Wimbledon_Images/Unknown-8.jpg';
+import wimbledon2 from './assets/images/PP_Wimbledon_Images/Unknown-9.jpg';
+import wimbledon3 from './assets/images/PP_Wimbledon_Images/Unknown-10.jpg';
+import wimbledon4 from './assets/images/PP_Wimbledon_Images/Unknown-11.jpg';
+import wimbledon5 from './assets/images/PP_Wimbledon_Images/Unknown-12.jpg';
+import wimbledon6 from './assets/images/PP_Wimbledon_Images/Unknown-13.jpg';
+
 export const Images = {
   studioHero,
   birthdayParties,
@@ -14,4 +28,6 @@ export const Images = {
   putneyStudio,
   wimbledonStudio,
   logo,
+  putneyGallery: [putney1, putney2, putney3, putney4, putney5, putney6],
+  wimbledonGallery: [wimbledon1, wimbledon2, wimbledon3, wimbledon4, wimbledon5, wimbledon6],
 };

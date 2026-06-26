@@ -15,6 +15,7 @@ export default function Navbar({ currentPage, setCurrentPage }: NavbarProps) {
   const navItems: { label: string; value: Page }[] = [
     { label: 'Home', value: 'home' },
     { label: 'Prices', value: 'pricing' },
+    { label: 'Gift Cards', value: 'buy-gift-card' },
     { label: 'Parties & Events', value: 'parties' },
     { label: 'FAQ', value: 'faqs' },
     { label: 'Gallery', value: 'gallery' },

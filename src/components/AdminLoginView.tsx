@@ -1,8 +1,10 @@
 import { useState, FormEvent } from 'react';
 import { Lock, User } from 'lucide-react';
+import { Staff } from '../types';
+import { sha256 } from '../lib/hash';
 
 interface AdminLoginProps {
- onLogin: () => void;
+  onLogin: (staff: Staff) => void;
 }
 
 export default function AdminLoginView({ onLogin }: AdminLoginProps) {
@@ -10,14 +12,55 @@ export default function AdminLoginView({ onLogin }: AdminLoginProps) {
  const [password, setPassword] = useState('');
  const [error, setError] = useState('');
 
- const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
- e.preventDefault();
- if (username === 'Evonne' && password === 'lalala14') {
- onLogin();
- } else {
- setError('Invalid credentials');
- }
- };
+ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+
+    if (!username || !password) {
+      setError('Please enter username and password');
+      return;
+    }
+
+    const passwordHash = await sha256(password);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/staff-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ username, passwordHash }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        setError(data.error || 'Invalid credentials');
+        return;
+      }
+
+      const staff: Staff = {
+        id: data.id,
+        name: data.name,
+        username: data.username,
+        passwordHash,
+        role: data.role,
+        canUpdateStatus: !!data.canUpdateStatus,
+        canEditBookings: !!data.canEditBookings,
+        canAddWalkIns: !!data.canAddWalkIns,
+        canDeleteBookings: !!data.canDeleteBookings,
+        sessionToken: data.sessionToken,
+        sessionExpiresAt: data.sessionExpiresAt,
+        createdAt: new Date().toISOString(),
+      };
+
+      onLogin(staff);
+      return;
+    } catch (err) {
+      console.error('Staff login failed:', err);
+      setError('Login failed');
+    }
+  };
 
  return (
  <div className="min-h-screen flex items-center justify-center bg-[#FFFFFF] p-4">

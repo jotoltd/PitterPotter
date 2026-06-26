@@ -1,4 +1,4 @@
-export type Page = 'home' | 'parties' | 'pricing' | 'faqs' | 'gallery' | 'contact' | 'admin' | 'putney' | 'wimbledon' | 'book';
+export type Page = 'home' | 'parties' | 'pricing' | 'faqs' | 'gallery' | 'contact' | 'admin' | 'putney' | 'wimbledon' | 'book' | 'gift-cards' | 'buy-gift-card' | 'gift-card-success' | 'gift-card-balance';
 
 export interface PotteryItem {
   id: string;
@@ -33,6 +33,9 @@ export interface BookingInquiry {
   requestDate: string;
   estimatedPrice?: number;
   source?: 'online' | 'walk-in';
+  giftCardCode?: string;
+  giftCardDiscount?: number;
+  finalPrice?: number;
 }
 
 export interface GalleryItem {
@@ -42,3 +45,34 @@ export interface GalleryItem {
   category: 'creation' | 'studio' | 'party' | 'imprint';
   caption: string;
 }
+
+export interface GiftCard {
+  id: string;
+  code: string;
+  amount: number;
+  balance: number;
+  recipientName: string;
+  recipientEmail: string;
+  senderName: string;
+  message?: string;
+  purchaseDate: string;
+  expiryDate?: string;
+  status: 'active' | 'redeemed' | 'expired';
+}
+
+export interface Staff {
+  id: string;
+  name: string;
+  username: string;
+  passwordHash: string;
+  role: 'super_admin' | 'staff';
+  canUpdateStatus: boolean;
+  canEditBookings: boolean;
+  canAddWalkIns: boolean;
+  canDeleteBookings: boolean;
+  sessionToken?: string;
+  sessionExpiresAt?: string;
+  createdAt: string;
+}
+
+export type StaffRole = Staff['role'];

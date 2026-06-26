@@ -16,5 +16,9 @@ View your app in AI Studio: https://ai.studio/apps/cd42f6d2-3260-438b-b639-5fbd0
 1. Install dependencies:
    `npm install`
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+3. Set your Supabase credentials in [.env.local](.env.local):
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+4. Create the `gift_cards` table in your Supabase project by running [supabase/schema.sql](supabase/schema.sql) in the SQL Editor
+5. Run the app:
    `npm run dev`

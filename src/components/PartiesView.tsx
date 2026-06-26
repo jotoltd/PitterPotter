@@ -1,11 +1,39 @@
-import { Gift, Heart, Users, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Gift, Heart, Users, AlertCircle, MapPin, X } from 'lucide-react';
 import { Page } from '../types';
 
 interface PartiesViewProps {
   setCurrentPage: (page: Page) => void;
 }
 
+type PartyType = 'birthday' | 'baby-shower-hen' | 'corporate';
+
 export default function PartiesView({ setCurrentPage }: PartiesViewProps) {
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [selectedPartyType, setSelectedPartyType] = useState<PartyType | null>(null);
+
+  const partyLabels: Record<PartyType, string> = {
+    birthday: 'Birthday Party',
+    'baby-shower-hen': 'Baby Shower / Hen Party',
+    corporate: 'Corporate Event',
+  };
+
+  const handleBookParty = (type: PartyType) => {
+    setSelectedPartyType(type);
+    setShowLocationModal(true);
+  };
+
+  const handleSelectLocation = (location: 'putney' | 'wimbledon') => {
+    if (selectedPartyType) {
+      localStorage.setItem('pp_party_context', JSON.stringify({
+        type: selectedPartyType,
+        label: partyLabels[selectedPartyType],
+      }));
+    }
+    setShowLocationModal(false);
+    setCurrentPage(location);
+  };
+
   return (
     <div id="parties-view" className="space-y-20 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
       {/* Page Title Header */}
@@ -38,10 +66,10 @@ export default function PartiesView({ setCurrentPage }: PartiesViewProps) {
             </p>
           </div>
           <button
-            onClick={() => setCurrentPage('contact')}
+            onClick={() => handleBookParty('birthday')}
             className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs font-bold uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
           >
-            Enquire Now
+            Book Party
           </button>
         </div>
 
@@ -61,10 +89,10 @@ export default function PartiesView({ setCurrentPage }: PartiesViewProps) {
             </p>
           </div>
           <button
-            onClick={() => setCurrentPage('contact')}
+            onClick={() => handleBookParty('baby-shower-hen')}
             className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs font-bold uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
           >
-            Enquire Now
+            Book Party
           </button>
         </div>
 
@@ -84,10 +112,10 @@ export default function PartiesView({ setCurrentPage }: PartiesViewProps) {
             </p>
           </div>
           <button
-            onClick={() => setCurrentPage('contact')}
+            onClick={() => handleBookParty('corporate')}
             className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs font-bold uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
           >
-            Enquire Now
+            Book Party
           </button>
         </div>
       </div>
@@ -103,6 +131,54 @@ export default function PartiesView({ setCurrentPage }: PartiesViewProps) {
           </p>
         </div>
       </div>
+
+      {/* Location Picker Modal */}
+      {showLocationModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-5 shadow-lg rounded-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Choose Location</h3>
+              <button
+                onClick={() => setShowLocationModal(false)}
+                className="p-1 hover:bg-[#D6E2E9]/30 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5 text-[#1B2D3C]" />
+              </button>
+            </div>
+            {selectedPartyType && (
+              <p className="text-xs font-semibold text-[#1B2D3C]/70">
+                Booking: <span className="text-[#1B2D3C] font-bold">{partyLabels[selectedPartyType]}</span>
+              </p>
+            )}
+            <div className="grid grid-cols-1 gap-3">
+              <button
+                onClick={() => handleSelectLocation('putney')}
+                className="w-full py-4 px-5 bg-[#FFFFFF] border border-[#1B2D3C]/20 rounded-lg hover:bg-[#D6E2E9]/20 transition-all cursor-pointer text-left flex items-center gap-4"
+              >
+                <div className="p-2.5 bg-[#D6E2E9] rounded-lg">
+                  <MapPin className="w-5 h-5 text-[#1B2D3C]" />
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-[#1B2D3C]">Putney Studio</p>
+                  <p className="text-[10px] text-[#1B2D3C]/60 font-medium">SW15, London</p>
+                </div>
+              </button>
+              <button
+                onClick={() => handleSelectLocation('wimbledon')}
+                className="w-full py-4 px-5 bg-[#FFFFFF] border border-[#1B2D3C]/20 rounded-lg hover:bg-[#D6E2E9]/20 transition-all cursor-pointer text-left flex items-center gap-4"
+              >
+                <div className="p-2.5 bg-[#D6E2E9] rounded-lg">
+                  <MapPin className="w-5 h-5 text-[#1B2D3C]" />
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-[#1B2D3C]">Wimbledon Studio</p>
+                  <p className="text-[10px] text-[#1B2D3C]/60 font-medium">SW19, London</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

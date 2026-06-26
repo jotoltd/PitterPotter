@@ -17,23 +17,45 @@ import AdminLoginView from './components/AdminLoginView';
 import AdminDashboardView from './components/AdminDashboardView';
 import PutneyView from './components/PutneyView';
 import WimbledonView from './components/WimbledonView';
-import { Page } from './types';
+import GiftCardView from './components/GiftCardView';
+import GiftCardPurchaseView from './components/GiftCardPurchaseView';
+import GiftCardSuccessView from './components/GiftCardSuccessView';
+import GiftCardBalanceView from './components/GiftCardBalanceView';
+import { Page, Staff } from './types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Images } from './images';
 
 export default function App() {
  const [currentPage, setCurrentPage] = useState<Page>('home');
  const [paintersCountPreset, setPaintersCountPreset] = useState<number>(1);
- const [isAdmin, setIsAdmin] = useState(false);
- const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+ const [currentStaff, setCurrentStaff] = useState<Staff | null>(null);
  const [showSplash, setShowSplash] = useState(true);
 
+ const isAdminLoggedIn = !!currentStaff;
+
  useEffect(() => {
- const adminAuth = localStorage.getItem('pp_admin_auth');
- if (adminAuth === 'true') {
- setIsAdminLoggedIn(true);
- }
- }, []);
+    const saved = localStorage.getItem('pp_current_staff');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.id && parsed.role) {
+          const expires = parsed.sessionExpiresAt ? new Date(parsed.sessionExpiresAt) : null;
+          if (expires && expires < new Date()) {
+            localStorage.removeItem('pp_current_staff');
+          } else {
+            setCurrentStaff(parsed as Staff);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load staff session:', err);
+      }
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const pageParam = params.get('page') as Page | null;
+    if (pageParam && ['gift-card-success', 'buy-gift-card'].includes(pageParam)) {
+      setCurrentPage(pageParam);
+    }
+  }, []);
 
  useEffect(() => {
  const timer = setTimeout(() => {
@@ -46,16 +68,16 @@ export default function App() {
  window.scrollTo(0, 0);
  }, [currentPage]);
 
- const handleAdminLogin = () => {
- setIsAdminLoggedIn(true);
- localStorage.setItem('pp_admin_auth', 'true');
- };
+ const handleAdminLogin = (staff: Staff) => {
+    setCurrentStaff(staff);
+    localStorage.setItem('pp_current_staff', JSON.stringify(staff));
+  };
 
  const handleAdminLogout = () => {
- setIsAdminLoggedIn(false);
- localStorage.removeItem('pp_admin_auth');
- setCurrentPage('home');
- };
+    setCurrentStaff(null);
+    localStorage.removeItem('pp_current_staff');
+    setCurrentPage('home');
+  };
 
  // Cross-page preset bridges
  const handleVisitPreset = (preset: { paintersCount: number; itemId: string }) => {
@@ -85,15 +107,23 @@ export default function App() {
  return <ContactView initialPainters={paintersCountPreset} />;
  case 'book':
  return <BookView setCurrentPage={setCurrentPage} />;
+ case 'gift-cards':
+ return <GiftCardView />;
+ case 'buy-gift-card':
+ return <GiftCardPurchaseView setCurrentPage={setCurrentPage} />;
+ case 'gift-card-success':
+ return <GiftCardSuccessView setCurrentPage={setCurrentPage} />;
+ case 'gift-card-balance':
+ return <GiftCardBalanceView setCurrentPage={setCurrentPage} />;
  case 'putney':
  return <PutneyView setCurrentPage={setCurrentPage} />;
  case 'wimbledon':
  return <WimbledonView setCurrentPage={setCurrentPage} />;
  case 'admin':
- if (isAdminLoggedIn) {
- return <AdminDashboardView onLogout={handleAdminLogout} />;
- }
- return <AdminLoginView onLogin={handleAdminLogin} />;
+            if (currentStaff) {
+              return <AdminDashboardView staff={currentStaff} onLogout={handleAdminLogout} />;
+            }
+            return <AdminLoginView onLogin={handleAdminLogin} />;
  default:
  return <HomeView setCurrentPage={setCurrentPage} />;
  }
@@ -101,26 +131,6 @@ export default function App() {
 
  return (
  <div className="flex flex-col min-h-screen bg-[#FFFFFF] text-[#1B2D3C] selection:bg-[#DBE7E4]/15 selection:text-[#1B2D3C] transition-all duration-300">
- {/* Splash Screen */}
- <AnimatePresence>
- {showSplash && (
- <motion.div
- initial={{ opacity: 1 }}
- exit={{ opacity: 0 }}
- transition={{ duration: 0.5 }}
- className="fixed inset-0 z-[100] bg-[#FFFFFF] flex items-center justify-center"
- >
- <motion.img
- src={Images.logo}
- alt="Pitter Potter"
- initial={{ scale: 3, opacity: 1 }}
- animate={{ scale: 0.1, opacity: 0 }}
- transition={{ duration: 0.8, ease: 'easeInOut' }}
- className="w-64 h-auto object-contain"
- />
- </motion.div>
- )}
- </AnimatePresence>
 
  {/* Navigation Headers */}
  {currentPage !== 'admin' && <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />}

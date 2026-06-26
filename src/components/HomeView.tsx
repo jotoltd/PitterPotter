@@ -25,13 +25,15 @@ export default function HomeView({ setCurrentPage }: HomeViewProps) {
  initial={{ opacity: 0, y: 25 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ duration: 0.6 }}
- className="max-w-xl md:max-w-2xl text-left"
+ className="max-w-xl md:max-w-2xl text-left bg-[#DBE7E4]/80 backdrop-blur-sm p-6 sm:p-8 rounded-2xl"
  >
- <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-[#1B2D3C] leading-[1.05] mb-6">
- Paint Your<br />Own Pottery
- </h1>
+ <img
+            src={Images.logo}
+            alt="Pitter Potter Logo"
+            className="h-20 sm:h-24 w-auto object-contain mb-6"
+          />
  <p className="font-heading text-xl sm:text-2xl md:text-3xl text-[#1B2D3C] mb-6 font-light leading-relaxed">
- Pitter Potter - Putney & Wimbledon
+ Paint your own Pottery Studio<br />Putney & Wimbledon
  </p>
  <p className="text-[#1B2D3C] text-lg sm:text-xl leading-relaxed mb-8 max-w-lg">
  Bright, welcoming ceramic studios in South West London. Choose from 150+ shapes, paint with premium glazes, and we'll fire your masterpiece.
@@ -40,7 +42,7 @@ export default function HomeView({ setCurrentPage }: HomeViewProps) {
  <button
  id="hero-book-button"
  onClick={() => setCurrentPage('book')}
- className="px-7 py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-sm uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer"
+ className="px-7 py-3.5 bg-[#FFF1E6] text-[#1B2D3C] font-bold text-sm uppercase tracking-widest border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
  >
  Book a Session
  </button>
