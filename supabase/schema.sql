@@ -105,3 +105,24 @@ ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public insert bookings" ON bookings
   FOR INSERT
   WITH CHECK (true);
+
+-- Content table for CMS-style inline editing
+CREATE TABLE IF NOT EXISTS content (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key TEXT NOT NULL UNIQUE,
+  value TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'text' CHECK (type IN ('text', 'image', 'html')),
+  page TEXT NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE content ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public read content" ON content
+  FOR SELECT
+  USING (true);
+
+CREATE POLICY "Allow super admin manage content" ON content
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);

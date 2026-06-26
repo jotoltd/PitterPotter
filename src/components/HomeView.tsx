@@ -2,22 +2,27 @@ import { motion } from 'motion/react';
 import { MapPin, Phone, ArrowRight } from 'lucide-react';
 import { Page } from '../types';
 import { Images } from '../images';
+import EditableText from './EditableText';
+import EditableImage from './EditableImage';
 
 interface HomeViewProps {
+  adminMode?: boolean;
  setCurrentPage: (page: Page) => void;
  setVisitPreset?: (preset: { paintersCount: number; itemId: string }) => void;
 }
 
-export default function HomeView({ setCurrentPage }: HomeViewProps) {
+export default function HomeView({ setCurrentPage, adminMode = false }: HomeViewProps) {
  return (
  <div id="home-view" className="space-y-16 pb-20">
  {/* Hero Banner Section */}
  <section className="relative min-h-[80vh] flex items-center overflow-hidden bg-[#FFFFFF]">
- <img
- src={Images.studioHero}
+ <EditableImage
+ key="hero_image"
+ page="home"
+ defaultSrc={Images.studioHero}
  alt="Pitter Potter Ceramic Studio"
  className="absolute inset-0 w-full h-full object-cover opacity-90 rounded-lg"
- referrerPolicy="no-referrer"
+ adminMode={adminMode}
  />
  <div className="absolute inset-0 bg-gradient-to-r from-[#FFFFFF]/95 via-[#FFFFFF]/70 to-transparent" />
  <div className="relative max-w-7xl mx-auto px-4 sm:px-6 md:px-8 z-10 w-full">
@@ -32,12 +37,20 @@ export default function HomeView({ setCurrentPage }: HomeViewProps) {
             alt="Pitter Potter Logo"
             className="h-20 sm:h-24 w-auto object-contain mb-6"
           />
- <p className="font-heading text-xl sm:text-2xl md:text-3xl text-[#1B2D3C] mb-6 font-light leading-relaxed">
- Paint your own Pottery Studio<br />Putney & Wimbledon
- </p>
- <p className="text-[#1B2D3C] text-lg sm:text-xl leading-relaxed mb-8 max-w-lg">
- Bright, welcoming ceramic studios in South West London. Choose from 150+ shapes, paint with premium glazes, and we'll fire your masterpiece.
- </p>
+ <EditableText
+ key="hero_title"
+ page="home"
+ defaultValue="Paint your own Pottery Studio<br />Putney & Wimbledon"
+ className="font-heading text-xl sm:text-2xl md:text-3xl text-[#1B2D3C] mb-6 font-light leading-relaxed"
+ adminMode={adminMode}
+ />
+ <EditableText
+ key="hero_subtitle"
+ page="home"
+ defaultValue="Bright, welcoming ceramic studios in South West London. Choose from 150+ shapes, paint with premium glazes, and we'll fire your masterpiece."
+ className="text-[#1B2D3C] text-lg sm:text-xl leading-relaxed mb-8 max-w-lg"
+ adminMode={adminMode}
+ />
  <div className="flex flex-wrap gap-4">
  <button
  id="hero-book-button"

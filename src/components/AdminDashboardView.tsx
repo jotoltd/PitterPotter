@@ -17,7 +17,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'bookings' | 'gift-cards' | 'staff' | 'settings'>('bookings');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'gift-cards' | 'staff' | 'settings' | 'content'>('bookings');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed'>('all');
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
@@ -494,6 +494,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           {[
             { value: 'bookings', label: 'Bookings' },
             { value: 'gift-cards', label: 'Gift Vouchers' },
+            ...(canManageStaff ? [{ value: 'content', label: 'Content' }] : []),
             ...(canManageStaff ? [{ value: 'staff', label: 'Staff' }] : []),
             ...(canManageStaff ? [{ value: 'settings', label: 'Settings' }] : []),
           ].map((tab) => (
@@ -1341,6 +1342,21 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               {stripeMode === 'live'
                 ? 'Live mode is active. Real payments will be processed. Make sure live Stripe keys are configured in Supabase secrets.'
                 : 'Sandbox mode is active. Use test card details for payments.'}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'content' && canManageStaff && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
+          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-6">
+            <div>
+              <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Content Management</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Edit website content directly. Toggle "Edit Mode" in the navbar to edit inline on the site.</p>
+            </div>
+            <div className="p-4 bg-[#DBE7E4]/30 rounded-lg text-xs font-bold text-[#1B2D3C]">
+              <p>Use the "Edit Mode" toggle in the top navigation bar to click and edit text/images directly on the website.</p>
+              <p className="mt-2">Changes are saved to the database and persist across all users.</p>
             </div>
           </div>
         </div>

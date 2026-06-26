@@ -30,6 +30,7 @@ export default function App() {
  const [paintersCountPreset, setPaintersCountPreset] = useState<number>(1);
  const [currentStaff, setCurrentStaff] = useState<Staff | null>(null);
  const [showSplash, setShowSplash] = useState(true);
+ const [adminMode, setAdminMode] = useState(false);
 
  const isAdminLoggedIn = !!currentStaff;
 
@@ -95,7 +96,7 @@ export default function App() {
  const renderCurrentView = () => {
  switch (currentPage) {
  case 'home':
- return <HomeView setCurrentPage={setCurrentPage} setVisitPreset={handleVisitPreset} />;
+ return <HomeView setCurrentPage={setCurrentPage} setVisitPreset={handleVisitPreset} adminMode={adminMode} />;
  case 'parties':
  return <PartiesView setCurrentPage={setCurrentPage} />;
  case 'pricing':
@@ -146,7 +147,7 @@ export default function App() {
  <div className="flex flex-col min-h-screen bg-[#FFFFFF] text-[#1B2D3C] selection:bg-[#DBE7E4]/15 selection:text-[#1B2D3C] transition-all duration-300">
 
  {/* Navigation Headers */}
- {currentPage !== 'admin' && <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />}
+ {currentPage !== 'admin' && <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} currentStaff={currentStaff} adminMode={adminMode} setAdminMode={setAdminMode} />}
 
  {/* Main Pages Content Window with graceful layout transitions */}
  <main className="flex-grow">

@@ -1,14 +1,17 @@
 import { useState } from 'react';
-import { Menu, X, Phone, Calendar } from 'lucide-react';
-import { Page } from '../types';
+import { Menu, X, Phone, Calendar, Edit3 } from 'lucide-react';
+import { Page, Staff } from '../types';
 import { Images } from '../images';
 
 interface NavbarProps {
   currentPage: Page;
   setCurrentPage: (page: Page) => void;
+  currentStaff: Staff | null;
+  adminMode: boolean;
+  setAdminMode: (mode: boolean) => void;
 }
 
-export default function Navbar({ currentPage, setCurrentPage }: NavbarProps) {
+export default function Navbar({ currentPage, setCurrentPage, currentStaff, adminMode, setAdminMode }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showCallOptions, setShowCallOptions] = useState(false);
 
@@ -70,6 +73,18 @@ export default function Navbar({ currentPage, setCurrentPage }: NavbarProps) {
               >
                 Booking
               </button>
+              {currentStaff && (
+                <button
+                  onClick={() => setAdminMode(!adminMode)}
+                  className={`ml-3 px-3 py-2.5 text-[11px] font-bold uppercase tracking-widest border transition-all cursor-pointer flex items-center gap-1.5 ${
+                    adminMode
+                      ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                      : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
+                  }`}
+                >
+                  <Edit3 className="w-3.5 h-3.5" /> {adminMode ? 'Editing On' : 'Edit Mode'}
+                </button>
+              )}
             </div>
 
             {/* Mobile menu button */}
