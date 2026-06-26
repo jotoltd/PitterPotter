@@ -40,7 +40,7 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  <EditableText
  key="hero_title"
  page="home"
- defaultValue="Paint your own Pottery Studio · Putney & Wimbledon"
+ defaultValue="Paint your own Pottery Studio"
  className="font-heading text-xl sm:text-2xl md:text-3xl text-[#1B2D3C] mb-6 font-light leading-relaxed"
  adminMode={adminMode}
  />
@@ -49,6 +49,13 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  page="home"
  defaultValue="Bright, welcoming ceramic studios in South West London. Choose from 150+ shapes, paint with premium glazes, and we'll fire your masterpiece."
  className="text-[#1B2D3C] text-lg sm:text-xl leading-relaxed mb-8 max-w-lg"
+ adminMode={adminMode}
+ />
+ <EditableText
+ key="hero_locations"
+ page="home"
+ defaultValue="Putney & Wimbledon"
+ className="text-[#1B2D3C] text-base font-bold uppercase tracking-wider mb-8"
  adminMode={adminMode}
  />
  <div className="flex flex-wrap gap-4">
