@@ -3,7 +3,7 @@ import { Mail, Phone, MapPin, Clock, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { BookingInquiry, GiftCard } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
-import { getRemainingCapacity, createBooking } from '../lib/bookings';
+import { getRemainingCapacity, createPublicBooking } from '../lib/bookings';
 
 
 interface ContactViewProps {
@@ -208,7 +208,7 @@ export default function ContactView({ initialPainters = 1 }: ContactViewProps) {
     }
 
     try {
-      await createBooking(newInquiry);
+      await createPublicBooking(newInquiry);
       setSubmittedInquiry(newInquiry);
       setShowSuccessModal(true);
       clearDraft();

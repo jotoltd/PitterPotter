@@ -21,6 +21,7 @@ import GiftCardView from './components/GiftCardView';
 import GiftCardPurchaseView from './components/GiftCardPurchaseView';
 import GiftCardSuccessView from './components/GiftCardSuccessView';
 import GiftCardBalanceView from './components/GiftCardBalanceView';
+import PartyBookingView from './components/PartyBookingView';
 import { Page, Staff } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -119,6 +120,18 @@ export default function App() {
  return <PutneyView setCurrentPage={setCurrentPage} />;
  case 'wimbledon':
  return <WimbledonView setCurrentPage={setCurrentPage} />;
+ case 'party-birthday-putney':
+ return <PartyBookingView partyType="birthday" studio="Putney" setCurrentPage={setCurrentPage} />;
+ case 'party-birthday-wimbledon':
+ return <PartyBookingView partyType="birthday" studio="Wimbledon" setCurrentPage={setCurrentPage} />;
+ case 'party-babyshower-putney':
+ return <PartyBookingView partyType="baby-shower-hen" studio="Putney" setCurrentPage={setCurrentPage} />;
+ case 'party-babyshower-wimbledon':
+ return <PartyBookingView partyType="baby-shower-hen" studio="Wimbledon" setCurrentPage={setCurrentPage} />;
+ case 'party-corporate-putney':
+ return <PartyBookingView partyType="corporate" studio="Putney" setCurrentPage={setCurrentPage} />;
+ case 'party-corporate-wimbledon':
+ return <PartyBookingView partyType="corporate" studio="Wimbledon" setCurrentPage={setCurrentPage} />;
  case 'admin':
             if (currentStaff) {
               return <AdminDashboardView staff={currentStaff} onLogout={handleAdminLogout} />;

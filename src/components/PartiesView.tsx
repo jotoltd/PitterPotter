@@ -24,14 +24,16 @@ export default function PartiesView({ setCurrentPage }: PartiesViewProps) {
   };
 
   const handleSelectLocation = (location: 'putney' | 'wimbledon') => {
-    if (selectedPartyType) {
-      localStorage.setItem('pp_party_context', JSON.stringify({
-        type: selectedPartyType,
-        label: partyLabels[selectedPartyType],
-      }));
-    }
     setShowLocationModal(false);
-    setCurrentPage(location);
+    if (!selectedPartyType) return;
+
+    const pageMap: Record<PartyType, Record<string, Page>> = {
+      birthday: { putney: 'party-birthday-putney', wimbledon: 'party-birthday-wimbledon' },
+      'baby-shower-hen': { putney: 'party-babyshower-putney', wimbledon: 'party-babyshower-wimbledon' },
+      corporate: { putney: 'party-corporate-putney', wimbledon: 'party-corporate-wimbledon' },
+    };
+
+    setCurrentPage(pageMap[selectedPartyType][location]);
   };
 
   return (

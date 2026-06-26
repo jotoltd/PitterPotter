@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { amount, recipientName, recipientEmail, senderName, message, successUrl, cancelUrl } = await req.json();
+    const { amount, recipientName, recipientEmail, senderName, message } = await req.json();
 
     if (!amount || amount <= 0) {
       return new Response(JSON.stringify({ error: 'Invalid amount' }), {
@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Read stripe mode from DB (single source of truth)
+    // Read stripe mode from DB
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -32,6 +32,10 @@ Deno.serve(async (req) => {
       ? Deno.env.get('STRIPE_SECRET_KEY_LIVE')
       : Deno.env.get('STRIPE_SECRET_KEY_SANDBOX');
 
+    const publishableKey = isLive
+      ? Deno.env.get('STRIPE_PUBLISHABLE_KEY_LIVE')
+      : Deno.env.get('STRIPE_PUBLISHABLE_KEY_SANDBOX');
+
     if (!secretKey) {
       return new Response(JSON.stringify({ error: 'Stripe not configured' }), {
         status: 500,
@@ -39,42 +43,31 @@ Deno.serve(async (req) => {
       });
     }
 
-    const stripe = new Stripe(secretKey, { apiVersion: '2024-12-18.acacia' });
+    const stripe = new Stripe(secretKey);
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'gbp',
-            product_data: {
-              name: 'Pitter Potter Gift Card',
-              description: `Gift card for ${recipientName || 'recipient'}${senderName ? ` from ${senderName}` : ''}`,
-            },
-            unit_amount: Math.round(amount * 100),
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100),
+      currency: 'gbp',
+      automatic_payment_methods: { enabled: true },
       metadata: {
         recipientName: recipientName || '',
         recipientEmail: recipientEmail || '',
         senderName: senderName || '',
         message: message || '',
         amount: String(amount),
-        mode: isLive ? 'live' : 'sandbox',
+        type: 'gift_card',
       },
     });
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({
+      clientSecret: paymentIntent.client_secret,
+      publishableKey: publishableKey || '',
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    console.error('Checkout error:', err);
-    return new Response(JSON.stringify({ error: 'Failed to create checkout' }), {
+    console.error('Payment intent error:', err);
+    return new Response(JSON.stringify({ error: 'Failed to create payment' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

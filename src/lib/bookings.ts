@@ -92,12 +92,37 @@ export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date:
   return data.remaining ?? MAX_PAINTERS[studio];
 }
 
-export async function createBooking(booking: BookingInquiry): Promise<void> {
+export async function createPublicBooking(booking: BookingInquiry): Promise<void> {
   if (!isSupabaseEnabled()) return;
   const { error } = await supabase!.from('bookings').insert(toBookingRow(booking));
   if (error) {
     console.error('Failed to create booking:', error);
     throw new Error('Failed to create booking');
+  }
+}
+
+export async function createBooking(booking: BookingInquiry, staff?: Staff | null): Promise<void> {
+  if (!isSupabaseEnabled()) return;
+  if (!staff) throw new Error('Staff required');
+
+  const response = await fetch(functionUrl('admin-bookings'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({
+      action: 'create',
+      username: staff.username,
+      sessionToken: staff.sessionToken,
+      booking,
+    }),
+  });
+
+  const data = await response.json();
+  if (!response.ok || data.error) {
+    console.error('Failed to create booking:', data.error);
+    throw new Error(data.error || 'Failed to create booking');
   }
 }
 

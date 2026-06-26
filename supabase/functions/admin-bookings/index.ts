@@ -98,6 +98,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'create') {
+      if (!isSuperAdmin && !staff.can_add_walk_ins) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { error } = await supabase.from('bookings').insert(toBookingRow(booking));
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (action === 'update') {
       if (!isSuperAdmin && !staff.can_edit_bookings) {
         return new Response(JSON.stringify({ error: 'Forbidden' }), {
