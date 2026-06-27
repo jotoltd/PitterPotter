@@ -23,6 +23,7 @@ import GiftCardSuccessView from './components/GiftCardSuccessView';
 import NotFoundView from './components/NotFoundView';
 import GiftCardBalanceView from './components/GiftCardBalanceView';
 import PartyBookingView from './components/PartyBookingView';
+import { ToastProvider } from './components/ToastContext';
 import { Page, Staff } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -145,6 +146,7 @@ export default function App() {
  };
 
  return (
+ <ToastProvider>
  <div className="flex flex-col min-h-screen bg-[#FFFFFF] text-[#1B2D3C] selection:bg-[#DBE7E4]/15 selection:text-[#1B2D3C] transition-all duration-300">
 
  {/* Navigation Headers */}
@@ -172,6 +174,7 @@ export default function App() {
  </div>
  )}
  </div>
+ </ToastProvider>
  );
 }
 

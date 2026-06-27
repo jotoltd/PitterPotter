@@ -5,7 +5,8 @@ import { DayPicker } from 'react-day-picker';
 import { format, getDay } from 'date-fns';
 import {Clock, Calendar as CalendarIcon, ArrowRight, ChevronLeft, ChevronRight, X} from 'lucide-react';
 import 'react-day-picker/dist/style.css';
-import { getRemainingCapacity } from '../lib/bookings';
+import { getRemainingCapacity, getBusyDates } from '../lib/bookings';
+import { useToast } from './ToastContext';
 import EditableText from './EditableText';
 
 interface PutneyViewProps {
@@ -32,6 +33,7 @@ function getTimeSlots(date: Date): string[] {
 
 
 export default function PutneyView({ setCurrentPage, adminMode = false }: PutneyViewProps) {
+  const { showToast } = useToast();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [mobileGalleryIndex, setMobileGalleryIndex] = useState(0);
 
@@ -39,6 +41,8 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
   const [time, setTime] = useState<string | undefined>(undefined);
   const [painters, setPainters] = useState<number | ''>(1);
   const [slotCapacity, setSlotCapacity] = useState<Record<string, number>>({});
+  const [busyDates, setBusyDates] = useState<Date[]>([]);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
@@ -64,6 +68,12 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
     });
   }, [date]);
 
+  useEffect(() => {
+    getBusyDates('Putney', calendarMonth.getFullYear(), calendarMonth.getMonth()).then((dates) => {
+      setBusyDates(dates.map((d) => new Date(d)));
+    });
+  }, [calendarMonth]);
+
   const handleBookDate = async () => {
     if (!date || !time) return;
 
@@ -71,7 +81,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
     const remaining = await getRemainingCapacity('Putney', format(date, 'yyyy-MM-dd'), time);
     const paintersCount = painters === '' ? 1 : painters;
     if (paintersCount > remaining) {
-      alert(`This session only has room for ${remaining} more painter${remaining === 1 ? "" : "s"}. Please choose a different time or reduce the number of painters.`);
+      showToast(`This session only has room for ${remaining} more painter${remaining === 1 ? "" : "s"}. Please choose a different time or reduce the number of painters.`, 'error');
       return;
     }
 
@@ -220,7 +230,9 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                 mode="single"
                 selected={date}
                 onSelect={handleDateSelect}
-                disabled={{ dayOfWeek: [1] }}
+                month={calendarMonth}
+                onMonthChange={setCalendarMonth}
+                disabled={[{ dayOfWeek: [1] }, ...busyDates]}
                 weekStartsOn={1}
               />
             </div>

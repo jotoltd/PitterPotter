@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { Edit2, Check, X, Image as ImageIcon, Upload } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import { useToast } from './ToastContext';
 
 interface EditableImageProps {
   key: string;
@@ -13,6 +14,7 @@ interface EditableImageProps {
 }
 
 export default function EditableImage({ key: contentKey, page, defaultSrc, alt, className, adminMode, onSave }: EditableImageProps) {
+  const { showToast } = useToast();
   const [src, setSrc] = useState(defaultSrc);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(defaultSrc);
@@ -75,7 +77,7 @@ export default function EditableImage({ key: contentKey, page, defaultSrc, alt, 
       setEditValue(publicUrlData.publicUrl);
     } catch (err) {
       console.error('Failed to upload image:', err);
-      alert('Failed to upload image. Please try a URL or create the content bucket in Supabase.');
+      showToast('Failed to upload image. Please try a URL or create the content bucket in Supabase.', 'error');
     } finally {
       setLoading(false);
     }
@@ -108,7 +110,7 @@ export default function EditableImage({ key: contentKey, page, defaultSrc, alt, 
       onSave?.(editValue);
     } catch (err) {
       console.error('Failed to save content:', err);
-      alert('Failed to save changes');
+      showToast('Failed to save changes', 'error');
     } finally {
       setLoading(false);
     }

@@ -6,6 +6,7 @@ import { BookingInquiry, GiftCard, Staff } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { sha256 } from '../lib/hash';
 import { loadBookings, createBooking, updateBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
+import { useToast } from './ToastContext';
 import 'react-day-picker/dist/style.css';
 
 interface AdminDashboardProps {
@@ -14,6 +15,7 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboardView({ staff, onLogout }: AdminDashboardProps) {
+  const { showToast } = useToast();
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
@@ -96,13 +98,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       const { error } = await supabase!.from('settings').upsert({ key: 'stripe_mode', value: mode, updated_at: new Date().toISOString() });
       if (error) {
         console.error('Failed to update stripe mode:', error);
-        alert('Failed to update Stripe mode');
+        showToast('Failed to update Stripe mode', 'error');
         return;
       }
       setStripeMode(mode);
     } catch (err) {
       console.error('Failed to update stripe mode:', err);
-      alert('Failed to update Stripe mode');
+      showToast('Failed to update Stripe mode', 'error');
     }
   };
 
@@ -255,7 +257,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const updateGiftCardStatus = async (id: string, status: 'active' | 'redeemed' | 'expired') => {
     if (!isSupabaseEnabled() || !staff.sessionToken) {
-      alert('Gift card update unavailable');
+      showToast('Gift card update unavailable', 'error');
       return;
     }
     if (status === 'expired' && !confirm('Are you sure you want to expire this gift card? This cannot be undone.')) return;
@@ -279,9 +281,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         throw new Error(data.error || 'Failed to update gift card');
       }
       setGiftCards(giftCards.map((c) => c.id === id ? { ...c, status } : c));
+      showToast(`Gift card marked as ${status}`, 'success');
     } catch (err) {
       console.error('Failed to update gift card status:', err);
-      alert('Failed to update gift card status');
+      showToast('Failed to update gift card status', 'error');
     }
   };
 
@@ -321,8 +324,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     try {
       await deleteBooking(id, staff);
       setInquiries(inquiries.filter((i) => i.id !== id));
+      showToast('Booking deleted', 'success');
     } catch {
-      alert('Failed to delete booking');
+      showToast('Failed to delete booking', 'error');
     }
   };
 
@@ -330,8 +334,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     try {
       await updateBookingStatus(id, status, staff);
       setInquiries(inquiries.map((i) => (i.id === id ? { ...i, status } : i)));
+      showToast(`Booking marked as ${status}`, 'success');
     } catch {
-      alert('Failed to update status');
+      showToast('Failed to update status', 'error');
     }
   };
 
@@ -420,7 +425,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     const remaining = await getRemainingCapacity(updatedBooking.studio, updatedBooking.date, updatedBooking.time);
     const available = oldBooking ? remaining + oldBooking.paintersCount : remaining;
     if (updatedBooking.paintersCount > available) {
-      alert(`This session only has room for ${available} painter${available === 1 ? '' : 's'} after this edit.`);
+      showToast(`This session only has room for ${available} painter${available === 1 ? '' : 's'} after this edit.`, 'error');
       return;
     }
 
@@ -429,18 +434,19 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       setInquiries(inquiries.map((i) => i.id === updatedBooking.id ? updatedBooking : i));
       setShowEditModal(false);
       setEditingBooking(null);
+      showToast('Booking updated', 'success');
     } catch {
-      alert('Failed to update booking');
+      showToast('Failed to update booking', 'error');
     }
   };
 
   const saveNewBooking = async () => {
     if (!canAddWalkIn) {
-      alert('You do not have permission to add bookings');
+      showToast('You do not have permission to add bookings', 'error');
       return;
     }
     if (!newBooking.name || !newBooking.phone || !newBooking.date || !newBooking.time || !newBooking.studio) {
-      alert('Please fill in all required fields');
+      showToast('Please fill in all required fields', 'error');
       return;
     }
     const booking: BookingInquiry = {
@@ -461,7 +467,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
     const remaining = await getRemainingCapacity(booking.studio, booking.date, booking.time);
     if (booking.paintersCount > remaining) {
-      alert(`This session only has room for ${remaining} more painter${remaining === 1 ? '' : 's'}.`);
+      showToast(`This session only has room for ${remaining} more painter${remaining === 1 ? '' : 's'}.`, 'error');
       return;
     }
 
@@ -480,8 +486,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         sessionType: 'painting',
         status: 'confirmed',
       });
+      showToast('Booking added', 'success');
     } catch {
-      alert('Failed to add booking');
+      showToast('Failed to add booking', 'error');
     }
   };
 
@@ -499,11 +506,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const addStaffMember = async () => {
     if (!canManageStaff) {
-      alert('Only super admins can manage staff');
+      showToast('Only super admins can manage staff', 'error');
       return;
     }
     if (!newStaff.name || !newStaff.username || !newStaff.password) {
-      alert('Please fill in all fields');
+      showToast('Please fill in all fields', 'error');
       return;
     }
 
@@ -524,7 +531,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
         if (error) {
           console.error('Supabase add staff error:', error);
-          alert('Failed to add staff member. Username may already exist.');
+          showToast('Failed to add staff member. Username may already exist.', 'error');
           return;
         }
       } catch (err) {
@@ -548,11 +555,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const deleteStaffMember = async (id: string) => {
     if (!canManageStaff) {
-      alert('Only super admins can manage staff');
+      showToast('Only super admins can manage staff', 'error');
       return;
     }
     if (id === staff.id) {
-      alert('You cannot delete your own account');
+      showToast('You cannot delete your own account', 'error');
       return;
     }
     if (!confirm('Are you sure you want to remove this staff member?')) return;
@@ -845,6 +852,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               selected={selectedDate}
               onSelect={setSelectedDate}
               className="rdp"
+              modifiers={{
+                hasConfirmed: inquiries.filter((i) => i.status === 'confirmed').map((i) => new Date(i.date)),
+                hasPending: inquiries.filter((i) => i.status === 'pending').map((i) => new Date(i.date)),
+              }}
+              modifiersClassNames={{
+                hasConfirmed: 'has-confirmed-booking',
+                hasPending: 'has-pending-booking',
+              }}
             />
             {selectedDate && (
               <div className="mt-4 pt-4 border-t border-[#1B2D3C]/20">

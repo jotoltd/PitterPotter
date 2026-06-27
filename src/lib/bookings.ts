@@ -74,6 +74,24 @@ export async function loadBookings(staff?: Staff | null): Promise<BookingInquiry
   return data as BookingInquiry[];
 }
 
+export async function getBusyDates(studio: 'Putney' | 'Wimbledon', year: number, month: number): Promise<string[]> {
+  if (!isSupabaseEnabled()) return [];
+  const response = await fetch(functionUrl('get-busy-dates'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ studio, year, month }),
+  });
+  const data = await response.json();
+  if (!response.ok || data.error) {
+    console.error('Failed to get busy dates:', data.error);
+    return [];
+  }
+  return data.busyDates || [];
+}
+
 export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date: string, time: string): Promise<number> {
   if (!isSupabaseEnabled()) return MAX_PAINTERS[studio];
   const response = await fetch(functionUrl('get-capacity'), {

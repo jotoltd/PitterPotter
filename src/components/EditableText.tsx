@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Edit2, Check, X } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import { useToast } from './ToastContext';
 
 interface EditableTextProps {
   key: string;
@@ -12,6 +13,7 @@ interface EditableTextProps {
 }
 
 export default function EditableText({ key: contentKey, page, defaultValue, className, adminMode, onSave }: EditableTextProps) {
+  const { showToast } = useToast();
   const [value, setValue] = useState(defaultValue);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(defaultValue);
@@ -61,7 +63,7 @@ export default function EditableText({ key: contentKey, page, defaultValue, clas
       onSave?.(editValue);
     } catch (err) {
       console.error('Failed to save content:', err);
-      alert('Failed to save changes');
+      showToast('Failed to save changes', 'error');
     } finally {
       setLoading(false);
     }

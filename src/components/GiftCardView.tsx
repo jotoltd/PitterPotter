@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { GiftCard } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import { useToast } from './ToastContext';
 import { CheckCircle2, Copy, Gift } from 'lucide-react';
 
 const PRESET_AMOUNTS = [25, 50, 75, 100];
@@ -26,6 +27,7 @@ export default function GiftCardView() {
   const [message, setMessage] = useState('');
   const [purchasedCard, setPurchasedCard] = useState<GiftCard | null>(null);
   const [copied, setCopied] = useState(false);
+  const { showToast } = useToast();
 
   const finalAmount = PRESET_AMOUNTS.includes(amount) ? amount : parseInt(customAmount, 10) || 0;
 
@@ -42,7 +44,7 @@ export default function GiftCardView() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!recipientName || !recipientEmail || !senderName || finalAmount <= 0) {
-      alert('Please fill out all required fields and select an amount.');
+      showToast('Please fill out all required fields and select an amount.', 'error');
       return;
     }
 
@@ -74,7 +76,7 @@ export default function GiftCardView() {
 
         if (error) {
           console.error('Supabase insert error:', error);
-          alert('Failed to save gift card online. Falling back to local storage.');
+          showToast('Failed to save gift card online. Falling back to local storage.', 'error');
         }
       } catch (err) {
         console.error('Supabase request failed:', err);

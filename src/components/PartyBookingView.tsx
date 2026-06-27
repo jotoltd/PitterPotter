@@ -4,7 +4,7 @@ import { DayPicker } from 'react-day-picker';
 import { format, getDay } from 'date-fns';
 import { Clock, Calendar as CalendarIcon, ArrowRight, Users, MapPin, Gift, Heart, Briefcase } from 'lucide-react';
 import 'react-day-picker/dist/style.css';
-import { getRemainingCapacity, createPublicBooking } from '../lib/bookings';
+import { getRemainingCapacity, createPublicBooking, getBusyDates } from '../lib/bookings';
 
 type PartyType = 'birthday' | 'baby-shower-hen' | 'corporate';
 type Studio = 'Putney' | 'Wimbledon';
@@ -59,6 +59,8 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
   const [submitting, setSubmitting] = useState(false);
   const [bookingRef, setBookingRef] = useState('');
   const [error, setError] = useState('');
+  const [busyDates, setBusyDates] = useState<Date[]>([]);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
 
   const info = PARTY_INFO[partyType];
   const IconComponent = info.icon;
@@ -86,6 +88,12 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
       setSlotCapacity(map);
     });
   }, [date, studio]);
+
+  useEffect(() => {
+    getBusyDates(studio, calendarMonth.getFullYear(), calendarMonth.getMonth()).then((dates) => {
+      setBusyDates(dates.map((d) => new Date(d)));
+    });
+  }, [calendarMonth, studio]);
 
   const handleSubmit = async () => {
     setError('');
@@ -221,7 +229,9 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
               mode="single"
               selected={date}
               onSelect={handleDateSelect}
-              disabled={{ dayOfWeek: [1], before: new Date() }}
+              month={calendarMonth}
+              onMonthChange={setCalendarMonth}
+              disabled={[{ dayOfWeek: [1], before: new Date() }, ...busyDates]}
               weekStartsOn={1}
             />
           </div>
