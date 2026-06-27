@@ -20,6 +20,7 @@ import WimbledonView from './components/WimbledonView';
 import GiftCardView from './components/GiftCardView';
 import GiftCardPurchaseView from './components/GiftCardPurchaseView';
 import GiftCardSuccessView from './components/GiftCardSuccessView';
+import NotFoundView from './components/NotFoundView';
 import GiftCardBalanceView from './components/GiftCardBalanceView';
 import PartyBookingView from './components/PartyBookingView';
 import { Page, Staff } from './types';
@@ -139,7 +140,7 @@ export default function App() {
             }
             return <AdminLoginView onLogin={handleAdminLogin} />;
  default:
- return <HomeView setCurrentPage={setCurrentPage} />;
+ return <NotFoundView setCurrentPage={setCurrentPage} />;
  }
  };
 

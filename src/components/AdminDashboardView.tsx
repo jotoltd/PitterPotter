@@ -197,11 +197,64 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     return { total, totalRevenue, activeBalance, redeemed, expired, active };
   };
 
+  const exportBookingsCSV = () => {
+    const headers = ['Reference', 'Name', 'Email', 'Phone', 'Studio', 'Date', 'Time', 'Painters', 'Session Type', 'Status', 'Request Date', 'Notes', 'Estimated Price', 'Final Price', 'Gift Card Code'];
+    const rows = inquiries.map((inq) => [
+      inq.id,
+      inq.name,
+      inq.email,
+      inq.phone,
+      inq.studio,
+      inq.date,
+      inq.time,
+      inq.paintersCount,
+      inq.sessionType,
+      inq.status,
+      inq.requestDate || '',
+      inq.notes || '',
+      inq.estimatedPrice || '',
+      inq.finalPrice || '',
+      inq.giftCardCode || '',
+    ]);
+    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bookings_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportGiftCardsCSV = () => {
+    const headers = ['Code', 'Amount', 'Balance', 'Recipient Name', 'Recipient Email', 'Sender Name', 'Status', 'Purchase Date', 'Expiry Date'];
+    const rows = giftCards.map((card) => [
+      card.code,
+      card.amount,
+      card.balance,
+      card.recipientName,
+      card.recipientEmail,
+      card.senderName,
+      card.status,
+      card.purchaseDate,
+      card.expiryDate || '',
+    ]);
+    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gift_cards_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const updateGiftCardStatus = async (id: string, status: 'active' | 'redeemed' | 'expired') => {
     if (!isSupabaseEnabled() || !staff.sessionToken) {
       alert('Gift card update unavailable');
       return;
     }
+    if (status === 'expired' && !confirm('Are you sure you want to expire this gift card? This cannot be undone.')) return;
     try {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift-cards`, {
         method: 'POST',
@@ -260,6 +313,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const deleteInquiry = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this booking? This cannot be undone.')) return;
     try {
       await deleteBooking(id, staff);
       setInquiries(inquiries.filter((i) => i.id !== id));
@@ -598,12 +652,20 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="bg-white p-6 border border-[#1B2D3C]/20 shadow-sm mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-heading text-lg font-black text-[#1B2D3C] uppercase tracking-wider">Gift Cards</h2>
-            <button
-              onClick={() => loadGiftCards()}
-              className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hover:text-[#486581] underline"
-            >
-              Refresh
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={exportGiftCardsCSV}
+                className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hover:text-[#486581] underline"
+              >
+                Export CSV
+              </button>
+              <button
+                onClick={() => loadGiftCards()}
+                className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hover:text-[#486581] underline"
+              >
+                Refresh
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
             <div className="bg-[#D6E2E9]/30 p-3 rounded-lg">
@@ -862,6 +924,15 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
 
         {/* Bookings Table */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-heading text-lg font-black text-[#1B2D3C] uppercase tracking-wider">All Bookings</h2>
+          <button
+            onClick={exportBookingsCSV}
+            className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hover:text-[#486581] underline"
+          >
+            Export CSV
+          </button>
+        </div>
         <div className="bg-white border border-[#1B2D3C]/20 shadow-sm overflow-hidden">
           {filteredInquiries.length === 0 ? (
             <div className="p-8 sm:p-12 text-center">

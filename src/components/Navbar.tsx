@@ -63,7 +63,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                   }`}
                 >
                   {item.label}
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-[#DBE7E4] transition-all duration-300 w-0 group-hover:w-full"></span>
+                  <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-[#1B2D3C] transition-all duration-300 ${isActive(item.value) ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
                 </button>
               ))}
               <button

@@ -94,6 +94,10 @@ export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date:
 
 export async function createPublicBooking(booking: BookingInquiry): Promise<void> {
   if (!isSupabaseEnabled()) return;
+  const remaining = await getRemainingCapacity(booking.studio, booking.date, booking.time);
+  if (remaining < booking.paintersCount) {
+    throw new Error(`Not enough capacity. Only ${remaining} painter spots remaining for this slot.`);
+  }
   const { error } = await supabase!.from('bookings').insert(toBookingRow(booking));
   if (error) {
     console.error('Failed to create booking:', error);
