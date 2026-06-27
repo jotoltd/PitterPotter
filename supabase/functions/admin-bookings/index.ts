@@ -135,6 +135,23 @@ Deno.serve(async (req) => {
       }
       const { error } = await supabase.from('bookings').update({ status }).eq('booking_id', id);
       if (error) throw error;
+
+      if (status === 'confirmed') {
+        try {
+          const projectUrl = Deno.env.get('SUPABASE_URL')!;
+          await fetch(`${projectUrl}/functions/v1/send-booking-confirmation`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': req.headers.get('Authorization') || '',
+            },
+            body: JSON.stringify({ username, sessionToken, bookingId: id }),
+          });
+        } catch (err) {
+          console.error('Failed to send confirmation email:', err);
+        }
+      }
+
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
