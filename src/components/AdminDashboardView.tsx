@@ -42,6 +42,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [newBookingCapacity, setNewBookingCapacity] = useState<number | null>(null);
   const [editBookingCapacity, setEditBookingCapacity] = useState<number | null>(null);
   const [capacityLoading, setCapacityLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchCapacity = useCallback(async (studio: string, date: string, time: string, setter: (v: number | null) => void) => {
     if (!studio || !date || !time) { setter(null); return; }
@@ -69,9 +70,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   }, [showEditModal, editingBooking?.studio, editingBooking?.date, editingBooking?.time, fetchCapacity]);
 
   useEffect(() => {
-    loadInquiries();
-    loadGiftCards();
-    loadStripeMode();
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([loadInquiries(), loadGiftCards(), loadStripeMode()]);
+      setLoading(false);
+    };
+    loadData();
   }, []);
 
   const loadStripeMode = async () => {
@@ -590,7 +594,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
         {/* Admin Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8 border-b border-[#1B2D3C]/10 pb-4">
+        <div className="flex flex-nowrap overflow-x-auto gap-2 mb-8 border-b border-[#1B2D3C]/10 pb-4 scrollbar-hide">
           {[
             { value: 'bookings', label: 'Bookings' },
             { value: 'gift-cards', label: 'Gift Vouchers' },
@@ -613,7 +617,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           ))}
         </div>
 
-        {activeTab === 'bookings' && (
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B2D3C]"></div>
+          </div>
+        )}
+
+        {!loading && activeTab === 'bookings' && (
           <>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
