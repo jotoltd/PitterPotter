@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, CalendarX, Gift, ChevronUp, ChevronDown } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff } from '../types';
@@ -12,6 +12,31 @@ import 'react-day-picker/dist/style.css';
 interface AdminDashboardProps {
   staff: Staff;
   onLogout: () => void;
+}
+
+interface SortHeaderProps {
+  field: 'date' | 'name' | 'studio' | 'status';
+  label: string;
+  sort: { field: 'date' | 'name' | 'studio' | 'status'; direction: 'asc' | 'desc' };
+  setSort: (sort: { field: 'date' | 'name' | 'studio' | 'status'; direction: 'asc' | 'desc' }) => void;
+}
+
+function SortHeader({ field, label, sort, setSort }: SortHeaderProps) {
+  const active = sort.field === field;
+  const handleClick = () => {
+    setSort({ field, direction: active && sort.direction === 'asc' ? 'desc' : 'asc' });
+  };
+  return (
+    <th
+      onClick={handleClick}
+      className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] cursor-pointer select-none hover:bg-[#1B2D3C]/5"
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {active && (sort.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+      </span>
+    </th>
+  );
 }
 
 export default function AdminDashboardView({ staff, onLogout }: AdminDashboardProps) {
@@ -27,6 +52,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [searchTerm, setSearchTerm] = useState('');
   const [editingBooking, setEditingBooking] = useState<BookingInquiry | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [sort, setSort] = useState<{ field: 'date' | 'name' | 'studio' | 'status'; direction: 'asc' | 'desc' }>({ field: 'date', direction: 'desc' });
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newBooking, setNewBooking] = useState<Partial<BookingInquiry>>({
@@ -340,15 +366,27 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
-  const filteredInquiries = inquiries.filter((inq) => {
-    const statusMatch = filter === 'all' || inq.status === filter;
-    const studioMatch = studioFilter === 'all' || inq.studio === studioFilter;
-    const searchMatch = searchTerm === '' ||
-      inq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inq.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inq.phone.includes(searchTerm);
-    return statusMatch && studioMatch && searchMatch;
-  });
+  const filteredInquiries = inquiries
+    .filter((inq) => {
+      const statusMatch = filter === 'all' || inq.status === filter;
+      const studioMatch = studioFilter === 'all' || inq.studio === studioFilter;
+      const searchMatch = searchTerm === '' ||
+        inq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inq.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inq.phone.includes(searchTerm);
+      return statusMatch && studioMatch && searchMatch;
+    })
+    .sort((a, b) => {
+      const dir = sort.direction === 'asc' ? 1 : -1;
+      if (sort.field === 'date') {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return dateA === dateB ? a.time.localeCompare(b.time) * dir : (dateA - dateB) * dir;
+      }
+      if (sort.field === 'name') return a.name.localeCompare(b.name) * dir;
+      if (sort.field === 'studio') return a.studio.localeCompare(b.studio) * dir;
+      return a.status.localeCompare(b.status) * dir;
+    });
 
   const getBookingsForDate = (date: Date) => {
     return inquiries.filter((inq) => {
@@ -581,7 +619,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   return (
     <div className="min-h-screen bg-[#FFFFFF]">
       {/* Header */}
-      <div className="bg-[#1B2D3C] text-white py-4 px-6">
+      <div className="sticky top-0 z-30 bg-[#1B2D3C] text-white py-4 px-6 shadow-md">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div>
             <h1 className="font-heading text-2xl font-black">Admin Dashboard</h1>
@@ -601,7 +639,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
         {/* Admin Tabs */}
-        <div className="flex flex-nowrap overflow-x-auto gap-2 mb-8 border-b border-[#1B2D3C]/10 pb-4 scrollbar-hide">
+        <div className="sticky top-[72px] z-20 bg-[#FFFFFF] flex flex-nowrap overflow-x-auto gap-2 mb-8 border-b border-[#1B2D3C]/10 pb-4 pt-2 scrollbar-hide">
           {[
             { value: 'bookings', label: 'Bookings' },
             { value: 'gift-cards', label: 'Gift Vouchers' },
@@ -762,7 +800,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               </table>
             </div>
           ) : (
-            <p className="text-xs text-stone-500 font-medium">No gift cards sold yet.</p>
+            <div className="text-center py-10">
+              <Gift className="w-10 h-10 text-stone-300 mx-auto mb-3" />
+              <p className="text-sm text-stone-500 font-semibold">No gift cards sold yet</p>
+              <p className="text-xs text-stone-400 mt-1">Gift cards will appear here once purchased</p>
+            </div>
           )}
         </div>
         )}
@@ -771,7 +813,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <>
                     {/* Filter Tabs */}"
 
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="sticky top-[120px] z-10 bg-[#FFFFFF] flex flex-wrap gap-2 mb-6 py-2">
           {[
             { value: 'all', label: 'All Bookings' },
             { value: 'pending', label: 'Pending' },
@@ -882,8 +924,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               {selectedDate ? `Bookings for ${format(selectedDate, 'PPP')}` : 'Select a date to view bookings'}
             </h3>
             {selectedDate && bookingsForSelectedDate.length === 0 ? (
-              <div className="text-center py-8">
+              <div className="text-center py-10">
+                <CalendarX className="w-10 h-10 text-stone-300 mx-auto mb-3" />
                 <p className="text-sm text-stone-500 font-semibold">No bookings for this date</p>
+                <p className="text-xs text-stone-400 mt-1">Try selecting another date or adding a new booking</p>
               </div>
             ) : selectedDate ? (
               <div className="space-y-3 sm:space-y-4">
@@ -912,6 +956,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           }}
                           className="p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 transition-all cursor-pointer"
                           title="Copy reference"
+                          aria-label="Copy booking reference"
                         >
                           <Copy className="w-4 h-4 text-[#1B2D3C]" />
                         </button>
@@ -954,8 +999,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-sm text-stone-500 font-semibold">Click on a date in the calendar to view bookings</p>
+              <div className="text-center py-10">
+                <Calendar className="w-10 h-10 text-stone-300 mx-auto mb-3" />
+                <p className="text-sm text-stone-500 font-semibold">Select a date to view bookings</p>
+                <p className="text-xs text-stone-400 mt-1">Click on any day in the calendar</p>
               </div>
             )}
           </div>
@@ -973,23 +1020,25 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
         <div className="bg-white border border-[#1B2D3C]/20 shadow-sm overflow-hidden">
           {filteredInquiries.length === 0 ? (
-            <div className="p-8 sm:p-12 text-center">
+            <div className="p-10 sm:p-14 text-center">
+              <Inbox className="w-10 h-10 text-stone-300 mx-auto mb-3" />
               <p className="text-sm text-stone-500 font-semibold">No bookings found</p>
+              <p className="text-xs text-stone-400 mt-1">Adjust your filters or add a new booking</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px]">
                 <thead className="bg-[#D6E2E9] border-b border-[#1B2D3C]/20">
                   <tr>
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Date</th>
+                    <SortHeader field="date" label="Date" sort={sort} setSort={setSort} />
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Time</th>
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Studio</th>
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Name</th>
+                    <SortHeader field="studio" label="Studio" sort={sort} setSort={setSort} />
+                    <SortHeader field="name" label="Name" sort={sort} setSort={setSort} />
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Contact</th>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Session</th>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Painters</th>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Source</th>
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Status</th>
+                    <SortHeader field="status" label="Status" sort={sort} setSort={setSort} />
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Actions</th>
                   </tr>
                 </thead>

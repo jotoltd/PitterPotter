@@ -91,6 +91,8 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
             <div className="flex md:hidden">
               <button
                 id="mobile-menu-toggle"
+                aria-label={isOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={isOpen}
                 onClick={() => setIsOpen(!isOpen)}
                 className="p-2 border border-[#1B2D3C] text-[#1B2D3C] hover:bg-[#D6E2E9] transition-colors focus:outline-none"
               >

@@ -140,6 +140,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                   <img
                     src={src}
                     alt="Our Putney Studio gallery {idx + 1}"
+                    loading="lazy"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                     referrerPolicy="no-referrer"
                   />
@@ -158,6 +159,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                 <img
                   src={Images.putneyGallery[mobileGalleryIndex]}
                   alt="Our Putney Studio gallery {mobileGalleryIndex + 1}"
+                  loading="lazy"
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />

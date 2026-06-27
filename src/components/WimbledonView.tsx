@@ -140,6 +140,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
                   <img
                     src={src}
                     alt="Our Wimbledon Studio gallery {idx + 1}"
+                    loading="lazy"
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                     referrerPolicy="no-referrer"
                   />
@@ -158,6 +159,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
                 <img
                   src={Images.wimbledonGallery[mobileGalleryIndex]}
                   alt="Our Wimbledon Studio gallery {mobileGalleryIndex + 1}"
+                  loading="lazy"
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
