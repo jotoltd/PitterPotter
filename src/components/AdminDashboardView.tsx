@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, CalendarX, Gift, ChevronUp, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, CalendarX, Gift, ChevronUp, ChevronDown, CalendarDays } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff } from '../types';
@@ -50,6 +50,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
   const [editingBooking, setEditingBooking] = useState<BookingInquiry | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [sort, setSort] = useState<{ field: 'date' | 'name' | 'studio' | 'status'; direction: 'asc' | 'desc' }>({ field: 'date', direction: 'desc' });
@@ -71,6 +75,15 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [editBookingCapacity, setEditBookingCapacity] = useState<number | null>(null);
   const [capacityLoading, setCapacityLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 250);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, studioFilter, debouncedSearchTerm, dateRange, sort]);
 
   const fetchCapacity = useCallback(async (studio: string, date: string, time: string, setter: (v: number | null) => void) => {
     if (!studio || !date || !time) { setter(null); return; }
@@ -391,15 +404,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
-  const filteredInquiries = inquiries
+  const filteredInquiries = useMemo(() => inquiries
     .filter((inq) => {
       const statusMatch = filter === 'all' || inq.status === filter;
       const studioMatch = studioFilter === 'all' || inq.studio === studioFilter;
-      const searchMatch = searchTerm === '' ||
-        inq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        inq.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        inq.phone.includes(searchTerm);
-      return statusMatch && studioMatch && searchMatch;
+      const searchMatch = debouncedSearchTerm === '' ||
+        inq.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        inq.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        inq.phone.includes(debouncedSearchTerm);
+      const dateMatch = (!dateRange.start || inq.date >= dateRange.start) && (!dateRange.end || inq.date <= dateRange.end);
+      return statusMatch && studioMatch && searchMatch && dateMatch;
     })
     .sort((a, b) => {
       const dir = sort.direction === 'asc' ? 1 : -1;
@@ -411,7 +425,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       if (sort.field === 'name') return a.name.localeCompare(b.name) * dir;
       if (sort.field === 'studio') return a.studio.localeCompare(b.studio) * dir;
       return a.status.localeCompare(b.status) * dir;
-    });
+    }), [inquiries, filter, studioFilter, debouncedSearchTerm, dateRange, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredInquiries.length / ITEMS_PER_PAGE));
+  const paginatedInquiries = filteredInquiries.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const getBookingsForDate = (date: Date) => {
     return inquiries.filter((inq) => {
@@ -876,7 +893,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           ))}
         </div>
 
-        {/* Search and Export */}
+        {/* Search, Date Range, and Export */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="flex-1">
             <input
@@ -885,6 +902,24 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-[#1B2D3C]/60" />
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
+              className="px-2 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+              aria-label="From date"
+            />
+            <span className="text-xs text-[#1B2D3C]/60">-</span>
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
+              className="px-2 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+              aria-label="To date"
             />
           </div>
           {canAddWalkIn && (
@@ -1068,7 +1103,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredInquiries.map((inq) => (
+                  {paginatedInquiries.map((inq) => (
                     <tr key={inq.id} className="border-b border-[#1B2D3C]/10 hover:bg-[#FFFFFF]/50">
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">{inq.date}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">{inq.time}</td>
@@ -1159,6 +1194,31 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {filteredInquiries.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-[#1B2D3C]/10 bg-white">
+              <span className="text-xs font-semibold text-[#1B2D3C]/70">
+                Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredInquiries.length)} of {filteredInquiries.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-xs font-bold uppercase tracking-wider border border-[#1B2D3C]/20 rounded hover:bg-[#D6E2E9] disabled:opacity-50 cursor-pointer"
+                >
+                  Previous
+                </button>
+                <span className="text-xs font-bold text-[#1B2D3C]">{currentPage} / {totalPages}</span>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-xs font-bold uppercase tracking-wider border border-[#1B2D3C]/20 rounded hover:bg-[#D6E2E9] disabled:opacity-50 cursor-pointer"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </div>
