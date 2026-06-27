@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Page, BookingInquiry } from '../types';
 import { DayPicker } from 'react-day-picker';
 import { format, getDay } from 'date-fns';
-import { Clock, Calendar as CalendarIcon, ArrowRight, Users, MapPin, Gift, Heart, Briefcase } from 'lucide-react';
+import { Clock, Calendar as CalendarIcon, ArrowRight, Users, MapPin, Gift, Heart, Briefcase, Copy } from 'lucide-react';
+import { useToast } from './ToastContext';
 import 'react-day-picker/dist/style.css';
 import { getRemainingCapacity, createPublicBooking, getBusyDates } from '../lib/bookings';
 
@@ -47,6 +48,7 @@ function getTimeSlots(date: Date): string[] {
 }
 
 export default function PartyBookingView({ partyType, studio, setCurrentPage }: PartyBookingViewProps) {
+  const { showToast } = useToast();
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState<string | undefined>(undefined);
   const [guests, setGuests] = useState<number | ''>(8);
@@ -172,7 +174,19 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
             We'll be in touch shortly to confirm your event.
           </p>
           <div className="bg-[#D6E2E9]/30 p-4 rounded-lg text-left space-y-2 text-xs font-semibold text-[#1B2D3C]">
-            <p><span className="font-bold">Reference:</span> {bookingRef}</p>
+            <p className="flex items-center gap-2">
+              <span className="font-bold">Reference:</span> {bookingRef}
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(bookingRef);
+                  showToast('Reference copied', 'success');
+                }}
+                className="p-1 hover:bg-[#D6E2E9] rounded cursor-pointer"
+                title="Copy reference"
+              >
+                <Copy className="w-3.5 h-3.5 text-[#1B2D3C]" />
+              </button>
+            </p>
             <p><span className="font-bold">Event:</span> {info.title}</p>
             <p><span className="font-bold">Studio:</span> {studio}</p>
             <p><span className="font-bold">Date:</span> {date && format(date, 'EEEE, do MMMM yyyy')}</p>

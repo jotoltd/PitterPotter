@@ -93,6 +93,7 @@ export default function GiftCardView() {
       navigator.clipboard.writeText(purchasedCard.code);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      showToast('Gift card code copied', 'success');
     }
   };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff } from '../types';
@@ -738,7 +738,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       <td className="py-2">
                         <div className="flex gap-2">
                           <button
-                            onClick={() => navigator.clipboard.writeText(card.code)}
+                            onClick={() => {
+                              navigator.clipboard.writeText(card.code);
+                              showToast('Gift card code copied', 'success');
+                            }}
                             className="px-2 py-1 bg-[#D6E2E9]/50 text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded hover:bg-[#D6E2E9] cursor-pointer"
                           >
                             Copy
@@ -902,6 +905,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         </p>
                       </div>
                       <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(inq.id);
+                            showToast('Booking reference copied', 'success');
+                          }}
+                          className="p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 transition-all cursor-pointer"
+                          title="Copy reference"
+                        >
+                          <Copy className="w-4 h-4 text-[#1B2D3C]" />
+                        </button>
                         {canEdit && (
                           <button
                             onClick={() => handleEditBooking(inq)}
@@ -1023,6 +1036,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <div className="flex gap-1 sm:gap-2">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(inq.id);
+                              showToast('Booking reference copied', 'success');
+                            }}
+                            className="p-1 sm:p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 transition-all cursor-pointer"
+                            title="Copy reference"
+                          >
+                            <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1B2D3C]" />
+                          </button>
                           {canEdit && (
                             <button
                               onClick={() => handleEditBooking(inq)}

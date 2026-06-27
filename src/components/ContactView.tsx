@@ -1,5 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { Mail, Phone, MapPin, Clock, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, CheckCircle2, Copy } from 'lucide-react';
+import { useToast } from './ToastContext';
 import { format } from 'date-fns';
 import { BookingInquiry, GiftCard } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
@@ -13,6 +14,7 @@ interface ContactViewProps {
 }
 
 export default function ContactView({ initialPainters = 1, adminMode = false }: ContactViewProps) {
+  const { showToast } = useToast();
   // Booking details from previous stage
   const [studio, setStudio] = useState<'Putney' | 'Wimbledon'>('Putney');
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -471,8 +473,18 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
               <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed">
                 Thank you {name}! Your booking request for {format(new Date(submittedInquiry.date), 'PPP')} at {submittedInquiry.time} has been received.
               </p>
-              <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed mt-2">
+              <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed mt-2 flex items-center justify-center gap-2">
                 Reference: <span className="font-black text-[#1B2D3C]">{submittedInquiry.id}</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(submittedInquiry.id);
+                    showToast('Reference copied', 'success');
+                  }}
+                  className="p-1 hover:bg-[#D6E2E9] rounded cursor-pointer"
+                  title="Copy reference"
+                >
+                  <Copy className="w-3.5 h-3.5 text-[#1B2D3C]" />
+                </button>
               </p>
               <p className="text-xs text-stone-500 font-semibold leading-relaxed mt-2">
                 We'll confirm your table within 24 hours via email.

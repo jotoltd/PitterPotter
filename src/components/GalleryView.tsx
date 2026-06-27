@@ -79,6 +79,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
  <img
  src={item.imageUrl}
  alt={item.title}
+ loading="lazy"
  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 font-sans font-medium text-xs text-[#1B2D3C] rounded-lg"
  referrerPolicy="no-referrer"
  />
