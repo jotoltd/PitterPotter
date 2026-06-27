@@ -127,7 +127,17 @@ CREATE POLICY "Allow super admin manage content" ON content
   USING (true)
   WITH CHECK (true);
 
--- Storage bucket for CMS image uploads (run via Supabase Storage UI if available)
--- INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
--- VALUES ('content', 'content', true, 5242880, ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif'])
--- ON CONFLICT (id) DO NOTHING;
+-- Storage bucket for CMS image uploads
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('content', 'content', true, 5242880, ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif'])
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies for content bucket (public read, staff can manage)
+CREATE POLICY "Allow public read content images" ON storage.objects
+  FOR SELECT
+  USING (bucket_id = 'content');
+
+CREATE POLICY "Allow staff manage content images" ON storage.objects
+  FOR ALL
+  USING (bucket_id = 'content')
+  WITH CHECK (bucket_id = 'content');
