@@ -6,9 +6,11 @@ import { format, getDay } from 'date-fns';
 import {Clock, Calendar as CalendarIcon, ArrowRight, ChevronLeft, ChevronRight, X} from 'lucide-react';
 import 'react-day-picker/dist/style.css';
 import { getRemainingCapacity } from '../lib/bookings';
+import EditableText from './EditableText';
 
 interface PutneyViewProps {
   setCurrentPage: (page: Page) => void;
+  adminMode?: boolean;
 }
 
 const MAX_PAINTERS = 30;
@@ -29,7 +31,7 @@ function getTimeSlots(date: Date): string[] {
 }
 
 
-export default function PutneyView({ setCurrentPage }: PutneyViewProps) {
+export default function PutneyView({ setCurrentPage, adminMode = false }: PutneyViewProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [mobileGalleryIndex, setMobileGalleryIndex] = useState(0);
 
@@ -170,12 +172,8 @@ export default function PutneyView({ setCurrentPage }: PutneyViewProps) {
             </div>
           </div>
           <div className="space-y-4">
-            <h2 className="font-heading text-3xl font-black text-[#1B2D3C]">
-              Our Putney Studio
-            </h2>
-            <p className="text-[#1B2D3C] text-sm md:text-base leading-relaxed font-medium">
-              Our bright, airy flagship studio on Upper Richmond Road, perfect for individuals, families, and creative birthday parties. Step inside and bring unglazed pottery to vibrant life with our premium glazes and expert guidance.
-            </p>
+            <EditableText key="putney_title" page="putney" defaultValue="Our Putney Studio" adminMode={adminMode} className="font-heading text-3xl font-black text-[#1B2D3C] block" />
+            <EditableText key="putney_description" page="putney" defaultValue="Our bright, airy flagship studio on Upper Richmond Road, perfect for individuals, families, and creative birthday parties. Step inside and bring unglazed pottery to vibrant life with our premium glazes and expert guidance." adminMode={adminMode} className="text-[#1B2D3C] text-sm md:text-base leading-relaxed font-medium" />
           </div>
 
           {lightboxIndex !== null && (

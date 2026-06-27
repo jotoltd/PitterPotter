@@ -2,8 +2,13 @@ import { useState } from 'react';
 import { FAQ_ITEMS } from '../data';
 import { HelpCircle, Search, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import EditableText from './EditableText';
 
-export default function FAQsView() {
+interface FAQsViewProps {
+  adminMode?: boolean;
+}
+
+export default function FAQsView({ adminMode = false }: FAQsViewProps) {
  const [searchTerm, setSearchTerm] = useState('');
  const [selectedCategory, setSelectedCategory] = useState<'all' | 'fees' | 'bookings' | 'fittings' | 'creativity' | 'policies'>('all');
  const [expandedId, setExpandedId] = useState<string | null>('f1');
@@ -24,11 +29,9 @@ export default function FAQsView() {
  <div id="faqs-view" className="space-y-12 pb-20 pt-6 max-w-4xl mx-auto px-4">
  {/* Title Header */}
  <div className="text-center space-y-4">
- <span className="text-xs tracking-widest text-[#1B2D3C] font-black uppercase block">Studio Guidelines</span>
- <h1 className="font-heading text-4xl font-black text-[#1B2D3C] tracking-tight">Frequently Asked Questions</h1>
- <p className="text-[#1B2D3C]/85 text-xs sm:text-sm font-medium leading-relaxed max-w-2xl mx-auto">
- Got questions on how the clay glazed firing kiln cycle works, our policies on child-safe coloring tools, or booking weekend session durations? Browse our helpful answers below.
- </p>
+ <EditableText key="faqs_tagline" page="faqs" defaultValue="Studio Guidelines" adminMode={adminMode} className="text-xs tracking-widest text-[#1B2D3C] font-black uppercase block" />
+ <EditableText key="faqs_title" page="faqs" defaultValue="Frequently Asked Questions" adminMode={adminMode} className="font-heading text-4xl font-black text-[#1B2D3C] tracking-tight" />
+ <EditableText key="faqs_subtitle" page="faqs" defaultValue="Got questions on how the clay glazed firing kiln cycle works, our policies on child-safe coloring tools, or booking weekend session durations? Browse our helpful answers below." adminMode={adminMode} className="text-[#1B2D3C]/85 text-xs sm:text-sm font-medium leading-relaxed max-w-2xl mx-auto" />
  </div>
 
  {/* Interactive Controls */}

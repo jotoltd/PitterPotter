@@ -1,9 +1,16 @@
 import { useState } from 'react';
 import { POTTERY_ITEMS } from '../data';
-import { PotteryItem } from '../types';
+import { Page, PotteryItem } from '../types';
 import { Search, X } from 'lucide-react';
+import EditableText from './EditableText';
 
-export default function PricingView() {
+interface PricingViewProps {
+  setCurrentPage?: (page: Page) => void;
+  initialPainters?: number;
+  adminMode?: boolean;
+}
+
+export default function PricingView({ adminMode = false }: PricingViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'tableware' | 'decor' | 'kids' | 'seasonal'>('all');
   const [selectedItem, setSelectedItem] = useState<PotteryItem | null>(null);
@@ -29,11 +36,9 @@ export default function PricingView() {
     <div id="pricing-view" className="space-y-12 pb-20 pt-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 text-center space-y-4 max-w-3xl">
-        <span className="text-xs tracking-widest text-[#1B2D3C] font-black uppercase block">Studio Menu</span>
-        <h1 className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight">Prices</h1>
-        <p className="text-[#1B2D3C]/85 text-xs sm:text-sm font-medium leading-relaxed">
-          Click any item to see an image and full details.
-        </p>
+        <EditableText key="pricing_tagline" page="pricing" defaultValue="Studio Menu" adminMode={adminMode} className="text-xs tracking-widest text-[#1B2D3C] font-black uppercase block" />
+        <EditableText key="pricing_title" page="pricing" defaultValue="Prices" adminMode={adminMode} className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight" />
+        <EditableText key="pricing_subtitle" page="pricing" defaultValue="Click any item to see an image and full details." adminMode={adminMode} className="text-[#1B2D3C]/85 text-xs sm:text-sm font-medium leading-relaxed" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 space-y-6">

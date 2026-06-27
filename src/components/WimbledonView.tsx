@@ -6,9 +6,11 @@ import { format, getDay } from 'date-fns';
 import {Clock, Calendar as CalendarIcon, ArrowRight, ChevronLeft, ChevronRight, X} from 'lucide-react';
 import 'react-day-picker/dist/style.css';
 import { getRemainingCapacity } from '../lib/bookings';
+import EditableText from './EditableText';
 
 interface WimbledonViewProps {
   setCurrentPage: (page: Page) => void;
+  adminMode?: boolean;
 }
 
 const MAX_PAINTERS = 50;
@@ -29,7 +31,7 @@ function getTimeSlots(date: Date): string[] {
 }
 
 
-export default function WimbledonView({ setCurrentPage }: WimbledonViewProps) {
+export default function WimbledonView({ setCurrentPage, adminMode = false }: WimbledonViewProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [mobileGalleryIndex, setMobileGalleryIndex] = useState(0);
 
@@ -170,12 +172,8 @@ export default function WimbledonView({ setCurrentPage }: WimbledonViewProps) {
             </div>
           </div>
           <div className="space-y-4">
-            <h2 className="font-heading text-3xl font-black text-[#1B2D3C]">
-              Our Wimbledon Studio
-            </h2>
-            <p className="text-[#1B2D3C] text-sm md:text-base leading-relaxed font-medium">
-              Our cozy, high-street studio on Wimbledon Hill Road, ideal for baby clay imprints, friendly gatherings, and relaxed creative sessions.
-            </p>
+            <EditableText key="wimbledon_title" page="wimbledon" defaultValue="Our Wimbledon Studio" adminMode={adminMode} className="font-heading text-3xl font-black text-[#1B2D3C] block" />
+            <EditableText key="wimbledon_description" page="wimbledon" defaultValue="Our cozy, high-street studio on Wimbledon Hill Road, ideal for baby clay imprints, friendly gatherings, and relaxed creative sessions." adminMode={adminMode} className="text-[#1B2D3C] text-sm md:text-base leading-relaxed font-medium" />
           </div>
 
           {lightboxIndex !== null && (

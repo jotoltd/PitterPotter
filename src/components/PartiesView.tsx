@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Gift, Heart, Users, AlertCircle, MapPin, X } from 'lucide-react';
 import { Page } from '../types';
+import EditableText from './EditableText';
 
 interface PartiesViewProps {
   setCurrentPage: (page: Page) => void;
+  adminMode?: boolean;
 }
 
 type PartyType = 'birthday' | 'baby-shower-hen' | 'corporate';
 
-export default function PartiesView({ setCurrentPage }: PartiesViewProps) {
+export default function PartiesView({ setCurrentPage, adminMode = false }: PartiesViewProps) {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [selectedPartyType, setSelectedPartyType] = useState<PartyType | null>(null);
 
@@ -40,11 +42,9 @@ export default function PartiesView({ setCurrentPage }: PartiesViewProps) {
     <div id="parties-view" className="space-y-20 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
       {/* Page Title Header */}
       <div className="text-center space-y-4 max-w-3xl mx-auto">
-        <span className="text-xs tracking-widest text-[#1B2D3C] font-black uppercase block">Celebrate Creatively</span>
-        <h1 className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight">Studio Parties & Group Events</h1>
-        <p className="text-[#1B2D3C]/85 text-xs sm:text-sm font-medium leading-relaxed">
-          From children's birthday milestones to sophisticated hen celebrations and calming team-building events, painting ceramics together is a beautiful, memorable experience.
-        </p>
+        <EditableText key="parties_tagline" page="parties" defaultValue="Celebrate Creatively" adminMode={adminMode} className="text-xs tracking-widest text-[#1B2D3C] font-black uppercase block" />
+        <EditableText key="parties_title" page="parties" defaultValue="Studio Parties & Group Events" adminMode={adminMode} className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight" />
+        <EditableText key="parties_subtitle" page="parties" defaultValue="From children's birthday milestones to sophisticated hen celebrations and calming team-building events, painting ceramics together is a beautiful, memorable experience." adminMode={adminMode} className="text-[#1B2D3C]/85 text-xs sm:text-sm font-medium leading-relaxed" />
       </div>
 
       {/* Main Services Grid */}

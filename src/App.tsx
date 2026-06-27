@@ -98,15 +98,15 @@ export default function App() {
  case 'home':
  return <HomeView setCurrentPage={setCurrentPage} setVisitPreset={handleVisitPreset} adminMode={adminMode} />;
  case 'parties':
- return <PartiesView setCurrentPage={setCurrentPage} />;
+ return <PartiesView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'pricing':
- return <PricingView setCurrentPage={setCurrentPage} initialPainters={paintersCountPreset} />;
+ return <PricingView setCurrentPage={setCurrentPage} initialPainters={paintersCountPreset} adminMode={adminMode} />;
  case 'gallery':
- return <GalleryView />;
+ return <GalleryView adminMode={adminMode} />;
  case 'faqs':
- return <FAQsView />;
+ return <FAQsView adminMode={adminMode} />;
  case 'contact':
- return <ContactView initialPainters={paintersCountPreset} />;
+ return <ContactView initialPainters={paintersCountPreset} adminMode={adminMode} />;
  case 'book':
  return <BookView setCurrentPage={setCurrentPage} />;
  case 'gift-cards':
@@ -118,9 +118,9 @@ export default function App() {
  case 'gift-card-balance':
  return <GiftCardBalanceView setCurrentPage={setCurrentPage} />;
  case 'putney':
- return <PutneyView setCurrentPage={setCurrentPage} />;
+ return <PutneyView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'wimbledon':
- return <WimbledonView setCurrentPage={setCurrentPage} />;
+ return <WimbledonView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'party-birthday-putney':
  return <PartyBookingView partyType="birthday" studio="Putney" setCurrentPage={setCurrentPage} />;
  case 'party-birthday-wimbledon':
