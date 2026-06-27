@@ -58,6 +58,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [bookingRef, setBookingRef] = useState('');
+  const [error, setError] = useState('');
 
   const info = PARTY_INFO[partyType];
   const IconComponent = info.icon;
@@ -87,15 +88,27 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
   }, [date, studio]);
 
   const handleSubmit = async () => {
+    setError('');
     if (!date || !time || !name || !phone) {
-      alert('Please fill in all required fields and select a date/time.');
+      const missing = [
+        !date && 'Date',
+        !time && 'Time',
+        !name && 'Name',
+        !phone && 'Phone',
+      ].filter(Boolean).join(', ');
+      setError(`Please fill in the required fields: ${missing}`);
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email && !emailRegex.test(email)) {
+      setError('Please enter a valid email address or leave it blank');
       return;
     }
 
     const guestCount = guests === '' ? 1 : guests;
     const remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time);
     if (guestCount > remaining) {
-      alert(`This session only has room for ${remaining} more guest${remaining === 1 ? '' : 's'}. Please choose a different time or reduce the group size.`);
+      setError(`This session only has room for ${remaining} more guest${remaining === 1 ? '' : 's'}. Please choose a different time or reduce the group size.`);
       return;
     }
 
@@ -128,8 +141,9 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
       await createPublicBooking(booking);
       setBookingRef(bookingId);
       setSubmitted(true);
-    } catch {
-      alert('Failed to submit booking. Please try again.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to submit booking. Please try again.';
+      setError(message);
     } finally {
       setSubmitting(false);
     }
@@ -318,6 +332,13 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
             </div>
           </div>
         </div>
+
+        {/* Error */}
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-lg">
+            {error}
+          </div>
+        )}
 
         {/* Submit */}
         <button

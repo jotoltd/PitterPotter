@@ -28,6 +28,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
 
   const [submittedInquiry, setSubmittedInquiry] = useState<BookingInquiry | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [error, setError] = useState('');
 
   const [giftCardCode, setGiftCardCode] = useState('');
   const [appliedGiftCard, setAppliedGiftCard] = useState<GiftCard | null>(null);
@@ -139,14 +140,26 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setError('');
     if (!name || !email || !phone || !date) {
-      alert('Please fill out all required fields');
+      const missing = [
+        !name && 'Name',
+        !email && 'Email',
+        !phone && 'Phone',
+        !date && 'Date',
+      ].filter(Boolean).join(', ');
+      setError(`Please fill in the required fields: ${missing}`);
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
       return;
     }
 
     const remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time);
     if (paintersCount > remaining) {
-      alert(`This session only has room for ${remaining} more painter${remaining === 1 ? '' : 's'}. Please choose a different time or reduce the number of painters.`);
+      setError(`This session only has room for ${remaining} more painter${remaining === 1 ? '' : 's'}. Please choose a different time or reduce the number of painters.`);
       return;
     }
 
@@ -214,8 +227,9 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
       setSubmittedInquiry(newInquiry);
       setShowSuccessModal(true);
       clearDraft();
-    } catch {
-      alert('Failed to save booking. Please try again.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save booking. Please try again.';
+      setError(message);
       return;
     }
 
@@ -320,6 +334,11 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-lg">
+                {error}
+              </div>
+            )}
             {/* Booking Summary */}
             <div className="bg-[#D6E2E9]/50 p-4 border border-[#1B2D3C]/20 space-y-2">
               <h4 className="font-heading text-sm font-black text-[#1B2D3C] uppercase tracking-wider">Selected Session</h4>
