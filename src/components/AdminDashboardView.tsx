@@ -107,23 +107,41 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   }, []);
 
   const loadStripeMode = async () => {
-    if (!isSupabaseEnabled()) return;
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
     try {
-      const { data, error } = await supabase!.from('settings').select('value').eq('key', 'stripe_mode').single();
-      if (!error && data?.value === 'live') {
-        setStripeMode('live');
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'load', username: staff.username, sessionToken: staff.sessionToken, key: 'stripe_mode' }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        console.error('Failed to load stripe mode:', data.error);
+        return;
       }
+      if (data.value === 'live') setStripeMode('live');
     } catch (err) {
       console.error('Failed to load stripe mode:', err);
     }
   };
 
   const updateStripeMode = async (mode: 'sandbox' | 'live') => {
-    if (!isSupabaseEnabled()) return;
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
     try {
-      const { error } = await supabase!.from('settings').upsert({ key: 'stripe_mode', value: mode, updated_at: new Date().toISOString() });
-      if (error) {
-        console.error('Failed to update stripe mode:', error);
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'update', username: staff.username, sessionToken: staff.sessionToken, key: 'stripe_mode', value: mode }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        console.error('Failed to update stripe mode:', data.error);
         showToast('Failed to update Stripe mode', 'error');
         return;
       }

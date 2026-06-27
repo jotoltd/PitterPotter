@@ -123,10 +123,8 @@ CREATE POLICY "Allow public read content" ON content
   FOR SELECT
   USING (true);
 
-CREATE POLICY "Allow super admin manage content" ON content
-  FOR ALL
-  USING (true)
-  WITH CHECK (true);
+-- All content writes are routed through the admin-content edge function using the service role key.
+-- We intentionally do NOT create INSERT/UPDATE policies for client connections.
 
 -- Capacity table for configurable studio/session limits
 CREATE TABLE IF NOT EXISTS capacity (

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { Edit2, Check, X, Image as ImageIcon, Upload } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import { Staff } from '../types';
 import { useToast } from './ToastContext';
 
 interface EditableImageProps {
@@ -93,17 +94,45 @@ export default function EditableImage({ key: contentKey, page, defaultSrc, alt, 
 
     setLoading(true);
     try {
-      const { error } = await supabase!
-        .from('content')
-        .upsert({
-          key: contentKey,
-          value: editValue,
-          type: 'image',
-          page,
-          updated_at: new Date().toISOString(),
-        });
+      let saved = false;
+      if (adminMode) {
+        const savedStaff = localStorage.getItem('pp_current_staff');
+        const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
+        if (staff?.sessionToken) {
+          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              action: 'save',
+              username: staff.username,
+              sessionToken: staff.sessionToken,
+              key: contentKey,
+              page,
+              value: editValue,
+              type: 'image',
+            }),
+          });
+          const data = await response.json();
+          if (!response.ok || data.error) throw new Error(data.error || 'Failed to save content');
+          saved = true;
+        }
+      }
 
-      if (error) throw error;
+      if (!saved) {
+        const { error } = await supabase!
+          .from('content')
+          .upsert({
+            key: contentKey,
+            value: editValue,
+            type: 'image',
+            page,
+            updated_at: new Date().toISOString(),
+          });
+        if (error) throw error;
+      }
 
       setSrc(editValue);
       setIsEditing(false);
