@@ -144,14 +144,21 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const loadGiftCards = async () => {
-    if (isSupabaseEnabled()) {
+    if (isSupabaseEnabled() && staff?.sessionToken) {
       try {
-        const { data, error } = await supabase!.from('gift_cards').select('*').order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Supabase gift cards error:', error);
-        } else if (data) {
-          const mapped: GiftCard[] = data.map((row: any) => ({
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift-cards`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ action: 'list', username: staff.username, sessionToken: staff.sessionToken }),
+        });
+        const data = await response.json();
+        if (!response.ok || data.error) {
+          console.error('Gift cards list error:', data.error);
+        } else if (data.giftCards) {
+          const mapped: GiftCard[] = data.giftCards.map((row: any) => ({
             id: row.id,
             code: row.code,
             amount: Number(row.amount),
@@ -169,7 +176,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           return;
         }
       } catch (err) {
-        console.error('Supabase gift cards request failed:', err);
+        console.error('Gift cards request failed:', err);
       }
     }
 

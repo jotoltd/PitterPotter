@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
 
-const MAX_PAINTERS: Record<'Putney' | 'Wimbledon', number> = { Putney: 30, Wimbledon: 50 };
+const DEFAULT_MAX_PAINTERS: Record<'Putney' | 'Wimbledon', number> = { Putney: 30, Wimbledon: 50 };
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,8 +48,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    const booked = (data || []).reduce((sum: number, row: any) => sum + (row.painters_count || 1), 0);
-    const max = MAX_PAINTERS[studio as 'Putney' | 'Wimbledon'] || 0;
+    const booked = (data || []).reduce((sum: number, row: { painters_count?: number }) => sum + (row.painters_count || 1), 0);
+
+    const { data: capacity } = await supabase
+      .from('capacity')
+      .select('max_painters')
+      .eq('studio', studio)
+      .eq('session_type', 'open')
+      .single();
+
+    const max = capacity?.max_painters ?? DEFAULT_MAX_PAINTERS[studio as 'Putney' | 'Wimbledon'] ?? 0;
 
     return new Response(JSON.stringify({ booked, remaining: max - booked, max }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

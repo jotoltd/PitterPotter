@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { Gift, Search, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Page } from '../types';
-import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import { isSupabaseEnabled } from '../lib/supabase';
 
 interface GiftCardBalanceViewProps {
   setCurrentPage: (page: Page) => void;
@@ -37,25 +37,27 @@ export default function GiftCardBalanceView({ setCurrentPage }: GiftCardBalanceV
         throw new Error('Gift card lookup unavailable');
       }
 
-      const { data, error: lookupError } = await supabase!
-        .from('gift_cards')
-        .select('*')
-        .eq('code', code.trim())
-        .single();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-gift-card`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ code: code.trim() }),
+      });
 
-      if (lookupError || !data) {
-        throw new Error('Gift card not found');
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        throw new Error(data.error || 'Gift card not found');
       }
 
-      const expiryDate = data.expiry_date ? new Date(data.expiry_date) : null;
-      const isExpired = expiryDate ? expiryDate < new Date() : false;
-      const status = isExpired ? 'expired' : data.status;
+      const expiryDate = data.expiryDate ? new Date(data.expiryDate) : null;
 
       setResult({
         code: data.code,
         amount: Number(data.amount),
         balance: Number(data.balance),
-        status,
+        status: data.status,
         expiryDate: expiryDate ? expiryDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null,
       });
     } catch (err) {

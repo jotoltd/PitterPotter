@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
 
-const MAX_PAINTERS: Record<'Putney' | 'Wimbledon', number> = { Putney: 30, Wimbledon: 50 };
+const DEFAULT_MAX_PAINTERS: Record<'Putney' | 'Wimbledon', number> = { Putney: 30, Wimbledon: 50 };
 const SLOTS = ['10:00', '12:00', '14:00', '16:00'];
 
 const corsHeaders = {
@@ -51,7 +51,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    const max = MAX_PAINTERS[studio as 'Putney' | 'Wimbledon'] || 0;
+    const { data: capacity } = await supabase
+      .from('capacity')
+      .select('max_painters')
+      .eq('studio', studio)
+      .eq('session_type', 'open')
+      .single();
+
+    const max = capacity?.max_painters ?? DEFAULT_MAX_PAINTERS[studio as 'Putney' | 'Wimbledon'] ?? 0;
     const dateMap: Record<string, Record<string, number>> = {};
     interface BookingRow {
       date: string;

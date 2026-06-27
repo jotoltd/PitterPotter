@@ -34,7 +34,15 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { action, username, sessionToken, id, status } = await req.json();
+    const { action, username, sessionToken, key, page, value, type } = await req.json();
+
+    if (action === 'load') {
+      const { data, error: loadError } = await supabase.from('content').select('value').eq('key', key).eq('page', page).single();
+      if (loadError && loadError.code !== 'PGRST116') throw loadError;
+      return new Response(JSON.stringify({ value: data?.value }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const staff = await verifyStaff(supabase, username, sessionToken);
     if (!staff) {
@@ -44,33 +52,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    const isSuperAdmin = staff.role === 'super_admin';
-
-    if (action === 'list') {
-      if (!isSuperAdmin) {
+    if (action === 'save') {
+      if (staff.role !== 'super_admin') {
         return new Response(JSON.stringify({ error: 'Forbidden' }), {
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const { data, error: listError } = await supabase
-        .from('gift_cards')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (listError) throw listError;
-      return new Response(JSON.stringify({ giftCards: data }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (action === 'updateStatus') {
-      if (!isSuperAdmin) {
-        return new Response(JSON.stringify({ error: 'Forbidden' }), {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      const { error } = await supabase.from('gift_cards').update({ status }).eq('id', id);
+      const { error } = await supabase.from('content').upsert({
+        key,
+        page,
+        value,
+        type: type || 'text',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' });
       if (error) throw error;
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -82,7 +77,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    console.error('Admin gift cards error:', err);
+    console.error('Admin content error:', err);
     return new Response(JSON.stringify({ error: 'Failed to process request' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

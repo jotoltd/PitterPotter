@@ -30,21 +30,17 @@ ON CONFLICT (key) DO NOTHING;
 ALTER TABLE gift_cards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 
+-- Public can read settings only (e.g. stripe_mode). Staff updates must go through service-role edge functions.
 CREATE POLICY "Allow public read settings" ON settings
   FOR SELECT
   USING (true);
 
-CREATE POLICY "Allow super admin update settings" ON settings
-  FOR ALL
-  USING (true)
+-- Gift cards: public may only create a card after Stripe checkout. Reads and updates must go through edge functions.
+CREATE POLICY "Allow public insert gift cards" ON gift_cards
+  FOR INSERT
   WITH CHECK (true);
 
--- Allow anyone to read a gift card by code (needed for balance check/redemption)
-CREATE POLICY "Allow public read by code" ON gift_cards
-  FOR SELECT
-  USING (true);
-
--- Staff table for admin/staff roles
+-- Staff table for admin/staff roles (managed exclusively by service-role edge functions)
 CREATE TABLE IF NOT EXISTS staff (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -62,16 +58,11 @@ CREATE TABLE IF NOT EXISTS staff (
 
 ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow staff read own" ON staff
-  FOR SELECT
-  USING (true);
-
-CREATE POLICY "Allow super admin manage staff" ON staff
-  FOR ALL
-  USING (true)
-  WITH CHECK (true);
+-- No public access to staff. Edge functions use the service role key for all staff operations.
+-- We intentionally do NOT create SELECT/UPDATE policies for anonymous/authenticated users.
 
 -- Seed super admin (password hash is SHA-256 of 'lalala14')
+-- NOTE: migrate to bcrypt/argon2 in the staff-login edge function before storing real passwords.
 INSERT INTO staff (name, username, password_hash, role, can_update_status, can_edit_bookings, can_add_walk_ins, can_delete_bookings)
 VALUES ('Evonne', 'Evonne', '971c0c79a0bf248d94f48fd66819944641715b690116b2d281d50f4249379448', 'super_admin', true, true, true, true)
 ON CONFLICT (username) DO NOTHING;
@@ -101,6 +92,16 @@ CREATE TABLE IF NOT EXISTS bookings (
 
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 
+-- Performance indexes for common lookups
+CREATE INDEX IF NOT EXISTS idx_bookings_date_studio ON bookings(date, studio);
+CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
+CREATE INDEX IF NOT EXISTS idx_bookings_email ON bookings(email);
+CREATE INDEX IF NOT EXISTS idx_bookings_created_at ON bookings(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_gift_cards_code ON gift_cards(code);
+CREATE INDEX IF NOT EXISTS idx_content_key_page ON content(key, page);
+CREATE INDEX IF NOT EXISTS idx_staff_username ON staff(username);
+CREATE INDEX IF NOT EXISTS idx_staff_session_token ON staff(session_token);
+
 -- Anyone can create a booking (customer-facing)
 CREATE POLICY "Allow public insert bookings" ON bookings
   FOR INSERT
@@ -126,6 +127,29 @@ CREATE POLICY "Allow super admin manage content" ON content
   FOR ALL
   USING (true)
   WITH CHECK (true);
+
+-- Capacity table for configurable studio/session limits
+CREATE TABLE IF NOT EXISTS capacity (
+  studio TEXT NOT NULL,
+  session_type TEXT NOT NULL,
+  max_painters INTEGER NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY (studio, session_type)
+);
+
+ALTER TABLE capacity ENABLE ROW LEVEL SECURITY;
+
+-- Public can read capacity (used by booking flow). Staff updates via edge functions.
+CREATE POLICY "Allow public read capacity" ON capacity
+  FOR SELECT
+  USING (true);
+
+-- Seed default capacity
+INSERT INTO capacity (studio, session_type, max_painters)
+VALUES
+  ('Putney', 'open', 30),
+  ('Wimbledon', 'open', 50)
+ON CONFLICT (studio, session_type) DO NOTHING;
 
 -- Storage bucket for CMS image uploads
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)

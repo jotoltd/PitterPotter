@@ -1,7 +1,7 @@
 import { BookingInquiry, Staff } from '../types';
 import { supabase, isSupabaseEnabled } from './supabase';
 
-const MAX_PAINTERS: Record<'Putney' | 'Wimbledon', number> = { Putney: 30, Wimbledon: 50 };
+const DEFAULT_MAX_PAINTERS: Record<'Putney' | 'Wimbledon', number> = { Putney: 30, Wimbledon: 50 };
 
 const functionUrl = (name: string) => `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`;
 
@@ -93,7 +93,7 @@ export async function getBusyDates(studio: 'Putney' | 'Wimbledon', year: number,
 }
 
 export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date: string, time: string): Promise<number> {
-  if (!isSupabaseEnabled()) return MAX_PAINTERS[studio];
+  if (!isSupabaseEnabled()) return DEFAULT_MAX_PAINTERS[studio];
   const response = await fetch(functionUrl('get-capacity'), {
     method: 'POST',
     headers: {
@@ -105,9 +105,9 @@ export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date:
   const data = await response.json();
   if (!response.ok || data.error) {
     console.error('Failed to get capacity:', data.error);
-    return MAX_PAINTERS[studio];
+    return DEFAULT_MAX_PAINTERS[studio];
   }
-  return data.remaining ?? MAX_PAINTERS[studio];
+  return data.remaining ?? DEFAULT_MAX_PAINTERS[studio];
 }
 
 export async function createPublicBooking(booking: BookingInquiry): Promise<void> {
