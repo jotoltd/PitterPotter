@@ -1,7 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { Lock, User } from 'lucide-react';
 import { Staff } from '../types';
-import { sha256 } from '../lib/hash';
 
 interface AdminLoginProps {
   onLogin: (staff: Staff) => void;
@@ -21,8 +20,6 @@ export default function AdminLoginView({ onLogin }: AdminLoginProps) {
       return;
     }
 
-    const passwordHash = await sha256(password);
-
     try {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/staff-login`, {
         method: 'POST',
@@ -30,7 +27,7 @@ export default function AdminLoginView({ onLogin }: AdminLoginProps) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ username, passwordHash }),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
@@ -43,7 +40,7 @@ export default function AdminLoginView({ onLogin }: AdminLoginProps) {
         id: data.id,
         name: data.name,
         username: data.username,
-        passwordHash,
+        passwordHash: '',
         role: data.role,
         canUpdateStatus: !!data.canUpdateStatus,
         canEditBookings: !!data.canEditBookings,

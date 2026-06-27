@@ -4,7 +4,6 @@ import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
-import { sha256 } from '../lib/hash';
 import { loadBookings, createBooking, updateBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
 import { useToast } from './ToastContext';
 import 'react-day-picker/dist/style.css';
@@ -353,33 +352,37 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const loadStaffList = async () => {
-    if (!canManageStaff) return;
+    if (!canManageStaff || !staff?.sessionToken) return;
 
-    if (isSupabaseEnabled()) {
-      try {
-        const { data, error } = await supabase!.from('staff').select('*').order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Supabase staff error:', error);
-        } else if (data) {
-          const mapped: Staff[] = data.map((row: any) => ({
-            id: row.id,
-            name: row.name,
-            username: row.username,
-            passwordHash: row.password_hash,
-            role: row.role,
-            canUpdateStatus: !!row.can_update_status,
-            canEditBookings: !!row.can_edit_bookings,
-            canAddWalkIns: !!row.can_add_walk_ins,
-            canDeleteBookings: !!row.can_delete_bookings,
-            createdAt: row.created_at,
-          }));
-          setStaffList(mapped);
-          return;
-        }
-      } catch (err) {
-        console.error('Supabase staff request failed:', err);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/staff-management`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'list', username: staff.username, sessionToken: staff.sessionToken }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        console.error('Staff list error:', data.error);
+      } else if (data.staff) {
+        const mapped: Staff[] = data.staff.map((row: any) => ({
+          id: row.id,
+          name: row.name,
+          username: row.username,
+          passwordHash: '',
+          role: row.role,
+          canUpdateStatus: !!row.can_update_status,
+          canEditBookings: !!row.can_edit_bookings,
+          canAddWalkIns: !!row.can_add_walk_ins,
+          canDeleteBookings: !!row.can_delete_bookings,
+          createdAt: row.created_at,
+        }));
+        setStaffList(mapped);
       }
+    } catch (err) {
+      console.error('Staff list request failed:', err);
     }
   };
 
@@ -585,7 +588,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   });
 
   const addStaffMember = async () => {
-    if (!canManageStaff) {
+    if (!canManageStaff || !staff?.sessionToken) {
       showToast('Only super admins can manage staff', 'error');
       return;
     }
@@ -594,28 +597,40 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       return;
     }
 
-    const passwordHash = await sha256(newStaff.password);
-
     if (isSupabaseEnabled()) {
       try {
-        const { error } = await supabase!.from('staff').insert({
-          name: newStaff.name,
-          username: newStaff.username,
-          password_hash: passwordHash,
-          role: newStaff.role,
-          can_update_status: newStaff.canUpdateStatus,
-          can_edit_bookings: newStaff.canEditBookings,
-          can_add_walk_ins: newStaff.canAddWalkIns,
-          can_delete_bookings: newStaff.canDeleteBookings,
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/staff-management`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            action: 'create',
+            username: staff.username,
+            sessionToken: staff.sessionToken,
+            staff: {
+              name: newStaff.name,
+              username: newStaff.username,
+              password: newStaff.password,
+              role: newStaff.role,
+              canUpdateStatus: newStaff.canUpdateStatus,
+              canEditBookings: newStaff.canEditBookings,
+              canAddWalkIns: newStaff.canAddWalkIns,
+              canDeleteBookings: newStaff.canDeleteBookings,
+            },
+          }),
         });
-
-        if (error) {
-          console.error('Supabase add staff error:', error);
+        const data = await response.json();
+        if (!response.ok || data.error) {
+          console.error('Staff create error:', data.error);
           showToast('Failed to add staff member. Username may already exist.', 'error');
           return;
         }
       } catch (err) {
-        console.error('Supabase add staff failed:', err);
+        console.error('Create staff request failed:', err);
+        showToast('Failed to add staff member', 'error');
+        return;
       }
     }
 
