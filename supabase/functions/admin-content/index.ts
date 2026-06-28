@@ -72,6 +72,45 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'upload') {
+      if (staff.role !== 'super_admin') {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { fileData, fileName } = await req.json();
+      if (!fileData || !fileName) {
+        return new Response(JSON.stringify({ error: 'Missing file data or name' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const base64Match = fileData.match(/^data:image\/(png|jpeg|jpg|webp|gif);base64,(.*)$/i);
+      if (!base64Match) {
+        return new Response(JSON.stringify({ error: 'Invalid base64 image data' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const ext = base64Match[1].toLowerCase().replace('jpeg', 'jpg');
+      const mimeType = `image/${base64Match[1].toLowerCase()}`;
+      const binary = Uint8Array.from(atob(base64Match[2]), (c) => c.charCodeAt(0));
+      const filePath = `${page}/${key}-${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('content')
+        .upload(filePath, binary, { contentType: mimeType, upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage.from('content').getPublicUrl(filePath);
+      return new Response(JSON.stringify({ url: publicUrlData.publicUrl }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     return new Response(JSON.stringify({ error: 'Unknown action' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

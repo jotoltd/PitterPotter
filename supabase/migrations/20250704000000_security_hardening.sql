@@ -165,15 +165,10 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 VALUES ('content', 'content', true, 5242880, ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif'])
 ON CONFLICT (id) DO NOTHING;
 
--- Storage policies for content bucket (public read, staff can manage)
+-- Storage policies for content bucket (public read only; writes go through admin-content edge function)
 DROP POLICY IF EXISTS "Allow public read content images" ON storage.objects;
 DROP POLICY IF EXISTS "Allow staff manage content images" ON storage.objects;
 
 CREATE POLICY "Allow public read content images" ON storage.objects
   FOR SELECT
   USING (bucket_id = 'content');
-
-CREATE POLICY "Allow staff manage content images" ON storage.objects
-  FOR ALL
-  USING (bucket_id = 'content')
-  WITH CHECK (bucket_id = 'content');

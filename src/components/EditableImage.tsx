@@ -55,27 +55,47 @@ export default function EditableImage({ key: contentKey, page, defaultSrc, alt, 
 
     setLoading(true);
     try {
-      const fileExt = file.name.split('.').pop() || 'jpg';
-      const filePath = `${page}/${contentKey}-${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase!.storage
-        .from('content')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) {
-        if (uploadError.message?.includes('Bucket not found') || uploadError.message?.includes('bucket')) {
+      if (adminMode) {
+        const savedStaff = localStorage.getItem('pp_current_staff');
+        const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
+        if (staff?.sessionToken) {
           const reader = new FileReader();
-          reader.onload = (event) => {
-            const dataUrl = event.target?.result as string;
-            if (dataUrl) setEditValue(dataUrl);
-          };
-          reader.readAsDataURL(file);
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            reader.onload = (event) => resolve(event.target?.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+
+          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              action: 'upload',
+              username: staff.username,
+              sessionToken: staff.sessionToken,
+              key: contentKey,
+              page,
+              fileData: dataUrl,
+              fileName: file.name,
+            }),
+          });
+          const data = await response.json();
+          if (!response.ok || data.error) throw new Error(data.error || 'Failed to upload image');
+          setEditValue(data.url);
           return;
         }
-        throw uploadError;
       }
 
-      const { data: publicUrlData } = supabase!.storage.from('content').getPublicUrl(filePath);
-      setEditValue(publicUrlData.publicUrl);
+      // Fallback for local/offline mode
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        if (dataUrl) setEditValue(dataUrl);
+      };
+      reader.readAsDataURL(file);
     } catch (err) {
       console.error('Failed to upload image:', err);
       showToast('Failed to upload image. Please try a URL or create the content bucket in Supabase.', 'error');
