@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
 import { isNonEmptyString, isString, isObject } from '../_shared/validate.ts';
+import { logAudit } from '../_shared/audit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -101,6 +102,7 @@ Deno.serve(async (req) => {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'key' });
       if (error) throw error;
+      await logAudit(supabase, staff, 'save', 'content', `${page}:${key}`, { type: type || 'text' });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -145,6 +147,7 @@ Deno.serve(async (req) => {
         .upload(filePath, binary, { contentType: mimeType, upsert: true });
       if (uploadError) throw uploadError;
 
+      await logAudit(supabase, staff, 'upload', 'storage', filePath, { page, key });
       const { data: publicUrlData } = supabase.storage.from('content').getPublicUrl(filePath);
       return new Response(JSON.stringify({ url: publicUrlData.publicUrl }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

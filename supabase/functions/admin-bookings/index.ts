@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
 import { isObject, isNonEmptyString, isOneOf } from '../_shared/validate.ts';
+import { logAudit } from '../_shared/audit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -128,6 +129,7 @@ Deno.serve(async (req) => {
       }
       const { error } = await supabase.from('bookings').insert(toBookingRow(booking as Record<string, unknown>));
       if (error) throw error;
+      await logAudit(supabase, staff, 'create', 'booking', booking.id as string, { studio: booking.studio, date: booking.date, time: booking.time });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -148,6 +150,7 @@ Deno.serve(async (req) => {
       }
       const { error } = await supabase.from('bookings').update(toBookingRow(booking as Record<string, unknown>)).eq('booking_id', booking.id);
       if (error) throw error;
+      await logAudit(supabase, staff, 'update', 'booking', booking.id as string, { studio: booking.studio, date: booking.date, time: booking.time });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -168,6 +171,7 @@ Deno.serve(async (req) => {
       }
       const { error } = await supabase.from('bookings').update({ status }).eq('booking_id', id);
       if (error) throw error;
+      await logAudit(supabase, staff, 'update_status', 'booking', id, { status });
 
       if (status === 'confirmed') {
         try {
@@ -205,6 +209,7 @@ Deno.serve(async (req) => {
       }
       const { error } = await supabase.from('bookings').delete().eq('booking_id', id);
       if (error) throw error;
+      await logAudit(supabase, staff, 'delete', 'booking', id);
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

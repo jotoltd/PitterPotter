@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
 import { isObject, isNonEmptyString, isInteger } from '../_shared/validate.ts';
+import { logAudit } from '../_shared/audit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -88,6 +89,7 @@ Deno.serve(async (req) => {
       }
       const { error } = await supabase.from('settings').upsert({ key, value, updated_at: new Date().toISOString() });
       if (error) throw error;
+      await logAudit(supabase, staff, 'update', 'settings', key, { value });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -122,6 +124,7 @@ Deno.serve(async (req) => {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'studio,session_type' });
       if (error) throw error;
+      await logAudit(supabase, staff, 'update', 'capacity', `${studio}:${sessionType}`, { maxPainters });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

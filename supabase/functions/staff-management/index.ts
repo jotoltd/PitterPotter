@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
 import { hash, genSalt } from 'bcrypt';
 import { isObject, isNonEmptyString, isOneOf, isBoolean } from '../_shared/validate.ts';
+import { logAudit } from '../_shared/audit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -96,6 +97,7 @@ Deno.serve(async (req) => {
         ...permissions,
       });
       if (error) throw error;
+      await logAudit(supabase, staff, 'create', 'staff', staffData.username, { name: staffData.name, role });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -121,6 +123,7 @@ Deno.serve(async (req) => {
       }
       const { error } = await supabase.from('staff').update(updateData).eq('id', staffData.id);
       if (error) throw error;
+      await logAudit(supabase, staff, 'update', 'staff', staffData.id, { name: staffData.name, role: updateData.role, passwordChanged: !!updateData.password_hash });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -135,6 +138,7 @@ Deno.serve(async (req) => {
       }
       const { error } = await supabase.from('staff').delete().eq('id', staffData.id);
       if (error) throw error;
+      await logAudit(supabase, staff, 'delete', 'staff', staffData.id);
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

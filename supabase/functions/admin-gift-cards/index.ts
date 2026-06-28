@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
 import { isObject, isNonEmptyString, isOneOf } from '../_shared/validate.ts';
+import { logAudit } from '../_shared/audit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -93,6 +94,7 @@ Deno.serve(async (req) => {
       }
       const { error } = await supabase.from('gift_cards').update({ status }).eq('id', id);
       if (error) throw error;
+      await logAudit(supabase, staff, 'update_status', 'gift_card', id, { status });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
