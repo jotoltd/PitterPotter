@@ -1,4 +1,4 @@
-import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
+import { createClient } from 'supabase';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 

@@ -1,7 +1,8 @@
-import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
+import { createClient } from 'supabase';
 import { compare, hash, genSalt } from 'bcrypt';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
+import type { StaffRecord } from '../_shared/types.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,7 +54,7 @@ Deno.serve(async (req) => {
       .from('staff')
       .select('*')
       .eq('username', username)
-      .single();
+      .single() as { data: StaffRecord | null; error: Error | null };
 
     if (error || !staff) {
       return new Response(JSON.stringify({ error: 'Invalid credentials' }), {

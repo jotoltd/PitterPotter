@@ -1,10 +1,22 @@
-import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
+import { createClient } from 'supabase';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
+import type { StaffRecord } from '../_shared/types.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+interface BookingRow {
+  booking_id: string;
+  name: string;
+  email: string;
+  studio: string;
+  date: string;
+  time: string;
+  painters_count: number;
+  session_type: string;
+}
 
 interface BookingDetails {
   bookingId: string;
@@ -108,7 +120,7 @@ Deno.serve(async (req) => {
       .eq('username', username)
       .eq('session_token', sessionToken)
       .gt('session_expires_at', new Date().toISOString())
-      .single();
+      .single() as { data: StaffRecord | null; error: Error | null };
 
     if (!staff.data) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -121,7 +133,7 @@ Deno.serve(async (req) => {
       .from('bookings')
       .select('*')
       .eq('booking_id', bookingId)
-      .single();
+      .single() as { data: BookingRow | null; error: Error | null };
 
     if (!booking) {
       return new Response(JSON.stringify({ error: 'Booking not found' }), {

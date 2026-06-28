@@ -1,5 +1,7 @@
+import type { AdminSupabaseClient } from './types.ts';
+
 export async function logAudit(
-  supabase: any,
+  supabase: AdminSupabaseClient,
   staff: { id?: string; username?: string } | null,
   action: string,
   entity: string,

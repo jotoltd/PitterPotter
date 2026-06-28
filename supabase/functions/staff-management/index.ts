@@ -1,14 +1,15 @@
-import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
+import { createClient } from 'supabase';
 import { hash, genSalt } from 'bcrypt';
 import { isObject, isNonEmptyString, isOneOf, isBoolean } from '../_shared/validate.ts';
 import { logAudit } from '../_shared/audit.ts';
+import type { AdminSupabaseClient, StaffRecord } from '../_shared/types.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-async function verifyStaff(supabase: any, username: string, sessionToken: string): Promise<any> {
+async function verifyStaff(supabase: AdminSupabaseClient, username: string, sessionToken: string): Promise<StaffRecord | null> {
   const { data, error } = await supabase
     .from('staff')
     .select('*')
@@ -110,7 +111,7 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const updateData: any = {
+      const updateData: Record<string, string | boolean> = {
         name: staffData.name,
         role: isOneOf(staffData.role, ['super_admin', 'admin'] as const) ? staffData.role : 'admin',
         can_update_status: isBoolean(staffData.canUpdateStatus) ? staffData.canUpdateStatus : false,
