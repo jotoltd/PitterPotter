@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
-import { isObject, isNonEmptyString } from '../_shared/validate.ts';
+import { isObject, isNonEmptyString, isInteger } from '../_shared/validate.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -87,6 +87,40 @@ Deno.serve(async (req) => {
         });
       }
       const { error } = await supabase.from('settings').upsert({ key, value, updated_at: new Date().toISOString() });
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'loadCapacity') {
+      const { data, error: capacityError } = await supabase.from('capacity').select('*').order('studio');
+      if (capacityError) throw capacityError;
+      return new Response(JSON.stringify({ capacity: data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'updateCapacity') {
+      if (staff.role !== 'super_admin') {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { studio, sessionType, maxPainters } = body;
+      if (!isNonEmptyString(studio) || !isNonEmptyString(sessionType) || !isInteger(maxPainters) || maxPainters < 1) {
+        return new Response(JSON.stringify({ error: 'Invalid capacity values' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { error } = await supabase.from('capacity').upsert({
+        studio,
+        session_type: sessionType,
+        max_painters: maxPainters,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'studio,session_type' });
       if (error) throw error;
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

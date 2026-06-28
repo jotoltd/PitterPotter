@@ -43,8 +43,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'bookings' | 'gift-cards' | 'staff' | 'settings' | 'content' | 'analytics'>('bookings');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'gift-cards' | 'staff' | 'settings' | 'content' | 'analytics' | 'capacity'>('bookings');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
+  const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
+  const [capacitySaving, setCapacitySaving] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed'>('all');
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -118,6 +120,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (activeTab === 'capacity') {
+      loadCapacity();
+    }
+  }, [activeTab]);
+
   const loadStripeMode = async () => {
     if (!isSupabaseEnabled() || !staff?.sessionToken) return;
     try {
@@ -161,6 +169,63 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     } catch (err) {
       console.error('Failed to update stripe mode:', err);
       showToast('Failed to update Stripe mode', 'error');
+    }
+  };
+
+  const loadCapacity = async () => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'loadCapacity', username: staff.username, sessionToken: staff.sessionToken }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        console.error('Failed to load capacity:', data.error);
+        return;
+      }
+      setCapacityRows(data.capacity || []);
+    } catch (err) {
+      console.error('Failed to load capacity:', err);
+    }
+  };
+
+  const updateCapacity = async (row: { studio: string; session_type: string; max_painters: number }) => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    setCapacitySaving(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'updateCapacity',
+          username: staff.username,
+          sessionToken: staff.sessionToken,
+          studio: row.studio,
+          sessionType: row.session_type,
+          maxPainters: row.max_painters,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        console.error('Failed to update capacity:', data.error);
+        showToast('Failed to update capacity', 'error');
+        return;
+      }
+      showToast('Capacity updated', 'success');
+      await loadCapacity();
+    } catch (err) {
+      console.error('Failed to update capacity:', err);
+      showToast('Failed to update capacity', 'error');
+    } finally {
+      setCapacitySaving(false);
     }
   };
 
@@ -702,6 +767,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             { value: 'gift-cards', label: 'Gift Vouchers' },
             ...(canManageStaff ? [{ value: 'analytics', label: 'Analytics' }] : []),
             ...(canManageStaff ? [{ value: 'content', label: 'Content' }] : []),
+            ...(canManageStaff ? [{ value: 'capacity', label: 'Capacity' }] : []),
             ...(canManageStaff ? [{ value: 'staff', label: 'Staff' }] : []),
             ...(canManageStaff ? [{ value: 'settings', label: 'Settings' }] : []),
           ].map((tab) => (
@@ -1673,6 +1739,57 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               <p>Use the "Edit Mode" toggle in the top navigation bar to click and edit text/images directly on the website.</p>
               <p className="mt-2">Changes are saved to the database and persist across all users.</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'capacity' && canManageStaff && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
+          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-6">
+            <div>
+              <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Capacity Management</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Set the maximum number of painters per studio and session type.</p>
+            </div>
+            {capacityRows.length === 0 ? (
+              <p className="text-xs text-stone-500">Loading capacity settings...</p>
+            ) : (
+              <div className="space-y-4">
+                {capacityRows.map((row, index) => (
+                  <div key={`${row.studio}-${row.session_type}`} className="flex items-center gap-4 p-4 bg-[#DBE7E4]/30 rounded-lg">
+                    <div className="flex-1">
+                      <p className="text-xs font-bold uppercase text-[#1B2D3C]/70">Studio</p>
+                      <p className="text-sm font-bold text-[#1B2D3C]">{row.studio}</p>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-bold uppercase text-[#1B2D3C]/70">Session Type</p>
+                      <p className="text-sm font-bold text-[#1B2D3C]">{row.session_type}</p>
+                    </div>
+                    <div className="w-32">
+                      <label className="text-xs font-bold uppercase text-[#1B2D3C]/70">Max Painters</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={row.max_painters}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value, 10);
+                          const updated = [...capacityRows];
+                          updated[index] = { ...row, max_painters: Number.isNaN(value) ? row.max_painters : value };
+                          setCapacityRows(updated);
+                        }}
+                        className="w-full px-2 py-1 border-2 border-[#1B2D3C] bg-white text-[#1B2D3C] text-sm font-bold focus:outline-none"
+                      />
+                    </div>
+                    <button
+                      onClick={() => updateCapacity(capacityRows[index])}
+                      disabled={capacitySaving}
+                      className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#1B2D3C]/90 disabled:opacity-50 cursor-pointer"
+                    >
+                      Save
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
