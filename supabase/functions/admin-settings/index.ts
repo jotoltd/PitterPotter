@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
+import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,7 +35,21 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { action, username, sessionToken, key, value } = await req.json();
+    const body = await req.json();
+    if (!isObject(body)) {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { action, username, sessionToken, key, value } = body;
+
+    if (!isNonEmptyString(action) || !isNonEmptyString(username) || !isNonEmptyString(sessionToken)) {
+      return new Response(JSON.stringify({ error: 'Missing action, username, or sessionToken' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const staff = await verifyStaff(supabase, username, sessionToken);
     if (!staff) {
@@ -45,6 +60,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'load') {
+      if (!isNonEmptyString(key)) {
+        return new Response(JSON.stringify({ error: 'Missing key' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       const { data, error: loadError } = await supabase.from('settings').select('key, value').eq('key', key).single();
       if (loadError && loadError.code !== 'PGRST116') throw loadError;
       return new Response(JSON.stringify({ value: data?.value }), {
@@ -56,6 +77,12 @@ Deno.serve(async (req) => {
       if (staff.role !== 'super_admin') {
         return new Response(JSON.stringify({ error: 'Forbidden' }), {
           status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (!isNonEmptyString(key) || !isNonEmptyString(value)) {
+        return new Response(JSON.stringify({ error: 'Missing key or value' }), {
+          status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }

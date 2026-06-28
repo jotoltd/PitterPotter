@@ -1,5 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
 import { compare, hash, genSalt } from 'bcrypt';
+import { isObject, isNonEmptyString } from '../_shared/validate.ts';
+import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,6 +17,11 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  const clientIp = getClientIp(req);
+  if (isRateLimited(`login:${clientIp}`, 10, 60_000)) {
+    return rateLimitResponse();
+  }
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!supabaseUrl || !supabaseServiceKey) {
@@ -27,8 +34,15 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { username, password } = await req.json();
-    if (!username || !password) {
+    const body = await req.json();
+    if (!isObject(body)) {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { username, password } = body;
+    if (!isNonEmptyString(username) || !isNonEmptyString(password)) {
       return new Response(JSON.stringify({ error: 'Missing credentials' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
+import { isObject, isNonEmptyString, isOneOf } from '../_shared/validate.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,7 +35,21 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { action, username, sessionToken, id, status } = await req.json();
+    const body = await req.json();
+    if (!isObject(body)) {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { action, username, sessionToken, id, status } = body;
+
+    if (!isNonEmptyString(action) || !isNonEmptyString(username) || !isNonEmptyString(sessionToken)) {
+      return new Response(JSON.stringify({ error: 'Missing action, username, or sessionToken' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const staff = await verifyStaff(supabase, username, sessionToken);
     if (!staff) {
@@ -67,6 +82,12 @@ Deno.serve(async (req) => {
       if (!isSuperAdmin) {
         return new Response(JSON.stringify({ error: 'Forbidden' }), {
           status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (!isNonEmptyString(id) || !isOneOf(status, ['active', 'redeemed', 'expired', 'cancelled'] as const)) {
+        return new Response(JSON.stringify({ error: 'Invalid id or status' }), {
+          status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }

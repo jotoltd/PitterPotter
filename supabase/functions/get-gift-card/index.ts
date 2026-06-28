@@ -1,4 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
+import { isObject, isNonEmptyString } from '../_shared/validate.ts';
+import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,9 +12,21 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  const clientIp = getClientIp(req);
+  if (isRateLimited(`gift-card:${clientIp}`, 20, 60_000)) {
+    return rateLimitResponse();
+  }
+
   try {
-    const { code } = await req.json();
-    if (!code) {
+    const body = await req.json();
+    if (!isObject(body)) {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { code } = body;
+    if (!isNonEmptyString(code)) {
       return new Response(JSON.stringify({ error: 'Missing code' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
 import { hash, genSalt } from 'bcrypt';
+import { isObject, isNonEmptyString, isOneOf, isBoolean } from '../_shared/validate.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,7 +41,21 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { action, username, sessionToken, staff: staffData } = await req.json();
+    const body = await req.json();
+    if (!isObject(body)) {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { action, username, sessionToken, staff: staffData } = body;
+
+    if (!isNonEmptyString(action) || !isNonEmptyString(username) || !isNonEmptyString(sessionToken)) {
+      return new Response(JSON.stringify({ error: 'Missing action, username, or sessionToken' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const staff = await verifyStaff(supabase, username, sessionToken);
     if (!staff || staff.role !== 'super_admin') {
@@ -59,22 +74,26 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'create') {
-      if (!staffData.name || !staffData.username || !staffData.password) {
+      if (!isObject(staffData) || !isNonEmptyString(staffData.name) || !isNonEmptyString(staffData.username) || !isNonEmptyString(staffData.password)) {
         return new Response(JSON.stringify({ error: 'Missing fields' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+      const role = isOneOf(staffData.role, ['super_admin', 'admin'] as const) ? staffData.role : 'admin';
+      const permissions = {
+        can_update_status: isBoolean(staffData.canUpdateStatus) ? staffData.canUpdateStatus : false,
+        can_edit_bookings: isBoolean(staffData.canEditBookings) ? staffData.canEditBookings : false,
+        can_add_walk_ins: isBoolean(staffData.canAddWalkIns) ? staffData.canAddWalkIns : false,
+        can_delete_bookings: isBoolean(staffData.canDeleteBookings) ? staffData.canDeleteBookings : false,
+      };
       const passwordHash = await hashPassword(staffData.password);
       const { error } = await supabase.from('staff').insert({
         name: staffData.name,
         username: staffData.username,
         password_hash: passwordHash,
-        role: staffData.role,
-        can_update_status: staffData.canUpdateStatus,
-        can_edit_bookings: staffData.canEditBookings,
-        can_add_walk_ins: staffData.canAddWalkIns,
-        can_delete_bookings: staffData.canDeleteBookings,
+        role,
+        ...permissions,
       });
       if (error) throw error;
       return new Response(JSON.stringify({ success: true }), {
@@ -83,15 +102,21 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'update') {
+      if (!isObject(staffData) || !isNonEmptyString(staffData.id) || !isNonEmptyString(staffData.name)) {
+        return new Response(JSON.stringify({ error: 'Missing staff id or name' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       const updateData: any = {
         name: staffData.name,
-        role: staffData.role,
-        can_update_status: staffData.canUpdateStatus,
-        can_edit_bookings: staffData.canEditBookings,
-        can_add_walk_ins: staffData.canAddWalkIns,
-        can_delete_bookings: staffData.canDeleteBookings,
+        role: isOneOf(staffData.role, ['super_admin', 'admin'] as const) ? staffData.role : 'admin',
+        can_update_status: isBoolean(staffData.canUpdateStatus) ? staffData.canUpdateStatus : false,
+        can_edit_bookings: isBoolean(staffData.canEditBookings) ? staffData.canEditBookings : false,
+        can_add_walk_ins: isBoolean(staffData.canAddWalkIns) ? staffData.canAddWalkIns : false,
+        can_delete_bookings: isBoolean(staffData.canDeleteBookings) ? staffData.canDeleteBookings : false,
       };
-      if (staffData.password) {
+      if (isNonEmptyString(staffData.password)) {
         updateData.password_hash = await hashPassword(staffData.password);
       }
       const { error } = await supabase.from('staff').update(updateData).eq('id', staffData.id);
@@ -102,6 +127,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'delete') {
+      if (!isObject(staffData) || !isNonEmptyString(staffData.id)) {
+        return new Response(JSON.stringify({ error: 'Missing staff id' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       const { error } = await supabase.from('staff').delete().eq('id', staffData.id);
       if (error) throw error;
       return new Response(JSON.stringify({ success: true }), {

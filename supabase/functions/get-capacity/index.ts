@@ -1,4 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
+import { isObject, isNonEmptyString } from '../_shared/validate.ts';
+import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 
 const DEFAULT_MAX_PAINTERS: Record<'Putney' | 'Wimbledon', number> = { Putney: 30, Wimbledon: 50 };
 
@@ -12,14 +14,20 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  const clientIp = getClientIp(req);
+  if (isRateLimited(`capacity:${clientIp}`, 30, 60_000)) {
+    return rateLimitResponse();
+  }
+
   try {
-    const { studio, date, time } = await req.json();
-    if (!studio || !date || !time) {
+    const body = await req.json();
+    if (!isObject(body) || !isNonEmptyString(body.studio) || !isNonEmptyString(body.date) || !isNonEmptyString(body.time)) {
       return new Response(JSON.stringify({ error: 'Missing studio, date or time' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    const { studio, date, time } = body;
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');

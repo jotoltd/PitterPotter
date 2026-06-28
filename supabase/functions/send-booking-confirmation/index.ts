@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
+import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -85,7 +86,21 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { username, sessionToken, bookingId } = await req.json();
+    const body = await req.json();
+    if (!isObject(body)) {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { username, sessionToken, bookingId } = body;
+
+    if (!isNonEmptyString(username) || !isNonEmptyString(sessionToken) || !isNonEmptyString(bookingId)) {
+      return new Response(JSON.stringify({ error: 'Missing username, sessionToken, or bookingId' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const staff = await supabase
       .from('staff')

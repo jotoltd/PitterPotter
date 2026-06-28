@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
+import { isNonEmptyString, isString, isObject } from '../_shared/validate.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,12 +35,39 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { action, username, sessionToken, key, page, value, type } = await req.json();
+    const body = await req.json();
+    if (!isObject(body)) {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { action, username, sessionToken, key, page, value, type } = body;
+
+    if (!isNonEmptyString(action)) {
+      return new Response(JSON.stringify({ error: 'Missing or invalid action' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (action === 'load') {
+      if (!isNonEmptyString(key) || !isNonEmptyString(page)) {
+        return new Response(JSON.stringify({ error: 'Missing key or page' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       const { data, error: loadError } = await supabase.from('content').select('value').eq('key', key).eq('page', page).single();
       if (loadError && loadError.code !== 'PGRST116') throw loadError;
       return new Response(JSON.stringify({ value: data?.value }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!isNonEmptyString(username) || !isNonEmptyString(sessionToken)) {
+      return new Response(JSON.stringify({ error: 'Missing credentials' }), {
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -53,6 +81,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'save') {
+      if (!isNonEmptyString(key) || !isNonEmptyString(page) || !isString(value)) {
+        return new Response(JSON.stringify({ error: 'Missing key, page, or value' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       if (staff.role !== 'super_admin') {
         return new Response(JSON.stringify({ error: 'Forbidden' }), {
           status: 403,
@@ -73,14 +107,20 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'upload') {
+      if (!isNonEmptyString(key) || !isNonEmptyString(page)) {
+        return new Response(JSON.stringify({ error: 'Missing key or page' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       if (staff.role !== 'super_admin') {
         return new Response(JSON.stringify({ error: 'Forbidden' }), {
           status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const { fileData, fileName } = await req.json();
-      if (!fileData || !fileName) {
+      const { fileData, fileName } = body;
+      if (!isString(fileData) || !isNonEmptyString(fileName)) {
         return new Response(JSON.stringify({ error: 'Missing file data or name' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

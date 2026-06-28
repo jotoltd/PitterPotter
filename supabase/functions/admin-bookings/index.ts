@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@^2.0.0';
+import { isObject, isNonEmptyString, isOneOf } from '../_shared/validate.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -78,7 +79,21 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { action, username, sessionToken, booking, id, status } = await req.json();
+    const body = await req.json();
+    if (!isObject(body)) {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const { action, username, sessionToken, booking, id, status } = body;
+
+    if (!isNonEmptyString(action) || !isNonEmptyString(username) || !isNonEmptyString(sessionToken)) {
+      return new Response(JSON.stringify({ error: 'Missing action, username, or sessionToken' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const staff = await verifyStaff(supabase, username, sessionToken);
     if (!staff) {
@@ -105,7 +120,13 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const { error } = await supabase.from('bookings').insert(toBookingRow(booking));
+      if (!isObject(booking)) {
+        return new Response(JSON.stringify({ error: 'Invalid booking data' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { error } = await supabase.from('bookings').insert(toBookingRow(booking as Record<string, unknown>));
       if (error) throw error;
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -119,7 +140,13 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const { error } = await supabase.from('bookings').update(toBookingRow(booking)).eq('booking_id', booking.id);
+      if (!isObject(booking) || !isNonEmptyString(booking.id)) {
+        return new Response(JSON.stringify({ error: 'Invalid booking data' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { error } = await supabase.from('bookings').update(toBookingRow(booking as Record<string, unknown>)).eq('booking_id', booking.id);
       if (error) throw error;
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -130,6 +157,12 @@ Deno.serve(async (req) => {
       if (!isSuperAdmin && !staff.can_update_status) {
         return new Response(JSON.stringify({ error: 'Forbidden' }), {
           status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (!isNonEmptyString(id) || !isOneOf(status, ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'] as const)) {
+        return new Response(JSON.stringify({ error: 'Invalid booking id or status' }), {
+          status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -161,6 +194,12 @@ Deno.serve(async (req) => {
       if (!isSuperAdmin && !staff.can_delete_bookings) {
         return new Response(JSON.stringify({ error: 'Forbidden' }), {
           status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (!isNonEmptyString(id)) {
+        return new Response(JSON.stringify({ error: 'Invalid booking id' }), {
+          status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
