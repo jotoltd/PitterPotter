@@ -21,10 +21,11 @@ View your app in AI Studio: https://ai.studio/apps/cd42f6d2-3260-438b-b639-5fbd0
    - `VITE_SUPABASE_ANON_KEY`
 4. Create the `gift_cards` table in your Supabase project by running [supabase/schema.sql](supabase/schema.sql) in the SQL Editor
 5. Deploy the Supabase Edge Functions: `supabase functions deploy`
-6. Set the following Edge Function secrets in the Supabase dashboard for booking confirmation emails:
+6. Optionally set `VITE_SENTRY_DSN` in your frontend environment to enable Sentry error tracking.
+7. Set the following Edge Function secrets in the Supabase dashboard for booking confirmation emails:
    - `RESEND_API_KEY` — your Resend API key
    - `RESEND_FROM_EMAIL` — sender address (defaults to `bookings@pitterpotter.com`)
-7. Run the app:
+8. Run the app:
    `npm run dev`
 
 ## Testing
