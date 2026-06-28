@@ -1,6 +1,5 @@
 {
   "imports": {
-    "@supabase/functions-js": "jsr:@supabase/functions-js@^2",
-    "bcrypt": "https://deno.land/x/bcrypt@v0.4.1/mod.ts"
+    "bcrypt": "npm:bcrypt@^6.0.0"
   }
 }

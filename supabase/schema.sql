@@ -65,11 +65,10 @@ ALTER TABLE staff ENABLE ROW LEVEL SECURITY;
 -- No public access to staff. Edge functions use the service role key for all staff operations.
 -- We intentionally do NOT create SELECT/UPDATE policies for anonymous/authenticated users.
 
--- Seed super admin (password hash is SHA-256 of 'lalala14')
--- NOTE: migrate to bcrypt/argon2 in the staff-login edge function before storing real passwords.
+-- Seed super admin (password is bcrypt hash of 'lalala14')
 INSERT INTO staff (name, username, password_hash, role, can_update_status, can_edit_bookings, can_add_walk_ins, can_delete_bookings)
-VALUES ('Evonne', 'Evonne', '971c0c79a0bf248d94f48fd66819944641715b690116b2d281d50f4249379448', 'super_admin', true, true, true, true)
-ON CONFLICT (username) DO NOTHING;
+VALUES ('Evonne', 'Evonne', '$2b$10$wfdkWj.LrsebiAQhKw3P6O/OyfEDAz/9pfElj.MDA24rmyu34wY2', 'super_admin', true, true, true, true)
+ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash;
 
 -- Bookings table
 CREATE TABLE IF NOT EXISTS bookings (
