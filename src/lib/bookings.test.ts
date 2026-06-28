@@ -1,6 +1,13 @@
-import { describe, it, expect } from 'vitest';
-import { toBookingInquiry, toBookingRow } from './bookings';
-import { BookingInquiry } from '../types';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import {
+  toBookingInquiry,
+  toBookingRow,
+  getRemainingCapacity,
+  getBusyDates,
+  createPublicBooking,
+  updateBookingStatus,
+} from './bookings';
+import { BookingInquiry, Staff } from '../types';
 
 describe('toBookingInquiry', () => {
   it('maps a database row to a BookingInquiry', () => {
@@ -76,5 +83,143 @@ describe('toBookingRow', () => {
       gift_card_code: null,
       gift_card_discount: null,
     });
+  });
+});
+
+describe('getRemainingCapacity', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns remaining capacity from edge function', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ remaining: 12 }),
+    } as Response);
+
+    const remaining = await getRemainingCapacity('Putney', '2025-08-01', '10:00');
+    expect(remaining).toBe(12);
+  });
+
+  it('falls back to default capacity on edge function error', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ error: 'Failed' }),
+    } as Response);
+
+    const remaining = await getRemainingCapacity('Wimbledon', '2025-08-01', '10:00');
+    expect(remaining).toBe(50);
+  });
+});
+
+describe('getBusyDates', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns busy dates from edge function', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ busyDates: ['2025-08-01', '2025-08-15'] }),
+    } as Response);
+
+    const dates = await getBusyDates('Putney', 2025, 7);
+    expect(dates).toEqual(['2025-08-01', '2025-08-15']);
+  });
+
+  it('returns empty array when Supabase is not enabled', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ error: 'Offline' }),
+    } as Response);
+
+    const dates = await getBusyDates('Putney', 2025, 7);
+    expect(dates).toEqual([]);
+  });
+});
+
+describe('createPublicBooking', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('throws when capacity is insufficient', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ remaining: 2 }),
+    } as Response);
+
+    const booking: BookingInquiry = {
+      id: 'b-789',
+      studio: 'Putney',
+      name: 'Carol',
+      email: 'carol@example.com',
+      phone: '07111111111',
+      date: '2025-08-01',
+      time: '10:00',
+      paintersCount: 5,
+      sessionType: 'painting',
+      status: 'pending',
+      requestDate: '2025-07-01T10:00:00Z',
+    };
+
+    await expect(createPublicBooking(booking)).rejects.toThrow(/Not enough capacity/);
+  });
+});
+
+describe('updateBookingStatus', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('throws when staff is not provided', async () => {
+    await expect(updateBookingStatus('b-123', 'confirmed', null)).rejects.toThrow('Staff required');
+  });
+
+  it('calls admin-bookings edge function with updateStatus action', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true }),
+    } as Response);
+
+    const staff: Staff = {
+      id: 's-1',
+      name: 'Admin',
+      username: 'admin',
+      passwordHash: 'hash',
+      role: 'super_admin',
+      canUpdateStatus: true,
+      canEditBookings: true,
+      canAddWalkIns: true,
+      canDeleteBookings: true,
+      sessionToken: 'tok',
+      sessionExpiresAt: '',
+      createdAt: '',
+    };
+    await updateBookingStatus('b-123', 'confirmed', staff);
+
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/functions/v1/admin-bookings'),
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"action":"updateStatus"'),
+      }),
+    );
   });
 });
