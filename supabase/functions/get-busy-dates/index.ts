@@ -2,7 +2,10 @@ import { createClient } from 'supabase';
 import { isObject, isNonEmptyString, isInteger } from '../_shared/validate.ts';
 import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 
-const DEFAULT_MAX_PAINTERS: Record<'Putney' | 'Wimbledon', number> = { Putney: 30, Wimbledon: 50 };
+const PARTY_SESSION_TYPES = ['birthday-party', 'baby-shower-hen', 'corporate'];
+
+const DEFAULT_OPEN_CAPACITY: Record<'Putney' | 'Wimbledon', number> = { Putney: 32, Wimbledon: 65 };
+const DEFAULT_PARTY_CAPACITY: Record<'Putney' | 'Wimbledon', number> = { Putney: 20, Wimbledon: 40 };
 const SLOTS = ['10:00', '12:00', '14:00', '16:00'];
 
 const corsHeaders = {
@@ -45,7 +48,7 @@ Deno.serve(async (req) => {
 
     const { data, error } = await supabase
       .from('bookings')
-      .select('date, time, painters_count')
+      .select('date, time, painters_count, session_type')
       .eq('studio', studio)
       .gte('date', start)
       .lt('date', end)
@@ -59,27 +62,44 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: capacity } = await supabase
-      .from('capacity')
-      .select('max_painters')
-      .eq('studio', studio)
-      .eq('session_type', 'open')
-      .single();
+    const studioKey = studio as 'Putney' | 'Wimbledon';
 
-    const max = capacity?.max_painters ?? DEFAULT_MAX_PAINTERS[studio as 'Putney' | 'Wimbledon'] ?? 0;
-    const dateMap: Record<string, Record<string, number>> = {};
+    const { data: capacityRows } = await supabase
+      .from('capacity')
+      .select('session_type, max_painters')
+      .eq('studio', studio)
+      .in('session_type', ['open', 'party']);
+
+    const openRow = (capacityRows || []).find((r: { session_type: string }) => r.session_type === 'open');
+    const partyRow = (capacityRows || []).find((r: { session_type: string }) => r.session_type === 'party');
+
+    const openMax = openRow?.max_painters ?? DEFAULT_OPEN_CAPACITY[studioKey];
+    const partyMax = partyRow?.max_painters ?? DEFAULT_PARTY_CAPACITY[studioKey];
+
     interface BookingRow {
       date: string;
       time: string;
       painters_count: number;
+      session_type: string;
     }
+
+    const dateSlotBookings: Record<string, Record<string, BookingRow[]>> = {};
     (data || [] as BookingRow[]).forEach((row) => {
-      if (!dateMap[row.date]) dateMap[row.date] = {};
-      dateMap[row.date][row.time] = (dateMap[row.date][row.time] || 0) + (row.painters_count || 1);
+      if (!dateSlotBookings[row.date]) dateSlotBookings[row.date] = {};
+      if (!dateSlotBookings[row.date][row.time]) dateSlotBookings[row.date][row.time] = [];
+      dateSlotBookings[row.date][row.time].push(row);
     });
 
-    const busyDates = Object.entries(dateMap)
-      .filter(([_, slots]: [string, Record<string, number>]) => SLOTS.every((slot) => (slots[slot] || 0) >= max))
+    const busyDates = Object.entries(dateSlotBookings)
+      .filter(([_, slotMap]) =>
+        SLOTS.every((slot) => {
+          const slotRows = slotMap[slot] || [];
+          const hasParty = slotRows.some((r) => PARTY_SESSION_TYPES.includes(r.session_type ?? ''));
+          const max = hasParty ? partyMax : openMax;
+          const booked = slotRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
+          return booked >= max;
+        })
+      )
       .map(([date]) => date);
 
     return new Response(JSON.stringify({ busyDates }), {

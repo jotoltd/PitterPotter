@@ -244,10 +244,37 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
   return (
     <div id="contact-view" className="space-y-16 pb-20 pt-6">
       {/* Title Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 text-center space-y-4 max-w-3xl">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8 text-center space-y-4">
         <EditableText key="contact_tagline" page="contact" defaultValue="Secure Your Easel" adminMode={adminMode} className="text-xs tracking-widest text-[#1B2D3C] font-black uppercase block" />
-        <h1 className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight">{studio} Booking</h1>
-        <EditableText key="contact_subtitle" page="contact" defaultValue={`Complete your ${studio} studio booking below. For general questions, call or email us anytime.`} adminMode={adminMode} className="text-[#1B2D3C]/85 text-xs sm:text-sm font-medium leading-relaxed" />
+        <h1 className="font-heading text-4xl md:text-5xl font-black italic tracking-tight text-[#1B2D3C]">Book a Session</h1>
+        <EditableText key="contact_subtitle" page="contact" defaultValue="Choose your studio location and complete your booking below." adminMode={adminMode} className="text-[#1B2D3C]/85 text-xs sm:text-sm font-medium leading-relaxed" />
+      </div>
+
+      {/* Location Picker */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8">
+        <p className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C] mb-4 text-center">Choose Your Studio</p>
+        <div className="grid grid-cols-2 gap-4">
+          {(['Putney', 'Wimbledon'] as const).map((loc) => (
+            <button
+              key={loc}
+              type="button"
+              onClick={() => setStudio(loc)}
+              className={`p-5 border-2 text-left transition-all cursor-pointer rounded-xl ${
+                studio === loc
+                  ? 'border-[#1B2D3C] bg-[#1B2D3C] text-white'
+                  : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
+              }`}
+            >
+              <p className="font-heading font-black italic tracking-tight text-lg">{loc} Studio</p>
+              <p className={`text-[11px] font-semibold mt-1 ${studio === loc ? 'text-white/80' : 'text-[#1B2D3C]/60'}`}>
+                {loc === 'Putney' ? '234 Upper Richmond Road, SW15 6TG' : '52 Wimbledon Hill Road, SW19 7PA'}
+              </p>
+              <p className={`text-[11px] font-bold mt-2 ${studio === loc ? 'text-white/90' : 'text-[#1B2D3C]'}`}>
+                {loc === 'Putney' ? '020 87881635' : '020 37704499'}
+              </p>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Main Grid: Info Cards (Left) & Form (Right) */}

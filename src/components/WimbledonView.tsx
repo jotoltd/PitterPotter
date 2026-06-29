@@ -14,7 +14,7 @@ interface WimbledonViewProps {
   adminMode?: boolean;
 }
 
-const MAX_PAINTERS = 50;
+const MAX_PAINTERS = 65;
 
 const OPENING_HOURS = [
   { day: 'Monday', time: 'Closed (except school holidays)' },
@@ -24,9 +24,9 @@ const OPENING_HOURS = [
 
 function getTimeSlots(date: Date): string[] {
   const day = getDay(date);
-  // Tue - Sun: 10am - 6pm, 4 x 2-hour slots
+  // Tue - Sun: 10am - 6pm, 2-hour sessions starting every 30 mins
   if (day >= 2 || day === 0) {
-    return ['10:00', '12:00', '14:00', '16:00'];
+    return ['10:00', '10:30', '12:00', '12:30', '14:00', '14:30', '16:00', '16:30'];
   }
   return [];
 }

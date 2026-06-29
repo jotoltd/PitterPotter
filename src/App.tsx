@@ -4,14 +4,17 @@
  */
 
 import { useState, useEffect } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomeView from './components/HomeView';
+import BabyPrintsView from './components/BabyPrintsView';
 import PartiesView from './components/PartiesView';
 import PricingView from './components/PricingView';
 import FAQsView from './components/FAQsView';
 import GalleryView from './components/GalleryView';
 import ContactView from './components/ContactView';
+import ContactInfoView from './components/ContactInfoView';
 import BookView from './components/BookView';
 import AdminLoginView from './components/AdminLoginView';
 import AdminDashboardView from './components/AdminDashboardView';
@@ -57,9 +60,23 @@ export default function App() {
 
     const params = new URLSearchParams(window.location.search);
     const pageParam = params.get('page') as Page | null;
-    if (pageParam && ['gift-card-success', 'buy-gift-card'].includes(pageParam)) {
+    const validPages: Page[] = ['home', 'baby-prints', 'parties', 'pricing', 'faqs', 'gallery', 'contact', 'contact-info', 'book', 'gift-cards', 'buy-gift-card', 'gift-card-success', 'gift-card-balance', 'putney', 'wimbledon', 'admin'];
+    if (pageParam && validPages.includes(pageParam)) {
       setCurrentPage(pageParam);
     }
+
+    const handlePopState = () => {
+      const updatedParams = new URLSearchParams(window.location.search);
+      const updatedPage = updatedParams.get('page') as Page | null;
+      if (updatedPage && validPages.includes(updatedPage)) {
+        setCurrentPage(updatedPage);
+      } else {
+        setCurrentPage('home');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
  useEffect(() => {
@@ -72,6 +89,16 @@ export default function App() {
  useEffect(() => {
  window.scrollTo(0, 0);
  }, [currentPage]);
+
+ useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const currentUrlPage = params.get('page');
+    const targetPage = currentPage === 'home' ? null : currentPage;
+    if (currentUrlPage !== targetPage) {
+      const newUrl = targetPage ? `${window.location.pathname}?page=${targetPage}` : window.location.pathname;
+      window.history.pushState({}, '', newUrl);
+    }
+  }, [currentPage]);
 
  const handleAdminLogin = (staff: Staff) => {
     setCurrentStaff(staff);
@@ -100,6 +127,8 @@ export default function App() {
  switch (currentPage) {
  case 'home':
  return <HomeView setCurrentPage={setCurrentPage} setVisitPreset={handleVisitPreset} adminMode={adminMode} />;
+ case 'baby-prints':
+ return <BabyPrintsView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'parties':
  return <PartiesView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'pricing':
@@ -107,9 +136,11 @@ export default function App() {
  case 'gallery':
  return <GalleryView adminMode={adminMode} />;
  case 'faqs':
- return <FAQsView adminMode={adminMode} />;
+ return <FAQsView adminMode={adminMode} setCurrentPage={setCurrentPage} />;
  case 'contact':
  return <ContactView initialPainters={paintersCountPreset} adminMode={adminMode} />;
+ case 'contact-info':
+ return <ContactInfoView setCurrentPage={setCurrentPage} />;
  case 'book':
  return <BookView setCurrentPage={setCurrentPage} />;
  case 'gift-cards':
@@ -156,6 +187,17 @@ export default function App() {
 
  {/* Main Pages Content Window with graceful layout transitions */}
  <main className="flex-grow">
+ {currentPage !== 'home' && currentPage !== 'admin' && (
+ <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-4">
+ <button
+ onClick={() => setCurrentPage('home')}
+ className="inline-flex items-center gap-2 text-sm text-[#1B2D3C] hover:text-[#1B2D3C]/70 transition-colors cursor-pointer"
+ >
+ <ArrowLeft className="w-4 h-4" />
+ Back
+ </button>
+ </div>
+ )}
  <AnimatePresence mode="wait">
  <motion.div
  key={currentPage}

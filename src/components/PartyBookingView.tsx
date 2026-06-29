@@ -6,6 +6,7 @@ import { Clock, Calendar as CalendarIcon, ArrowRight, Users, MapPin, Gift, Heart
 import { useToast } from './ToastContext';
 import 'react-day-picker/dist/style.css';
 import { getRemainingCapacity, createPublicBooking, getBusyDates } from '../lib/bookings';
+import { Images } from '../images';
 
 type PartyType = 'birthday' | 'baby-shower-hen' | 'corporate';
 type Studio = 'Putney' | 'Wimbledon';
@@ -37,12 +38,14 @@ const PARTY_INFO: Record<PartyType, { title: string; price: string; description:
   },
 };
 
-const MAX_PAINTERS: Record<Studio, number> = { Putney: 30, Wimbledon: 25 };
+const MAX_PAINTERS: Record<Studio, number> = { Putney: 20, Wimbledon: 14 };
+const PARTY_GUEST_LIMIT: Record<Studio, number> = { Putney: 16, Wimbledon: 14 };
 
 function getTimeSlots(date: Date): string[] {
   const day = getDay(date);
+  // Party slots: 2-hour blocks
   if (day >= 2 || day === 0) {
-    return ['10:00', '12:00', '14:00', '16:00'];
+    return ['10:00-12:00', '12:30-14:30', '15:00-17:00'];
   }
   return [];
 }
@@ -56,6 +59,8 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
+  const [childAge, setChildAge] = useState<number | ''>('');
+  const [partyArea, setPartyArea] = useState<'Area 1' | 'Area 2'>('Area 1');
   const [slotCapacity, setSlotCapacity] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -116,6 +121,15 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
     }
 
     const guestCount = guests === '' ? 1 : guests;
+    const partyLimit = PARTY_GUEST_LIMIT[studio];
+    if (guestCount > partyLimit) {
+      if (studio === 'Putney') {
+        setError(`Putney can accommodate up to 16 guests for a party. For larger groups, please call us to discuss arrangements.`);
+      } else {
+        setError(`This studio can accommodate up to ${partyLimit} guests for a party.`);
+      }
+      return;
+    }
     const remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time);
     if (guestCount > remaining) {
       setError(`This session only has room for ${remaining} more guest${remaining === 1 ? '' : 's'}. Please choose a different time or reduce the group size.`);
@@ -140,7 +154,13 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
       time,
       paintersCount: guestCount,
       sessionType: sessionTypeMap[partyType],
-      notes: `[${info.title}] ${notes}`.trim(),
+      notes: studio === 'Wimbledon'
+        ? (partyType === 'birthday' && childAge !== ''
+          ? `[${info.title}] ${partyArea} | Age: ${childAge} | ${notes}`.trim()
+          : `[${info.title}] ${partyArea} | ${notes}`.trim())
+        : (partyType === 'birthday' && childAge !== '' 
+          ? `[${info.title}] Age: ${childAge} | ${notes}`.trim()
+          : `[${info.title}] ${notes}`.trim()),
       status: 'pending',
       source: 'online',
       requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
@@ -188,7 +208,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
               </button>
             </p>
             <p><span className="font-bold">Event:</span> {info.title}</p>
-            <p><span className="font-bold">Studio:</span> {studio}</p>
+            <p><span className="font-bold">Studio:</span> {studio}{studio === 'Wimbledon' && ` - ${partyArea}`}</p>
             <p><span className="font-bold">Date:</span> {date && format(date, 'EEEE, do MMMM yyyy')}</p>
             <p><span className="font-bold">Time:</span> {time}</p>
             <p><span className="font-bold">Guests:</span> {guests === '' ? 1 : guests}</p>
@@ -258,26 +278,104 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
               <Clock className="w-5 h-5 text-[#1B2D3C]" />
               <h3 className="font-heading text-lg font-black text-[#1B2D3C]">Choose a Time Slot</h3>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {timeSlots.map((slot) => (
-                <button
-                  key={slot}
-                  onClick={() => setTime(slot)}
-                  disabled={(slotCapacity[slot] ?? MAX_PAINTERS[studio]) === 0}
-                  className={`py-3 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer rounded-lg ${
-                    time === slot
-                      ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
-                      : (slotCapacity[slot] ?? MAX_PAINTERS[studio]) === 0
-                        ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
-                        : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
-                  }`}
-                >
-                  {slot}
-                  <span className="block text-[9px] font-normal normal-case tracking-normal">
-                    {slotCapacity[slot] ?? MAX_PAINTERS[studio]} spots left
-                  </span>
-                </button>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {timeSlots.map((slot) => {
+                const remaining = slotCapacity[slot] ?? MAX_PAINTERS[studio];
+                const isFull = remaining === 0;
+                const isLimited = remaining > 0 && remaining <= 5;
+                
+                return (
+                  <button
+                    key={slot}
+                    onClick={() => setTime(slot)}
+                    disabled={isFull}
+                    className={`py-3 px-2 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer rounded-lg ${
+                      time === slot
+                        ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                        : isFull
+                          ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
+                          : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
+                    }`}
+                  >
+                    <div className="font-bold text-sm">{slot}</div>
+                    <div className={`text-[11px] font-semibold mt-1 ${
+                      time === slot 
+                        ? 'text-white/90' 
+                        : isFull 
+                          ? 'text-stone-400'
+                          : isLimited 
+                            ? 'text-orange-600' 
+                            : 'text-[#1B2D3C]/60'
+                    }`}>
+                      {isFull ? 'FULLY BOOKED' : `${remaining} ${remaining === 1 ? 'space' : 'spaces'} left`}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Party Area (Wimbledon Only) */}
+        {studio === 'Wimbledon' && (
+          <div className="space-y-4">
+            <h3 className="font-heading text-lg font-black text-[#1B2D3C]">Choose Party Area</h3>
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+              <div className="flex gap-3">
+                <div className="text-blue-600 text-xl flex-shrink-0">ℹ️</div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-blue-900">Two Separate Party Areas</p>
+                  <p className="text-xs font-medium text-blue-800 leading-relaxed">
+                    Wimbledon has 2 distinct party spaces. Another celebration may be happening in the other area at the same time. Both areas are separately enclosed for privacy.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button
+                onClick={() => setPartyArea('Area 1')}
+                className={`overflow-hidden border-2 transition-all cursor-pointer rounded-lg ${
+                  partyArea === 'Area 1'
+                    ? 'border-[#1B2D3C] ring-2 ring-[#1B2D3C] ring-offset-2'
+                    : 'border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
+                }`}
+              >
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img
+                    src={Images.wimbledonGallery[1]}
+                    alt="Party Area 1"
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div className={`py-3 px-4 text-sm font-bold uppercase tracking-wider ${
+                  partyArea === 'Area 1' ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]'
+                }`}>
+                  Area 1
+                </div>
+              </button>
+              <button
+                onClick={() => setPartyArea('Area 2')}
+                className={`overflow-hidden border-2 transition-all cursor-pointer rounded-lg ${
+                  partyArea === 'Area 2'
+                    ? 'border-[#1B2D3C] ring-2 ring-[#1B2D3C] ring-offset-2'
+                    : 'border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
+                }`}
+              >
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img
+                    src={Images.wimbledonGallery[3]}
+                    alt="Party Area 2"
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div className={`py-3 px-4 text-sm font-bold uppercase tracking-wider ${
+                  partyArea === 'Area 2' ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]'
+                }`}>
+                  Area 2
+                </div>
+              </button>
             </div>
           </div>
         )}
@@ -291,22 +389,36 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
           <input
             type="number"
             min={1}
-            max={30}
+            max={PARTY_GUEST_LIMIT[studio]}
             value={guests}
-            onChange={(e) => setGuests(e.target.value === '' ? '' : Math.max(1, Math.min(30, parseInt(e.target.value) || 1)))}
+            onChange={(e) => setGuests(e.target.value === '' ? '' : Math.max(1, Math.min(PARTY_GUEST_LIMIT[studio], parseInt(e.target.value) || 1)))}
             className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
           />
+          {studio === 'Putney' && (
+            <p className="text-[10px] text-[#1B2D3C]/60 font-medium">
+              Max 16 guests for a party at Putney. For larger groups, please call us.
+            </p>
+          )}
+          {studio === 'Wimbledon' && (
+            <p className="text-[10px] text-[#1B2D3C]/60 font-medium">
+              Each party area accommodates up to 14 guests.
+            </p>
+          )}
         </div>
 
         {/* Summary */}
         {date && time && (
-          <div className="bg-[#D6E2E9]/50 p-4 rounded-lg text-sm font-bold text-[#1B2D3C] space-y-1">
-            <p>{info.title} · {studio} Studio</p>
-            <p>{format(date, 'EEEE, do MMMM yyyy')} · {time} – {parseInt(time.split(':')[0], 10) + 2}:00</p>
+          <div className="bg-[#D6E2E9]/50 p-4 rounded-lg text-sm font-bold text-[#1B2D3C] space-y-2">
+            <p>{info.title} · {studio} Studio{studio === 'Wimbledon' && ` - ${partyArea}`}</p>
+            <p>{format(date, 'EEEE, do MMMM yyyy')} · {time}</p>
             <p>{guests === '' ? 1 : guests} guest{(guests === '' ? 1 : guests) !== 1 ? 's' : ''}</p>
-            <p className="text-[10px] font-normal text-[#1B2D3C]/60">
-              {(slotCapacity[time] ?? MAX_PAINTERS[studio])} spaces remaining for this session
-            </p>
+            <div className={`inline-block px-2 py-1 rounded text-xs font-bold ${
+              (slotCapacity[time] ?? MAX_PAINTERS[studio]) <= 5 
+                ? 'bg-orange-100 text-orange-700' 
+                : 'bg-green-100 text-green-700'
+            }`}>
+              ✓ {(slotCapacity[time] ?? MAX_PAINTERS[studio])} space{(slotCapacity[time] ?? MAX_PAINTERS[studio]) !== 1 ? 's' : ''} available
+            </div>
           </div>
         )}
 
@@ -344,6 +456,20 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
                 placeholder="07xxx xxxxxx"
               />
             </div>
+            {partyType === 'birthday' && (
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Birthday Child's Age</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={childAge}
+                  onChange={(e) => setChildAge(e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full px-3 py-2.5 border border-[#1B2D3C]/20 text-sm text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  placeholder="e.g. 7"
+                />
+              </div>
+            )}
             <div>
               <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Additional Notes</label>
               <textarea
@@ -351,7 +477,9 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage }: 
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 className="w-full px-3 py-2.5 border border-[#1B2D3C]/20 text-sm text-[#1B2D3C] font-medium rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 resize-none"
-                placeholder="Any special requests, dietary requirements, age of birthday child, etc."
+                placeholder={partyType === 'birthday' 
+                  ? "Any special requests or additional information..."
+                  : "Any special requests, dietary requirements, etc."}
               />
             </div>
           </div>

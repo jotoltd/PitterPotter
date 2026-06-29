@@ -1,4 +1,4 @@
-import { MapPin, Facebook, Instagram } from 'lucide-react';
+import { MapPin, Phone, Facebook, Instagram } from 'lucide-react';
 import { Page } from '../types';
 import { Images } from '../images';
 
@@ -37,7 +37,8 @@ export default function Footer({ setCurrentPage }: FooterProps) {
                 <div>
                   <p className="font-semibold text-[#1B2D3C]">Putney</p>
                   <p className="text-xs">234 Upper Richmond Road<br />SW15 6TG</p>
-                  <p className="text-xs font-semibold mt-1">
+                  <p className="text-xs font-semibold mt-1 flex items-center gap-1.5">
+                    <Phone className="w-3 h-3 shrink-0 text-[#1B2D3C]" />
                     <a href="tel:02087881635" className="hover:text-[#1B2D3C] transition-colors">020 87881635</a>
                   </p>
                 </div>
@@ -47,7 +48,8 @@ export default function Footer({ setCurrentPage }: FooterProps) {
                 <div>
                   <p className="font-semibold text-[#1B2D3C]">Wimbledon</p>
                   <p className="text-xs">52 Wimbledon Hill Road<br />SW19 7PA</p>
-                  <p className="text-xs font-semibold mt-1">
+                  <p className="text-xs font-semibold mt-1 flex items-center gap-1.5">
+                    <Phone className="w-3 h-3 shrink-0 text-[#1B2D3C]" />
                     <a href="tel:02037704499" className="hover:text-[#1B2D3C] transition-colors">020 37704499</a>
                   </p>
                 </div>

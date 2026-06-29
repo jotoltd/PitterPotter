@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { MapPin, Phone, ArrowRight } from 'lucide-react';
+import { MapPin, Phone, Clock, ArrowRight } from 'lucide-react';
 import { Page } from '../types';
 import { Images } from '../images';
 import EditableText from './EditableText';
@@ -53,25 +53,27 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  adminMode={adminMode}
  />
  </div>
+ <div className="mb-8">
  <EditableText
  key="hero_subtitle"
  page="home"
  defaultValue="Bright, welcoming ceramic studios in South West London. Choose from 150+ shapes, paint with premium glazes, and we'll fire your masterpiece."
- className="text-[#1B2D3C] text-lg sm:text-xl leading-relaxed mb-8 max-w-lg"
+ className="text-[#1B2D3C] text-lg sm:text-xl leading-relaxed max-w-lg"
  adminMode={adminMode}
  />
+ </div>
  <div className="flex flex-wrap gap-4">
  <button
  id="hero-book-button"
  onClick={() => setCurrentPage('book')}
- className="px-7 py-3.5 bg-[#FFF1E6] text-[#1B2D3C] font-bold text-sm uppercase tracking-widest border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
+ className="px-7 py-3.5 bg-white text-[#1B2D3C] font-bold text-sm tracking-wide border border-[#DBE7E4]/30 hover:border-[#DBE7E4] transition-all cursor-pointer"
  >
  Book a Session
  </button>
  <button
  id="hero-contact-button"
- onClick={() => setCurrentPage('contact')}
- className="px-7 py-3.5 bg-white text-[#1B2D3C] font-bold text-sm uppercase tracking-widest border border-[#DBE7E4]/30 hover:border-[#DBE7E4] transition-all cursor-pointer"
+ onClick={() => setCurrentPage('contact-info')}
+ className="px-7 py-3.5 bg-white text-[#1B2D3C] font-bold text-sm tracking-wide border border-[#DBE7E4]/30 hover:border-[#DBE7E4] transition-all cursor-pointer"
  >
  Contact Us
  </button>
@@ -96,13 +98,13 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  />
  </div>
  <div className="space-y-4">
- <h2 className="font-heading text-2xl lg:text-3xl font-black text-[#1B2D3C]">
+ <h2 className="font-heading text-2xl lg:text-3xl font-black tracking-tight text-[#1B2D3C]">
  Putney Studio
  </h2>
- <p className="text-sm text-[#1B2D3C]/80 leading-relaxed">
+ <p className="card-body text-[#1B2D3C]/80 leading-relaxed">
  Our bright, airy flagship studio on Upper Richmond Road, perfect for individuals, families, and creative parties.
  </p>
- <div className="space-y-2 text-sm text-[#1B2D3C]/80">
+ <div className="space-y-2 card-body text-[#1B2D3C]/80">
  <div className="flex items-start gap-2.5">
  <MapPin className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
  <span>234 Upper Richmond Road, Putney SW15 6TG</span>
@@ -110,6 +112,16 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  <div className="flex items-start gap-2.5">
  <Phone className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
  <span>020 87881635</span>
+ </div>
+ <div className="flex items-start gap-2.5">
+ <Clock className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
+ <table className="text-xs w-full">
+ <tbody>
+ <tr><td className="pr-3 font-semibold">Monday</td><td className="text-[#1B2D3C]/60">Closed (except school holidays)</td></tr>
+ <tr><td className="pr-3 font-semibold">Tuesday – Saturday</td><td>10am – 6pm</td></tr>
+ <tr><td className="pr-3 font-semibold">Sunday</td><td>11am – 5pm</td></tr>
+ </tbody>
+ </table>
  </div>
  </div>
  <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#1B2D3C] pt-2">
@@ -131,13 +143,13 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  />
  </div>
  <div className="space-y-4">
- <h2 className="font-heading text-2xl lg:text-3xl font-black text-[#1B2D3C]">
+ <h2 className="font-heading text-2xl lg:text-3xl font-black tracking-tight text-[#1B2D3C]">
  Wimbledon Studio
  </h2>
- <p className="text-sm text-[#1B2D3C]/80 leading-relaxed">
+ <p className="card-body text-[#1B2D3C]/80 leading-relaxed">
  Our cozy, high-street location on Wimbledon Hill Road, ideal for baby clay imprints and friendly gatherings.
  </p>
- <div className="space-y-2 text-sm text-[#1B2D3C]/80">
+ <div className="space-y-2 card-body text-[#1B2D3C]/80">
  <div className="flex items-start gap-2.5">
  <MapPin className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
  <span>52 Wimbledon Hill Road, Wimbledon SW19 7PA</span>
@@ -145,6 +157,16 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  <div className="flex items-start gap-2.5">
  <Phone className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
  <span>020 37704499</span>
+ </div>
+ <div className="flex items-start gap-2.5">
+ <Clock className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
+ <table className="text-xs w-full">
+ <tbody>
+ <tr><td className="pr-3 font-semibold">Monday</td><td className="text-[#1B2D3C]/60">Closed (except school holidays)</td></tr>
+ <tr><td className="pr-3 font-semibold">Tuesday – Saturday</td><td>10am – 6pm</td></tr>
+ <tr><td className="pr-3 font-semibold">Sunday</td><td>11am – 5pm</td></tr>
+ </tbody>
+ </table>
  </div>
  </div>
  <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#1B2D3C] pt-2">
@@ -158,19 +180,20 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  {/* What We Do */}
  <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
  <div className="text-center md:text-left space-y-2 mb-8">
- <span className="text-xs tracking-widest text-[#1B2D3C] font-black uppercase block">What We Do</span>
- <h2 className="font-heading text-3xl md:text-4xl font-black text-[#1B2D3C]">Creative Studio Sessions</h2>
+ <span className="text-xs tracking-wide text-[#1B2D3C] font-black block">What We Do</span>
+ <h2 className="font-heading text-3xl md:text-4xl font-black tracking-tight text-[#1B2D3C]">Creative Studio Sessions</h2>
  </div>
  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
  {[
- { title: 'Paint Your Own Pottery', desc: 'Choose from 150+ shapes and paint with premium glazes.', image: Images.potteryGallery },
- { title: 'Baby Prints', desc: 'Capture tiny hand and foot impressions in clay keepsakes.', image: Images.clayImprint },
- { title: 'Parties & Events', desc: 'Birthdays, hen parties, baby showers and corporate groups.', image: Images.birthdayParties },
+ { title: 'Paint Your Own Pottery', desc: 'Choose from 150+ shapes and paint with premium glazes.', image: Images.potteryGallery, page: 'pricing' as Page },
+ { title: 'Baby Prints', desc: 'Capture tiny hand and foot impressions in clay keepsakes.', image: Images.clayImprint, page: 'baby-prints' as Page },
+ { title: 'Parties & Events', desc: 'Birthdays, hen parties, baby showers and corporate groups.', image: Images.birthdayParties, page: 'parties' as Page },
  { title: 'More Workshops', desc: 'Coming soon...', badge: 'Coming Soon', image: Images.studioHero },
  ].map((item) => (
  <div
  key={item.title}
- className="text-left bg-white shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col"
+ onClick={() => item.page && setCurrentPage(item.page)}
+ className={`text-left bg-white shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col ${item.page ? 'cursor-pointer' : ''}`}
  >
  <div className="relative aspect-[4/3] overflow-hidden">
  <img
@@ -186,8 +209,8 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  )}
  </div>
  <div className="p-6 flex-1">
- <h3 className="font-heading text-lg font-black text-[#1B2D3C] mb-2">{item.title}</h3>
- <p className="text-xs text-[#1B2D3C] leading-relaxed">{item.desc}</p>
+ <h3 className="font-heading text-lg font-black tracking-tight text-[#1B2D3C] mb-2">{item.title}</h3>
+ <p className="card-body text-[#1B2D3C] leading-relaxed">{item.desc}</p>
  </div>
  </div>
  ))}

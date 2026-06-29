@@ -2,7 +2,10 @@ import { createClient } from 'supabase';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 
-const DEFAULT_MAX_PAINTERS: Record<'Putney' | 'Wimbledon', number> = { Putney: 30, Wimbledon: 50 };
+const PARTY_SESSION_TYPES = ['birthday-party', 'baby-shower-hen', 'corporate'];
+
+const DEFAULT_OPEN_CAPACITY: Record<'Putney' | 'Wimbledon', number> = { Putney: 32, Wimbledon: 65 };
+const DEFAULT_PARTY_CAPACITY: Record<'Putney' | 'Wimbledon', number> = { Putney: 20, Wimbledon: 40 };
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,7 +45,7 @@ Deno.serve(async (req) => {
 
     const { data, error } = await supabase
       .from('bookings')
-      .select('painters_count')
+      .select('painters_count, session_type')
       .eq('studio', studio)
       .eq('date', date)
       .eq('time', time)
@@ -56,18 +59,27 @@ Deno.serve(async (req) => {
       });
     }
 
-    const booked = (data || []).reduce((sum: number, row: { painters_count?: number }) => sum + (row.painters_count || 1), 0);
+    const rows = data || [];
+    const hasPartyBooking = rows.some((r: { session_type?: string }) => PARTY_SESSION_TYPES.includes(r.session_type ?? ''));
+    const booked = rows.reduce((sum: number, row: { painters_count?: number }) => sum + (row.painters_count || 1), 0);
 
-    const { data: capacity } = await supabase
+    const studioKey = studio as 'Putney' | 'Wimbledon';
+
+    const { data: capacityRows } = await supabase
       .from('capacity')
-      .select('max_painters')
+      .select('session_type, max_painters')
       .eq('studio', studio)
-      .eq('session_type', 'open')
-      .single();
+      .in('session_type', ['open', 'party']);
 
-    const max = capacity?.max_painters ?? DEFAULT_MAX_PAINTERS[studio as 'Putney' | 'Wimbledon'] ?? 0;
+    const openRow = (capacityRows || []).find((r: { session_type: string }) => r.session_type === 'open');
+    const partyRow = (capacityRows || []).find((r: { session_type: string }) => r.session_type === 'party');
 
-    return new Response(JSON.stringify({ booked, remaining: max - booked, max }), {
+    const openMax = openRow?.max_painters ?? DEFAULT_OPEN_CAPACITY[studioKey];
+    const partyMax = partyRow?.max_painters ?? DEFAULT_PARTY_CAPACITY[studioKey];
+
+    const max = hasPartyBooking ? partyMax : openMax;
+
+    return new Response(JSON.stringify({ booked, remaining: max - booked, max, hasPartyBooking }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {

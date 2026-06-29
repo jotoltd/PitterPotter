@@ -1,7 +1,7 @@
 import { BookingInquiry, Staff } from '../types';
 import { supabase, isSupabaseEnabled } from './supabase';
 
-const DEFAULT_MAX_PAINTERS: Record<'Putney' | 'Wimbledon', number> = { Putney: 30, Wimbledon: 50 };
+const DEFAULT_MAX_PAINTERS: Record<'Putney' | 'Wimbledon', number> = { Putney: 32, Wimbledon: 65 };
 
 const functionUrl = (name: string) => `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`;
 
@@ -120,6 +120,30 @@ export async function createPublicBooking(booking: BookingInquiry): Promise<void
   if (error) {
     console.error('Failed to create booking:', error);
     throw new Error('Failed to create booking');
+  }
+
+  try {
+    await fetch(functionUrl('notify-admin-booking'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        bookingId: booking.id,
+        name: booking.name,
+        email: booking.email,
+        phone: booking.phone,
+        studio: booking.studio,
+        date: booking.date,
+        time: booking.time,
+        paintersCount: booking.paintersCount,
+        sessionType: booking.sessionType,
+        notes: booking.notes,
+      }),
+    });
+  } catch (err) {
+    console.error('Failed to send admin notification:', err);
   }
 }
 

@@ -153,10 +153,14 @@ CREATE POLICY "Allow public read capacity" ON capacity
   USING (true);
 
 -- Seed default capacity
+-- Putney: 10 tables (32 guests open), 6 tables when party is booked (20 guests remaining for open)
+-- Wimbledon: 17 tables (65 guests open), when party is booked capacity drops to 40 guests
 INSERT INTO capacity (studio, session_type, max_painters)
 VALUES
-  ('Putney', 'open', 30),
-  ('Wimbledon', 'open', 50)
+  ('Putney', 'open', 32),
+  ('Putney', 'party', 20),
+  ('Wimbledon', 'open', 65),
+  ('Wimbledon', 'party', 40)
 ON CONFLICT (studio, session_type) DO NOTHING;
 
 -- Audit log for staff actions

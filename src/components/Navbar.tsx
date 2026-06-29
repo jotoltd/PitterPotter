@@ -17,11 +17,13 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
 
   const navItems: { label: string; value: Page }[] = [
     { label: 'Home', value: 'home' },
+    { label: 'Baby Prints', value: 'baby-prints' },
+    { label: 'Parties & Events', value: 'parties' },
     { label: 'Prices', value: 'pricing' },
     { label: 'Gift Cards', value: 'buy-gift-card' },
-    { label: 'Parties & Events', value: 'parties' },
-    { label: 'FAQ', value: 'faqs' },
+    { label: 'FAQs', value: 'faqs' },
     { label: 'Gallery', value: 'gallery' },
+    { label: 'Contact', value: 'contact-info' },
   ];
 
   const handleNavClick = (page: Page) => {
@@ -56,7 +58,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                   key={item.value}
                   id={`nav-link-${item.value}`}
                   onClick={() => handleNavClick(item.value)}
-                  className={`group px-3.5 py-2 text-[11px] font-bold uppercase tracking-widest transition-all relative ${
+                  className={`group px-3.5 py-2 text-[11px] font-normal uppercase tracking-widest transition-all relative ${
                     isActive(item.value)
                       ? 'text-[#1B2D3C]'
                       : 'text-[#1B2D3C] hover:text-[#1B2D3C]'
@@ -69,14 +71,14 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
               <button
                 id="cta-book-session"
                 onClick={() => handleNavClick('book')}
-                className="ml-4 px-5 py-2.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-[11px] uppercase tracking-widest border border-[#1B2D3C] hover:bg-[#D6E2E9] transition-all cursor-pointer"
+                className="ml-4 px-5 py-2.5 bg-[#DBE7E4] text-[#1B2D3C] font-normal text-[11px] uppercase tracking-widest border border-[#1B2D3C] hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
                 Booking
               </button>
               {currentStaff && (
                 <button
                   onClick={() => setAdminMode(!adminMode)}
-                  className={`ml-3 px-3 py-2.5 text-[11px] font-bold uppercase tracking-widest border transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`ml-3 px-3 py-2.5 text-[11px] font-normal uppercase tracking-widest border transition-all cursor-pointer flex items-center gap-1.5 ${
                     adminMode
                       ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
                       : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
@@ -111,7 +113,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                   key={item.value}
                   id={`mobile-nav-link-${item.value}`}
                   onClick={() => handleNavClick(item.value)}
-                  className={`w-full text-left px-5 py-4 text-lg font-black uppercase tracking-widest transition-all ${
+                  className={`w-full text-left px-5 py-4 text-lg font-normal uppercase tracking-widest transition-all ${
                     isActive(item.value)
                       ? 'bg-[#D6E2E9] text-[#1B2D3C] border border-[#1B2D3C] pl-6'
                       : 'text-[#1B2D3C] hover:bg-[#D6E2E9]/20 pl-5'
@@ -124,7 +126,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                 <button
                   id="mobile-cta-book"
                   onClick={() => handleNavClick('book')}
-                  className="w-full py-4 bg-[#DBE7E4] text-[#1B2D3C] font-black text-lg uppercase tracking-widest text-center border border-[#1B2D3C] transition-all cursor-pointer"
+                  className="w-full py-4 bg-[#DBE7E4] text-[#1B2D3C] font-normal text-lg uppercase tracking-widest text-center border border-[#1B2D3C] transition-all cursor-pointer"
                 >
                   Book Studio
                 </button>
@@ -142,7 +144,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
             className="flex flex-col items-center justify-center py-3 px-4 flex-1 min-w-0 text-[#1B2D3C] transition-all cursor-pointer active:bg-[#FFFFFF]"
           >
             <Phone className="w-5 h-5 mb-1" />
-            <span className="text-[9px] font-bold uppercase tracking-wider truncate w-full text-center">Call us</span>
+            <span className="text-[9px] font-normal uppercase tracking-wider truncate w-full text-center">Call us</span>
           </button>
           <div className="w-px h-8 bg-[#1B2D3C]/10" />
           <button
@@ -150,7 +152,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
             className="flex flex-col items-center justify-center py-3 px-4 flex-1 min-w-0 bg-[#DBE7E4] text-[#1B2D3C] transition-all cursor-pointer active:bg-[#D6E2E9]"
           >
             <Calendar className="w-5 h-5 mb-1" />
-            <span className="text-[9px] font-bold uppercase tracking-wider truncate w-full text-center">Book</span>
+            <span className="text-[9px] font-normal uppercase tracking-wider truncate w-full text-center">Book</span>
           </button>
         </div>
       </div>
@@ -159,7 +161,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
         <div className="md:hidden fixed inset-0 z-[60] bg-[#1B2D3C]/60 flex items-end justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-t-lg overflow-hidden shadow-lg animate-in slide-in-from-bottom-10">
             <div className="p-4 border-b border-[#1B2D3C]/10 flex justify-between items-center">
-              <p className="font-heading text-lg font-black text-[#1B2D3C]">Call us</p>
+              <p className="font-heading text-lg font-normal text-[#1B2D3C]">Call us</p>
               <button
                 onClick={() => setShowCallOptions(false)}
                 className="p-2 hover:bg-[#FFFFFF] transition-colors cursor-pointer"
@@ -171,7 +173,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
               <a
                 href="tel:02087881635"
                 onClick={() => setShowCallOptions(false)}
-                className="block w-full py-3 px-4 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-sm border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all"
+                className="block w-full py-3 px-4 bg-[#FFFFFF] text-[#1B2D3C] font-normal text-sm border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all"
               >
                 <span className="block text-[10px] text-[#1B2D3C] uppercase tracking-wider mb-1">Putney Studio</span>
                 020 8788 1635
@@ -179,14 +181,14 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
               <a
                 href="tel:02037704499"
                 onClick={() => setShowCallOptions(false)}
-                className="block w-full py-3 px-4 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-sm border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all"
+                className="block w-full py-3 px-4 bg-[#FFFFFF] text-[#1B2D3C] font-normal text-sm border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all"
               >
                 <span className="block text-[10px] text-[#1B2D3C] uppercase tracking-wider mb-1">Wimbledon Studio</span>
                 020 3770 4499
               </a>
               <button
                 onClick={() => setShowCallOptions(false)}
-                className="w-full py-3 text-[#1B2D3C] font-bold text-xs uppercase tracking-wider hover:bg-[#FFFFFF] transition-all cursor-pointer"
+                className="w-full py-3 text-[#1B2D3C] font-normal text-xs uppercase tracking-wider hover:bg-[#FFFFFF] transition-all cursor-pointer"
               >
                 Cancel
               </button>

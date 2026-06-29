@@ -47,11 +47,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+
 /* Force light weight for central light heading aesthetic */
 h1, h2, h3, h4, h5, h6, .font-heading {
   font-family: var(--font-heading);
   font-weight: 500 !important;
   line-height: 1.2;
+}
+
+.card-body {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.6;
 }
 
 h1 {
