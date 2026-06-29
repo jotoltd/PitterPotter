@@ -29,10 +29,7 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
       {/* Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 text-center max-w-3xl">
         <div className="mb-2">
-          <EditableText key="pricing_title" page="pricing" defaultValue="Prices" adminMode={adminMode} className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight" />
-        </div>
-        <div className="mt-6">
-          <EditableText key="pricing_subtitle" page="pricing" defaultValue="Click any item to see an image and full details." adminMode={adminMode} className="text-[#1B2D3C]/85 text-xs sm:text-sm font-medium leading-relaxed" />
+          <EditableText key="pricing_title" page="pricing" defaultValue="Prices" adminMode={adminMode} className="font-heading text-4xl md:text-5xl text-[#1B2D3C] tracking-tight" />
         </div>
       </div>
 
@@ -49,8 +46,8 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
                   }}
                   className={`w-full text-left px-6 py-5 hover:bg-[#D6E2E9]/40 transition-all flex justify-between items-center gap-6 cursor-pointer ${idx % 2 === 1 ? 'bg-[#F8FAFC]' : 'bg-white'}`}
                 >
-                  <p className="font-bold text-[#1B2D3C] text-base md:text-lg">{item.name}</p>
-                  <span className="text-base md:text-lg font-black text-[#1B2D3C] shrink-0">{item.price}</span>
+                  <p className="text-[#1B2D3C] text-base md:text-lg">{item.name}</p>
+                  <span className="text-base md:text-lg text-[#1B2D3C] shrink-0">{item.price}</span>
               </button>
             ))}
           </div>
@@ -110,14 +107,14 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
             <div className="p-6 space-y-4">
               <div className="flex justify-between items-start gap-4">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] mb-1">{categoryLabel(selectedItem.category)}</p>
-                  <h2 className="font-heading text-2xl font-black text-[#1B2D3C]">{selectedItem.name}</h2>
+                  <p className="text-[10px] uppercase tracking-wider text-[#1B2D3C] mb-1">{categoryLabel(selectedItem.category)}</p>
+                  <h2 className="font-heading text-2xl text-[#1B2D3C]">{selectedItem.name}</h2>
                 </div>
-                <span className="text-xl font-black text-[#1B2D3C] shrink-0">{selectedItem.price}</span>
+                <span className="text-xl text-[#1B2D3C] shrink-0">{selectedItem.price}</span>
               </div>
-              <p className="text-sm text-[#1B2D3C]/80 leading-relaxed font-medium">{selectedItem.description}</p>
+              <p className="text-sm text-[#1B2D3C]/80 leading-relaxed">{selectedItem.description}</p>
               {selectedItem.isPartyEligible && (
-                <span className="inline-block px-2.5 py-1 bg-[#D6E2E9] text-[#1B2D3C] text-[10px] font-black uppercase tracking-widest">
+                <span className="inline-block px-2.5 py-1 bg-[#D6E2E9] text-[#1B2D3C] text-[10px] uppercase tracking-widest">
                   Party Favorite
                 </span>
               )}

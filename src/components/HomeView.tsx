@@ -53,27 +53,18 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  adminMode={adminMode}
  />
  </div>
- <div className="mb-8">
- <EditableText
- key="hero_subtitle"
- page="home"
- defaultValue="Bright, welcoming ceramic studios in South West London. Choose from 150+ shapes, paint with premium glazes, and we'll fire your masterpiece."
- className="text-[#1B2D3C] text-lg sm:text-xl leading-relaxed max-w-lg"
- adminMode={adminMode}
- />
- </div>
  <div className="flex flex-wrap gap-4">
  <button
  id="hero-book-button"
  onClick={() => setCurrentPage('book')}
- className="px-7 py-3.5 bg-white text-[#1B2D3C] font-bold text-sm tracking-wide border border-[#DBE7E4]/30 hover:border-[#DBE7E4] transition-all cursor-pointer"
+ className="px-7 py-3.5 bg-white text-[#1B2D3C] text-sm tracking-wide border border-[#DBE7E4]/30 hover:border-[#DBE7E4] transition-all cursor-pointer"
  >
  Book a Session
  </button>
  <button
  id="hero-contact-button"
  onClick={() => setCurrentPage('contact-info')}
- className="px-7 py-3.5 bg-white text-[#1B2D3C] font-bold text-sm tracking-wide border border-[#DBE7E4]/30 hover:border-[#DBE7E4] transition-all cursor-pointer"
+ className="px-7 py-3.5 bg-white text-[#1B2D3C] text-sm tracking-wide border border-[#DBE7E4]/30 hover:border-[#DBE7E4] transition-all cursor-pointer"
  >
  Contact Us
  </button>
@@ -98,7 +89,7 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  />
  </div>
  <div className="space-y-4">
- <h2 className="font-heading text-2xl lg:text-3xl font-black tracking-tight text-[#1B2D3C]">
+ <h2 className="font-heading text-2xl lg:text-3xl tracking-tight text-[#1B2D3C]">
  Putney Studio
  </h2>
  <p className="card-body text-[#1B2D3C]/80 leading-relaxed">
@@ -117,14 +108,14 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  <Clock className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
  <table className="text-xs w-full">
  <tbody>
- <tr><td className="pr-3 font-semibold">Monday</td><td className="text-[#1B2D3C]/60">Closed (except school holidays)</td></tr>
- <tr><td className="pr-3 font-semibold">Tuesday – Saturday</td><td>10am – 6pm</td></tr>
- <tr><td className="pr-3 font-semibold">Sunday</td><td>11am – 5pm</td></tr>
+ <tr><td className="pr-3">Monday</td><td className="text-[#1B2D3C]/60">Closed (except school holidays)</td></tr>
+ <tr><td className="pr-3">Tuesday – Saturday</td><td>10am – 6pm</td></tr>
+ <tr><td className="pr-3">Sunday</td><td>11am – 5pm</td></tr>
  </tbody>
  </table>
  </div>
  </div>
- <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#1B2D3C] pt-2">
+ <span className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#1B2D3C] pt-2">
  View Studio <ArrowRight className="w-4 h-4" />
  </span>
  </div>
@@ -143,7 +134,7 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  />
  </div>
  <div className="space-y-4">
- <h2 className="font-heading text-2xl lg:text-3xl font-black tracking-tight text-[#1B2D3C]">
+ <h2 className="font-heading text-2xl lg:text-3xl tracking-tight text-[#1B2D3C]">
  Wimbledon Studio
  </h2>
  <p className="card-body text-[#1B2D3C]/80 leading-relaxed">
@@ -162,14 +153,14 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  <Clock className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
  <table className="text-xs w-full">
  <tbody>
- <tr><td className="pr-3 font-semibold">Monday</td><td className="text-[#1B2D3C]/60">Closed (except school holidays)</td></tr>
- <tr><td className="pr-3 font-semibold">Tuesday – Saturday</td><td>10am – 6pm</td></tr>
- <tr><td className="pr-3 font-semibold">Sunday</td><td>11am – 5pm</td></tr>
+ <tr><td className="pr-3">Monday</td><td className="text-[#1B2D3C]/60">Closed (except school holidays)</td></tr>
+ <tr><td className="pr-3">Tuesday – Saturday</td><td>10am – 6pm</td></tr>
+ <tr><td className="pr-3">Sunday</td><td>11am – 5pm</td></tr>
  </tbody>
  </table>
  </div>
  </div>
- <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#1B2D3C] pt-2">
+ <span className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#1B2D3C] pt-2">
  View Studio <ArrowRight className="w-4 h-4" />
  </span>
  </div>
@@ -180,8 +171,7 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  {/* What We Do */}
  <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
  <div className="text-center md:text-left space-y-2 mb-8">
- <span className="text-xs tracking-wide text-[#1B2D3C] font-black block">What We Do</span>
- <h2 className="font-heading text-3xl md:text-4xl font-black tracking-tight text-[#1B2D3C]">Creative Studio Sessions</h2>
+ <h2 className="font-heading text-3xl md:text-4xl tracking-tight text-[#1B2D3C]">What We Do</h2>
  </div>
  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
  {[
@@ -203,13 +193,13 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  referrerPolicy="no-referrer"
  />
  {item.badge && (
- <span className="absolute top-3 left-3 px-2.5 py-1 bg-[#D6E2E9]/90 text-[#1B2D3C] text-[10px] font-black uppercase tracking-widest">
+ <span className="absolute top-3 left-3 px-2.5 py-1 bg-[#D6E2E9]/90 text-[#1B2D3C] text-[10px] uppercase tracking-widest">
  {item.badge}
  </span>
  )}
  </div>
  <div className="p-6 flex-1">
- <h3 className="font-heading text-lg font-black tracking-tight text-[#1B2D3C] mb-2">{item.title}</h3>
+ <h3 className="font-heading text-lg tracking-tight text-[#1B2D3C] mb-2">{item.title}</h3>
  <p className="card-body text-[#1B2D3C] leading-relaxed">{item.desc}</p>
  </div>
  </div>

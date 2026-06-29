@@ -13,9 +13,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
     <div id="baby-prints-view" className="space-y-20 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
       {/* Page Title Header */}
       <div className="text-center space-y-4 max-w-3xl mx-auto">
-        <EditableText key="babyprints_tagline" page="baby-prints" defaultValue="Tiny Hands, Lasting Memories" adminMode={adminMode} className="text-xs tracking-widest text-[#1B2D3C] font-black uppercase block" />
         <EditableText key="babyprints_title" page="baby-prints" defaultValue="Baby Prints & Clay Imprints" adminMode={adminMode} className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight" />
-        <EditableText key="babyprints_subtitle" page="baby-prints" defaultValue="Capture precious hand and foot impressions in clay keepsakes. A beautiful way to preserve your little one's earliest moments at either of our studios." adminMode={adminMode} className="text-[#1B2D3C]/85 text-xs sm:text-sm font-medium leading-relaxed" />
       </div>
 
       {/* Hero Image */}

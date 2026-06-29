@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { Gift, ArrowRight, CreditCard, CheckCircle, Lock } from 'lucide-react';
+import { Gift, ArrowRight, CheckCircle, Lock } from 'lucide-react';
 import { Page } from '../types';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -189,11 +189,7 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-12 space-y-8">
       <div className="text-center space-y-3 max-w-2xl mx-auto">
-        <span className="text-xs tracking-widest text-[#1B2D3C] font-black uppercase block">Gift Cards</span>
         <h1 className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight">Buy a Gift Card</h1>
-        <p className="text-[#1B2D3C]/85 text-sm font-medium">
-          Send the perfect creative gift. Choose an amount, add a personal message, and pay securely below.
-        </p>
       </div>
 
       <div className="max-w-xl mx-auto bg-white border border-[#1B2D3C]/10 p-6 md:p-8 rounded-xl space-y-6">
@@ -326,7 +322,7 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
               >
                 {loading ? 'Loading...' : (
                   <>
-                    <CreditCard className="w-4 h-4" /> Continue to Payment <ArrowRight className="w-4 h-4" />
+                    Continue to Payment <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>

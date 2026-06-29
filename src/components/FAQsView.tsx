@@ -35,7 +35,7 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
  onClick={() => toggleExpand(faq.id)}
  className="w-full py-4 flex justify-between items-center text-left focus:outline-none cursor-pointer"
  >
- <span className="font-heading font-black text-[#1B2D3C] text-sm md:text-base leading-snug pr-4">
+ <span className="text-[#1B2D3C] text-sm md:text-base leading-snug pr-4">
  {faq.question}
  </span>
  <div className="shrink-0 text-[#1B2D3C]">

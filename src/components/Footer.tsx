@@ -30,7 +30,6 @@ export default function Footer({ setCurrentPage }: FooterProps) {
 
           {/* Locations & Phone Combined */}
           <div className="space-y-3 md:col-span-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#1B2D3C]/80">Locations</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-[#1B2D3C]/60">
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-[#1B2D3C]" />
@@ -59,7 +58,6 @@ export default function Footer({ setCurrentPage }: FooterProps) {
 
           {/* Social Media & Email */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#1B2D3C]/80">Contact</h4>
             <div className="space-y-2 text-sm text-[#1B2D3C]/60">
               <a href="mailto:info@pitterpotter.co.uk" className="hover:text-[#1B2D3C] transition-colors block">
                 info@pitterpotter.co.uk
