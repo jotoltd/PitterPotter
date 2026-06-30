@@ -2,9 +2,11 @@ import { useState, FormEvent } from 'react';
 import { Gift, Search, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Page } from '../types';
 import { isSupabaseEnabled } from '../lib/supabase';
+import EditableText from './EditableText';
 
 interface GiftCardBalanceViewProps {
   setCurrentPage: (page: Page) => void;
+  adminMode?: boolean;
 }
 
 interface GiftCardResult {
@@ -15,7 +17,7 @@ interface GiftCardResult {
   expiryDate: string | null;
 }
 
-export default function GiftCardBalanceView({ setCurrentPage }: GiftCardBalanceViewProps) {
+export default function GiftCardBalanceView({ setCurrentPage, adminMode = false }: GiftCardBalanceViewProps) {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GiftCardResult | null>(null);
@@ -75,8 +77,8 @@ export default function GiftCardBalanceView({ setCurrentPage }: GiftCardBalanceV
           <div className="w-14 h-14 bg-[#DBE7E4] rounded-full flex items-center justify-center mx-auto">
             <Gift className="w-7 h-7 text-[#1B2D3C]" />
           </div>
-          <h1 className="font-heading text-2xl md:text-3xl font-black text-[#1B2D3C]">Gift Card Balance</h1>
-          <p className="text-xs text-[#1B2D3C]/70">Enter your gift card code to check the remaining balance.</p>
+          <h1 className="font-heading text-2xl md:text-3xl font-black text-[#1B2D3C]"><EditableText contentKey="giftcardbalance_title" page="gift-card-balance" defaultValue="Gift Card Balance" adminMode={adminMode} className="font-heading text-2xl md:text-3xl text-[#1B2D3C]" /></h1>
+          <p className="text-xs text-[#1B2D3C]/70"><EditableText contentKey="giftcardbalance_subtitle" page="gift-card-balance" defaultValue="Enter your gift card code to check the remaining balance." adminMode={adminMode} className="text-xs text-[#1B2D3C]/70" /></p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -103,7 +105,7 @@ export default function GiftCardBalanceView({ setCurrentPage }: GiftCardBalanceV
             disabled={loading}
             className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? 'Checking...' : 'Check Balance'}
+            {loading ? <EditableText contentKey="giftcardbalance_checking" page="gift-card-balance" defaultValue="Checking..." adminMode={adminMode} className="text-xs uppercase tracking-widest" /> : <EditableText contentKey="giftcardbalance_check_button" page="gift-card-balance" defaultValue="Check Balance" adminMode={adminMode} className="text-xs uppercase tracking-widest" />}
           </button>
         </form>
 
@@ -116,20 +118,20 @@ export default function GiftCardBalanceView({ setCurrentPage }: GiftCardBalanceV
               : 'bg-[#DBE7E4]/20 border-[#DBE7E4]'
           }`}>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-[#1B2D3C]">Code</span>
+              <span className="text-xs font-black uppercase tracking-wider text-[#1B2D3C]"><EditableText contentKey="giftcardbalance_code_label" page="gift-card-balance" defaultValue="Code" adminMode={adminMode} className="text-xs uppercase tracking-wider text-[#1B2D3C]" /></span>
               <code className="text-sm font-bold text-[#1B2D3C] tracking-wider">{result.code}</code>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-[#1B2D3C]">Balance</span>
+              <span className="text-xs font-black uppercase tracking-wider text-[#1B2D3C]"><EditableText contentKey="giftcardbalance_balance_label" page="gift-card-balance" defaultValue="Balance" adminMode={adminMode} className="text-xs uppercase tracking-wider text-[#1B2D3C]" /></span>
               <span className="text-2xl font-black text-[#1B2D3C]">£{result.balance.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-[#1B2D3C]">Original Amount</span>
+              <span className="text-xs font-black uppercase tracking-wider text-[#1B2D3C]"><EditableText contentKey="giftcardbalance_original_label" page="gift-card-balance" defaultValue="Original Amount" adminMode={adminMode} className="text-xs uppercase tracking-wider text-[#1B2D3C]" /></span>
               <span className="text-sm font-bold text-[#1B2D3C]">£{result.amount.toFixed(2)}</span>
             </div>
             {result.expiryDate && (
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-wider text-[#1B2D3C]">Expires</span>
+                <span className="text-xs font-black uppercase tracking-wider text-[#1B2D3C]"><EditableText contentKey="giftcardbalance_expires_label" page="gift-card-balance" defaultValue="Expires" adminMode={adminMode} className="text-xs uppercase tracking-wider text-[#1B2D3C]" /></span>
                 <span className="text-sm font-bold text-[#1B2D3C]">{result.expiryDate}</span>
               </div>
             )}
@@ -137,17 +139,17 @@ export default function GiftCardBalanceView({ setCurrentPage }: GiftCardBalanceV
               {result.status === 'active' && (
                 <>
                   <CheckCircle2 className="w-4 h-4 text-green-700" />
-                  <span className="text-xs font-bold text-green-700">Active</span>
+                  <span className="text-xs font-bold text-green-700"><EditableText contentKey="giftcardbalance_status_active" page="gift-card-balance" defaultValue="Active" adminMode={adminMode} className="text-xs font-bold text-green-700" /></span>
                 </>
               )}
               {result.status === 'expired' && (
                 <>
                   <AlertCircle className="w-4 h-4 text-red-700" />
-                  <span className="text-xs font-bold text-red-700">Expired</span>
+                  <span className="text-xs font-bold text-red-700"><EditableText contentKey="giftcardbalance_status_expired" page="gift-card-balance" defaultValue="Expired" adminMode={adminMode} className="text-xs font-bold text-red-700" /></span>
                 </>
               )}
               {result.status === 'redeemed' && (
-                <span className="text-xs font-bold text-stone-600">Fully redeemed</span>
+                <span className="text-xs font-bold text-stone-600"><EditableText contentKey="giftcardbalance_status_redeemed" page="gift-card-balance" defaultValue="Fully redeemed" adminMode={adminMode} className="text-xs font-bold text-stone-600" /></span>
               )}
             </div>
           </div>
@@ -158,13 +160,13 @@ export default function GiftCardBalanceView({ setCurrentPage }: GiftCardBalanceV
             onClick={() => setCurrentPage('buy-gift-card')}
             className="flex-1 py-3 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-widest cursor-pointer rounded-lg"
           >
-            Buy a Gift Card
+            <EditableText contentKey="giftcardbalance_buy_button" page="gift-card-balance" defaultValue="Buy a Gift Card" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
           <button
             onClick={() => setCurrentPage('home')}
             className="flex-1 py-3 bg-white border border-[#1B2D3C] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest cursor-pointer rounded-lg"
           >
-            Home
+            <EditableText contentKey="giftcardbalance_home_button" page="gift-card-balance" defaultValue="Home" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
         </div>
       </div>

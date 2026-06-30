@@ -144,29 +144,29 @@ export default function App() {
  case 'book':
  return <BookView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'gift-cards':
- return <GiftCardView />;
+ return <GiftCardView adminMode={adminMode} />;
  case 'buy-gift-card':
- return <GiftCardPurchaseView setCurrentPage={setCurrentPage} />;
+ return <GiftCardPurchaseView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'gift-card-success':
- return <GiftCardSuccessView setCurrentPage={setCurrentPage} />;
+ return <GiftCardSuccessView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'gift-card-balance':
- return <GiftCardBalanceView setCurrentPage={setCurrentPage} />;
+ return <GiftCardBalanceView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'putney':
  return <PutneyView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'wimbledon':
  return <WimbledonView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'party-birthday-putney':
- return <PartyBookingView partyType="birthday" studio="Putney" setCurrentPage={setCurrentPage} />;
+ return <PartyBookingView partyType="birthday" studio="Putney" setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'party-birthday-wimbledon':
- return <PartyBookingView partyType="birthday" studio="Wimbledon" setCurrentPage={setCurrentPage} />;
+ return <PartyBookingView partyType="birthday" studio="Wimbledon" setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'party-babyshower-putney':
- return <PartyBookingView partyType="baby-shower-hen" studio="Putney" setCurrentPage={setCurrentPage} />;
+ return <PartyBookingView partyType="baby-shower-hen" studio="Putney" setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'party-babyshower-wimbledon':
- return <PartyBookingView partyType="baby-shower-hen" studio="Wimbledon" setCurrentPage={setCurrentPage} />;
+ return <PartyBookingView partyType="baby-shower-hen" studio="Wimbledon" setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'party-corporate-putney':
- return <PartyBookingView partyType="corporate" studio="Putney" setCurrentPage={setCurrentPage} />;
+ return <PartyBookingView partyType="corporate" studio="Putney" setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'party-corporate-wimbledon':
- return <PartyBookingView partyType="corporate" studio="Wimbledon" setCurrentPage={setCurrentPage} />;
+ return <PartyBookingView partyType="corporate" studio="Wimbledon" setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'admin':
             if (currentStaff) {
               return <AdminDashboardView staff={currentStaff} onLogout={handleAdminLogout} />;

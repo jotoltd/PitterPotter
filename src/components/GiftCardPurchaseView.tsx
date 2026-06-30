@@ -3,9 +3,11 @@ import { Gift, ArrowRight, CheckCircle, Lock } from 'lucide-react';
 import { Page } from '../types';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import EditableText from './EditableText';
 
 interface GiftCardPurchaseViewProps {
   setCurrentPage: (page: Page) => void;
+  adminMode?: boolean;
 }
 
 const PRESET_AMOUNTS = [10, 20, 25, 50];
@@ -21,9 +23,10 @@ interface PaymentFormProps {
   senderName: string;
   message: string;
   paymentIntentId: string;
+  adminMode?: boolean;
 }
 
-function PaymentForm({ onSuccess, onError, loading, setLoading, finalAmount, recipientName, recipientEmail, senderName, message, paymentIntentId }: PaymentFormProps) {
+function PaymentForm({ onSuccess, onError, loading, setLoading, finalAmount, recipientName, recipientEmail, senderName, message, paymentIntentId, adminMode = false }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
 
@@ -79,20 +82,20 @@ function PaymentForm({ onSuccess, onError, loading, setLoading, finalAmount, rec
         disabled={!stripe || loading}
         className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {loading ? 'Processing...' : (
+        {loading ? <EditableText contentKey="buygiftcard_processing" page="buy-gift-card" defaultValue="Processing..." adminMode={adminMode} className="text-xs uppercase tracking-widest" /> : (
           <>
-            <Lock className="w-3.5 h-3.5" /> Pay £{finalAmount.toFixed(2)}
+            <Lock className="w-3.5 h-3.5" /> <EditableText contentKey="buygiftcard_pay_button" page="buy-gift-card" defaultValue={`Pay £${finalAmount.toFixed(2)}`} adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </>
         )}
       </button>
       <p className="text-[10px] text-[#1B2D3C]/50 text-center">
-        Payments processed securely by Stripe.
+        <EditableText contentKey="buygiftcard_stripe_notice" page="buy-gift-card" defaultValue="Payments processed securely by Stripe." adminMode={adminMode} className="text-[10px] text-[#1B2D3C]/50" />
       </p>
     </form>
   );
 }
 
-export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchaseViewProps) {
+export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false }: GiftCardPurchaseViewProps) {
   const [amount, setAmount] = useState<number | ''>(50);
   const [customAmount, setCustomAmount] = useState<number | ''>('');
   const [useCustom, setUseCustom] = useState(false);
@@ -165,21 +168,21 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
           <div className="inline-flex p-4 bg-emerald-100 rounded-full">
             <CheckCircle className="w-10 h-10 text-emerald-600" />
           </div>
-          <h2 className="font-heading text-2xl font-black text-[#1B2D3C]">Gift Card Purchased!</h2>
+          <h2 className="font-heading text-2xl font-black text-[#1B2D3C]"><EditableText contentKey="buygiftcard_success_title" page="buy-gift-card" defaultValue="Gift Card Purchased!" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" /></h2>
           <div className="bg-[#D6E2E9]/30 p-6 rounded-xl space-y-3">
-            <p className="text-xs font-bold text-[#1B2D3C]/60 uppercase tracking-widest">Gift Card Code</p>
+            <p className="text-xs font-bold text-[#1B2D3C]/60 uppercase tracking-widest"><EditableText contentKey="buygiftcard_success_code_label" page="buy-gift-card" defaultValue="Gift Card Code" adminMode={adminMode} className="text-xs uppercase tracking-widest text-[#1B2D3C]/60" /></p>
             <p className="text-2xl font-mono font-black text-[#1B2D3C] tracking-wider">{success.code}</p>
             <p className="text-sm font-bold text-[#1B2D3C]">£{success.amount.toFixed(2)}</p>
-            <p className="text-xs text-[#1B2D3C]/60">Valid for 12 months from purchase</p>
+            <p className="text-xs text-[#1B2D3C]/60"><EditableText contentKey="buygiftcard_success_validity" page="buy-gift-card" defaultValue="Valid for 12 months from purchase" adminMode={adminMode} className="text-xs text-[#1B2D3C]/60" /></p>
           </div>
           <p className="text-xs text-[#1B2D3C]/70 font-medium">
-            For: <span className="font-bold">{recipientName}</span> from <span className="font-bold">{senderName}</span>
+            <EditableText contentKey="buygiftcard_success_for" page="buy-gift-card" defaultValue={`For: ${recipientName} from ${senderName}`} adminMode={adminMode} className="text-xs text-[#1B2D3C]/70" />
           </p>
           <button
             onClick={() => setCurrentPage('home')}
             className="w-full py-3 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer rounded-lg"
           >
-            Back to Home
+            <EditableText contentKey="buygiftcard_success_home" page="buy-gift-card" defaultValue="Back to Home" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
         </div>
       </div>
@@ -189,7 +192,7 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-12 space-y-8">
       <div className="text-center space-y-3 max-w-2xl mx-auto">
-        <h1 className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight">Buy a Gift Card</h1>
+        <h1 className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight"><EditableText contentKey="buygiftcard_title" page="buy-gift-card" defaultValue="Buy a Gift Card" adminMode={adminMode} className="font-heading text-4xl md:text-5xl text-[#1B2D3C]" /></h1>
       </div>
 
       <div className="max-w-xl mx-auto bg-white border border-[#1B2D3C]/10 p-6 md:p-8 rounded-xl space-y-6">
@@ -198,8 +201,8 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
             <Gift className="w-5 h-5 text-[#1B2D3C]" />
           </div>
           <div>
-            <h2 className="font-bold text-lg text-[#1B2D3C]">Gift Card Details</h2>
-            <p className="text-xs text-[#1B2D3C]/70">All fields are required unless marked optional</p>
+            <h2 className="font-bold text-lg text-[#1B2D3C]"><EditableText contentKey="buygiftcard_details_title" page="buy-gift-card" defaultValue="Gift Card Details" adminMode={adminMode} className="text-lg font-bold text-[#1B2D3C]" /></h2>
+            <p className="text-xs text-[#1B2D3C]/70"><EditableText contentKey="buygiftcard_details_subtitle" page="buy-gift-card" defaultValue="All fields are required unless marked optional" adminMode={adminMode} className="text-xs text-[#1B2D3C]/70" /></p>
           </div>
         </div>
 
@@ -212,7 +215,7 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
         {!showPayment ? (
           <form onSubmit={handleContinueToPayment} className="space-y-5">
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Amount</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="buygiftcard_amount_label" page="buy-gift-card" defaultValue="Amount" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
               <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                 {PRESET_AMOUNTS.map((preset) => (
                   <button
@@ -242,7 +245,7 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
                   className="w-4 h-4 accent-[#1B2D3C]"
                 />
                 <label htmlFor="customAmount" className="text-xs font-semibold text-[#1B2D3C] cursor-pointer">
-                  Custom amount
+                  <EditableText contentKey="buygiftcard_custom_amount" page="buy-gift-card" defaultValue="Custom amount" adminMode={adminMode} className="text-xs text-[#1B2D3C]" />
                 </label>
                 {useCustom && (
                   <div className="flex items-center gap-1 ml-2">
@@ -264,7 +267,7 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Recipient Name</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="buygiftcard_recipient_name_label" page="buy-gift-card" defaultValue="Recipient Name" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
                 <input
                   type="text"
                   required
@@ -275,7 +278,7 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
                 />
               </div>
               <div className="space-y-1">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Recipient Email</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="buygiftcard_recipient_email_label" page="buy-gift-card" defaultValue="Recipient Email" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
                 <input
                   type="email"
                   required
@@ -288,7 +291,7 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Your Name</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="buygiftcard_sender_name_label" page="buy-gift-card" defaultValue="Your Name" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
               <input
                 type="text"
                 required
@@ -300,7 +303,7 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
             </div>
 
             <div className="space-y-1">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Personal Message <span className="font-normal normal-case">(optional)</span></label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="buygiftcard_message_label" page="buy-gift-card" defaultValue="Personal Message (optional)" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -312,7 +315,7 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
 
             <div className="pt-4 border-t border-[#1B2D3C]/10">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-bold text-[#1B2D3C]">Total</span>
+                <span className="text-sm font-bold text-[#1B2D3C]"><EditableText contentKey="buygiftcard_total_label" page="buy-gift-card" defaultValue="Total" adminMode={adminMode} className="text-sm font-bold text-[#1B2D3C]" /></span>
                 <span className="text-2xl font-black text-[#1B2D3C]">£{finalAmount.toFixed(2)}</span>
               </div>
               <button
@@ -320,9 +323,9 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
                 disabled={loading}
                 className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {loading ? 'Loading...' : (
+                {loading ? <EditableText contentKey="buygiftcard_loading" page="buy-gift-card" defaultValue="Loading..." adminMode={adminMode} className="text-xs uppercase tracking-widest" /> : (
                   <>
-                    Continue to Payment <ArrowRight className="w-4 h-4" />
+                    <EditableText contentKey="buygiftcard_continue_button" page="buy-gift-card" defaultValue="Continue to Payment" adminMode={adminMode} className="text-xs uppercase tracking-widest" /> <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
@@ -331,14 +334,14 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
         ) : (
           <div className="space-y-5">
             <div className="bg-[#D6E2E9]/30 p-3 rounded-lg text-xs font-bold text-[#1B2D3C] space-y-1">
-              <p>£{finalAmount.toFixed(2)} Gift Card for {recipientName}</p>
-              <p className="font-normal text-[#1B2D3C]/60">From {senderName}</p>
+              <p><EditableText contentKey="buygiftcard_summary_for" page="buy-gift-card" defaultValue={`£${finalAmount.toFixed(2)} Gift Card for ${recipientName}`} adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></p>
+              <p className="font-normal text-[#1B2D3C]/60"><EditableText contentKey="buygiftcard_summary_from" page="buy-gift-card" defaultValue={`From ${senderName}`} adminMode={adminMode} className="text-xs text-[#1B2D3C]/60" /></p>
               <button
                 type="button"
                 onClick={() => { setShowPayment(false); setClientSecret(''); }}
                 className="text-[10px] underline text-[#1B2D3C]/50 hover:text-[#1B2D3C] mt-1 cursor-pointer"
               >
-                Edit details
+                <EditableText contentKey="buygiftcard_edit_details" page="buy-gift-card" defaultValue="Edit details" adminMode={adminMode} className="text-[10px] text-[#1B2D3C]/50" />
               </button>
             </div>
 
@@ -355,6 +358,7 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
                   senderName={senderName}
                   message={message}
                   paymentIntentId={paymentIntentId}
+                  adminMode={adminMode}
                 />
               </Elements>
             )}
@@ -366,7 +370,7 @@ export default function GiftCardPurchaseView({ setCurrentPage }: GiftCardPurchas
             onClick={() => setCurrentPage('gift-card-balance')}
             className="text-xs font-bold text-[#1B2D3C]/60 underline hover:text-[#1B2D3C] transition-colors cursor-pointer"
           >
-            Already have a gift card? Check your balance
+            <EditableText contentKey="buygiftcard_balance_link" page="buy-gift-card" defaultValue="Already have a gift card? Check your balance" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]/60 underline" />
           </button>
         </div>
       </div>

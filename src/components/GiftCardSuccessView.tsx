@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Gift, CheckCircle2, Copy, Loader2 } from 'lucide-react';
 import { Page } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import EditableText from './EditableText';
 
 interface GiftCardSuccessViewProps {
   setCurrentPage: (page: Page) => void;
+  adminMode?: boolean;
 }
 
-export default function GiftCardSuccessView({ setCurrentPage }: GiftCardSuccessViewProps) {
+export default function GiftCardSuccessView({ setCurrentPage, adminMode = false }: GiftCardSuccessViewProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [giftCard, setGiftCard] = useState<{ code: string; amount: number; balance: number; status: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ export default function GiftCardSuccessView({ setCurrentPage }: GiftCardSuccessV
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-20 flex flex-col items-center justify-center gap-4">
         <Loader2 className="w-8 h-8 text-[#1B2D3C] animate-spin" />
-        <p className="text-sm font-bold text-[#1B2D3C]">Verifying your gift card...</p>
+        <p className="text-sm font-bold text-[#1B2D3C]"><EditableText contentKey="giftcardsuccess_loading" page="gift-card-success" defaultValue="Verifying your gift card..." adminMode={adminMode} className="text-sm font-bold text-[#1B2D3C]" /></p>
       </div>
     );
   }
@@ -81,7 +83,7 @@ export default function GiftCardSuccessView({ setCurrentPage }: GiftCardSuccessV
             onClick={() => setCurrentPage('buy-gift-card')}
             className="px-6 py-2.5 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-widest cursor-pointer"
           >
-            Try Again
+            <EditableText contentKey="giftcardsuccess_try_again" page="gift-card-success" defaultValue="Try Again" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
         </div>
       </div>
@@ -96,9 +98,9 @@ export default function GiftCardSuccessView({ setCurrentPage }: GiftCardSuccessV
         </div>
 
         <div className="space-y-2">
-          <h1 className="font-heading text-3xl font-black text-[#1B2D3C]">Gift Card Purchased!</h1>
+          <h1 className="font-heading text-3xl font-black text-[#1B2D3C]"><EditableText contentKey="giftcardsuccess_title" page="gift-card-success" defaultValue="Gift Card Purchased!" adminMode={adminMode} className="font-heading text-3xl text-[#1B2D3C]" /></h1>
           <p className="text-sm text-[#1B2D3C]/80">
-            Thank you for your purchase. The recipient will receive an email with their gift card details.
+            <EditableText contentKey="giftcardsuccess_message" page="gift-card-success" defaultValue="Thank you for your purchase. The recipient will receive an email with their gift card details." adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" />
           </p>
         </div>
 
@@ -120,7 +122,7 @@ export default function GiftCardSuccessView({ setCurrentPage }: GiftCardSuccessV
                 <Copy className="w-4 h-4 text-[#1B2D3C]" />
               </button>
             </div>
-            {copied && <p className="text-[10px] font-bold text-[#1B2D3C]">Copied!</p>}
+            {copied && <p className="text-[10px] font-bold text-[#1B2D3C]"><EditableText contentKey="giftcardsuccess_copied" page="gift-card-success" defaultValue="Copied!" adminMode={adminMode} className="text-[10px] font-bold text-[#1B2D3C]" /></p>}
           </div>
         )}
 
@@ -129,13 +131,13 @@ export default function GiftCardSuccessView({ setCurrentPage }: GiftCardSuccessV
             onClick={() => setCurrentPage('home')}
             className="flex-1 py-3 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-widest cursor-pointer"
           >
-            Back to Home
+            <EditableText contentKey="giftcardsuccess_home" page="gift-card-success" defaultValue="Back to Home" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
           <button
             onClick={() => setCurrentPage('buy-gift-card')}
             className="flex-1 py-3 bg-white border border-[#1B2D3C] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest cursor-pointer"
           >
-            Buy Another
+            <EditableText contentKey="giftcardsuccess_buy_another" page="gift-card-success" defaultValue="Buy Another" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
         </div>
       </div>

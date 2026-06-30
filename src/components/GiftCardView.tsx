@@ -3,6 +3,7 @@ import { GiftCard } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { useToast } from './ToastContext';
 import { CheckCircle2, Copy, Gift } from 'lucide-react';
+import EditableText from './EditableText';
 
 const PRESET_AMOUNTS = [25, 50, 75, 100];
 
@@ -18,7 +19,11 @@ function generateCode(): string {
   return code;
 }
 
-export default function GiftCardView() {
+interface GiftCardViewProps {
+  adminMode?: boolean;
+}
+
+export default function GiftCardView({ adminMode = false }: GiftCardViewProps) {
   const [amount, setAmount] = useState<number>(50);
   const [customAmount, setCustomAmount] = useState<string>('');
   const [recipientName, setRecipientName] = useState('');
@@ -115,13 +120,13 @@ export default function GiftCardView() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 text-center">
           <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full mb-6">
             <Gift className="w-4 h-4 text-[#1B2D3C]" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Gift Cards</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="giftcard_hero_badge" page="giftcard" defaultValue="Gift Cards" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></span>
           </div>
           <h1 className="font-heading text-4xl md:text-6xl font-black text-[#1B2D3C] mb-4">
-            Give the Gift of Creativity
+            <EditableText contentKey="giftcard_hero_title" page="giftcard" defaultValue="Give the Gift of Creativity" adminMode={adminMode} className="font-heading text-4xl md:text-6xl text-[#1B2D3C]" />
           </h1>
           <p className="text-base md:text-lg text-[#1B2D3C]/80 font-medium max-w-2xl mx-auto">
-            Treat someone special to a Pitter Potter experience. Our digital gift cards can be used towards any session at either studio.
+            <EditableText contentKey="giftcard_hero_description" page="giftcard" defaultValue="Treat someone special to a Pitter Potter experience. Our digital gift cards can be used towards any session at either studio." adminMode={adminMode} className="text-base md:text-lg text-[#1B2D3C]/80" />
           </p>
         </div>
       </section>
@@ -130,7 +135,7 @@ export default function GiftCardView() {
       <section className="max-w-2xl mx-auto px-4 py-16 -mt-8 relative z-10">
         <div className="bg-white p-6 md:p-10 border border-[#1B2D3C]/20 rounded-2xl space-y-8">
           <div className="space-y-3">
-            <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Choose Amount</label>
+            <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="giftcard_amount_label" page="giftcard" defaultValue="Choose Amount" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {PRESET_AMOUNTS.map((value) => (
                 <button
@@ -148,7 +153,7 @@ export default function GiftCardView() {
               ))}
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-bold text-[#1B2D3C]">Custom:</span>
+              <span className="text-sm font-bold text-[#1B2D3C]"><EditableText contentKey="giftcard_custom_label" page="giftcard" defaultValue="Custom:" adminMode={adminMode} className="text-sm font-bold text-[#1B2D3C]" /></span>
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1B2D3C] font-bold">£</span>
                 <input
@@ -165,7 +170,7 @@ export default function GiftCardView() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Recipient Name</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="giftcard_recipient_name_label" page="giftcard" defaultValue="Recipient Name" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
               <input
                 type="text"
                 value={recipientName}
@@ -176,7 +181,7 @@ export default function GiftCardView() {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Recipient Email</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="giftcard_recipient_email_label" page="giftcard" defaultValue="Recipient Email" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
               <input
                 type="email"
                 value={recipientEmail}
@@ -187,7 +192,7 @@ export default function GiftCardView() {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Your Name</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="giftcard_sender_name_label" page="giftcard" defaultValue="Your Name" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
               <input
                 type="text"
                 value={senderName}
@@ -198,7 +203,7 @@ export default function GiftCardView() {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Personal Message (optional)</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="giftcard_message_label" page="giftcard" defaultValue="Personal Message (optional)" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -209,17 +214,17 @@ export default function GiftCardView() {
 
             <div className="pt-4 border-t border-[#1B2D3C]/10">
               <div className="flex justify-between items-center mb-4">
-                <span className="text-sm font-bold text-[#1B2D3C]">Total</span>
+                <span className="text-sm font-bold text-[#1B2D3C]"><EditableText contentKey="giftcard_total_label" page="giftcard" defaultValue="Total" adminMode={adminMode} className="text-sm font-bold text-[#1B2D3C]" /></span>
                 <span className="text-2xl font-black text-[#1B2D3C]">£{finalAmount}</span>
               </div>
               <button
                 type="submit"
                 className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-[#486581] transition-all"
               >
-                Purchase Gift Card
+                <EditableText contentKey="giftcard_purchase_button" page="giftcard" defaultValue="Purchase Gift Card" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
               </button>
               <p className="text-[10px] text-[#1B2D3C]/60 text-center mt-3 font-medium">
-                This is a demo frontend purchase. No real payment is processed.
+                <EditableText contentKey="giftcard_demo_notice" page="giftcard" defaultValue="This is a demo frontend purchase. No real payment is processed." adminMode={adminMode} className="text-[10px] text-[#1B2D3C]/60" />
               </p>
             </div>
           </form>
@@ -234,14 +239,14 @@ export default function GiftCardView() {
               <CheckCircle2 className="w-8 h-8 text-[#1B2D3C]" />
             </div>
             <div>
-              <h2 className="font-heading text-2xl font-black text-[#1B2D3C] mb-2">Gift Card Created!</h2>
+              <h2 className="font-heading text-2xl font-black text-[#1B2D3C] mb-2"><EditableText contentKey="giftcard_success_title" page="giftcard" defaultValue="Gift Card Created!" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" /></h2>
               <p className="text-sm text-[#1B2D3C]/80 font-medium">
-                Share this code with {purchasedCard.recipientName} so they can redeem it at checkout.
+                <EditableText contentKey="giftcard_success_message" page="giftcard" defaultValue={`Share this code with ${purchasedCard.recipientName} so they can redeem it at checkout.`} adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" />
               </p>
             </div>
 
             <div className="bg-[#D6E2E9]/30 p-4 rounded-xl space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Gift Card Code</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="giftcard_success_code_label" page="giftcard" defaultValue="Gift Card Code" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-lg font-black text-[#1B2D3C] bg-white px-3 py-2 rounded-lg border border-[#1B2D3C]/20">
                   {purchasedCard.code}
@@ -253,14 +258,14 @@ export default function GiftCardView() {
                   {copied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
                 </button>
               </div>
-              <p className="text-xs font-bold text-[#1B2D3C]">Balance: £{purchasedCard.balance}</p>
+              <p className="text-xs font-bold text-[#1B2D3C]"><EditableText contentKey="giftcard_success_balance" page="giftcard" defaultValue={`Balance: £${purchasedCard.balance}`} adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></p>
             </div>
 
             <button
               onClick={reset}
               className="w-full py-3 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-[#D6E2E9] transition-all"
             >
-              Buy Another Gift Card
+              <EditableText contentKey="giftcard_success_reset" page="giftcard" defaultValue="Buy Another Gift Card" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
             </button>
           </div>
         </div>
