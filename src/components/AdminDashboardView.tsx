@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import FloorPlanView from './FloorPlanView';
 import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, CalendarX, Gift, ChevronUp, ChevronDown, CalendarDays } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO } from 'date-fns';
@@ -43,7 +44,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'bookings' | 'gift-cards' | 'staff' | 'settings' | 'content' | 'analytics' | 'capacity'>('bookings');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'gift-cards' | 'staff' | 'settings' | 'content' | 'analytics' | 'capacity' | 'floor-plan'>('bookings');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
   const [capacitySaving, setCapacitySaving] = useState(false);
@@ -770,6 +771,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             ...(canManageStaff ? [{ value: 'capacity', label: 'Capacity' }] : []),
             ...(canManageStaff ? [{ value: 'staff', label: 'Staff' }] : []),
             ...(canManageStaff ? [{ value: 'settings', label: 'Settings' }] : []),
+            ...(canManageStaff ? [{ value: 'floor-plan', label: 'Floor Plans' }] : []),
           ].map((tab) => (
             <button
               key={tab.value}
@@ -1928,6 +1930,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             );
           })()}
         </div>
+      )}
+
+      {activeTab === 'floor-plan' && (
+        <FloorPlanView />
       )}
     </div>
   );
