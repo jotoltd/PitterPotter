@@ -58,7 +58,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                   key={item.value}
                   id={`nav-link-${item.value}`}
                   onClick={() => handleNavClick(item.value)}
-                  className={`group px-3.5 py-2 text-[11px] font-normal uppercase tracking-widest transition-all relative ${
+                  className={`group px-3.5 py-2 text-[13px] font-normal uppercase tracking-widest transition-all relative ${
                     isActive(item.value)
                       ? 'text-[#1B2D3C]'
                       : 'text-[#1B2D3C] hover:text-[#1B2D3C]'
@@ -71,7 +71,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
               <button
                 id="cta-book-session"
                 onClick={() => handleNavClick('book')}
-                className="ml-4 px-5 py-2.5 bg-[#DBE7E4] text-[#1B2D3C] font-normal text-[11px] uppercase tracking-widest border border-[#1B2D3C] hover:bg-[#D6E2E9] transition-all cursor-pointer"
+                className="ml-4 px-5 py-2.5 bg-[#DBE7E4] text-[#1B2D3C] font-normal text-[13px] uppercase tracking-widest border border-[#1B2D3C] hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
                 Booking
               </button>

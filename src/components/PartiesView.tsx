@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Gift, Heart, Users, AlertCircle, MapPin, X } from 'lucide-react';
+import { AlertCircle, MapPin, X } from 'lucide-react';
 import { Page } from '../types';
+import { Images } from '../images';
 import EditableText from './EditableText';
 
 interface PartiesViewProps {
@@ -46,51 +47,49 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
       </div>
 
       {/* Main Services Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Birthday Parties */}
-        <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-between space-y-6 rounded-xl">
-          <div className="space-y-4">
-            <div className="p-3 bg-[#D6E2E9] text-[#1B2D3C] border border-[#1B2D3C]/20 inline-block rounded-lg">
-              <Gift className="w-6 h-6 stroke-[2]" />
-            </div>
-            <h3 className="font-heading text-xl font-bold text-[#1B2D3C]">Birthday Parties</h3>
-            <p className="text-[#1B2D3C] font-black text-lg">£28.95 per head</p>
-            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed font-semibold">
-              A painting party at Pitter Potter is a fun and creative way of celebrating birthdays. We provide the space, materials and help to ensure everything runs smoothly.
-            </p>
-            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed font-medium">
-              Our birthday package is £28.95 per head for a standard 2 hour party session (for children under the age of 7, we recommend a 1.5 hours session). Included in the cost is the studio fee and an item of pottery up to the value of £22.95. We have a vast array of items you can choose from, including all our party animals, all money banks, all mugs and some bowls and plates. Hosts are more than welcome to bring their own food/drinks/cakes. Please bring your own paper plates, cups and cutlery.
-            </p>
-            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed font-medium">
-              To confirm your party booking, we will require an non-refundable £50 deposit that will be deducted from your final bill on the day. Please contact us via phone or email should you have any further questions.
-            </p>
-          </div>
-          <button
-            onClick={() => handleBookParty('birthday')}
-            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs font-bold uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
-          >
-            Book Party
-          </button>
-        </div>
-
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Baby Showers & Hen Parties */}
         <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-between space-y-6 rounded-xl">
           <div className="space-y-4">
-            <div className="p-3 bg-[#D6E2E9] text-[#1B2D3C] border border-[#1B2D3C]/20 inline-block rounded-lg">
-              <Heart className="w-6 h-6 stroke-[2]" />
+            <h3 className="font-heading text-xl text-[#1B2D3C]">Baby Shower / Hen Party / Stag Do</h3>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
+              <img src={Images.clayImprint} alt="Baby shower and hen party" className="w-full h-full object-cover rounded-lg" referrerPolicy="no-referrer" />
             </div>
-            <h3 className="font-heading text-xl font-bold text-[#1B2D3C]">Baby Shower / Hen Party / Stag Do</h3>
-            <p className="text-[#1B2D3C] font-black text-lg">£28.95 per head*</p>
-            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed font-semibold">
+            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
               For the bride, groom or parents to be who are seeking a creative alternative to a traditional celebration. Get everyone to paint a piece for the happy couple or the new addition to the family.
             </p>
-            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed font-medium">
+            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
               The same terms apply as per our weekend birthday party package above. If you would like your event to run after hours, there is a surcharge and a minimum 10 painters is required. You are welcome to provide your own nibbles/drinks or we are happy to organise catering for you upon request.
             </p>
           </div>
           <button
             onClick={() => handleBookParty('baby-shower-hen')}
-            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs font-bold uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
+            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
+          >
+            Book Party
+          </button>
+        </div>
+
+        {/* Birthday Parties — Most Popular */}
+        <div className="bg-[#DBE7E4] border border-[#1B2D3C] p-8 flex flex-col justify-between space-y-6 rounded-xl">
+          <div className="space-y-4">
+            <h3 className="font-heading text-xl text-[#1B2D3C]">Birthday Parties</h3>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
+              <img src={Images.birthdayParties} alt="Birthday party" className="w-full h-full object-cover rounded-lg" referrerPolicy="no-referrer" />
+            </div>
+            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
+              A painting party at Pitter Potter is a fun and creative way of celebrating birthdays. We provide the space, materials and help to ensure everything runs smoothly.
+            </p>
+            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
+              Our birthday package is £28.95 per head for a standard 2 hour party session (for children under the age of 7, we recommend a 1.5 hours session). Included in the cost is the studio fee and an item of pottery up to the value of £22.95. We have a vast array of items you can choose from, including all our party animals, all money banks, all mugs and some bowls and plates. Hosts are more than welcome to bring their own food/drinks/cakes. Please bring your own paper plates, cups and cutlery.
+            </p>
+            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
+              To confirm your party booking, we will require an non-refundable £50 deposit that will be deducted from your final bill on the day. Please contact us via phone or email should you have any further questions.
+            </p>
+          </div>
+          <button
+            onClick={() => handleBookParty('birthday')}
+            className="w-full py-2.5 bg-[#1B2D3C] text-white border border-[#1B2D3C] text-xs uppercase tracking-widest hover:bg-[#486581] transition-colors rounded-lg cursor-pointer"
           >
             Book Party
           </button>
@@ -99,21 +98,20 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
         {/* Corporate Team Events */}
         <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-between space-y-6 rounded-xl">
           <div className="space-y-4">
-            <div className="p-3 bg-[#D6E2E9] text-[#1B2D3C] border border-[#1B2D3C]/20 inline-block rounded-lg">
-              <Users className="w-6 h-6 stroke-[2]" />
+            <h3 className="font-heading text-xl text-[#1B2D3C]">Corporate Events</h3>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
+              <img src={Images.studioHero} alt="Corporate event" className="w-full h-full object-cover rounded-lg" referrerPolicy="no-referrer" />
             </div>
-            <h3 className="font-heading text-xl font-bold text-[#1B2D3C]">Corporate Events</h3>
-            <p className="text-[#1B2D3C] font-black text-lg">Custom Packages</p>
-            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed font-semibold">
+            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
               Whether it's a team-building exercise or an end-of-year alternative to a Christmas party, Pitter Potter provides a relaxing and meditative activity for your business.
             </p>
-            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed font-medium">
+            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
               Please contact us to tailor a package for you.
             </p>
           </div>
           <button
             onClick={() => handleBookParty('corporate')}
-            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs font-bold uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
+            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
           >
             Book Party
           </button>

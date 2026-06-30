@@ -84,7 +84,7 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  <img
  src={Images.putneyStudio}
  alt="Pitter Potter Putney Studio"
- className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg"
+ className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 rounded-lg bg-[#DBE7E4]"
  referrerPolicy="no-referrer"
  />
  </div>
@@ -129,7 +129,7 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  <img
  src={Images.wimbledonStudio}
  alt="Pitter Potter Wimbledon Studio"
- className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg"
+ className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 rounded-lg bg-[#DBE7E4]"
  referrerPolicy="no-referrer"
  />
  </div>
@@ -185,6 +185,9 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  onClick={() => item.page && setCurrentPage(item.page)}
  className={`text-left bg-white shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col ${item.page ? 'cursor-pointer' : ''}`}
  >
+ <div className="p-6">
+ <h3 className="font-heading text-lg tracking-tight text-[#1B2D3C] mb-2">{item.title}</h3>
+ </div>
  <div className="relative aspect-[4/3] overflow-hidden">
  <img
  src={item.image}
@@ -199,7 +202,6 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  )}
  </div>
  <div className="p-6 flex-1">
- <h3 className="font-heading text-lg tracking-tight text-[#1B2D3C] mb-2">{item.title}</h3>
  <p className="card-body text-[#1B2D3C] leading-relaxed">{item.desc}</p>
  </div>
  </div>

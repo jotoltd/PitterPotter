@@ -1,5 +1,5 @@
 import studioHero from './assets/images/PP_Putney_Images/Unknown-13.jpg';
-import putneyStudio from './assets/images/PP_Putney_Images/Unknown-8.jpg';
+import putneyStudio from './assets/images/pitter_potter_putney_outside.jpg';
 import wimbledonStudio from './assets/images/PP_Wimbledon_Images/Unknown-8.jpg';
 import potteryGallery from './assets/images/PP_Putney_Images/Unknown-9.jpg';
 import birthdayParties from './assets/images/PP_Putney_Images/Unknown-10.jpg';
