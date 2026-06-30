@@ -1,8 +1,10 @@
 import { Mail, MapPin, Phone, ExternalLink } from 'lucide-react';
 import { Page } from '../types';
+import EditableText from './EditableText';
 
 interface ContactInfoViewProps {
   setCurrentPage: (page: Page) => void;
+  adminMode?: boolean;
 }
 
 const studios = [
@@ -24,33 +26,39 @@ const studios = [
   },
 ];
 
-export default function ContactInfoView({ setCurrentPage }: ContactInfoViewProps) {
+export default function ContactInfoView({ setCurrentPage, adminMode = false }: ContactInfoViewProps) {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 pb-20 pt-6 space-y-12">
       <div className="space-y-2">
-        <h1 className="font-heading text-4xl text-[#1B2D3C]">Contact Us</h1>
+        <h1 className="font-heading text-4xl text-[#1B2D3C]">
+          <EditableText contentKey="contact_title" page="contact-info" defaultValue="Contact Us" adminMode={adminMode} className="font-heading text-4xl text-[#1B2D3C]" />
+        </h1>
         <a
           href="mailto:info@pitterpotter.co.uk"
           className="inline-flex items-center gap-2 text-sm text-[#1B2D3C] border border-[#1B2D3C]/30 px-4 py-2 rounded-lg hover:bg-[#DBE7E4] transition-colors"
         >
           <Mail className="w-4 h-4 shrink-0" />
-          info@pitterpotter.co.uk
+          <EditableText contentKey="contact_email" page="contact-info" defaultValue="info@pitterpotter.co.uk" adminMode={adminMode} className="text-sm text-[#1B2D3C]" />
         </a>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        {studios.map((studio) => (
+        {studios.map((studio, idx) => {
+          const prefix = idx === 0 ? 'putney' : 'wimbledon';
+          return (
           <div key={studio.name} className="space-y-4">
-            <h2 className="font-heading text-2xl text-[#1B2D3C]">{studio.name}</h2>
+            <h2 className="font-heading text-2xl text-[#1B2D3C]">
+              <EditableText contentKey={`${prefix}_title`} page="contact-info" defaultValue={studio.name} adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" />
+            </h2>
 
             <div className="space-y-2 text-sm text-[#1B2D3C]/80">
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-[#1B2D3C]" />
-                <span>{studio.address}</span>
+                <span><EditableText contentKey={`${prefix}_address`} page="contact-info" defaultValue={studio.address} adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" /></span>
               </div>
               <div className="flex items-start gap-2.5">
                 <Phone className="w-4 h-4 shrink-0 mt-0.5 text-[#1B2D3C]" />
-                <a href={`tel:${studio.tel}`} className="hover:text-[#1B2D3C] transition-colors">{studio.phone}</a>
+                <a href={`tel:${studio.tel}`} className="hover:text-[#1B2D3C] transition-colors"><EditableText contentKey={`${prefix}_phone`} page="contact-info" defaultValue={studio.phone} adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" /></a>
               </div>
             </div>
 
@@ -75,10 +83,10 @@ export default function ContactInfoView({ setCurrentPage }: ContactInfoViewProps
               className="inline-flex items-center gap-2 text-sm text-[#1B2D3C] border border-[#1B2D3C]/30 px-4 py-2 rounded-lg hover:bg-[#DBE7E4] transition-colors"
             >
               <ExternalLink className="w-4 h-4" />
-              Get Directions
+              <EditableText contentKey={`${prefix}_directions`} page="contact-info" defaultValue="Get Directions" adminMode={adminMode} className="text-sm text-[#1B2D3C]" />
             </a>
           </div>
-        ))}
+        )})}
       </div>
 
       <div>
@@ -86,7 +94,7 @@ export default function ContactInfoView({ setCurrentPage }: ContactInfoViewProps
           onClick={() => setCurrentPage('book')}
           className="px-7 py-3.5 bg-[#1B2D3C] text-white text-sm tracking-wide hover:bg-[#486581] transition-all cursor-pointer rounded-lg"
         >
-          Book a Session
+          <EditableText contentKey="book_button" page="contact-info" defaultValue="Book a Session" adminMode={adminMode} className="text-sm tracking-wide text-white" />
         </button>
       </div>
     </div>

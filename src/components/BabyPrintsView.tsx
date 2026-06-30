@@ -3,6 +3,7 @@ import { Calendar, MapPin, Phone, X } from 'lucide-react';
 import { Page } from '../types';
 import { Images } from '../images';
 import EditableText from './EditableText';
+import EditableImage from './EditableImage';
 
 interface BabyPrintsViewProps {
   setCurrentPage: (page: Page) => void;
@@ -16,16 +17,18 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
     <div id="baby-prints-view" className="space-y-20 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
       {/* Page Title Header */}
       <div className="text-center space-y-4 max-w-3xl mx-auto">
-        <EditableText key="babyprints_title" page="baby-prints" defaultValue="Baby Prints" adminMode={adminMode} className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight" />
+        <EditableText contentKey="babyprints_title" page="baby-prints" defaultValue="Baby Prints" adminMode={adminMode} className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight" />
       </div>
 
       {/* Hero Image */}
       <div className="relative aspect-[21/9] overflow-hidden rounded-2xl">
-        <img
-          src={Images.clayImprint}
+        <EditableImage
+          contentKey="hero_image"
+          page="baby-prints"
+          defaultSrc={Images.clayImprint}
           alt="Baby clay imprint keepsakes"
           className="w-full h-full object-cover"
-          referrerPolicy="no-referrer"
+          adminMode={adminMode}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1B2D3C]/40 to-transparent" />
       </div>
@@ -33,34 +36,38 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
       {/* What to Expect */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <div className="space-y-6">
-          <h2 className="font-heading text-3xl font-black text-[#1B2D3C]">A Keepsake to Treasure</h2>
+          <h2 className="font-heading text-3xl font-black text-[#1B2D3C]">
+            <EditableText contentKey="what_to_expect_heading" page="baby-prints" defaultValue="A Keepsake to Treasure" adminMode={adminMode} className="font-heading text-3xl text-[#1B2D3C]" />
+          </h2>
           <div className="space-y-4 text-[#1B2D3C]/85 leading-relaxed">
             <p>
-              Our baby print sessions are calm, friendly and designed around your little one. We take impressions of tiny hands and feet into soft clay, which is then fired and finished into a lasting keepsake you can display at home.
+              <EditableText contentKey="what_to_expect_p1" page="baby-prints" defaultValue="Our baby print sessions are calm, friendly and designed around your little one. We take impressions of tiny hands and feet into soft clay, which is then fired and finished into a lasting keepsake you can display at home." adminMode={adminMode} className="text-[#1B2D3C]/85 leading-relaxed" />
             </p>
             <p>
-              Suitable from newborn onwards, the process is quick and gentle. You choose the shape, glaze colour and any personal wording you'd like added. We handle the rest and let you know when your piece is ready to collect.
+              <EditableText contentKey="what_to_expect_p2" page="baby-prints" defaultValue="Suitable from newborn onwards, the process is quick and gentle. You choose the shape, glaze colour and any personal wording you'd like added. We handle the rest and let you know when your piece is ready to collect." adminMode={adminMode} className="text-[#1B2D3C]/85 leading-relaxed" />
             </p>
           </div>
         </div>
         <div className="bg-[#DBE7E4]/30 p-8 rounded-2xl space-y-6">
-          <h3 className="font-heading text-xl text-[#1B2D3C]">How It Works</h3>
+          <h3 className="font-heading text-xl text-[#1B2D3C]">
+            <EditableText contentKey="how_it_works_heading" page="baby-prints" defaultValue="How It Works" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" />
+          </h3>
           <ol className="space-y-4 text-[#1B2D3C]/85">
             <li className="flex gap-3">
               <span className="text-[#1B2D3C]">1.</span>
-              <span>Book a baby print session at either studio.</span>
+              <span><EditableText contentKey="how_it_works_step1" page="baby-prints" defaultValue="Book a baby print session at either studio." adminMode={adminMode} className="text-[#1B2D3C]/85" /></span>
             </li>
             <li className="flex gap-3">
               <span className="text-[#1B2D3C]">2.</span>
-              <span>We take hand and foot impressions in soft clay.</span>
+              <span><EditableText contentKey="how_it_works_step2" page="baby-prints" defaultValue="We take hand and foot impressions in soft clay." adminMode={adminMode} className="text-[#1B2D3C]/85" /></span>
             </li>
             <li className="flex gap-3">
               <span className="text-[#1B2D3C]">3.</span>
-              <span>Choose your shape, glaze colour and any wording.</span>
+              <span><EditableText contentKey="how_it_works_step3" page="baby-prints" defaultValue="Choose your shape, glaze colour and any wording." adminMode={adminMode} className="text-[#1B2D3C]/85" /></span>
             </li>
             <li className="flex gap-3">
               <span className="text-[#1B2D3C]">4.</span>
-              <span>We fire and finish your keepsake, ready to collect.</span>
+              <span><EditableText contentKey="how_it_works_step4" page="baby-prints" defaultValue="We fire and finish your keepsake, ready to collect." adminMode={adminMode} className="text-[#1B2D3C]/85" /></span>
             </li>
           </ol>
         </div>
@@ -68,17 +75,24 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
 
       {/* Gallery */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[Images.clayImprint, ...Images.productGallery.slice(0, 3)].map((src, idx) => (
+        {[
+          { key: 'gallery_main', src: Images.clayImprint, alt: 'Baby clay imprint keepsakes' },
+          { key: 'gallery_1', src: Images.productGallery[0], alt: 'Baby print example 2' },
+          { key: 'gallery_2', src: Images.productGallery[1], alt: 'Baby print example 3' },
+          { key: 'gallery_3', src: Images.productGallery[2], alt: 'Baby print example 4' },
+        ].map((item) => (
           <div
-            key={idx}
-            onClick={() => setSelectedImage(src)}
+            key={item.key}
+            onClick={() => setSelectedImage(item.src)}
             className="group relative aspect-square overflow-hidden rounded-xl cursor-pointer"
           >
-            <img
-              src={src}
-              alt={`Baby print example ${idx + 1}`}
+            <EditableImage
+              contentKey={item.key}
+              page="baby-prints"
+              defaultSrc={item.src}
+              alt={item.alt}
               className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-500"
-              referrerPolicy="no-referrer"
+              adminMode={adminMode}
             />
           </div>
         ))}
@@ -108,9 +122,11 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
 
       {/* Book CTA */}
       <div className="bg-[#DBE7E4] p-8 md:p-12 rounded-2xl text-center space-y-6">
-        <h2 className="font-heading text-3xl text-[#1B2D3C]">Ready to Capture the Moment?</h2>
+        <h2 className="font-heading text-3xl text-[#1B2D3C]">
+          <EditableText contentKey="cta_heading" page="baby-prints" defaultValue="Ready to Capture the Moment?" adminMode={adminMode} className="font-heading text-3xl text-[#1B2D3C]" />
+        </h2>
         <p className="text-[#1B2D3C]/85 max-w-2xl mx-auto leading-relaxed">
-          Book a baby print session at your preferred studio. Sessions are relaxed and can fit around feeds and naps.
+          <EditableText contentKey="cta_text" page="baby-prints" defaultValue="Book a baby print session at your preferred studio. Sessions are relaxed and can fit around feeds and naps." adminMode={adminMode} className="text-[#1B2D3C]/85 leading-relaxed" />
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
@@ -118,14 +134,14 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
             className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#F8FAFC] transition-all cursor-pointer rounded-lg"
           >
             <Calendar className="w-4 h-4" />
-            Book a Session
+            <EditableText contentKey="cta_book_button" page="baby-prints" defaultValue="Book a Session" adminMode={adminMode} className="text-sm uppercase tracking-widest" />
           </button>
           <button
             onClick={() => setCurrentPage('contact-info')}
             className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#1B2D3C] text-white text-sm uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer rounded-lg"
           >
             <Phone className="w-4 h-4" />
-            Contact Us
+            <EditableText contentKey="cta_contact_button" page="baby-prints" defaultValue="Contact Us" adminMode={adminMode} className="text-sm uppercase tracking-widest text-white" />
           </button>
         </div>
       </div>
@@ -135,18 +151,22 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
         <div className="p-6 bg-white border border-[#1B2D3C]/10 rounded-xl space-y-3">
           <div className="flex items-center gap-2 text-[#1B2D3C]">
             <MapPin className="w-5 h-5" />
-            <h3 className="font-heading text-lg font-black">Putney Studio</h3>
+            <h3 className="font-heading text-lg font-black">
+              <EditableText contentKey="putney_title" page="baby-prints" defaultValue="Putney Studio" adminMode={adminMode} className="font-heading text-lg text-[#1B2D3C]" />
+            </h3>
           </div>
-          <p className="text-[#1B2D3C]/85">234 Upper Richmond Road, Putney SW15 6TG</p>
-          <p className="text-[#1B2D3C]/85">020 8788 1635</p>
+          <p className="text-[#1B2D3C]/85"><EditableText contentKey="putney_address" page="baby-prints" defaultValue="234 Upper Richmond Road, Putney SW15 6TG" adminMode={adminMode} className="text-[#1B2D3C]/85" /></p>
+          <p className="text-[#1B2D3C]/85"><EditableText contentKey="putney_phone" page="baby-prints" defaultValue="020 8788 1635" adminMode={adminMode} className="text-[#1B2D3C]/85" /></p>
         </div>
         <div className="p-6 bg-white border border-[#1B2D3C]/10 rounded-xl space-y-3">
           <div className="flex items-center gap-2 text-[#1B2D3C]">
             <MapPin className="w-5 h-5" />
-            <h3 className="font-heading text-lg font-black">Wimbledon Studio</h3>
+            <h3 className="font-heading text-lg font-black">
+              <EditableText contentKey="wimbledon_title" page="baby-prints" defaultValue="Wimbledon Studio" adminMode={adminMode} className="font-heading text-lg text-[#1B2D3C]" />
+            </h3>
           </div>
-          <p className="text-[#1B2D3C]/85">52 Wimbledon Hill Road, Wimbledon SW19 7PA</p>
-          <p className="text-[#1B2D3C]/85">020 3770 4499</p>
+          <p className="text-[#1B2D3C]/85"><EditableText contentKey="wimbledon_address" page="baby-prints" defaultValue="52 Wimbledon Hill Road, Wimbledon SW19 7PA" adminMode={adminMode} className="text-[#1B2D3C]/85" /></p>
+          <p className="text-[#1B2D3C]/85"><EditableText contentKey="wimbledon_phone" page="baby-prints" defaultValue="020 3770 4499" adminMode={adminMode} className="text-[#1B2D3C]/85" /></p>
         </div>
       </div>
     </div>

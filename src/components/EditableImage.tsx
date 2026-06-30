@@ -5,7 +5,7 @@ import { Staff } from '../types';
 import { useToast } from './ToastContext';
 
 interface EditableImageProps {
-  key: string;
+  contentKey: string;
   page: string;
   defaultSrc: string;
   alt: string;
@@ -14,7 +14,7 @@ interface EditableImageProps {
   onSave?: (value: string) => void;
 }
 
-export default function EditableImage({ key: contentKey, page, defaultSrc, alt, className, adminMode, onSave }: EditableImageProps) {
+export default function EditableImage({ contentKey, page, defaultSrc, alt, className, adminMode, onSave }: EditableImageProps) {
   const { showToast } = useToast();
   const [src, setSrc] = useState(defaultSrc);
   const [isEditing, setIsEditing] = useState(false);

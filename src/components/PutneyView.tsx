@@ -8,6 +8,7 @@ import 'react-day-picker/dist/style.css';
 import { getRemainingCapacity, getBusyDates } from '../lib/bookings';
 import { useToast } from './ToastContext';
 import EditableText from './EditableText';
+import EditableImage from './EditableImage';
 
 interface PutneyViewProps {
   setCurrentPage: (page: Page) => void;
@@ -105,22 +106,27 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
     <div className="min-h-screen bg-[#FFFFFF]">
       {/* Hero Section */}
       <section className="relative h-[60vh] overflow-hidden">
-        <img
-          src={Images.putneyStudio}
+        <EditableImage
+          contentKey="putney_hero_image"
+          page="putney"
+          defaultSrc={Images.putneyStudio}
           alt="Pitter Potter Putney Studio Exterior"
           className="w-full h-full object-cover"
-          referrerPolicy="no-referrer"
+          adminMode={adminMode}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#1B2D3C]/40 via-[#1B2D3C]/20 to-[#1B2D3C]/60" />
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="text-center text-[#1B2D3C] px-4 bg-[#DBE7E4]/80 backdrop-blur-sm p-6 sm:p-8 rounded-2xl">
-            <img
-              src={Images.logo}
+            <EditableImage
+              contentKey="putney_hero_logo"
+              page="putney"
+              defaultSrc={Images.logo}
               alt="Pitter Potter Logo"
               className="h-16 sm:h-20 w-auto object-contain mx-auto mb-4"
+              adminMode={adminMode}
             />
             <p className="text-xl md:text-2xl font-light text-[#1B2D3C]">
-              Putney SW15
+              <EditableText contentKey="putney_subtitle" page="putney" defaultValue="Putney SW15" adminMode={adminMode} className="text-xl md:text-2xl font-light text-[#1B2D3C]" />
             </p>
           </div>
         </div>
@@ -137,12 +143,13 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                   onClick={() => setLightboxIndex(idx)}
                   className="w-full h-full cursor-pointer"
                 >
-                  <img
-                    src={src}
-                    alt="Our Putney Studio gallery {idx + 1}"
-                    loading="lazy"
+                  <EditableImage
+                    contentKey={`putney_gallery_${idx}`}
+                    page="putney"
+                    defaultSrc={src}
+                    alt={`Our Putney Studio gallery ${idx + 1}`}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                    referrerPolicy="no-referrer"
+                    adminMode={adminMode}
                   />
                 </button>
               </div>
@@ -156,12 +163,13 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                 onClick={() => setLightboxIndex(mobileGalleryIndex)}
                 className="w-full h-full cursor-pointer"
               >
-                <img
-                  src={Images.putneyGallery[mobileGalleryIndex]}
-                  alt="Our Putney Studio gallery {mobileGalleryIndex + 1}"
-                  loading="lazy"
+                <EditableImage
+                  contentKey={`putney_gallery_mobile_${mobileGalleryIndex}`}
+                  page="putney"
+                  defaultSrc={Images.putneyGallery[mobileGalleryIndex]}
+                  alt={`Our Putney Studio gallery ${mobileGalleryIndex + 1}`}
                   className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
+                  adminMode={adminMode}
                 />
               </button>
             </div>
@@ -184,8 +192,8 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
             </div>
           </div>
           <div className="space-y-4">
-            <EditableText key="putney_title" page="putney" defaultValue="Our Putney Studio" adminMode={adminMode} className="font-heading text-3xl font-black text-[#1B2D3C] block" />
-            <EditableText key="putney_description" page="putney" defaultValue="Our bright, airy flagship studio on Upper Richmond Road, perfect for individuals, families, and creative birthday parties. Step inside and bring unglazed pottery to vibrant life with our premium glazes and expert guidance." adminMode={adminMode} className="text-[#1B2D3C] text-sm md:text-base leading-relaxed font-medium" />
+            <EditableText contentKey="putney_title" page="putney" defaultValue="Our Putney Studio" adminMode={adminMode} className="font-heading text-3xl font-black text-[#1B2D3C] block" />
+            <EditableText contentKey="putney_description" page="putney" defaultValue="Our bright, airy flagship studio on Upper Richmond Road, perfect for individuals, families, and creative birthday parties. Step inside and bring unglazed pottery to vibrant life with our premium glazes and expert guidance." adminMode={adminMode} className="text-[#1B2D3C] text-sm md:text-base leading-relaxed font-medium" />
           </div>
 
           {lightboxIndex !== null && (
@@ -205,11 +213,13 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
               >
                 <ChevronLeft className="w-8 h-8" />
               </button>
-              <img
-                src={Images.putneyGallery[lightboxIndex]}
-                alt={"Gallery image " + (lightboxIndex + 1)}
+              <EditableImage
+                contentKey={`putney_lightbox_${lightboxIndex}`}
+                page="putney"
+                defaultSrc={Images.putneyGallery[lightboxIndex]}
+                alt={`Gallery image ${lightboxIndex + 1}`}
                 className="max-w-full max-h-[85vh] object-contain rounded-lg"
-                onClick={(e) => e.stopPropagation()}
+                adminMode={adminMode}
               />
               <button
                 onClick={(e) => { e.stopPropagation(); setLightboxIndex((lightboxIndex + 1) % Images.putneyGallery.length); }}
@@ -224,7 +234,9 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
           <div className="border-t border-[#1B2D3C]/10 pt-6 space-y-4">
             <div className="flex items-center gap-2">
               <CalendarIcon className="w-5 h-5 text-[#1B2D3C]" />
-              <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Book a Session</h3>
+              <h3 className="font-heading text-xl font-black text-[#1B2D3C]">
+                <EditableText contentKey="putney_book_heading" page="putney" defaultValue="Book a Session" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" />
+              </h3>
             </div>
 
             <div className="bg-[#FFFFFF] p-3 flex items-start justify-center">
@@ -241,7 +253,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
 
             {timeSlots.length > 0 && (
               <div className="space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Available 2-hour slots</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="putney_slots_label" page="putney" defaultValue="Available 2-hour slots" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></span>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {timeSlots.map((slot) => (
                     <button
@@ -258,7 +270,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                     >
                       {slot}
                       <span className="block text-[9px] font-normal normal-case tracking-normal">
-                        {slotCapacity[slot] ?? MAX_PAINTERS} left
+                        {slotCapacity[slot] ?? MAX_PAINTERS} <EditableText contentKey="putney_slots_left" page="putney" defaultValue="left" adminMode={adminMode} className="text-[9px] normal-case tracking-normal" />
                       </span>
                     </button>
                   ))}
@@ -267,7 +279,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
             )}
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Number of Painters</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="putney_painters_label" page="putney" defaultValue="Number of Painters" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
               <input
                 type="number"
                 min={1}
@@ -282,7 +294,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
               <div className="bg-[#D6E2E9]/50 p-3 text-sm font-bold text-[#1B2D3C]">
                 <p>{format(date, 'EEEE, do MMMM yyyy')} · {time} – {parseInt(time.split(':')[0], 10) + 2}:00 · {painters === '' ? 1 : painters} painter{(painters === '' ? 1 : painters) !== 1 ? 's' : ''}</p>
                 <p className="text-[10px] font-normal mt-1">
-                  {(slotCapacity[time] ?? MAX_PAINTERS)} spaces remaining for this session
+                  {(slotCapacity[time] ?? MAX_PAINTERS)} <EditableText contentKey="putney_spaces_remaining" page="putney" defaultValue="spaces remaining for this session" adminMode={adminMode} className="text-[10px] font-normal" />
                 </p>
               </div>
             )}
@@ -292,18 +304,20 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
               disabled={!date || !time}
               className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Book This Session <ArrowRight className="w-4 h-4" />
+              <EditableText contentKey="putney_book_button" page="putney" defaultValue="Book This Session" adminMode={adminMode} className="text-xs uppercase tracking-widest text-white" /> <ArrowRight className="w-4 h-4" />
             </button>
 
             <button
               onClick={() => setCurrentPage('book')}
               className="w-full py-3 bg-white text-[#1B2D3C] font-bold text-xs uppercase tracking-widest border border-[#1B2D3C]/20 hover:bg-[#FFFFFF] transition-all cursor-pointer"
             >
-              Choose a Different Studio
+              <EditableText contentKey="putney_choose_studio_button" page="putney" defaultValue="Choose a Different Studio" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
             </button>
           </div>
           <div className="border-t border-[#1B2D3C]/10 pt-8 space-y-6">
-            <h3 className="font-heading text-2xl font-black text-[#1B2D3C]">Contact & Location</h3>
+            <h3 className="font-heading text-2xl font-black text-[#1B2D3C]">
+              <EditableText contentKey="putney_contact_heading" page="putney" defaultValue="Contact & Location" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" />
+            </h3>
 
             <div className="aspect-video w-full bg-[#D6E2E9]/50 overflow-hidden rounded-lg">
               <iframe
@@ -324,8 +338,8 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                   </svg>
                 </div>
                 <div>
-                  <p className="font-bold">Address:</p>
-                  <p className="text-stone-600">234 Upper Richmond Road, Putney SW15 6TG</p>
+                  <p className="font-bold"><EditableText contentKey="putney_address_label" page="putney" defaultValue="Address:" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></p>
+                  <p className="text-stone-600"><EditableText contentKey="putney_address" page="putney" defaultValue="234 Upper Richmond Road, Putney SW15 6TG" adminMode={adminMode} className="text-sm text-stone-600" /></p>
                 </div>
               </div>
 
@@ -336,20 +350,22 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                   </svg>
                 </div>
                 <div>
-                  <p className="font-bold">Phone:</p>
-                  <a href="tel:02087881635" className="text-[#1B2D3C] hover:underline font-bold">020 87881635</a>
+                  <p className="font-bold"><EditableText contentKey="putney_phone_label" page="putney" defaultValue="Phone:" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></p>
+                  <a href="tel:02087881635" className="text-[#1B2D3C] hover:underline font-bold"><EditableText contentKey="putney_phone" page="putney" defaultValue="020 87881635" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></a>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="border-t border-[#1B2D3C]/10 pt-8 space-y-6">
-            <h3 className="font-heading text-2xl font-black text-[#1B2D3C]">Opening Hours</h3>
+            <h3 className="font-heading text-2xl font-black text-[#1B2D3C]">
+              <EditableText contentKey="putney_hours_heading" page="putney" defaultValue="Opening Hours" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" />
+            </h3>
             <div className="divide-y divide-[#1B2D3C]/10 text-sm text-[#1B2D3C] font-medium">
               {OPENING_HOURS.map(({ day, time }) => (
                 <div key={day} className="flex justify-between py-2.5">
-                  <span className="font-bold">{day}</span>
-                  <span className={time.includes('Closed') ? 'text-stone-500' : ''}>{time}</span>
+                  <span className="font-bold"><EditableText contentKey={`putney_hours_${day.toLowerCase().replace(/[^a-z]/g, '_')}`} page="putney" defaultValue={day} adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></span>
+                  <span className={time.includes('Closed') ? 'text-stone-500' : ''}><EditableText contentKey={`putney_hours_${day.toLowerCase().replace(/[^a-z]/g, '_')}_time`} page="putney" defaultValue={time} adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></span>
                 </div>
               ))}
             </div>

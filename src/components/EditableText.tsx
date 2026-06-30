@@ -5,7 +5,7 @@ import { Staff } from '../types';
 import { useToast } from './ToastContext';
 
 interface EditableTextProps {
-  key: string;
+  contentKey: string;
   page: string;
   defaultValue: string;
   className?: string;
@@ -13,7 +13,7 @@ interface EditableTextProps {
   onSave?: (value: string) => void;
 }
 
-export default function EditableText({ key: contentKey, page, defaultValue, className, adminMode, onSave }: EditableTextProps) {
+export default function EditableText({ contentKey, page, defaultValue, className, adminMode, onSave }: EditableTextProps) {
   const { showToast } = useToast();
   const [value, setValue] = useState(defaultValue);
   const [isEditing, setIsEditing] = useState(false);

@@ -22,7 +22,7 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
  <div id="faqs-view" className="space-y-8 pb-20 pt-6 max-w-3xl mx-auto px-4">
  {/* Title Header */}
  <div className="text-left">
- <EditableText key="faqs_title" page="faqs" defaultValue="FAQs" adminMode={adminMode} className="font-heading text-4xl font-black text-[#1B2D3C]" />
+ <EditableText contentKey="faqs_title" page="faqs" defaultValue="FAQs" adminMode={adminMode} className="font-heading text-4xl font-black text-[#1B2D3C]" />
  </div>
 
  {/* Accordion list */}
@@ -36,7 +36,7 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
  className="w-full py-4 flex justify-between items-center text-left focus:outline-none cursor-pointer"
  >
  <span className="text-[#1B2D3C] text-sm md:text-base leading-snug pr-4">
- {faq.question}
+ <EditableText contentKey={`faq_${faq.id}_question`} page="faqs" defaultValue={faq.question} adminMode={adminMode} className="text-sm md:text-base text-[#1B2D3C] leading-snug" />
  </span>
  <div className="shrink-0 text-[#1B2D3C]">
  {isExpanded ? (
@@ -58,7 +58,7 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
  >
  <div className="pb-4 text-xs md:text-sm text-[#1B2D3C]/80 leading-relaxed font-medium space-y-2">
  {faq.answer.split('\n\n').map((para, pIdx) => (
- <p key={pIdx}>{para}</p>
+ <p key={pIdx}><EditableText contentKey={`faq_${faq.id}_answer_${pIdx}`} page="faqs" defaultValue={para} adminMode={adminMode} className="text-xs md:text-sm text-[#1B2D3C]/80 leading-relaxed" /></p>
  ))}
  </div>
  </motion.div>
@@ -72,15 +72,15 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
  {/* Help Callout */}
  <div className="bg-white border border-[#1B2D3C]/20 p-6 rounded-lg flex items-center justify-between gap-6 flex-col md:flex-row text-center md:text-left">
  <div className="space-y-1">
- <p className="font-bold text-[#1B2D3C] text-sm uppercase tracking-wider">Still have questions?</p>
- <p className="text-xs text-stone-500 font-semibold">Contact us if you have any more questions.</p>
+ <p className="font-bold text-[#1B2D3C] text-sm uppercase tracking-wider"><EditableText contentKey="help_callout_title" page="faqs" defaultValue="Still have questions?" adminMode={adminMode} className="text-sm uppercase tracking-wider text-[#1B2D3C]" /></p>
+ <p className="text-xs text-stone-500 font-semibold"><EditableText contentKey="help_callout_text" page="faqs" defaultValue="Contact us if you have any more questions." adminMode={adminMode} className="text-xs text-stone-500" /></p>
  </div>
  <div className="flex gap-3">
  <button
  onClick={() => setCurrentPage('contact-info')}
  className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#486581] transition-all rounded-lg whitespace-nowrap cursor-pointer"
  >
- Contact Us
+ <EditableText contentKey="help_callout_button" page="faqs" defaultValue="Contact Us" adminMode={adminMode} className="text-xs uppercase tracking-wider text-white" />
  </button>
  </div>
  </div>

@@ -140,9 +140,9 @@ export default function App() {
  case 'contact':
  return <ContactView initialPainters={paintersCountPreset} adminMode={adminMode} />;
  case 'contact-info':
- return <ContactInfoView setCurrentPage={setCurrentPage} />;
+ return <ContactInfoView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'book':
- return <BookView setCurrentPage={setCurrentPage} />;
+ return <BookView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'gift-cards':
  return <GiftCardView />;
  case 'buy-gift-card':
@@ -173,7 +173,7 @@ export default function App() {
             }
             return <AdminLoginView onLogin={handleAdminLogin} />;
  default:
- return <NotFoundView setCurrentPage={setCurrentPage} />;
+ return <NotFoundView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  }
  };
 
@@ -214,7 +214,7 @@ export default function App() {
  {/* Footer Details */}
  {currentPage !== 'admin' && (
  <div className="pb-20 md:pb-0">
- <Footer setCurrentPage={setCurrentPage} />
+ <Footer setCurrentPage={setCurrentPage} adminMode={adminMode} />
  </div>
  )}
  </div>

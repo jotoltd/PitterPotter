@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Menu, X, Phone, Calendar, Edit3 } from 'lucide-react';
 import { Page, Staff } from '../types';
 import { Images } from '../images';
+import EditableText from './EditableText';
+import EditableImage from './EditableImage';
 
 interface NavbarProps {
   currentPage: Page;
@@ -15,15 +17,15 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
   const [isOpen, setIsOpen] = useState(false);
   const [showCallOptions, setShowCallOptions] = useState(false);
 
-  const navItems: { label: string; value: Page }[] = [
-    { label: 'Home', value: 'home' },
-    { label: 'Baby Prints', value: 'baby-prints' },
-    { label: 'Parties & Events', value: 'parties' },
-    { label: 'Prices', value: 'pricing' },
-    { label: 'Gift Cards', value: 'buy-gift-card' },
-    { label: 'FAQs', value: 'faqs' },
-    { label: 'Gallery', value: 'gallery' },
-    { label: 'Contact', value: 'contact-info' },
+  const navItems: { label: string; value: Page; keyPrefix: string }[] = [
+    { label: 'Home', value: 'home', keyPrefix: 'home' },
+    { label: 'Baby Prints', value: 'baby-prints', keyPrefix: 'baby_prints' },
+    { label: 'Parties & Events', value: 'parties', keyPrefix: 'parties' },
+    { label: 'Prices', value: 'pricing', keyPrefix: 'pricing' },
+    { label: 'Gift Cards', value: 'buy-gift-card', keyPrefix: 'gift_cards' },
+    { label: 'FAQs', value: 'faqs', keyPrefix: 'faqs' },
+    { label: 'Gallery', value: 'gallery', keyPrefix: 'gallery' },
+    { label: 'Contact', value: 'contact-info', keyPrefix: 'contact' },
   ];
 
   const handleNavClick = (page: Page) => {
@@ -44,10 +46,13 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
               onClick={() => handleNavClick('home')}
               className="flex items-center gap-2.5 text-left group transition-transform focus:outline-none"
             >
-              <img
-                src={Images.logo}
+              <EditableImage
+                contentKey="navbar_logo"
+                page="navbar"
+                defaultSrc={Images.logo}
                 alt="Pitter Potter Logo"
                 className="h-10 w-auto object-contain rounded-lg"
+                adminMode={adminMode}
               />
             </button>
 
@@ -64,7 +69,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                       : 'text-[#1B2D3C] hover:text-[#1B2D3C]'
                   }`}
                 >
-                  {item.label}
+                  <EditableText contentKey={`nav_${item.keyPrefix}_label`} page="navbar" defaultValue={item.label} adminMode={adminMode} className="text-[13px] font-normal uppercase tracking-widest" />
                   <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-[#1B2D3C] transition-all duration-300 ${isActive(item.value) ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
                 </button>
               ))}
@@ -73,7 +78,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                 onClick={() => handleNavClick('book')}
                 className="ml-4 px-5 py-2.5 bg-[#DBE7E4] text-[#1B2D3C] font-normal text-[13px] uppercase tracking-widest border border-[#1B2D3C] hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
-                Booking
+                <EditableText contentKey="nav_book_button" page="navbar" defaultValue="Booking" adminMode={adminMode} className="text-[13px] font-normal uppercase tracking-widest" />
               </button>
               {currentStaff && (
                 <button
@@ -119,7 +124,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                       : 'text-[#1B2D3C] hover:bg-[#D6E2E9]/20 pl-5'
                   }`}
                 >
-                  {item.label}
+                  <EditableText contentKey={`mobile_nav_${item.keyPrefix}_label`} page="navbar" defaultValue={item.label} adminMode={adminMode} className="text-lg font-normal uppercase tracking-widest" />
                 </button>
               ))}
               <div className="pt-2">
@@ -128,7 +133,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                   onClick={() => handleNavClick('book')}
                   className="w-full py-4 bg-[#DBE7E4] text-[#1B2D3C] font-normal text-lg uppercase tracking-widest text-center border border-[#1B2D3C] transition-all cursor-pointer"
                 >
-                  Book Studio
+                  <EditableText contentKey="mobile_nav_book_button" page="navbar" defaultValue="Book Studio" adminMode={adminMode} className="text-lg font-normal uppercase tracking-widest" />
                 </button>
               </div>
             </div>
@@ -144,7 +149,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
             className="flex flex-col items-center justify-center py-3 px-4 flex-1 min-w-0 text-[#1B2D3C] transition-all cursor-pointer active:bg-[#FFFFFF]"
           >
             <Phone className="w-5 h-5 mb-1" />
-            <span className="text-[9px] font-normal uppercase tracking-wider truncate w-full text-center">Call us</span>
+            <span className="text-[9px] font-normal uppercase tracking-wider truncate w-full text-center"><EditableText contentKey="mobile_call_us" page="navbar" defaultValue="Call us" adminMode={adminMode} className="text-[9px] font-normal uppercase tracking-wider" /></span>
           </button>
           <div className="w-px h-8 bg-[#1B2D3C]/10" />
           <button
@@ -152,7 +157,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
             className="flex flex-col items-center justify-center py-3 px-4 flex-1 min-w-0 bg-[#DBE7E4] text-[#1B2D3C] transition-all cursor-pointer active:bg-[#D6E2E9]"
           >
             <Calendar className="w-5 h-5 mb-1" />
-            <span className="text-[9px] font-normal uppercase tracking-wider truncate w-full text-center">Book</span>
+            <span className="text-[9px] font-normal uppercase tracking-wider truncate w-full text-center"><EditableText contentKey="mobile_book" page="navbar" defaultValue="Book" adminMode={adminMode} className="text-[9px] font-normal uppercase tracking-wider" /></span>
           </button>
         </div>
       </div>
@@ -161,7 +166,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
         <div className="md:hidden fixed inset-0 z-[60] bg-[#1B2D3C]/60 flex items-end justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-t-lg overflow-hidden shadow-lg animate-in slide-in-from-bottom-10">
             <div className="p-4 border-b border-[#1B2D3C]/10 flex justify-between items-center">
-              <p className="font-heading text-lg font-normal text-[#1B2D3C]">Call us</p>
+              <p className="font-heading text-lg font-normal text-[#1B2D3C]"><EditableText contentKey="call_modal_title" page="navbar" defaultValue="Call us" adminMode={adminMode} className="font-heading text-lg text-[#1B2D3C]" /></p>
               <button
                 onClick={() => setShowCallOptions(false)}
                 className="p-2 hover:bg-[#FFFFFF] transition-colors cursor-pointer"
@@ -175,22 +180,22 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                 onClick={() => setShowCallOptions(false)}
                 className="block w-full py-3 px-4 bg-[#FFFFFF] text-[#1B2D3C] font-normal text-sm border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all"
               >
-                <span className="block text-[10px] text-[#1B2D3C] uppercase tracking-wider mb-1">Putney Studio</span>
-                020 8788 1635
+                <span className="block text-[10px] text-[#1B2D3C] uppercase tracking-wider mb-1"><EditableText contentKey="call_modal_putney" page="navbar" defaultValue="Putney Studio" adminMode={adminMode} className="text-[10px] uppercase tracking-wider text-[#1B2D3C]" /></span>
+                <EditableText contentKey="call_modal_putney_phone" page="navbar" defaultValue="020 8788 1635" adminMode={adminMode} className="text-sm text-[#1B2D3C]" />
               </a>
               <a
                 href="tel:02037704499"
                 onClick={() => setShowCallOptions(false)}
                 className="block w-full py-3 px-4 bg-[#FFFFFF] text-[#1B2D3C] font-normal text-sm border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all"
               >
-                <span className="block text-[10px] text-[#1B2D3C] uppercase tracking-wider mb-1">Wimbledon Studio</span>
-                020 3770 4499
+                <span className="block text-[10px] text-[#1B2D3C] uppercase tracking-wider mb-1"><EditableText contentKey="call_modal_wimbledon" page="navbar" defaultValue="Wimbledon Studio" adminMode={adminMode} className="text-[10px] uppercase tracking-wider text-[#1B2D3C]" /></span>
+                <EditableText contentKey="call_modal_wimbledon_phone" page="navbar" defaultValue="020 3770 4499" adminMode={adminMode} className="text-sm text-[#1B2D3C]" />
               </a>
               <button
                 onClick={() => setShowCallOptions(false)}
                 className="w-full py-3 text-[#1B2D3C] font-normal text-xs uppercase tracking-wider hover:bg-[#FFFFFF] transition-all cursor-pointer"
               >
-                Cancel
+                <EditableText contentKey="call_modal_cancel" page="navbar" defaultValue="Cancel" adminMode={adminMode} className="text-xs uppercase tracking-wider text-[#1B2D3C]" />
               </button>
             </div>
           </div>

@@ -29,7 +29,7 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
       {/* Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 text-center max-w-3xl">
         <div className="mb-2">
-          <EditableText key="pricing_title" page="pricing" defaultValue="Prices" adminMode={adminMode} className="font-heading text-4xl md:text-5xl text-[#1B2D3C] tracking-tight" />
+          <EditableText contentKey="pricing_title" page="pricing" defaultValue="Prices" adminMode={adminMode} className="font-heading text-4xl md:text-5xl text-[#1B2D3C] tracking-tight" />
         </div>
       </div>
 
@@ -46,8 +46,8 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
                   }}
                   className={`w-full text-left px-6 py-5 hover:bg-[#D6E2E9]/40 transition-all flex justify-between items-center gap-6 cursor-pointer ${idx % 2 === 1 ? 'bg-[#F8FAFC]' : 'bg-white'}`}
                 >
-                  <p className="text-[#1B2D3C] text-base md:text-lg">{item.name}</p>
-                  <span className="text-base md:text-lg text-[#1B2D3C] shrink-0">{item.price}</span>
+                  <p className="text-[#1B2D3C] text-base md:text-lg"><EditableText contentKey={`pricing_item_${item.id}_name`} page="pricing" defaultValue={item.name} adminMode={adminMode} className="text-base md:text-lg text-[#1B2D3C]" /></p>
+                  <span className="text-base md:text-lg text-[#1B2D3C] shrink-0"><EditableText contentKey={`pricing_item_${item.id}_price`} page="pricing" defaultValue={item.price} adminMode={adminMode} className="text-base md:text-lg text-[#1B2D3C]" /></span>
               </button>
             ))}
           </div>
@@ -107,15 +107,15 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
             <div className="p-6 space-y-4">
               <div className="flex justify-between items-start gap-4">
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-[#1B2D3C] mb-1">{categoryLabel(selectedItem.category)}</p>
-                  <h2 className="font-heading text-2xl text-[#1B2D3C]">{selectedItem.name}</h2>
+                  <p className="text-[10px] uppercase tracking-wider text-[#1B2D3C] mb-1"><EditableText contentKey={`pricing_item_${selectedItem.id}_category`} page="pricing" defaultValue={categoryLabel(selectedItem.category)} adminMode={adminMode} className="text-[10px] uppercase tracking-wider text-[#1B2D3C]" /></p>
+                  <h2 className="font-heading text-2xl text-[#1B2D3C]"><EditableText contentKey={`pricing_item_${selectedItem.id}_name`} page="pricing" defaultValue={selectedItem.name} adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" /></h2>
                 </div>
-                <span className="text-xl text-[#1B2D3C] shrink-0">{selectedItem.price}</span>
+                <span className="text-xl text-[#1B2D3C] shrink-0"><EditableText contentKey={`pricing_item_${selectedItem.id}_price`} page="pricing" defaultValue={selectedItem.price} adminMode={adminMode} className="text-xl text-[#1B2D3C]" /></span>
               </div>
-              <p className="text-sm text-[#1B2D3C]/80 leading-relaxed">{selectedItem.description}</p>
+              <p className="text-sm text-[#1B2D3C]/80 leading-relaxed"><EditableText contentKey={`pricing_item_${selectedItem.id}_description`} page="pricing" defaultValue={selectedItem.description} adminMode={adminMode} className="text-sm text-[#1B2D3C]/80 leading-relaxed" /></p>
               {selectedItem.isPartyEligible && (
                 <span className="inline-block px-2.5 py-1 bg-[#D6E2E9] text-[#1B2D3C] text-[10px] uppercase tracking-widest">
-                  Party Favorite
+                  <EditableText contentKey="pricing_party_favorite" page="pricing" defaultValue="Party Favorite" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" />
                 </span>
               )}
             </div>
