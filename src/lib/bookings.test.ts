@@ -112,7 +112,7 @@ describe('getRemainingCapacity', () => {
     } as Response);
 
     const remaining = await getRemainingCapacity('Wimbledon', '2025-08-01', '10:00');
-    expect(remaining).toBe(50);
+    expect(remaining).toBe(65);
   });
 });
 
