@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import FloorPlanView from './FloorPlanView';
+import WimbledonFloorPlan from './WimbledonFloorPlan';
 import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, CalendarX, Gift, ChevronUp, ChevronDown, CalendarDays } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO } from 'date-fns';
@@ -77,6 +78,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [editBookingCapacity, setEditBookingCapacity] = useState<number | null>(null);
   const [capacityLoading, setCapacityLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [assignModalBooking, setAssignModalBooking] = useState<BookingInquiry | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 250);
@@ -449,6 +451,20 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       }
     } catch (err) {
       console.error('Staff list request failed:', err);
+    }
+  };
+
+  const updateBookingTable = async (bookingId: string, tableId: string | null) => {
+    try {
+      const booking = inquiries.find(i => i.id === bookingId);
+      if (!booking) return;
+      const updated = { ...booking, tableId: tableId ?? undefined };
+      await updateBooking(updated, staff);
+      setInquiries(inquiries.map(i => i.id === bookingId ? updated : i));
+      setAssignModalBooking(null);
+      showToast(tableId ? `Table ${tableId} assigned` : 'Table unassigned', 'success');
+    } catch {
+      showToast('Failed to update table assignment', 'error');
     }
   };
 
@@ -1182,6 +1198,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Painters</th>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Source</th>
                     <SortHeader field="status" label="Status" sort={sort} setSort={setSort} />
+                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Table</th>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Actions</th>
                   </tr>
                 </thead>
@@ -1225,6 +1242,23 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           )}
                           {inq.status}
                         </span>
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3">
+                        {inq.studio === 'Wimbledon' ? (
+                          <button
+                            onClick={() => setAssignModalBooking(inq)}
+                            className={`px-2 py-1 text-[10px] font-bold border transition-all cursor-pointer rounded ${
+                              inq.tableId
+                                ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                                : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/30 hover:border-[#1B2D3C]'
+                            }`}
+                            title="Assign table"
+                          >
+                            {inq.tableId ?? '+ Assign'}
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-[#1B2D3C]/30 font-semibold">—</span>
+                        )}
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <div className="flex gap-1 sm:gap-2">
@@ -1567,6 +1601,43 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               >
                 Save
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Table Modal */}
+      {assignModalBooking && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-[#1B2D3C]/20 max-w-lg w-full shadow-xl rounded-xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-[#1B2D3C]/10 flex items-center justify-between">
+              <div>
+                <h3 className="font-heading text-lg font-black text-[#1B2D3C]">Assign Table</h3>
+                <p className="text-[10px] text-[#1B2D3C]/60 font-semibold mt-0.5">
+                  {assignModalBooking.name} · {assignModalBooking.date} · {assignModalBooking.time}
+                </p>
+              </div>
+              <button onClick={() => setAssignModalBooking(null)} className="text-[#1B2D3C]/40 hover:text-[#1B2D3C] text-xl font-bold cursor-pointer">✕</button>
+            </div>
+            <div className="overflow-y-auto p-4 flex-1">
+              {assignModalBooking.tableId && (
+                <div className="mb-3 flex items-center justify-between bg-[#1B2D3C] text-white px-4 py-2 rounded-lg text-xs font-bold">
+                  <span>Currently assigned: {assignModalBooking.tableId}</span>
+                  <button
+                    onClick={() => updateBookingTable(assignModalBooking.id, null)}
+                    className="underline text-white/80 hover:text-white cursor-pointer"
+                  >
+                    Unassign
+                  </button>
+                </div>
+              )}
+              <WimbledonFloorPlan
+                bookings={inquiries}
+                selectedDate={assignModalBooking.date}
+                selectedTime={assignModalBooking.time}
+                highlightTableId={assignModalBooking.tableId}
+                onAssign={(tableId) => updateBookingTable(assignModalBooking.id, tableId)}
+              />
             </div>
           </div>
         </div>
@@ -1933,7 +2004,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       )}
 
       {activeTab === 'floor-plan' && (
-        <FloorPlanView />
+        <FloorPlanView bookings={inquiries} />
       )}
     </div>
   );

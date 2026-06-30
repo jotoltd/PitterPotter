@@ -1,24 +1,9 @@
-/**
- * Wimbledon floor plan — 17 tables
- * Two table sizes:
- *   SMALL  75×75cm  → rendered as 52×52px square
- *   LARGE 125×75cm  → rendered as 88×52px rectangle
- *
- * Layout (top → bottom):
- *   Main area:
- *     Left column  : T1–T4
- *     Right column : T5–T10
- *     Bar (bottom-left of main area)
- *     ✕ separator between T8 and T9
- *   Party Area 1   : T11, T12
- *   Party Area 2   : T15, T16, T17
- *   Right lower    : T13, T14
- */
-
 import { useState } from 'react';
+import { BookingInquiry } from '../types';
 
 type TableSize = 'small' | 'large';
 type ChairSide = 'top' | 'bottom' | 'left' | 'right';
+type TableStatus = 'free' | 'assigned' | 'selected';
 
 interface TableDef {
   id: number;
@@ -32,6 +17,15 @@ interface PositionedTable extends TableDef {
   y: number;
 }
 
+export interface WimbledonFloorPlanProps {
+  bookings?: BookingInquiry[];
+  selectedDate?: string;
+  selectedTime?: string;
+  highlightTableId?: string;
+  onAssign?: (tableId: string) => void;
+  readOnly?: boolean;
+}
+
 const SMALL_W = 52;
 const SMALL_H = 52;
 const LARGE_W = 88;
@@ -39,14 +33,43 @@ const LARGE_H = 52;
 const CHAIR_R = 9;
 const CHAIR_GAP = 5;
 
+const STATUS_FILL: Record<TableStatus, string> = {
+  free: '#FFFFFF',
+  assigned: '#ef4444',
+  selected: '#1B2D3C',
+};
+const STATUS_STROKE: Record<TableStatus, string> = {
+  free: '#1B2D3C',
+  assigned: '#b91c1c',
+  selected: '#1B2D3C',
+};
+const STATUS_TEXT: Record<TableStatus, string> = {
+  free: '#1B2D3C',
+  assigned: '#FFFFFF',
+  selected: '#FFFFFF',
+};
+const STATUS_SUB: Record<TableStatus, string> = {
+  free: '#1B2D3C99',
+  assigned: '#fecaca',
+  selected: '#D6E2E9',
+};
+
 function tableWidth(size: TableSize) { return size === 'small' ? SMALL_W : LARGE_W; }
 function tableHeight(size: TableSize) { return size === 'small' ? SMALL_H : LARGE_H; }
 
-function Chair({ cx, cy }: { cx: number; cy: number }) {
-  return <circle cx={cx} cy={cy} r={CHAIR_R} fill="#D6E2E9" stroke="#1B2D3C" strokeWidth={1.2} />;
+function Chair({ cx, cy, status }: { cx: number; cy: number; status: TableStatus }) {
+  const fill = status === 'assigned' ? '#fca5a5' : status === 'selected' ? '#486581' : '#D6E2E9';
+  return <circle cx={cx} cy={cy} r={CHAIR_R} fill={fill} stroke="#1B2D3C" strokeWidth={1.2} />;
 }
 
-function Table({ def, selected, onClick }: { def: PositionedTable; selected: boolean; onClick: () => void }) {
+function Table({
+  def, status, booking, onClick,
+}: {
+  def: PositionedTable;
+  status: TableStatus;
+  booking?: BookingInquiry;
+  onClick: () => void;
+}) {
   const w = tableWidth(def.size);
   const h = tableHeight(def.size);
   const chairs: { cx: number; cy: number }[] = [];
@@ -73,41 +96,22 @@ function Table({ def, selected, onClick }: { def: PositionedTable; selected: boo
     chairs.push({ cx: def.x + w + CHAIR_R + CHAIR_GAP, cy: def.y + spacing * (i + 1) });
   }
 
-  const totalSeats = def.chairs.length;
-
   return (
-    <g onClick={onClick} className="cursor-pointer">
-      {chairs.map((c, i) => <Chair key={i} cx={c.cx} cy={c.cy} />)}
+    <g onClick={onClick} className="cursor-pointer" role="button" aria-label={`Table ${def.id}`}>
+      {chairs.map((c, i) => <Chair key={i} cx={c.cx} cy={c.cy} status={status} />)}
       <rect
-        x={def.x}
-        y={def.y}
-        width={w}
-        height={h}
-        rx={4}
-        fill={selected ? '#1B2D3C' : '#FFFFFF'}
-        stroke="#1B2D3C"
-        strokeWidth={1.5}
+        x={def.x} y={def.y} width={w} height={h} rx={4}
+        fill={STATUS_FILL[status]}
+        stroke={STATUS_STROKE[status]}
+        strokeWidth={status === 'selected' ? 2.5 : 1.5}
       />
-      <text
-        x={def.x + w / 2}
-        y={def.y + h / 2 - 5}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fontSize={11}
-        fontWeight="800"
-        fill={selected ? '#FFFFFF' : '#1B2D3C'}
-      >
+      <text x={def.x + w / 2} y={def.y + h / 2 - 6} textAnchor="middle" dominantBaseline="middle"
+        fontSize={11} fontWeight="800" fill={STATUS_TEXT[status]}>
         T{def.id}
       </text>
-      <text
-        x={def.x + w / 2}
-        y={def.y + h / 2 + 8}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fontSize={9}
-        fill={selected ? '#D6E2E9' : '#1B2D3C99'}
-      >
-        {totalSeats} seats
+      <text x={def.x + w / 2} y={def.y + h / 2 + 7} textAnchor="middle" dominantBaseline="middle"
+        fontSize={8} fill={STATUS_SUB[status]}>
+        {status === 'assigned' && booking ? booking.name.split(' ')[0] : `${def.chairs.length} seats`}
       </text>
     </g>
   );
@@ -146,24 +150,70 @@ const RIGHT_LOWER_TABLES: PositionedTable[] = [
   { id: 14, size: 'small', chairs: ['left', 'right', 'bottom'],           label: 'T14', x: 310, y: 775 },
 ];
 
-export default function WimbledonFloorPlan() {
-  const [selected, setSelected] = useState<number | null>(null);
-
-  const toggle = (id: number) => setSelected(prev => prev === id ? null : id);
+export default function WimbledonFloorPlan({
+  bookings = [],
+  selectedDate,
+  selectedTime,
+  highlightTableId,
+  onAssign,
+  readOnly = false,
+}: WimbledonFloorPlanProps) {
+  const [localSelected, setLocalSelected] = useState<number | null>(null);
 
   const allTables = [...TABLES, ...PARTY_1_TABLES, ...PARTY_2_TABLES, ...RIGHT_LOWER_TABLES];
-  const selectedTable = allTables.find(t => t.id === selected);
+
+  const assignedMap = new Map<string, BookingInquiry>();
+  if (selectedDate && selectedTime) {
+    bookings
+      .filter(b => b.date === selectedDate && b.time === selectedTime && b.tableId && b.studio === 'Wimbledon')
+      .forEach(b => assignedMap.set(b.tableId!, b));
+  }
+
+  const getStatus = (tableId: string): TableStatus => {
+    if (`T${localSelected}` === tableId) return 'selected';
+    if (assignedMap.has(tableId)) return 'assigned';
+    return 'free';
+  };
+
+  const handleClick = (id: number) => {
+    if (readOnly) return;
+    const tid = `T${id}`;
+    if (assignedMap.has(tid)) return;
+    setLocalSelected(prev => prev === id ? null : id);
+    if (onAssign) onAssign(tid);
+  };
+
+  const selectedTable = localSelected ? allTables.find(t => t.id === localSelected) : null;
+  const selectedBooking = highlightTableId ? assignedMap.get(highlightTableId) : undefined;
+
+  const renderTable = (t: PositionedTable) => {
+    const tid = `T${t.id}`;
+    const status = highlightTableId === tid ? 'selected' : getStatus(tid);
+    return (
+      <Table
+        key={t.id}
+        def={t}
+        status={status}
+        booking={assignedMap.get(tid)}
+        onClick={() => handleClick(t.id)}
+      />
+    );
+  };
 
   return (
     <div className="bg-white border border-[#1B2D3C]/20 rounded-xl p-4 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="font-heading font-black text-[#1B2D3C] text-base">Wimbledon Studio</h3>
           <p className="text-[10px] text-[#1B2D3C]/50 font-semibold mt-0.5">17 tables · 52 Wimbledon Hill Road</p>
         </div>
-        {selectedTable && (
+        {(selectedTable || selectedBooking) && (
           <div className="bg-[#1B2D3C] text-white px-3 py-1.5 rounded-lg text-xs font-bold">
-            T{selectedTable.id} · {selectedTable.chairs.length} seats · {selectedTable.size === 'small' ? '75×75cm' : '125×75cm'}
+            {selectedBooking
+              ? `T${highlightTableId?.replace('T', '')} → ${selectedBooking.name}`
+              : selectedTable
+                ? `T${selectedTable.id} selected · ${selectedTable.chairs.length} seats`
+                : null}
           </div>
         )}
       </div>
@@ -172,26 +222,25 @@ export default function WimbledonFloorPlan() {
       <div className="flex flex-wrap gap-3 text-[10px] font-semibold text-[#1B2D3C]/70">
         <div className="flex items-center gap-1.5">
           <div className="w-4 h-3 bg-white border border-[#1B2D3C] rounded-sm" />
-          <span>75×75cm table</span>
+          <span>Free</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-6 h-3 bg-white border border-[#1B2D3C] rounded-sm" />
-          <span>125×75cm table</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-[#D6E2E9] border border-[#1B2D3C]" />
-          <span>Chair</span>
+          <div className="w-4 h-3 bg-red-500 border border-red-700 rounded-sm" />
+          <span>Assigned</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-4 h-3 bg-[#1B2D3C] rounded-sm" />
           <span>Selected</span>
         </div>
+        {(!selectedDate || !selectedTime) && (
+          <span className="text-amber-600 font-bold">← Pick a date &amp; time to see occupancy</span>
+        )}
       </div>
 
       <div className="overflow-x-auto">
         <svg width="450" height="1080" className="block mx-auto">
 
-          {/* ── MAIN AREA BOUNDARY ────────────────────────────── */}
+          {/* MAIN AREA */}
           <rect x={10} y={10} width={420} height={615} rx={8} fill="#F8FAFB" stroke="#1B2D3C" strokeWidth={1} strokeDasharray="4 3" />
           <text x={220} y={30} textAnchor="middle" fontSize={10} fontWeight="700" fill="#1B2D3C99" letterSpacing="2">MAIN AREA</text>
 
@@ -199,48 +248,39 @@ export default function WimbledonFloorPlan() {
           <rect x={10} y={480} width={170} height={60} rx={4} fill="#DBE7E4" stroke="#1B2D3C" strokeWidth={1.2} />
           <text x={95} y={515} textAnchor="middle" fontSize={13} fontWeight="800" fill="#1B2D3C" letterSpacing="3">BAR</text>
 
-          {/* ✕ SEPARATOR (pillar/post between T8 and T9) */}
+          {/* SEPARATOR */}
           <line x1={290} y1={400} x2={390} y2={400} stroke="#1B2D3C" strokeWidth={1.5} />
           <line x1={310} y1={398} x2={375} y2={415} stroke="#1B2D3C55" strokeWidth={1} />
           <line x1={375} y1={398} x2={310} y2={415} stroke="#1B2D3C55" strokeWidth={1} />
           <text x={342} y={410} textAnchor="middle" fontSize={9} fontWeight="700" fill="#1B2D3C80">SEPARATOR</text>
 
-          {/* Main tables */}
-          {TABLES.map(t => (
-            <Table key={t.id} def={t} selected={selected === t.id} onClick={() => toggle(t.id)} />
-          ))}
+          {TABLES.map(renderTable)}
 
-          {/* ── DIVIDER LINE ────────────────────────────────────── */}
           <line x1={10} y1={635} x2={430} y2={635} stroke="#1B2D3C" strokeWidth={1.5} />
 
-          {/* ── PARTY AREA 1 ────────────────────────────────────── */}
-          <rect x={10} y={645} width={280} height={140} rx={8} fill="#DBE7E4/30" stroke="#1B2D3C" strokeWidth={1} strokeDasharray="4 3" />
-          <text x={150} y={665} textAnchor="middle" fontSize={10} fontWeight="700" fill="#1B2D3C99" letterSpacing="2">PARTY AREA 1</text>
+          {/* PARTY AREA 1 */}
+          <rect x={10} y={645} width={280} height={140} rx={8} fill="#f0fdf4" stroke="#16a34a" strokeWidth={1} strokeDasharray="4 3" />
+          <text x={150} y={665} textAnchor="middle" fontSize={10} fontWeight="700" fill="#16a34a99" letterSpacing="2">PARTY AREA 1</text>
 
-          {PARTY_1_TABLES.map(t => (
-            <Table key={t.id} def={t} selected={selected === t.id} onClick={() => toggle(t.id)} />
-          ))}
+          {PARTY_1_TABLES.map(renderTable)}
 
-          {/* ── DIVIDER LINE ────────────────────────────────────── */}
           <line x1={10} y1={800} x2={280} y2={800} stroke="#1B2D3C" strokeWidth={1.5} />
 
-          {/* ── PARTY AREA 2 ────────────────────────────────────── */}
-          <rect x={10} y={810} width={420} height={250} rx={8} fill="#DBE7E4/20" stroke="#1B2D3C" strokeWidth={1} strokeDasharray="4 3" />
-          <text x={220} y={832} textAnchor="middle" fontSize={10} fontWeight="700" fill="#1B2D3C99" letterSpacing="2">PARTY AREA 2</text>
+          {/* PARTY AREA 2 */}
+          <rect x={10} y={810} width={420} height={250} rx={8} fill="#eff6ff" stroke="#2563eb" strokeWidth={1} strokeDasharray="4 3" />
+          <text x={220} y={832} textAnchor="middle" fontSize={10} fontWeight="700" fill="#2563eb99" letterSpacing="2">PARTY AREA 2</text>
 
-          {PARTY_2_TABLES.map(t => (
-            <Table key={t.id} def={t} selected={selected === t.id} onClick={() => toggle(t.id)} />
-          ))}
+          {PARTY_2_TABLES.map(renderTable)}
 
-          {/* ── RIGHT LOWER (T13, T14) ──────────────────────────── */}
-          {RIGHT_LOWER_TABLES.map(t => (
-            <Table key={t.id} def={t} selected={selected === t.id} onClick={() => toggle(t.id)} />
-          ))}
+          {/* RIGHT LOWER */}
+          {RIGHT_LOWER_TABLES.map(renderTable)}
 
         </svg>
       </div>
 
-      <p className="text-[10px] text-[#1B2D3C]/40 font-medium text-center">Click a table to select it</p>
+      <p className="text-[10px] text-[#1B2D3C]/40 font-medium text-center">
+        {readOnly ? 'Floor plan view only' : 'Click a free table to assign it'}
+      </p>
     </div>
   );
 }

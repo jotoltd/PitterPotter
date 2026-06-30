@@ -36,6 +36,7 @@ export interface BookingInquiry {
   giftCardCode?: string;
   giftCardDiscount?: number;
   finalPrice?: number;
+  tableId?: string;
 }
 
 export interface GalleryItem {
