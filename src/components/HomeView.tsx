@@ -81,7 +81,7 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  page="home"
  defaultSrc={Images.putneyStudio}
  alt="Pitter Potter Putney Studio"
- className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 rounded-lg bg-[#DBE7E4]"
+ className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg"
  adminMode={adminMode}
  />
  </div>
@@ -128,7 +128,7 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  page="home"
  defaultSrc={Images.wimbledonStudio}
  alt="Pitter Potter Wimbledon Studio"
- className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 rounded-lg bg-[#DBE7E4]"
+ className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 rounded-lg"
  adminMode={adminMode}
  />
  </div>
