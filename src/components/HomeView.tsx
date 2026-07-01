@@ -32,14 +32,6 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  transition={{ duration: 0.6 }}
  className="max-w-xl md:max-w-2xl text-left bg-[#DBE7E4]/80 backdrop-blur-sm p-6 sm:p-8 rounded-2xl"
  >
- <EditableImage
-            contentKey="hero_logo"
-            page="home"
-            defaultSrc={Images.logo}
-            alt="Pitter Potter Logo"
-            className="h-20 sm:h-24 w-auto object-contain mb-6"
-            adminMode={adminMode}
-          />
  <div className="mb-6">
  <EditableText
  contentKey="hero_title"
