@@ -201,7 +201,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
             <Gift className="w-5 h-5 text-[#1B2D3C]" />
           </div>
           <div>
-            <h2 className="font-bold text-lg text-[#1B2D3C]"><EditableText contentKey="buygiftcard_details_title" page="buy-gift-card" defaultValue="Gift Card Details" adminMode={adminMode} className="text-lg font-bold text-[#1B2D3C]" /></h2>
+            <h2 className="text-lg text-[#1B2D3C]"><EditableText contentKey="buygiftcard_details_title" page="buy-gift-card" defaultValue="Gift Card Details" adminMode={adminMode} className="text-lg text-[#1B2D3C]" /></h2>
             <p className="text-xs text-[#1B2D3C]/70"><EditableText contentKey="buygiftcard_details_subtitle" page="buy-gift-card" defaultValue="All fields are required unless marked optional" adminMode={adminMode} className="text-xs text-[#1B2D3C]/70" /></p>
           </div>
         </div>
@@ -256,7 +256,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
                       step={1}
                       value={customAmount}
                       onChange={(e) => setCustomAmount(e.target.value === '' ? '' : Math.max(1, Number(e.target.value)))}
-                      className="w-24 py-1.5 px-2 border border-[#1B2D3C]/20 text-sm font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded"
+                      className="w-24 py-1.5 px-2 border border-[#1B2D3C]/20 text-sm text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded"
                       placeholder="Amount"
                       autoFocus
                     />
@@ -273,7 +273,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
                   required
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
-                  className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg"
+                  className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg"
                   placeholder="Full name"
                 />
               </div>
@@ -284,7 +284,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
                   required
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
-                  className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg"
+                  className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg"
                   placeholder="email@example.com"
                 />
               </div>
@@ -297,7 +297,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
                 required
                 value={senderName}
                 onChange={(e) => setSenderName(e.target.value)}
-                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg"
+                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg"
                 placeholder="Full name"
               />
             </div>
@@ -308,7 +308,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={3}
-                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg resize-none"
+                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg resize-none"
                 placeholder="Add a lovely note..."
               />
             </div>
