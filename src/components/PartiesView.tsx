@@ -50,7 +50,7 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
       {/* Main Services Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Baby Showers & Hen Parties */}
-        <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-between space-y-6 rounded-xl">
+        <div className="bg-[#DBE7E4] border border-[#1B2D3C] p-8 flex flex-col justify-between space-y-6 rounded-xl">
           <div className="space-y-4">
             <h3 className="font-heading text-xl text-[#1B2D3C]">
               <EditableText contentKey="baby_shower_title" page="parties" defaultValue="Baby Shower / Hen Party / Stag Do" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" />
@@ -67,14 +67,14 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
           </div>
           <button
             onClick={() => handleBookParty('baby-shower-hen')}
-            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
+            className="w-full py-2.5 bg-[#1B2D3C] text-white border border-[#1B2D3C] text-xs uppercase tracking-widest hover:bg-[#486581] transition-colors rounded-lg cursor-pointer"
           >
             <EditableText contentKey="baby_shower_button" page="parties" defaultValue="Book Party" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
         </div>
 
         {/* Birthday Parties */}
-        <div className="bg-[#DBE7E4] border border-[#1B2D3C] p-8 flex flex-col justify-between space-y-6 rounded-xl">
+        <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-between space-y-6 rounded-xl">
           <div className="space-y-4">
             <h3 className="font-heading text-xl text-[#1B2D3C]">
               <EditableText contentKey="birthday_title" page="parties" defaultValue="Birthday Parties" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" />
@@ -94,7 +94,7 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
           </div>
           <button
             onClick={() => handleBookParty('birthday')}
-            className="w-full py-2.5 bg-[#1B2D3C] text-white border border-[#1B2D3C] text-xs uppercase tracking-widest hover:bg-[#486581] transition-colors rounded-lg cursor-pointer"
+            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
           >
             <EditableText contentKey="birthday_button" page="parties" defaultValue="Book Party" adminMode={adminMode} className="text-xs uppercase tracking-widest text-white" />
           </button>
