@@ -174,12 +174,13 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  <EditableText contentKey="what_we_do_heading" page="home" defaultValue="What We Do" adminMode={adminMode} className="font-heading text-3xl md:text-4xl tracking-tight text-[#1B2D3C]" />
  </h2>
  </div>
- <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+ <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
  {[
  { keyPrefix: 'paint', title: 'Paint Your Own Pottery', desc: 'Choose from 150+ shapes and paint with premium glazes.', image: Images.potteryGallery, page: 'pricing' as Page },
  { keyPrefix: 'baby', title: 'Baby Prints', desc: 'Capture tiny hand and foot impressions in clay keepsakes.', image: Images.clayImprint, page: 'baby-prints' as Page },
  { keyPrefix: 'parties', title: 'Parties & Events', desc: 'Birthdays, hen parties, baby showers and corporate groups.', image: Images.birthdayParties, page: 'parties' as Page },
  { keyPrefix: 'workshops', title: 'More Workshops', desc: 'Coming soon...', badge: 'Coming Soon', image: Images.studioHero },
+ { keyPrefix: 'giftcards', title: 'Gift Cards', desc: 'Give the gift of creativity with a Pitter Potter gift card.', image: Images.potteryGallery, page: 'gift-cards' as Page },
  ].map((item) => (
  <div
  key={item.keyPrefix}
