@@ -82,6 +82,24 @@ export const FAQ_ITEMS: FAQItem[] = [
     category: 'policies',
     question: 'What if something goes wrong with the firing of my piece?',
     answer: 'While we treat every piece of pottery with the utmost care, because ceramics is a chemically dynamic firing process, very occasionally bubbling, cracking, or thermal shock may occur in the kiln. If anything goes wrong in firing your piece, we will immediately contact you and invite you back to paint a brand new item of equal value at no cost and with complimentary studio fees.'
+  },
+  {
+    id: 'f11',
+    category: 'bookings',
+    question: 'Can I bring my own food and drinks?',
+    answer: 'Yes, you are welcome to bring your own food, snacks, and non-alcoholic drinks to enjoy during your session. For birthday parties and private events, hosts are encouraged to bring their own cake, food, and drinks. Please bring your own paper plates, cups, and cutlery. We ask that you avoid anything too messy that might interfere with the pottery or other guests.'
+  },
+  {
+    id: 'f12',
+    category: 'fees',
+    question: 'Do you offer gift cards?',
+    answer: 'Yes! Pitter Potter gift cards are available to purchase online or in-studio. They make a wonderful present for birthdays, anniversaries, or any occasion. Gift cards can be used towards studio fees, pottery pieces, or party bookings at both our Putney and Wimbledon studios.'
+  },
+  {
+    id: 'f13',
+    category: 'policies',
+    question: 'Is there parking available near the studios?',
+    answer: 'Both our Putney and Wimbledon studios are easily accessible by public transport. For those driving, street parking is available nearby, subject to local parking restrictions. We recommend checking parking availability in advance, particularly on weekends when demand is higher. Our team is happy to advise on the best parking options when you call to book.'
   }
 ];
 
