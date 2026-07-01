@@ -96,7 +96,7 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
             onClick={() => handleBookParty('birthday')}
             className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
           >
-            <EditableText contentKey="birthday_button" page="parties" defaultValue="Book Party" adminMode={adminMode} className="text-xs uppercase tracking-widest text-white" />
+            <EditableText contentKey="birthday_button" page="parties" defaultValue="Book Party" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
         </div>
 
