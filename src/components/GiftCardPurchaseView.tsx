@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { Gift, ArrowRight, CheckCircle, Lock } from 'lucide-react';
+import { ArrowRight, CheckCircle, Lock } from 'lucide-react';
 import { Page } from '../types';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -10,7 +10,7 @@ interface GiftCardPurchaseViewProps {
   adminMode?: boolean;
 }
 
-const PRESET_AMOUNTS = [10, 20, 25, 50];
+const PRESET_AMOUNTS = [10, 20, 25, 30, 50];
 
 interface PaymentFormProps {
   onSuccess: (giftCard: { code: string; amount: number }) => void;
@@ -197,9 +197,6 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
 
       <div className="max-w-xl mx-auto bg-white border border-[#1B2D3C]/10 p-6 md:p-8 rounded-xl space-y-6">
         <div className="flex items-center gap-3 pb-4 border-b border-[#1B2D3C]/10">
-          <div className="p-2.5 bg-[#DBE7E4] rounded-lg">
-            <Gift className="w-5 h-5 text-[#1B2D3C]" />
-          </div>
           <div>
             <h2 className="text-lg text-[#1B2D3C]"><EditableText contentKey="buygiftcard_details_title" page="buy-gift-card" defaultValue="Gift Card Details" adminMode={adminMode} className="text-lg text-[#1B2D3C]" /></h2>
             <p className="text-xs text-[#1B2D3C]/70"><EditableText contentKey="buygiftcard_details_subtitle" page="buy-gift-card" defaultValue="All fields are required unless marked optional" adminMode={adminMode} className="text-xs text-[#1B2D3C]/70" /></p>
