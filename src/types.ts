@@ -1,4 +1,4 @@
-export type Page = 'home' | 'baby-prints' | 'parties' | 'pricing' | 'faqs' | 'gallery' | 'contact' | 'contact-info' | 'admin' | 'putney' | 'wimbledon' | 'book' | 'gift-cards' | 'buy-gift-card' | 'gift-card-success' | 'gift-card-balance' | 'party-birthday-putney' | 'party-birthday-wimbledon' | 'party-babyshower-putney' | 'party-babyshower-wimbledon' | 'party-corporate-putney' | 'party-corporate-wimbledon';
+export type Page = 'home' | 'baby-prints' | 'parties' | 'pricing' | 'food-drink' | 'faqs' | 'gallery' | 'contact' | 'contact-info' | 'admin' | 'putney' | 'wimbledon' | 'book' | 'gift-cards' | 'buy-gift-card' | 'gift-card-success' | 'gift-card-balance' | 'party-birthday-putney' | 'party-birthday-wimbledon' | 'party-babyshower-putney' | 'party-babyshower-wimbledon' | 'party-corporate-putney' | 'party-corporate-wimbledon';
 
 export interface PotteryItem {
   id: string;
