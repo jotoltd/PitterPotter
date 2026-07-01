@@ -44,7 +44,7 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
     <div id="parties-view" className="space-y-20 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
       {/* Page Title Header */}
       <div className="text-center space-y-4 max-w-3xl mx-auto">
-        <EditableText contentKey="parties_title" page="parties" defaultValue="Studio Parties & Group Events" adminMode={adminMode} className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight" />
+        <EditableText contentKey="parties_title" page="parties" defaultValue="Parties & Group Events" adminMode={adminMode} className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight" />
       </div>
 
       {/* Main Services Grid */}
