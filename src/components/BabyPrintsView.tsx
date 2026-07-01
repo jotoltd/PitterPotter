@@ -156,7 +156,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
             </h3>
           </div>
           <p className="text-[#1B2D3C]/85"><EditableText contentKey="putney_address" page="baby-prints" defaultValue="234 Upper Richmond Road, Putney SW15 6TG" adminMode={adminMode} className="text-[#1B2D3C]/85" /></p>
-          <p className="text-[#1B2D3C]/85"><EditableText contentKey="putney_phone" page="baby-prints" defaultValue="020 8788 1635" adminMode={adminMode} className="text-[#1B2D3C]/85" /></p>
+          <p className="text-[#1B2D3C]/85"><a href="tel:02087881635" className="hover:underline hover:text-[#1B2D3C] transition-colors"><EditableText contentKey="putney_phone" page="baby-prints" defaultValue="020 8788 1635" adminMode={adminMode} className="text-[#1B2D3C]/85" /></a></p>
         </div>
         <div className="p-6 bg-white border border-[#1B2D3C]/10 rounded-xl space-y-3">
           <div className="flex items-center gap-2 text-[#1B2D3C]">
@@ -166,7 +166,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
             </h3>
           </div>
           <p className="text-[#1B2D3C]/85"><EditableText contentKey="wimbledon_address" page="baby-prints" defaultValue="52 Wimbledon Hill Road, Wimbledon SW19 7PA" adminMode={adminMode} className="text-[#1B2D3C]/85" /></p>
-          <p className="text-[#1B2D3C]/85"><EditableText contentKey="wimbledon_phone" page="baby-prints" defaultValue="020 3770 4499" adminMode={adminMode} className="text-[#1B2D3C]/85" /></p>
+          <p className="text-[#1B2D3C]/85"><a href="tel:02037704499" className="hover:underline hover:text-[#1B2D3C] transition-colors"><EditableText contentKey="wimbledon_phone" page="baby-prints" defaultValue="020 3770 4499" adminMode={adminMode} className="text-[#1B2D3C]/85" /></a></p>
         </div>
       </div>
     </div>
