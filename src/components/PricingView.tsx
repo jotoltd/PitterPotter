@@ -29,7 +29,7 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
       {/* Header */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8 text-center">
         <div className="mb-2">
-          <EditableText contentKey="pricing_title" page="pricing" defaultValue="Prices" adminMode={adminMode} className="font-heading text-4xl md:text-5xl text-[#1B2D3C] tracking-tight" />
+          <EditableText contentKey="pricing_title" page="pricing" defaultValue="Prices" adminMode={adminMode} className="font-heading text-3xl md:text-4xl text-[#1B2D3C] tracking-tight" />
         </div>
       </div>
 

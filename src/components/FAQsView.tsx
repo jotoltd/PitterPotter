@@ -22,7 +22,7 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
  <div id="faqs-view" className="space-y-8 pb-20 pt-6 max-w-3xl mx-auto px-4">
  {/* Title Header */}
  <div className="text-center">
- <EditableText contentKey="faqs_title" page="faqs" defaultValue="FAQs" adminMode={adminMode} className="font-heading text-4xl font-black text-[#1B2D3C]" />
+ <EditableText contentKey="faqs_title" page="faqs" defaultValue="FAQs" adminMode={adminMode} className="font-heading text-3xl font-black text-[#1B2D3C]" />
  </div>
 
  {/* Accordion list */}

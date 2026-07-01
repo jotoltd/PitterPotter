@@ -122,7 +122,7 @@ export default function GiftCardView({ adminMode = false }: GiftCardViewProps) {
             <Gift className="w-4 h-4 text-[#1B2D3C]" />
             <span className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="giftcard_hero_badge" page="giftcard" defaultValue="Gift Cards" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></span>
           </div>
-          <h1 className="font-heading text-4xl md:text-6xl font-black text-[#1B2D3C] mb-4">
+          <h1 className="font-heading text-3xl md:text-5xl font-black text-[#1B2D3C] mb-4">
             <EditableText contentKey="giftcard_hero_title" page="giftcard" defaultValue="Give the Gift of Creativity" adminMode={adminMode} className="font-heading text-4xl md:text-6xl text-[#1B2D3C]" />
           </h1>
           <p className="text-base md:text-lg text-[#1B2D3C]/80 font-medium max-w-2xl mx-auto">
@@ -162,7 +162,7 @@ export default function GiftCardView({ adminMode = false }: GiftCardViewProps) {
                   value={customAmount}
                   onChange={(e) => handleCustom(e.target.value)}
                   placeholder="Enter amount"
-                  className="w-full pl-7 pr-3 py-2.5 border border-[#1B2D3C]/20 rounded-lg text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
+                  className="w-full pl-7 pr-3 py-2.5 border border-[#1B2D3C]/20 rounded-lg text-sm text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
                 />
               </div>
             </div>
@@ -176,7 +176,7 @@ export default function GiftCardView({ adminMode = false }: GiftCardViewProps) {
                 value={recipientName}
                 onChange={(e) => setRecipientName(e.target.value)}
                 required
-                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 rounded-lg text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
+                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 rounded-lg text-sm text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
               />
             </div>
 
@@ -187,7 +187,7 @@ export default function GiftCardView({ adminMode = false }: GiftCardViewProps) {
                 value={recipientEmail}
                 onChange={(e) => setRecipientEmail(e.target.value)}
                 required
-                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 rounded-lg text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
+                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 rounded-lg text-sm text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
               />
             </div>
 
@@ -198,7 +198,7 @@ export default function GiftCardView({ adminMode = false }: GiftCardViewProps) {
                 value={senderName}
                 onChange={(e) => setSenderName(e.target.value)}
                 required
-                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 rounded-lg text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
+                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 rounded-lg text-sm text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
               />
             </div>
 
@@ -208,7 +208,7 @@ export default function GiftCardView({ adminMode = false }: GiftCardViewProps) {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={3}
-                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 rounded-lg text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
+                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 rounded-lg text-sm text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
               />
             </div>
 

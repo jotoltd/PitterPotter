@@ -21,7 +21,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
     <div id="gallery-view" className="space-y-8 pb-20 pt-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 text-center">
-        <EditableText contentKey="gallery_title" page="gallery" defaultValue="Gallery" adminMode={adminMode} className="font-heading text-4xl font-black text-[#1B2D3C]" />
+        <EditableText contentKey="gallery_title" page="gallery" defaultValue="Gallery" adminMode={adminMode} className="font-heading text-3xl font-black text-[#1B2D3C]" />
       </div>
 
       {/* Masonry columns */}

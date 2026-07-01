@@ -47,7 +47,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
  {/* Header */}
  <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 text-center space-y-4 max-w-3xl">
  <span className="text-xs tracking-widest text-[#1B2D3C] font-black uppercase block"><EditableText contentKey="book_subtitle" page="book" defaultValue="Choose Your Studio" adminMode={adminMode} className="text-xs tracking-widest uppercase text-[#1B2D3C]" /></span>
- <h1 className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight"><EditableText contentKey="book_title" page="book" defaultValue="Book a Session" adminMode={adminMode} className="font-heading text-4xl md:text-5xl text-[#1B2D3C] tracking-tight" /></h1>
+ <h1 className="font-heading text-3xl md:text-4xl font-black text-[#1B2D3C] tracking-tight"><EditableText contentKey="book_title" page="book" defaultValue="Book a Session" adminMode={adminMode} className="font-heading text-4xl md:text-5xl text-[#1B2D3C] tracking-tight" /></h1>
  <p className="text-[#1B2D3C]/85 text-xs sm:text-sm font-medium leading-relaxed">
  <EditableText contentKey="book_description" page="book" defaultValue="Select which studio you would like to visit. Both locations offer the same paint-your-own-pottery experience with friendly staff and premium glazes." adminMode={adminMode} className="text-xs sm:text-sm text-[#1B2D3C]/85 leading-relaxed" />
  </p>
