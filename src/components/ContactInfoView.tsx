@@ -29,7 +29,7 @@ const studios = [
 export default function ContactInfoView({ setCurrentPage, adminMode = false }: ContactInfoViewProps) {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-8 pb-20 pt-6 space-y-12">
-      <div className="space-y-2">
+      <div className="space-y-2 text-center">
         <h1 className="font-heading text-4xl text-[#1B2D3C]">
           <EditableText contentKey="contact_title" page="contact-info" defaultValue="Contact Us" adminMode={adminMode} className="font-heading text-4xl text-[#1B2D3C]" />
         </h1>

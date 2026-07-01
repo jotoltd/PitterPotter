@@ -27,7 +27,7 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
   return (
     <div id="pricing-view" className="space-y-12 pb-20 pt-6">
       {/* Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 text-center max-w-3xl">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8 text-center">
         <div className="mb-2">
           <EditableText contentKey="pricing_title" page="pricing" defaultValue="Prices" adminMode={adminMode} className="font-heading text-4xl md:text-5xl text-[#1B2D3C] tracking-tight" />
         </div>
