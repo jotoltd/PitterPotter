@@ -89,14 +89,6 @@ export default function ContactInfoView({ setCurrentPage, adminMode = false }: C
         )})}
       </div>
 
-      <div>
-        <button
-          onClick={() => setCurrentPage('book')}
-          className="px-7 py-3.5 bg-[#1B2D3C] text-white text-sm tracking-wide hover:bg-[#486581] transition-all cursor-pointer rounded-lg"
-        >
-          <EditableText contentKey="book_button" page="contact-info" defaultValue="Book a Session" adminMode={adminMode} className="text-sm tracking-wide text-white" />
-        </button>
-      </div>
     </div>
   );
 }
