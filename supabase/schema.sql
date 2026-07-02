@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   gift_card_code TEXT,
   gift_card_discount NUMERIC(10, 2),
   final_price NUMERIC(10, 2),
+  table_id TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
