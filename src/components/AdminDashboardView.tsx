@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import DashboardOverview from './DashboardOverview';
 import FloorPlanView from './FloorPlanView';
 import WimbledonFloorPlan, { findAvailableTable } from './WimbledonFloorPlan';
 import PutneyFloorPlan, { findAvailablePutneyTable } from './PutneyFloorPlan';
@@ -46,7 +47,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'bookings' | 'gift-cards' | 'staff' | 'settings' | 'content' | 'analytics' | 'capacity' | 'floor-plan'>('bookings');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'staff' | 'settings' | 'content' | 'analytics' | 'capacity' | 'floor-plan'>('dashboard');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
   const [capacitySaving, setCapacitySaving] = useState(false);
@@ -812,6 +813,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         {/* Admin Tabs */}
         <div className="sticky top-[72px] z-20 bg-[#FFFFFF] flex flex-nowrap overflow-x-auto gap-2 mb-8 border-b border-[#1B2D3C]/10 pb-4 pt-2 scrollbar-hide">
           {[
+            { value: 'dashboard', label: '📋 Dashboard' },
             { value: 'bookings', label: 'Bookings' },
             { value: 'gift-cards', label: 'Gift Vouchers' },
             ...(canManageStaff ? [{ value: 'analytics', label: 'Analytics' }] : []),
@@ -839,6 +841,21 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B2D3C]"></div>
           </div>
+        )}
+
+        {!loading && activeTab === 'dashboard' && (
+          <DashboardOverview
+            bookings={inquiries}
+            onAssignTable={(bookingId, tableId) => {
+              const booking = inquiries.find(i => i.id === bookingId);
+              if (!booking) return;
+              const updated = { ...booking, tableId: tableId ?? undefined };
+              updateBooking(updated, staff).then(() => {
+                setInquiries(inquiries.map(i => i.id === bookingId ? updated : i));
+                showToast(tableId ? `Table ${tableId} assigned` : 'Table unassigned', 'success');
+              }).catch(() => showToast('Failed to update table', 'error'));
+            }}
+          />
         )}
 
         {!loading && activeTab === 'bookings' && (
