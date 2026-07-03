@@ -94,7 +94,7 @@ export async function getBusyDates(studio: 'Putney' | 'Wimbledon', year: number,
   return data.busyDates || [];
 }
 
-export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date: string, time: string): Promise<number> {
+export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date: string, time: string, sessionType?: string): Promise<number> {
   if (!isSupabaseEnabled()) return DEFAULT_MAX_PAINTERS[studio];
   const response = await fetch(functionUrl('get-capacity'), {
     method: 'POST',
@@ -102,19 +102,21 @@ export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date:
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
     },
-    body: JSON.stringify({ studio, date, time }),
+    body: JSON.stringify({ studio, date, time, sessionType }),
   });
   const data = await response.json();
   if (!response.ok || data.error) {
     console.error('Failed to get capacity:', data.error);
     return DEFAULT_MAX_PAINTERS[studio];
   }
+  if (data.conflict === 'open_session_exists') throw new Error('This time slot already has open painting sessions booked. Party bookings cannot be mixed with open sessions.');
+  if (data.conflict === 'party_session_exists') throw new Error('This time slot already has a party booked. Please choose a different time.');
   return data.remaining ?? DEFAULT_MAX_PAINTERS[studio];
 }
 
 export async function createPublicBooking(booking: BookingInquiry): Promise<void> {
   if (!isSupabaseEnabled()) return;
-  const remaining = await getRemainingCapacity(booking.studio, booking.date, booking.time);
+  const remaining = await getRemainingCapacity(booking.studio, booking.date, booking.time, booking.sessionType);
   if (remaining < booking.paintersCount) {
     throw new Error(`Not enough capacity. Only ${remaining} painter spots remaining for this slot.`);
   }
@@ -152,6 +154,11 @@ export async function createPublicBooking(booking: BookingInquiry): Promise<void
 export async function createBooking(booking: BookingInquiry, staff?: Staff | null): Promise<void> {
   if (!isSupabaseEnabled()) return;
   if (!staff) throw new Error('Staff required');
+
+  const remaining = await getRemainingCapacity(booking.studio, booking.date, booking.time, booking.sessionType);
+  if (remaining < booking.paintersCount) {
+    throw new Error(`Not enough capacity. Only ${remaining} painter spots remaining for this slot.`);
+  }
 
   const response = await fetch(functionUrl('admin-bookings'), {
     method: 'POST',

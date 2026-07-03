@@ -41,8 +41,7 @@ const PARTY_INFO: Record<PartyType, { title: string; price: string; description:
   },
 };
 
-const MAX_PAINTERS: Record<Studio, number> = { Putney: 20, Wimbledon: 14 };
-const PARTY_GUEST_LIMIT: Record<Studio, number> = { Putney: 16, Wimbledon: 14 };
+const PARTY_GUEST_LIMIT: Record<Studio, number> = { Putney: 20, Wimbledon: 40 };
 
 function getTimeSlots(date: Date): string[] {
   const day = getDay(date);
@@ -87,10 +86,20 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
     }
     const slots = getTimeSlots(date);
     const dateStr = format(date, 'yyyy-MM-dd');
-    Promise.all(slots.map(async (slot) => ({
-      slot,
-      remaining: await getRemainingCapacity(studio, dateStr, slot),
-    }))).then((results) => {
+    const sessionTypeMap: Record<PartyType, string> = {
+      birthday: 'birthday-party',
+      'baby-shower-hen': 'baby-shower-hen',
+      corporate: 'corporate',
+    };
+    const sType = sessionTypeMap[partyType];
+    Promise.all(slots.map(async (slot) => {
+      try {
+        const remaining = await getRemainingCapacity(studio, dateStr, slot, sType);
+        return { slot, remaining };
+      } catch {
+        return { slot, remaining: 0 };
+      }
+    })).then((results) => {
       const map: Record<string, number> = {};
       results.forEach(({ slot, remaining }) => {
         map[slot] = remaining;
@@ -282,7 +291,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {timeSlots.map((slot) => {
-                const remaining = slotCapacity[slot] ?? MAX_PAINTERS[studio];
+                const remaining = slotCapacity[slot] ?? PARTY_GUEST_LIMIT[studio];
                 const isFull = remaining === 0;
                 const isLimited = remaining > 0 && remaining <= 5;
                 
@@ -405,11 +414,11 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
             <p>{format(date, 'EEEE, do MMMM yyyy')} · {time}</p>
             <p>{guests === '' ? 1 : guests} guest{(guests === '' ? 1 : guests) !== 1 ? 's' : ''}</p>
             <div className={`inline-block px-2 py-1 rounded text-xs font-bold ${
-              (slotCapacity[time] ?? MAX_PAINTERS[studio]) <= 5 
+              (slotCapacity[time] ?? PARTY_GUEST_LIMIT[studio]) <= 5 
                 ? 'bg-orange-100 text-orange-700' 
                 : 'bg-green-100 text-green-700'
             }`}>
-              <EditableText contentKey={`party_summary_available_${(slotCapacity[time] ?? MAX_PAINTERS[studio]) === 1 ? 'single' : 'plural'}`} page="party-booking" defaultValue={`✓ ${(slotCapacity[time] ?? MAX_PAINTERS[studio])} space${(slotCapacity[time] ?? MAX_PAINTERS[studio]) !== 1 ? 's' : ''} available`} adminMode={adminMode} className="text-xs font-bold" />
+              <EditableText contentKey={`party_summary_available_${(slotCapacity[time] ?? PARTY_GUEST_LIMIT[studio]) === 1 ? 'single' : 'plural'}`} page="party-booking" defaultValue={`✓ ${(slotCapacity[time] ?? PARTY_GUEST_LIMIT[studio])} space${(slotCapacity[time] ?? PARTY_GUEST_LIMIT[studio]) !== 1 ? 's' : ''} available`} adminMode={adminMode} className="text-xs font-bold" />
             </div>
           </div>
         )}

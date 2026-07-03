@@ -59,7 +59,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
     const dateStr = format(date, 'yyyy-MM-dd');
     Promise.all(slots.map(async (slot) => ({
       slot,
-      remaining: await getRemainingCapacity('Wimbledon', dateStr, slot),
+      remaining: await getRemainingCapacity('Wimbledon', dateStr, slot, 'painting'),
     }))).then((results) => {
       const map: Record<string, number> = {};
       results.forEach(({ slot, remaining }) => {

@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const { studio, date, time } = body;
+    const { studio, date, time, sessionType } = body;
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -60,7 +60,22 @@ Deno.serve(async (req) => {
     }
 
     const rows = data || [];
+    const incomingIsParty = sessionType ? PARTY_SESSION_TYPES.includes(sessionType) : false;
     const hasPartyBooking = rows.some((r: { session_type?: string }) => PARTY_SESSION_TYPES.includes(r.session_type ?? ''));
+    const hasOpenBooking = rows.some((r: { session_type?: string }) => !PARTY_SESSION_TYPES.includes(r.session_type ?? ''));
+
+    // Prevent mixing party and open session types at the same time slot
+    if (incomingIsParty && hasOpenBooking) {
+      return new Response(JSON.stringify({ booked: 0, remaining: 0, max: 0, hasPartyBooking: true, conflict: 'open_session_exists' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (!incomingIsParty && sessionType && hasPartyBooking) {
+      return new Response(JSON.stringify({ booked: 0, remaining: 0, max: 0, hasPartyBooking: true, conflict: 'party_session_exists' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const booked = rows.reduce((sum: number, row: { painters_count?: number }) => sum + (row.painters_count || 1), 0);
 
     const studioKey = studio as 'Putney' | 'Wimbledon';
@@ -77,9 +92,11 @@ Deno.serve(async (req) => {
     const openMax = openRow?.max_painters ?? DEFAULT_OPEN_CAPACITY[studioKey];
     const partyMax = partyRow?.max_painters ?? DEFAULT_PARTY_CAPACITY[studioKey];
 
-    const max = hasPartyBooking ? partyMax : openMax;
+    // Use party max if incoming booking is a party OR if existing bookings are parties
+    const isPartySlot = incomingIsParty || hasPartyBooking;
+    const max = isPartySlot ? partyMax : openMax;
 
-    return new Response(JSON.stringify({ booked, remaining: max - booked, max, hasPartyBooking }), {
+    return new Response(JSON.stringify({ booked, remaining: max - booked, max, hasPartyBooking: isPartySlot }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
