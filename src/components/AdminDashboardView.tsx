@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import FloorPlanView from './FloorPlanView';
 import WimbledonFloorPlan, { findAvailableTable } from './WimbledonFloorPlan';
+import PutneyFloorPlan, { findAvailablePutneyTable } from './PutneyFloorPlan';
 import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, CalendarX, Gift, ChevronUp, ChevronDown, CalendarDays } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO } from 'date-fns';
@@ -469,11 +470,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const autoAssignTable = async (booking: BookingInquiry) => {
-    if (booking.studio !== 'Wimbledon') return;
     try {
-      const blocked = JSON.parse(localStorage.getItem('pitter_potter_blocked_tables') || '[]');
-      const partyArea = booking.sessionType.includes('party') ? (booking.paintersCount > 8 ? 'party2' : 'party1') : undefined;
-      const tableId = findAvailableTable(inquiries, blocked, booking.date, booking.time, partyArea);
+      let tableId: string | null = null;
+      if (booking.studio === 'Wimbledon') {
+        const blocked = JSON.parse(localStorage.getItem('pitter_potter_blocked_tables') || '[]');
+        const partyArea = booking.sessionType.includes('party') ? (booking.paintersCount > 8 ? 'party2' : 'party1') : undefined;
+        tableId = findAvailableTable(inquiries, blocked, booking.date, booking.time, partyArea);
+      } else {
+        const blocked = JSON.parse(localStorage.getItem('pitter_potter_blocked_tables_putney') || '[]');
+        tableId = findAvailablePutneyTable(inquiries, blocked, booking.date, booking.time);
+      }
       if (!tableId) {
         showToast('No available table found', 'error');
         return;
@@ -1270,32 +1276,28 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         </span>
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        {inq.studio === 'Wimbledon' ? (
-                          <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setAssignModalBooking(inq)}
+                            className={`px-2 py-1 text-[10px] font-bold border transition-all cursor-pointer rounded ${
+                              inq.tableId
+                                ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                                : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/30 hover:border-[#1B2D3C]'
+                            }`}
+                            title="Assign table"
+                          >
+                            {inq.tableId ?? '+ Assign'}
+                          </button>
+                          {!inq.tableId && (
                             <button
-                              onClick={() => setAssignModalBooking(inq)}
-                              className={`px-2 py-1 text-[10px] font-bold border transition-all cursor-pointer rounded ${
-                                inq.tableId
-                                  ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
-                                  : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/30 hover:border-[#1B2D3C]'
-                              }`}
-                              title="Assign table"
+                              onClick={() => autoAssignTable(inq)}
+                              className="px-2 py-1 text-[10px] font-bold bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 rounded hover:bg-[#D6E2E9] transition-all cursor-pointer"
+                              title="Auto-assign table"
                             >
-                              {inq.tableId ?? '+ Assign'}
+                              Auto
                             </button>
-                            {!inq.tableId && (
-                              <button
-                                onClick={() => autoAssignTable(inq)}
-                                className="px-2 py-1 text-[10px] font-bold bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 rounded hover:bg-[#D6E2E9] transition-all cursor-pointer"
-                                title="Auto-assign table"
-                              >
-                                Auto
-                              </button>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-[10px] text-[#1B2D3C]/30 font-semibold">—</span>
-                        )}
+                          )}
+                        </div>
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <div className="flex gap-1 sm:gap-2">
@@ -1668,13 +1670,23 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   </button>
                 </div>
               )}
-              <WimbledonFloorPlan
-                bookings={inquiries}
-                selectedDate={assignModalBooking.date}
-                selectedTime={assignModalBooking.time}
-                highlightTableId={assignModalBooking.tableId}
-                onAssign={(tableId) => updateBookingTable(assignModalBooking.id, tableId)}
-              />
+              {assignModalBooking.studio === 'Wimbledon' ? (
+                <WimbledonFloorPlan
+                  bookings={inquiries}
+                  selectedDate={assignModalBooking.date}
+                  selectedTime={assignModalBooking.time}
+                  highlightTableId={assignModalBooking.tableId}
+                  onAssign={(tableId) => updateBookingTable(assignModalBooking.id, tableId)}
+                />
+              ) : (
+                <PutneyFloorPlan
+                  bookings={inquiries}
+                  selectedDate={assignModalBooking.date}
+                  selectedTime={assignModalBooking.time}
+                  highlightTableId={assignModalBooking.tableId}
+                  onAssign={(tableId) => updateBookingTable(assignModalBooking.id, tableId)}
+                />
+              )}
             </div>
           </div>
         </div>

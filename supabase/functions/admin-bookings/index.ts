@@ -40,6 +40,7 @@ function toBookingInquiry(row: any): any {
     giftCardCode: row.gift_card_code || undefined,
     giftCardDiscount: row.gift_card_discount ? Number(row.gift_card_discount) : undefined,
     finalPrice: row.final_price ? Number(row.final_price) : undefined,
+    tableId: row.table_id || undefined,
   };
 }
 
@@ -63,6 +64,7 @@ function toBookingRow(booking: any): any {
     gift_card_code: booking.giftCardCode || null,
     gift_card_discount: booking.giftCardDiscount ?? null,
     final_price: booking.finalPrice ?? null,
+    table_id: booking.tableId || null,
   };
 }
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import WimbledonFloorPlan, { useTableAnalytics } from './WimbledonFloorPlan';
+import PutneyFloorPlan from './PutneyFloorPlan';
 import { BookingInquiry } from '../types';
 import { format } from 'date-fns';
 
@@ -141,9 +142,13 @@ export default function FloorPlanView({ bookings = [] }: FloorPlanViewProps) {
         />
       )}
       {studio === 'Putney' && (
-        <div className="bg-white border border-[#1B2D3C]/20 rounded-xl p-12 text-center text-[#1B2D3C]/40 text-sm font-bold">
-          Putney floor plan coming soon
-        </div>
+        <PutneyFloorPlan
+          bookings={bookings}
+          selectedDate={selectedDate}
+          selectedTime={selectedTime}
+          readOnly
+          showTablePanel
+        />
       )}
     </div>
   );
