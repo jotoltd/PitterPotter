@@ -470,7 +470,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
-  const autoAssignTable = async (booking: BookingInquiry) => {
+  const autoAssignTable = async (booking: BookingInquiry, silent = false): Promise<string | null> => {
     try {
       let tableId: string | null = null;
       if (booking.studio === 'Wimbledon') {
@@ -482,12 +482,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         tableId = findAvailablePutneyTable(inquiries, blocked, booking.date, booking.time);
       }
       if (!tableId) {
-        showToast('No available table found', 'error');
-        return;
+        if (!silent) showToast('No available table found', 'error');
+        return null;
       }
-      await updateBookingTable(booking.id, tableId);
+      const updated = { ...booking, tableId };
+      await updateBooking(updated, staff);
+      setInquiries(prev => prev.map(i => i.id === booking.id ? updated : i));
+      if (!silent) showToast(`Table ${tableId} assigned`, 'success');
+      return tableId;
     } catch {
-      showToast('Auto-assign failed', 'error');
+      if (!silent) showToast('Auto-assign failed', 'error');
+      return null;
     }
   };
 
@@ -506,15 +511,18 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     if (status === 'confirmed') {
       const booking = inquiries.find(i => i.id === id);
       if (booking && !booking.tableId) {
-        showToast('Assign a table before confirming this booking', 'error');
-        setAssignModalBooking(booking);
-        return;
+        const assigned = await autoAssignTable(booking, true);
+        if (!assigned) {
+          showToast('No tables available — studio may be full', 'error');
+          return;
+        }
+        showToast(`Table ${assigned} auto-assigned`, 'success');
       }
     }
     try {
       await updateBookingStatus(id, status, staff);
-      setInquiries(inquiries.map((i) => (i.id === id ? { ...i, status } : i)));
-      showToast(`Booking marked as ${status}`, 'success');
+      setInquiries(prev => prev.map((i) => (i.id === id ? { ...i, status } : i)));
+      showToast(`Booking confirmed`, 'success');
     } catch {
       showToast('Failed to update status', 'error');
     }
@@ -869,11 +877,23 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             }}
             onConfirm={(bookingId) => updateStatus(bookingId, 'confirmed')}
             onBulkConfirm={async (ids) => {
-              const withTable = ids.filter(id => inquiries.find(i => i.id === id)?.tableId);
-              const skipped = ids.length - withTable.length;
-              await Promise.all(withTable.map(id => updateStatus(id, 'confirmed')));
-              if (withTable.length > 0) showToast(`${withTable.length} booking${withTable.length !== 1 ? 's' : ''} confirmed`, 'success');
-              if (skipped > 0) showToast(`${skipped} skipped — assign a table first`, 'error');
+              let confirmed = 0;
+              let failed = 0;
+              for (const id of ids) {
+                const booking = inquiries.find(i => i.id === id);
+                if (!booking) continue;
+                if (!booking.tableId) {
+                  const assigned = await autoAssignTable(booking, true);
+                  if (!assigned) { failed++; continue; }
+                }
+                try {
+                  await updateBookingStatus(id, 'confirmed', staff);
+                  setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: 'confirmed' } : i));
+                  confirmed++;
+                } catch { failed++; }
+              }
+              if (confirmed > 0) showToast(`${confirmed} booking${confirmed !== 1 ? 's' : ''} confirmed`, 'success');
+              if (failed > 0) showToast(`${failed} could not be confirmed — studio may be full`, 'error');
             }}
             onNavigateToBookings={() => setActiveTab('bookings')}
             onNavigateToAddBooking={() => { setActiveTab('bookings'); setShowAddModal(true); }}
