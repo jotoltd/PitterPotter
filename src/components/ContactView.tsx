@@ -25,7 +25,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  const [sessionType] = useState<'painting' | 'birthday-party' | 'baby-shower-hen' | 'clay-imprints' | 'corporate'>('painting');
+  const [sessionType, setSessionType] = useState<'painting' | 'birthday-party' | 'baby-shower-hen' | 'clay-imprints' | 'corporate'>('painting');
   const [paintersCount, setPaintersCount] = useState<number>(initialPainters);
 
   const [submittedInquiry, setSubmittedInquiry] = useState<BookingInquiry | null>(null);
@@ -49,12 +49,21 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
         setEmail(parsed.email || '');
         setPhone(parsed.phone || '');
         setPaintersCount(parsed.paintersCount || 1);
+        if (parsed.sessionType) setSessionType(parsed.sessionType);
       } catch (err) {
         console.error('Failed to load draft:', err);
       }
     }
 
   }, []);
+
+  const SESSION_TYPE_LABELS: Record<string, string> = {
+    'painting': 'Painting Session',
+    'birthday-party': 'Birthday Party',
+    'baby-shower-hen': 'Baby Shower / Hen Party',
+    'clay-imprints': 'Clay Imprints',
+    'corporate': 'Corporate Event',
+  };
 
   const saveDraft = () => {
     const draft = {
@@ -372,7 +381,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                 <p><strong><EditableText contentKey="contact_summary_date" page="contact" defaultValue="Date:" adminMode={adminMode} className="text-xs text-[#1B2D3C] font-bold" /></strong> {date ? format(date, 'PPP') : <EditableText contentKey="contact_summary_not_selected" page="contact" defaultValue="Not selected" adminMode={adminMode} className="text-xs text-[#1B2D3C]" />}</p>
                 <p><strong><EditableText contentKey="contact_summary_time" page="contact" defaultValue="Time:" adminMode={adminMode} className="text-xs text-[#1B2D3C] font-bold" /></strong> {time} - {parseInt(time.split(':')[0], 10) + 2}:00</p>
                 <p><strong><EditableText contentKey="contact_summary_painters" page="contact" defaultValue="Painters:" adminMode={adminMode} className="text-xs text-[#1B2D3C] font-bold" /></strong> {paintersCount}</p>
-                <p><strong><EditableText contentKey="contact_summary_session" page="contact" defaultValue="Session:" adminMode={adminMode} className="text-xs text-[#1B2D3C] font-bold" /></strong> <EditableText contentKey="contact_summary_session_type" page="contact" defaultValue="Painting Session" adminMode={adminMode} className="text-xs text-[#1B2D3C]" /></p>
+                <p><strong><EditableText contentKey="contact_summary_session" page="contact" defaultValue="Session:" adminMode={adminMode} className="text-xs text-[#1B2D3C] font-bold" /></strong> {SESSION_TYPE_LABELS[sessionType]}</p>
               </div>
 
               <div className="border-t border-[#1B2D3C]/10 pt-3 mt-3 space-y-1">
@@ -429,6 +438,27 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                     {giftCardError && <p className="text-[10px] text-red-600 font-semibold">{giftCardError}</p>}
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Session Type */}
+            <div className="space-y-2">
+              <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Session Type *</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {(['painting', 'birthday-party', 'baby-shower-hen', 'clay-imprints', 'corporate'] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setSessionType(type)}
+                    className={`py-2.5 px-3 border-2 text-left text-xs font-bold transition-all rounded-lg cursor-pointer ${
+                      sessionType === type
+                        ? 'border-[#1B2D3C] bg-[#1B2D3C] text-white'
+                        : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
+                    }`}
+                  >
+                    {SESSION_TYPE_LABELS[type]}
+                  </button>
+                ))}
               </div>
             </div>
 
