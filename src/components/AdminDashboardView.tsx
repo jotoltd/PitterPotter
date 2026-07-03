@@ -503,6 +503,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const updateStatus = async (id: string, status: 'confirmed' | 'pending') => {
+    if (status === 'confirmed') {
+      const booking = inquiries.find(i => i.id === id);
+      if (booking && !booking.tableId) {
+        showToast('Assign a table before confirming this booking', 'error');
+        setAssignModalBooking(booking);
+        return;
+      }
+    }
     try {
       await updateBookingStatus(id, status, staff);
       setInquiries(inquiries.map((i) => (i.id === id ? { ...i, status } : i)));
@@ -861,8 +869,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             }}
             onConfirm={(bookingId) => updateStatus(bookingId, 'confirmed')}
             onBulkConfirm={async (ids) => {
-              await Promise.all(ids.map(id => updateStatus(id, 'confirmed')));
-              showToast(`${ids.length} booking${ids.length !== 1 ? 's' : ''} confirmed`, 'success');
+              const withTable = ids.filter(id => inquiries.find(i => i.id === id)?.tableId);
+              const skipped = ids.length - withTable.length;
+              await Promise.all(withTable.map(id => updateStatus(id, 'confirmed')));
+              if (withTable.length > 0) showToast(`${withTable.length} booking${withTable.length !== 1 ? 's' : ''} confirmed`, 'success');
+              if (skipped > 0) showToast(`${skipped} skipped — assign a table first`, 'error');
             }}
             onNavigateToBookings={() => setActiveTab('bookings')}
             onNavigateToAddBooking={() => { setActiveTab('bookings'); setShowAddModal(true); }}
