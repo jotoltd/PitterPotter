@@ -18,6 +18,22 @@ interface AdminDashboardProps {
   onLogout: () => void;
 }
 
+const SESSION_LABELS: Record<string, string> = {
+  'painting': 'Painting',
+  'birthday-party': 'Birthday',
+  'baby-shower-hen': 'Baby Shower / Hen',
+  'clay-imprints': 'Clay Imprints',
+  'corporate': 'Corporate',
+};
+
+const SESSION_BADGE: Record<string, string> = {
+  'painting': 'bg-blue-50 text-blue-700',
+  'birthday-party': 'bg-pink-50 text-pink-700',
+  'baby-shower-hen': 'bg-purple-50 text-purple-700',
+  'clay-imprints': 'bg-orange-50 text-orange-700',
+  'corporate': 'bg-slate-100 text-slate-700',
+};
+
 interface SortHeaderProps {
   field: 'date' | 'name' | 'studio' | 'status';
   label: string;
@@ -848,54 +864,88 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   return (
     <div className="min-h-screen bg-[#FFFFFF]">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-[#1B2D3C] text-white py-4 px-6 shadow-md">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div>
-            <h1 className="font-heading text-2xl font-black">Admin Dashboard</h1>
-            <p className="text-xs text-white/60 mt-1">
-              {staff.name} · {roleLabel[staff.role]}
-            </p>
+      <div className="sticky top-0 z-30 bg-[#1B2D3C] text-white py-3 px-4 sm:px-6 shadow-md">
+        <div className="max-w-7xl mx-auto flex justify-between items-center gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+              <span className="font-heading font-black text-sm">PP</span>
+            </div>
+            <div className="min-w-0">
+              <p className="font-heading font-black text-sm leading-tight">Pitter Potter</p>
+              <p className="text-[10px] text-white/50 truncate">{staff.name} · {roleLabel[staff.role]}</p>
+            </div>
           </div>
-          <button
-            onClick={onLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/30 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
+          <div className="flex items-center gap-2">
+            {canAddWalkIn && (
+              <button
+                onClick={() => { setActiveTab('bookings'); setShowAddModal(true); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" /> New Booking
+              </button>
+            )}
+            <button
+              onClick={onLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold rounded-lg transition-all cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
         {/* Admin Tabs */}
-        <div className="sticky top-[72px] z-20 bg-[#FFFFFF] flex flex-nowrap overflow-x-auto gap-2 mb-8 border-b border-[#1B2D3C]/10 pb-4 pt-2 scrollbar-hide" style={{maskImage: 'linear-gradient(to right, transparent 0%, black 2%, black 92%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 2%, black 92%, transparent 100%)'}}>
-          {[
-            { value: 'dashboard', label: 'Dashboard', badge: null },
-            { value: 'bookings', label: 'Bookings', badge: stats.pending > 0 ? stats.pending : null },
-            { value: 'gift-cards', label: 'Gift Vouchers', badge: null },
-            ...(canManageStaff ? [{ value: 'analytics', label: 'Analytics', badge: null }] : []),
-            ...(canManageStaff ? [{ value: 'content', label: 'Content', badge: null }] : []),
-            ...(canManageStaff ? [{ value: 'capacity', label: 'Capacity', badge: null }] : []),
-            ...(canManageStaff ? [{ value: 'staff', label: 'Staff', badge: null }] : []),
-            ...(canManageStaff ? [{ value: 'settings', label: 'Settings', badge: null }] : []),
-          ].map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setActiveTab(tab.value as typeof activeTab)}
-              className={`relative px-4 py-2 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer flex items-center gap-2 ${
-                activeTab === tab.value
-                  ? 'bg-[#DBE7E4] border-[#DBE7E4] text-[#1B2D3C]'
-                  : 'bg-white border-[#1B2D3C]/20 text-[#1B2D3C] hover:border-[#DBE7E4]'
-              }`}
-            >
-              {tab.label}
-              {tab.badge !== null && tab.badge !== undefined && (
-                <span className="inline-flex items-center justify-center w-4 h-4 text-[9px] font-black bg-amber-500 text-white rounded-full">
-                  {tab.badge > 9 ? '9+' : tab.badge}
-                </span>
-              )}
-            </button>
-          ))}
+        <div className="sticky top-[56px] z-20 bg-white border-b border-[#1B2D3C]/10 mb-6">
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+            {[
+              { value: 'dashboard', label: 'Today', badge: null },
+              { value: 'bookings', label: 'Bookings', badge: stats.pending > 0 ? stats.pending : null },
+              { value: 'gift-cards', label: 'Gift Vouchers', badge: null },
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value as typeof activeTab)}
+                className={`relative shrink-0 px-4 py-3 text-xs font-bold tracking-wide border-b-2 transition-all cursor-pointer flex items-center gap-2 ${
+                  activeTab === tab.value
+                    ? 'border-[#1B2D3C] text-[#1B2D3C]'
+                    : 'border-transparent text-[#1B2D3C]/50 hover:text-[#1B2D3C]'
+                }`}
+              >
+                {tab.label}
+                {tab.badge !== null && tab.badge !== undefined && (
+                  <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[9px] font-black bg-amber-500 text-white rounded-full">
+                    {tab.badge > 99 ? '99+' : tab.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+            {canManageStaff && (
+              <>
+                <div className="w-px h-5 bg-[#1B2D3C]/10 mx-1 shrink-0" />
+                {[
+                  { value: 'analytics', label: 'Analytics' },
+                  { value: 'content', label: 'Content' },
+                  { value: 'capacity', label: 'Capacity' },
+                  { value: 'staff', label: 'Staff' },
+                  { value: 'settings', label: 'Settings' },
+                ].map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setActiveTab(tab.value as typeof activeTab)}
+                    className={`relative shrink-0 px-3 py-3 text-xs font-bold tracking-wide border-b-2 transition-all cursor-pointer ${
+                      activeTab === tab.value
+                        ? 'border-[#1B2D3C] text-[#1B2D3C]'
+                        : 'border-transparent text-[#1B2D3C]/40 hover:text-[#1B2D3C]/70'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
         </div>
 
         {loading && (
@@ -1084,230 +1134,61 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
         {activeTab === 'bookings' && (
           <>
-                    {/* Filter Tabs */}"
-
-        <div className="sticky top-[120px] z-10 bg-[#FFFFFF] flex flex-wrap gap-2 mb-6 py-2">
-          {[
-            { value: 'all', label: 'All Bookings' },
-            { value: 'pending', label: 'Awaiting Confirmation' },
-            { value: 'confirmed', label: 'Confirmed' },
-          ].map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setFilter(tab.value as any)}
-              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
-                filter === tab.value
-                  ? 'bg-[#DBE7E4] border-[#DBE7E4] text-[#1B2D3C]'
-                  : 'bg-white border-[#1B2D3C]/20 text-[#1B2D3C] hover:border-[#DBE7E4]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-          <div className="w-px bg-[#1B2D3C]/30 mx-2" />
-          {[
-            { value: 'all', label: 'All Studios' },
-            { value: 'Putney', label: 'Putney' },
-            { value: 'Wimbledon', label: 'Wimbledon' },
-          ].map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setStudioFilter(tab.value as any)}
-              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
-                studioFilter === tab.value
-                  ? 'bg-[#DBE7E4] border-[#DBE7E4] text-[#1B2D3C]'
-                  : 'bg-white border-[#1B2D3C]/20 text-[#1B2D3C] hover:border-[#DBE7E4]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Search, Date Range, and Export */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="flex-1">
+        {/* Bookings toolbar — all filters in one row */}
+        <div className="flex flex-wrap items-center gap-2 mb-5">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[180px]">
             <input
               type="text"
-              placeholder="Search by name, email, or phone..."
+              placeholder="Search name, email or phone…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+              className="w-full pl-3 pr-8 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-semibold rounded-lg focus:outline-none focus:border-[#1B2D3C]/40 bg-white"
             />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#1B2D3C]/30 hover:text-[#1B2D3C] cursor-pointer">×</button>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-[#1B2D3C]/60" />
-            <input
-              type="date"
-              value={dateRange.start}
-              onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
-              className="px-2 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
-              aria-label="From date"
-            />
-            <span className="text-xs text-[#1B2D3C]/60">-</span>
-            <input
-              type="date"
-              value={dateRange.end}
-              onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
-              className="px-2 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
-              aria-label="To date"
-            />
+          {/* Status filter */}
+          <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
+            {([['all','All'],['pending','Awaiting'],['confirmed','Confirmed']] as const).map(([val, label]) => (
+              <button key={val} onClick={() => setFilter(val as any)}
+                className={`px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
+                  filter === val ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                }`}>{label}</button>
+            ))}
           </div>
-          {canAddWalkIn && (
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" /> Add Booking
-            </button>
-          )}
-          <button
-            onClick={exportToCSV}
-            className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
-          >
+          {/* Studio filter */}
+          <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
+            {([['all','All Studios'],['Putney','Putney'],['Wimbledon','Wimbledon']] as const).map(([val, label]) => (
+              <button key={val} onClick={() => setStudioFilter(val as any)}
+                className={`px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
+                  studioFilter === val ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                }`}>{label}</button>
+            ))}
+          </div>
+          {/* Date range */}
+          <input type="date" value={dateRange.start}
+            onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+            className="px-2 py-2 border border-[#1B2D3C]/20 text-[10px] text-[#1B2D3C] font-semibold rounded-lg focus:outline-none bg-white" aria-label="From date" />
+          <span className="text-[#1B2D3C]/30 text-xs">→</span>
+          <input type="date" value={dateRange.end}
+            onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+            className="px-2 py-2 border border-[#1B2D3C]/20 text-[10px] text-[#1B2D3C] font-semibold rounded-lg focus:outline-none bg-white" aria-label="To date" />
+          {/* Export */}
+          <button onClick={exportToCSV}
+            className="ml-auto px-3 py-2 border border-[#1B2D3C]/20 text-[10px] font-bold text-[#1B2D3C] rounded-lg hover:bg-[#DBE7E4] transition-all cursor-pointer">
             Export CSV
           </button>
         </div>
 
-        {/* Calendar View */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
-          <div className="lg:col-span-1 bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-heading text-base sm:text-lg font-black text-[#1B2D3C]">
-                Booking Calendar {studioFilter !== 'all' && `- ${studioFilter}`}
-              </h3>
-              <button
-                onClick={() => setSelectedDate(new Date())}
-                className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#1B2D3C] hover:text-[#1B2D3C] transition-colors"
-              >
-                Today
-              </button>
-            </div>
-            <DayPicker
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              className="rdp"
-              modifiers={{
-                hasConfirmed: inquiries.filter((i) => i.status === 'confirmed').map((i) => new Date(i.date)),
-                hasPending: inquiries.filter((i) => i.status === 'pending').map((i) => new Date(i.date)),
-              }}
-              modifiersClassNames={{
-                hasConfirmed: 'has-confirmed-booking',
-                hasPending: 'has-pending-booking',
-              }}
-            />
-            {selectedDate && (
-              <div className="mt-4 pt-4 border-t border-[#1B2D3C]/20">
-                <p className="text-[10px] sm:text-xs font-bold text-[#1B2D3C] uppercase tracking-wider">
-                  Selected: {format(selectedDate, 'PPP')}
-                </p>
-                <p className="text-[10px] sm:text-xs text-stone-500 mt-1">
-                  {bookingsForSelectedDate.length} booking{bookingsForSelectedDate.length !== 1 ? 's' : ''} on this date
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Bookings for Selected Date */}
-          <div className="lg:col-span-2 bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
-            <h3 className="font-heading text-base sm:text-lg font-black text-[#1B2D3C] mb-4">
-              {selectedDate ? `Bookings for ${format(selectedDate, 'PPP')}` : 'Select a date to view bookings'}
-            </h3>
-            {selectedDate && bookingsForSelectedDate.length === 0 ? (
-              <div className="text-center py-10">
-                <CalendarX className="w-10 h-10 text-stone-300 mx-auto mb-3" />
-                <p className="text-sm text-stone-500 font-semibold">No bookings for this date</p>
-                <p className="text-xs text-stone-400 mt-1">Try selecting another date or adding a new booking</p>
-              </div>
-            ) : selectedDate ? (
-              <div className="space-y-3 sm:space-y-4">
-                {bookingsForSelectedDate.map((inq) => (
-                  <div key={inq.id} className="bg-[#FFFFFF] p-3 sm:p-4 border border-[#1B2D3C]/10">
-                    <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
-                      <div className="space-y-1.5 sm:space-y-2 flex-1">
-                        <p className="font-bold text-[#1B2D3C] text-sm sm:text-base">{inq.name}</p>
-                        <p className="text-[10px] sm:text-xs text-stone-600">
-                          <span className="font-semibold">Studio:</span> {inq.studio} |
-                          <span className="font-semibold ml-2">Time:</span> {inq.time} |
-                          <span className="font-semibold ml-2">Painters:</span> {inq.paintersCount}
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-stone-600">
-                          <span className="font-semibold">Session:</span> {inq.sessionType}
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-stone-600">
-                          <span className="font-semibold">Contact:</span> {inq.email} | {inq.phone}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(inq.id);
-                            showToast('Booking reference copied', 'success');
-                          }}
-                          className="p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 transition-all cursor-pointer"
-                          title="Copy reference"
-                          aria-label="Copy booking reference"
-                        >
-                          <Copy className="w-4 h-4 text-[#1B2D3C]" />
-                        </button>
-                        {canEdit && (
-                          <button
-                            onClick={() => handleEditBooking(inq)}
-                            className="p-1.5 hover:bg-white border border-[#1B2D3C]/20 transition-all cursor-pointer"
-                            title="Edit booking"
-                          >
-                            <svg className="w-4 h-4 text-[#1B2D3C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                        )}
-                        {canUpdateStatus && (
-                          <button
-                            onClick={() => updateStatus(inq.id, inq.status === 'confirmed' ? 'pending' : 'confirmed')}
-                            className="p-1.5 hover:bg-white border border-[#1B2D3C]/20 transition-all cursor-pointer"
-                            title={inq.status === 'confirmed' ? 'Mark as pending' : 'Mark as confirmed'}
-                          >
-                            {inq.status === 'confirmed' ? (
-                              <XCircle className="w-4 h-4 text-amber-600" />
-                            ) : (
-                              <CheckCircle className="w-4 h-4 text-emerald-600" />
-                            )}
-                          </button>
-                        )}
-                        {canDelete && (
-                          <button
-                            onClick={() => deleteInquiry(inq.id)}
-                            className="p-1.5 hover:bg-red-50 border border-[#1B2D3C]/20 transition-all cursor-pointer"
-                            title="Delete booking"
-                          >
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-10">
-                <Calendar className="w-10 h-10 text-stone-300 mx-auto mb-3" />
-                <p className="text-sm text-stone-500 font-semibold">Select a date to view bookings</p>
-                <p className="text-xs text-stone-400 mt-1">Click on any day in the calendar</p>
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Bookings Table */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-heading text-lg font-black text-[#1B2D3C] uppercase tracking-wider">All Bookings</h2>
-          <button
-            onClick={exportBookingsCSV}
-            className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hover:text-[#486581] underline"
-          >
-            Export CSV
-          </button>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-bold text-[#1B2D3C]/50">
+            {filteredInquiries.length} booking{filteredInquiries.length !== 1 ? 's' : ''}
+            {filter !== 'all' || studioFilter !== 'all' || searchTerm || dateRange.start ? ' (filtered)' : ''}
+          </p>
         </div>
         <div className="bg-white border border-[#1B2D3C]/20 shadow-sm overflow-hidden">
           {filteredInquiries.length === 0 ? (
@@ -1322,13 +1203,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <thead className="bg-[#D6E2E9] border-b border-[#1B2D3C]/20">
                   <tr>
                     <SortHeader field="date" label="Date" sort={sort} setSort={setSort} />
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Time</th>
-                    <SortHeader field="studio" label="Studio" sort={sort} setSort={setSort} />
-                    <SortHeader field="name" label="Name" sort={sort} setSort={setSort} />
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Contact</th>
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Session</th>
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Painters</th>
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Source</th>
+                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Time · Studio</th>
+                    <SortHeader field="name" label="Guest" sort={sort} setSort={setSort} />
+                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hidden sm:table-cell">Session</th>
                     <SortHeader field="status" label="Status" sort={sort} setSort={setSort} />
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Table</th>
                     <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Actions</th>
@@ -1337,27 +1214,20 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <tbody>
                   {paginatedInquiries.map((inq) => (
                     <tr key={inq.id} className="border-b border-[#1B2D3C]/10 hover:bg-[#FFFFFF]/50">
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">{inq.date}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">{inq.time}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">{inq.studio}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">{inq.name}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <div className="space-y-1">
-                          <p className="text-[10px] sm:text-xs font-semibold text-[#1B2D3C] flex items-center gap-1">
-                            <Mail className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                            <span className="hidden sm:inline">{inq.email}</span>
-                            <span className="sm:hidden">{inq.email.split('@')[0]}...</span>
-                          </p>
-                          <p className="text-[10px] sm:text-xs font-semibold text-[#1B2D3C] flex items-center gap-1">
-                            <Phone className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                            {inq.phone}
-                          </p>
-                        </div>
+                        <p className="text-[10px] sm:text-xs font-bold text-[#1B2D3C]">{inq.time}</p>
+                        <p className="text-[9px] text-[#1B2D3C]/50 font-semibold">{inq.date}</p>
+                        <p className="text-[9px] text-[#1B2D3C]/40 font-semibold">{inq.studio}</p>
                       </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">{inq.sessionType}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">{inq.paintersCount}</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs font-semibold text-[#1B2D3C]">
-                        {inq.source === 'walk-in' ? 'Walk-in' : 'Online'}
+                      <td className="px-2 sm:px-4 py-2 sm:py-3">
+                        <p className="text-[10px] sm:text-xs font-bold text-[#1B2D3C]">{inq.name}</p>
+                        <p className="text-[9px] text-[#1B2D3C]/50 font-semibold hidden sm:block">{inq.email}</p>
+                        <p className="text-[9px] text-[#1B2D3C]/40 font-semibold">{inq.phone} · {inq.paintersCount}p</p>
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 hidden sm:table-cell">
+                        <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold ${SESSION_BADGE[inq.sessionType] ?? 'bg-gray-100 text-gray-600'}`}>
+                          {SESSION_LABELS[inq.sessionType] ?? inq.sessionType}
+                        </span>
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <span
@@ -1376,28 +1246,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         </span>
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => setAssignModalBooking(inq)}
-                            className={`px-2 py-1 text-[10px] font-bold border transition-all cursor-pointer rounded ${
-                              inq.tableId
-                                ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
-                                : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/30 hover:border-[#1B2D3C]'
-                            }`}
-                            title="Assign table"
-                          >
-                            {inq.tableId ?? '+ Assign'}
-                          </button>
-                          {!inq.tableId && (
-                            <button
-                              onClick={() => autoAssignTable(inq)}
-                              className="px-2 py-1 text-[10px] font-bold bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 rounded hover:bg-[#D6E2E9] transition-all cursor-pointer"
-                              title="Auto-assign table"
-                            >
-                              Auto
-                            </button>
-                          )}
-                        </div>
+                        <button
+                          onClick={() => setAssignModalBooking(inq)}
+                          className={`px-2 py-1 text-[10px] font-bold border transition-all cursor-pointer rounded ${
+                            inq.tableId
+                              ? 'bg-[#1B2D3C] text-white border-[#1B2D3C] hover:bg-[#486581]'
+                              : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                          }`}
+                          title="Assign table"
+                        >
+                          {inq.tableId ?? 'Assign'}
+                        </button>
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <div className="flex gap-1 sm:gap-2">
