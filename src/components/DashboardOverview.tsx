@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Users, Clock, CheckCircle, CalendarDays, MapPin, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Phone, Mail, FileText, Gift, AlertCircle, Plus } from 'lucide-react';
 import { BookingInquiry } from '../types';
@@ -104,10 +104,172 @@ function BookingRow({ b, onConfirm }: { b: BookingInquiry; onConfirm?: (id: stri
   );
 }
 
+function StudioPanel({
+  studio,
+  studioBookings,
+  slotsByStudio,
+  allTimesForStudio,
+  bookings,
+  viewDate,
+  onConfirm,
+  onNavigateToAddBooking,
+  FloorPlanComponent,
+}: {
+  studio: 'Putney' | 'Wimbledon';
+  studioBookings: BookingInquiry[];
+  slotsByStudio: Record<string, Record<string, BookingInquiry[]>>;
+  allTimesForStudio: (s: 'Putney' | 'Wimbledon') => string[];
+  bookings: BookingInquiry[];
+  viewDate: string;
+  onConfirm?: (id: string) => void;
+  onNavigateToAddBooking?: () => void;
+  FloorPlanComponent: React.ComponentType<{ bookings?: BookingInquiry[]; selectedDate?: string; selectedTime?: string; highlightTableId?: string; readOnly?: boolean; showTablePanel?: boolean; onTableClick?: (tableId: string) => void }>;
+}) {
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string>('');
+  const studioPending = studioBookings.filter(b => b.status === 'pending').length;
+  const times = allTimesForStudio(studio);
+
+  const tableBookings = useMemo(() => {
+    if (!selectedTable) return null;
+    return studioBookings.filter(b => b.tableId === selectedTable);
+  }, [selectedTable, studioBookings]);
+
+  const highlightedBookingIds = useMemo(() => {
+    if (!selectedTable) return new Set<string>();
+    return new Set(studioBookings.filter(b => b.tableId === selectedTable).map(b => b.id));
+  }, [selectedTable, studioBookings]);
+
+  return (
+    <div className="bg-white border border-[#1B2D3C]/20 rounded-xl overflow-hidden">
+      {/* Studio header */}
+      <div className="px-5 py-3 bg-[#1B2D3C] flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-white/70" />
+          <h3 className="font-heading font-black text-white text-sm">{studio} Studio</h3>
+          {studioPending > 0 && (
+            <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[9px] font-black bg-amber-400 text-white rounded-full">
+              {studioPending} awaiting
+            </span>
+          )}
+        </div>
+        <span className="text-[10px] font-bold text-white/70">
+          {studioBookings.length} booking{studioBookings.length !== 1 ? 's' : ''} · {studioBookings.reduce((s, b) => s + b.paintersCount, 0)} painters
+        </span>
+      </div>
+
+      {/* Time slot filter */}
+      {times.length > 0 && (
+        <div className="px-4 pt-3 flex flex-wrap gap-1.5">
+          <button
+            onClick={() => setSelectedTime('')}
+            className={`px-2.5 py-1 text-[10px] font-bold rounded-full border transition-all cursor-pointer ${selectedTime === '' ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'}`}
+          >All times</button>
+          {times.map(t => (
+            <button
+              key={t}
+              onClick={() => setSelectedTime(t)}
+              className={`px-2.5 py-1 text-[10px] font-bold rounded-full border transition-all cursor-pointer ${selectedTime === t ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'}`}
+            >{t}</button>
+          ))}
+        </div>
+      )}
+
+      {/* Floor plan + booking list side by side */}
+      <div className="flex flex-col lg:flex-row gap-0 divide-y lg:divide-y-0 lg:divide-x divide-[#1B2D3C]/10">
+        {/* Floor plan */}
+        <div className="lg:w-[420px] shrink-0 p-3 overflow-x-auto">
+          <p className="text-[10px] font-bold text-[#1B2D3C]/40 uppercase tracking-wider mb-2">
+            {selectedTable ? `Showing bookings for ${selectedTable} — click another table or` : 'Click a table to see who\'s booked in'}
+            {selectedTable && <button onClick={() => setSelectedTable(null)} className="ml-1 underline cursor-pointer hover:text-[#1B2D3C]">clear</button>}
+          </p>
+          <FloorPlanComponent
+            bookings={bookings}
+            selectedDate={viewDate}
+            selectedTime={selectedTime || undefined}
+            highlightTableId={selectedTable ?? undefined}
+            readOnly
+            showTablePanel={false}
+            onTableClick={(tid) => setSelectedTable(prev => prev === tid ? null : tid)}
+          />
+        </div>
+
+        {/* Booking list */}
+        <div className="flex-1 min-w-0">
+          {selectedTable ? (
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-[#1B2D3C] text-white text-[10px] font-black rounded">{selectedTable}</span>
+                <span className="text-xs font-bold text-[#1B2D3C]">
+                  {tableBookings && tableBookings.length > 0
+                    ? `${tableBookings.length} booking${tableBookings.length !== 1 ? 's' : ''}`
+                    : 'No bookings at this table today'}
+                </span>
+              </div>
+              {tableBookings && tableBookings.length > 0 ? (
+                <div className="space-y-2">
+                  {tableBookings.map(b => (
+                    <BookingRow key={b.id} b={b} onConfirm={onConfirm} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-[#1B2D3C]/40 font-semibold py-4 text-center">This table is free today</p>
+              )}
+            </div>
+          ) : (
+            <div className="divide-y divide-[#1B2D3C]/5">
+              {times.length === 0 ? (
+                <div className="px-5 py-10 text-center space-y-3">
+                  <CalendarDays className="w-8 h-8 text-[#1B2D3C]/15 mx-auto" />
+                  <p className="text-xs text-[#1B2D3C]/40 font-semibold">No bookings for {studio} on this date</p>
+                  {onNavigateToAddBooking && (
+                    <button onClick={onNavigateToAddBooking} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold border border-[#1B2D3C]/20 rounded-lg hover:bg-[#DBE7E4] transition-all cursor-pointer text-[#1B2D3C]">
+                      <Plus className="w-3 h-3" /> Add booking
+                    </button>
+                  )}
+                </div>
+              ) : (
+                (selectedTime ? [selectedTime] : times).map(time => {
+                  const slotBookings = (slotsByStudio[studio][time] || []);
+                  const painters = slotBookings.reduce((s, b) => s + b.paintersCount, 0);
+                  const slotPending = slotBookings.filter(b => b.status === 'pending').length;
+                  return (
+                    <div key={time} className="px-4 py-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 text-[#1B2D3C]/40" />
+                          <span className="text-xs font-black text-[#1B2D3C]">{time}</span>
+                          {slotPending > 0 && (
+                            <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-bold rounded-full">{slotPending} awaiting</span>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-semibold text-[#1B2D3C]/40">{painters}p · {slotBookings.length} booking{slotBookings.length !== 1 ? 's' : ''}</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {slotBookings.map(b => (
+                          <div
+                            key={b.id}
+                            onClick={() => b.tableId && setSelectedTable(prev => prev === b.tableId ? null : b.tableId!)}
+                            className={`transition-all rounded-lg ${b.tableId ? 'cursor-pointer' : ''} ${highlightedBookingIds.has(b.id) ? 'ring-2 ring-[#1B2D3C]' : ''}`}
+                          >
+                            <BookingRow b={b} onConfirm={onConfirm} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardOverview({ bookings, onAssignTable, onConfirm, onBulkConfirm, onNavigateToBookings, onNavigateToAddBooking }: DashboardOverviewProps) {
   const [viewDate, setViewDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
-  const [floorStudio, setFloorStudio] = useState<'Putney' | 'Wimbledon'>('Putney');
-  const [floorTime, setFloorTime] = useState('');
   const [bulkConfirming, setBulkConfirming] = useState(false);
 
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -138,10 +300,6 @@ export default function DashboardOverview({ bookings, onAssignTable, onConfirm, 
     d.setDate(d.getDate() + days);
     setViewDate(format(d, 'yyyy-MM-dd'));
   };
-
-  const floorTimesForDate = [...new Set(
-    bookings.filter(b => b.studio === floorStudio && b.date === viewDate).map(b => b.time)
-  )].sort();
 
   const handleBulkConfirm = async () => {
     if (!onBulkConfirm || pendingToday.length === 0) return;
@@ -228,73 +386,8 @@ export default function DashboardOverview({ bookings, onAssignTable, onConfirm, 
         </div>
       </div>
 
-      {/* Time slot tables — two columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {(['Putney', 'Wimbledon'] as const).map(studio => {
-          const studioBookings = studio === 'Putney' ? putneyToday : wimbledonToday;
-          const studioPending = studioBookings.filter(b => b.status === 'pending').length;
-          return (
-            <div key={studio} className="bg-white border border-[#1B2D3C]/20 rounded-xl overflow-hidden">
-              <div className="px-5 py-3 bg-[#1B2D3C] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-white/70" />
-                  <h3 className="font-heading font-black text-white text-sm">{studio} Studio</h3>
-                  {studioPending > 0 && (
-                    <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[9px] font-black bg-amber-400 text-white rounded-full">
-                      {studioPending} awaiting
-                    </span>
-                  )}
-                </div>
-                <span className="text-[10px] font-bold text-white/70">
-                  {studioBookings.length} booking{studioBookings.length !== 1 ? 's' : ''} · {studioBookings.reduce((s, b) => s + b.paintersCount, 0)} painters
-                </span>
-              </div>
-
-              {allTimesForStudio(studio).length === 0 ? (
-                <div className="px-5 py-10 text-center space-y-3">
-                  <CalendarDays className="w-8 h-8 text-[#1B2D3C]/15 mx-auto" />
-                  <p className="text-xs text-[#1B2D3C]/40 font-semibold">No bookings for {studio} on this date</p>
-                  {onNavigateToAddBooking && (
-                    <button onClick={onNavigateToAddBooking} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold border border-[#1B2D3C]/20 rounded-lg hover:bg-[#DBE7E4] transition-all cursor-pointer text-[#1B2D3C]">
-                      <Plus className="w-3 h-3" /> Add booking
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="divide-y divide-[#1B2D3C]/5">
-                  {allTimesForStudio(studio).map(time => {
-                    const slotBookings = slotsByStudio[studio][time] || [];
-                    const painters = slotBookings.reduce((s, b) => s + b.paintersCount, 0);
-                    const slotPending = slotBookings.filter(b => b.status === 'pending').length;
-                    return (
-                      <div key={time} className="px-4 py-3 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-3.5 h-3.5 text-[#1B2D3C]/40" />
-                            <span className="text-xs font-black text-[#1B2D3C]">{time}</span>
-                            {slotPending > 0 && (
-                              <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-bold rounded-full">{slotPending} awaiting</span>
-                            )}
-                          </div>
-                          <span className="text-[10px] font-semibold text-[#1B2D3C]/40">{painters}p · {slotBookings.length} booking{slotBookings.length !== 1 ? 's' : ''}</span>
-                        </div>
-                        <div className="space-y-1.5">
-                          {slotBookings.map(b => (
-                            <BookingRow key={b.id} b={b} onConfirm={onConfirm} />
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Empty state for whole day */}
-      {todayBookings.length === 0 && (
+      {/* Unified studio view — floor plan + bookings together */}
+      {todayBookings.length === 0 ? (
         <div className="bg-white border border-[#1B2D3C]/10 rounded-xl px-8 py-14 text-center space-y-4">
           <CalendarDays className="w-12 h-12 text-[#1B2D3C]/10 mx-auto" />
           <p className="text-sm font-bold text-[#1B2D3C]/40">No bookings for {viewDate === today ? 'today' : format(new Date(viewDate), 'EEEE do MMMM')}</p>
@@ -311,60 +404,32 @@ export default function DashboardOverview({ bookings, onAssignTable, onConfirm, 
             )}
           </div>
         </div>
+      ) : (
+        <StudioPanel
+          studio="Putney"
+          studioBookings={putneyToday}
+          slotsByStudio={slotsByStudio}
+          allTimesForStudio={allTimesForStudio}
+          bookings={bookings}
+          viewDate={viewDate}
+          onConfirm={onConfirm}
+          onNavigateToAddBooking={onNavigateToAddBooking}
+          FloorPlanComponent={PutneyFloorPlan}
+        />
       )}
-
-      {/* Floor plan section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <h2 className="font-heading font-black text-[#1B2D3C] text-base uppercase tracking-wider flex items-center gap-2">
-            <CalendarDays className="w-5 h-5" />
-            Floor Plan — {format(new Date(viewDate), 'do MMM')}
-          </h2>
-          <div className="flex gap-2">
-            {(['Putney', 'Wimbledon'] as const).map(s => (
-              <button
-                key={s}
-                onClick={() => { setFloorStudio(s); setFloorTime(''); }}
-                className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer rounded-lg ${
-                  floorStudio === s ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {floorTimesForDate.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setFloorTime('')}
-              className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border rounded-lg transition-all cursor-pointer ${
-                floorTime === '' ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
-              }`}
-            >
-              All slots
-            </button>
-            {floorTimesForDate.map(t => (
-              <button
-                key={t}
-                onClick={() => setFloorTime(t)}
-                className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border rounded-lg transition-all cursor-pointer ${
-                  floorTime === t ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {floorStudio === 'Putney' ? (
-          <PutneyFloorPlan bookings={bookings} selectedDate={viewDate} selectedTime={floorTime || undefined} readOnly showTablePanel />
-        ) : (
-          <WimbledonFloorPlan bookings={bookings} selectedDate={viewDate} selectedTime={floorTime || undefined} readOnly showTablePanel />
-        )}
-      </div>
+      {wimbledonToday.length > 0 && (
+        <StudioPanel
+          studio="Wimbledon"
+          studioBookings={wimbledonToday}
+          slotsByStudio={slotsByStudio}
+          allTimesForStudio={allTimesForStudio}
+          bookings={bookings}
+          viewDate={viewDate}
+          onConfirm={onConfirm}
+          onNavigateToAddBooking={onNavigateToAddBooking}
+          FloorPlanComponent={WimbledonFloorPlan}
+        />
+      )}
 
       {/* Upcoming 7 days */}
       <div className="bg-white border border-[#1B2D3C]/20 rounded-xl overflow-hidden">
