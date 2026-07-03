@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import DashboardOverview from './DashboardOverview';
+import ConfirmDialog from './ConfirmDialog';
 import FloorPlanView from './FloorPlanView';
 import WimbledonFloorPlan, { findAvailableTable } from './WimbledonFloorPlan';
 import PutneyFloorPlan, { findAvailablePutneyTable } from './PutneyFloorPlan';
@@ -73,7 +74,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     time: '10:00',
     paintersCount: 1,
     sessionType: 'painting',
-    status: 'confirmed',
+    status: 'pending',
   });
 
   const [newBookingCapacity, setNewBookingCapacity] = useState<number | null>(null);
@@ -81,6 +82,20 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [capacityLoading, setCapacityLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [assignModalBooking, setAssignModalBooking] = useState<BookingInquiry | null>(null);
+  const [confirmingIds, setConfirmingIds] = useState<Set<string>>(new Set());
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmLabel: string;
+    variant: 'danger' | 'warning';
+    onConfirm: () => void;
+  }>({ isOpen: false, title: '', message: '', confirmLabel: 'Confirm', variant: 'danger', onConfirm: () => {} });
+
+  const showConfirmDialog = (opts: { title: string; message: string; confirmLabel?: string; variant?: 'danger' | 'warning'; onConfirm: () => void }) => {
+    setConfirmDialog({ isOpen: true, confirmLabel: 'Confirm', variant: 'danger', ...opts });
+  };
+  const closeConfirmDialog = () => setConfirmDialog(d => ({ ...d, isOpen: false }));
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 250);
@@ -393,7 +408,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       showToast('Gift card update unavailable', 'error');
       return;
     }
-    if (status === 'expired' && !confirm('Are you sure you want to expire this gift card? This cannot be undone.')) return;
+    if (status === 'expired') {
+      showConfirmDialog({
+        title: 'Expire Gift Card',
+        message: 'This will mark the gift card as expired. This cannot be undone.',
+        confirmLabel: 'Expire',
+        variant: 'warning',
+        onConfirm: () => { closeConfirmDialog(); updateGiftCardStatus(id, status); },
+      });
+      return;
+    }
     try {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift-cards`, {
         method: 'POST',
@@ -496,35 +520,46 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
-  const deleteInquiry = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this booking? This cannot be undone.')) return;
-    try {
-      await deleteBooking(id, staff);
-      setInquiries(inquiries.filter((i) => i.id !== id));
-      showToast('Booking deleted', 'success');
-    } catch {
-      showToast('Failed to delete booking', 'error');
-    }
+  const deleteInquiry = (id: string) => {
+    showConfirmDialog({
+      title: 'Delete Booking',
+      message: 'This will permanently remove the booking. This cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'danger',
+      onConfirm: async () => {
+        closeConfirmDialog();
+        try {
+          await deleteBooking(id, staff);
+          setInquiries(inquiries.filter((i) => i.id !== id));
+          showToast('Booking deleted', 'success');
+        } catch {
+          showToast('Failed to delete booking', 'error');
+        }
+      },
+    });
   };
 
   const updateStatus = async (id: string, status: 'confirmed' | 'pending') => {
-    if (status === 'confirmed') {
-      const booking = inquiries.find(i => i.id === id);
-      if (booking && !booking.tableId) {
-        const assigned = await autoAssignTable(booking, true);
-        if (!assigned) {
-          showToast('No tables available — studio may be full', 'error');
-          return;
-        }
-        showToast(`Table ${assigned} auto-assigned`, 'success');
-      }
-    }
+    setConfirmingIds(prev => new Set(prev).add(id));
     try {
+      if (status === 'confirmed') {
+        const booking = inquiries.find(i => i.id === id);
+        if (booking && !booking.tableId) {
+          const assigned = await autoAssignTable(booking, true);
+          if (!assigned) {
+            showToast('No tables available — studio may be full', 'error');
+            return;
+          }
+          showToast(`Table ${assigned} auto-assigned`, 'success');
+        }
+      }
       await updateBookingStatus(id, status, staff);
       setInquiries(prev => prev.map((i) => (i.id === id ? { ...i, status } : i)));
-      showToast(`Booking confirmed`, 'success');
+      showToast(status === 'confirmed' ? 'Booking confirmed' : 'Booking marked as pending', 'success');
     } catch {
       showToast('Failed to update status', 'error');
+    } finally {
+      setConfirmingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
     }
   };
 
@@ -788,20 +823,26 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       showToast('You cannot delete your own account', 'error');
       return;
     }
-    if (!confirm('Are you sure you want to remove this staff member?')) return;
-
-    if (isSupabaseEnabled()) {
-      try {
-        const { error } = await supabase!.from('staff').delete().eq('id', id);
-        if (error) {
-          console.error('Supabase delete staff error:', error);
+    showConfirmDialog({
+      title: 'Remove Staff Member',
+      message: 'This will permanently remove this staff member. They will lose all access.',
+      confirmLabel: 'Remove',
+      variant: 'danger',
+      onConfirm: async () => {
+        closeConfirmDialog();
+        if (isSupabaseEnabled()) {
+          try {
+            const { error } = await supabase!.from('staff').delete().eq('id', id);
+            if (error) console.error('Supabase delete staff error:', error);
+          } catch (err) {
+            console.error('Supabase delete staff failed:', err);
+          }
         }
-      } catch (err) {
-        console.error('Supabase delete staff failed:', err);
-      }
-    }
+        await loadStaffList();
+      },
+    });
+    return;
 
-    await loadStaffList();
   };
 
   return (
@@ -827,7 +868,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
         {/* Admin Tabs */}
-        <div className="sticky top-[72px] z-20 bg-[#FFFFFF] flex flex-nowrap overflow-x-auto gap-2 mb-8 border-b border-[#1B2D3C]/10 pb-4 pt-2 scrollbar-hide">
+        <div className="sticky top-[72px] z-20 bg-[#FFFFFF] flex flex-nowrap overflow-x-auto gap-2 mb-8 border-b border-[#1B2D3C]/10 pb-4 pt-2 scrollbar-hide" style={{maskImage: 'linear-gradient(to right, transparent 0%, black 2%, black 92%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 2%, black 92%, transparent 100%)'}}>
           {[
             { value: 'dashboard', label: 'Dashboard', badge: null },
             { value: 'bookings', label: 'Bookings', badge: stats.pending > 0 ? stats.pending : null },
@@ -1384,14 +1425,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           {canUpdateStatus && (
                             <button
                               onClick={() => updateStatus(inq.id, inq.status === 'confirmed' ? 'pending' : 'confirmed')}
-                              className={`px-2 py-1 text-[10px] font-bold rounded border transition-all cursor-pointer flex items-center gap-1 ${
+                              disabled={confirmingIds.has(inq.id)}
+                              className={`px-2 py-1 text-[10px] font-bold rounded border transition-all cursor-pointer flex items-center gap-1 disabled:opacity-60 ${
                                 inq.status === 'confirmed'
                                   ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
                                   : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
                               }`}
                               title={inq.status === 'confirmed' ? 'Mark as pending' : 'Confirm booking'}
                             >
-                              {inq.status === 'confirmed' ? (
+                              {confirmingIds.has(inq.id) ? (
+                                <><span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" /> Working…</>
+                              ) : inq.status === 'confirmed' ? (
                                 <><XCircle className="w-3 h-3" /> Unconfirm</>
                               ) : (
                                 <><CheckCircle className="w-3 h-3" /> Confirm</>
@@ -2115,6 +2159,15 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
       )}
 
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmLabel={confirmDialog.confirmLabel}
+        variant={confirmDialog.variant}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={closeConfirmDialog}
+      />
     </div>
   );
 }
