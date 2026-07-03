@@ -269,8 +269,11 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                       }`}
                     >
                       {slot}
-                      <span className="block text-[9px] font-normal normal-case tracking-normal">
-                        {slotCapacity[slot] ?? MAX_PAINTERS} <EditableText contentKey="putney_slots_left" page="putney" defaultValue="left" adminMode={adminMode} className="text-[9px] normal-case tracking-normal" />
+                      <span className="block text-[9px] font-normal normal-case tracking-normal mt-0.5">
+                        {(slotCapacity[slot] ?? MAX_PAINTERS) === 0
+                          ? 'Full'
+                          : `${slotCapacity[slot] ?? MAX_PAINTERS} spaces`
+                        }
                       </span>
                     </button>
                   ))}
@@ -293,8 +296,8 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
             {date && time && (
               <div className="bg-[#D6E2E9]/50 p-3 text-sm font-bold text-[#1B2D3C]">
                 <p>{format(date, 'EEEE, do MMMM yyyy')} · {time} – {parseInt(time.split(':')[0], 10) + 2}:00 · {painters === '' ? 1 : painters} painter{(painters === '' ? 1 : painters) !== 1 ? 's' : ''}</p>
-                <p className="text-[10px] font-normal mt-1">
-                  {(slotCapacity[time] ?? MAX_PAINTERS)} <EditableText contentKey="putney_spaces_remaining" page="putney" defaultValue="spaces remaining for this session" adminMode={adminMode} className="text-[10px] font-normal" />
+                <p className="text-[10px] font-normal mt-1 text-emerald-700">
+                  {(slotCapacity[time] ?? MAX_PAINTERS)} {(slotCapacity[time] ?? MAX_PAINTERS) === 1 ? 'space' : 'spaces'} available
                 </p>
               </div>
             )}
