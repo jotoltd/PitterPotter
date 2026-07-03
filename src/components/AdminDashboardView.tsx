@@ -47,7 +47,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'staff' | 'settings' | 'content' | 'analytics' | 'capacity' | 'floor-plan'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'staff' | 'settings' | 'content' | 'analytics' | 'capacity'>('dashboard');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
   const [capacitySaving, setCapacitySaving] = useState(false);
@@ -813,26 +813,30 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         {/* Admin Tabs */}
         <div className="sticky top-[72px] z-20 bg-[#FFFFFF] flex flex-nowrap overflow-x-auto gap-2 mb-8 border-b border-[#1B2D3C]/10 pb-4 pt-2 scrollbar-hide">
           {[
-            { value: 'dashboard', label: '📋 Dashboard' },
-            { value: 'bookings', label: 'Bookings' },
-            { value: 'gift-cards', label: 'Gift Vouchers' },
-            ...(canManageStaff ? [{ value: 'analytics', label: 'Analytics' }] : []),
-            ...(canManageStaff ? [{ value: 'content', label: 'Content' }] : []),
-            ...(canManageStaff ? [{ value: 'capacity', label: 'Capacity' }] : []),
-            ...(canManageStaff ? [{ value: 'staff', label: 'Staff' }] : []),
-            ...(canManageStaff ? [{ value: 'settings', label: 'Settings' }] : []),
-            ...(canManageStaff ? [{ value: 'floor-plan', label: 'Floor Plans' }] : []),
+            { value: 'dashboard', label: 'Dashboard', badge: null },
+            { value: 'bookings', label: 'Bookings', badge: stats.pending > 0 ? stats.pending : null },
+            { value: 'gift-cards', label: 'Gift Vouchers', badge: null },
+            ...(canManageStaff ? [{ value: 'analytics', label: 'Analytics', badge: null }] : []),
+            ...(canManageStaff ? [{ value: 'content', label: 'Content', badge: null }] : []),
+            ...(canManageStaff ? [{ value: 'capacity', label: 'Capacity', badge: null }] : []),
+            ...(canManageStaff ? [{ value: 'staff', label: 'Staff', badge: null }] : []),
+            ...(canManageStaff ? [{ value: 'settings', label: 'Settings', badge: null }] : []),
           ].map((tab) => (
             <button
               key={tab.value}
               onClick={() => setActiveTab(tab.value as typeof activeTab)}
-              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
+              className={`relative px-4 py-2 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer flex items-center gap-2 ${
                 activeTab === tab.value
                   ? 'bg-[#DBE7E4] border-[#DBE7E4] text-[#1B2D3C]'
                   : 'bg-white border-[#1B2D3C]/20 text-[#1B2D3C] hover:border-[#DBE7E4]'
               }`}
             >
               {tab.label}
+              {tab.badge !== null && tab.badge !== undefined && (
+                <span className="inline-flex items-center justify-center w-4 h-4 text-[9px] font-black bg-amber-500 text-white rounded-full">
+                  {tab.badge > 9 ? '9+' : tab.badge}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -855,6 +859,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 showToast(tableId ? `Table ${tableId} assigned` : 'Table unassigned', 'success');
               }).catch(() => showToast('Failed to update table', 'error'));
             }}
+            onConfirm={(bookingId) => updateStatus(bookingId, 'confirmed')}
+            onBulkConfirm={async (ids) => {
+              await Promise.all(ids.map(id => updateStatus(id, 'confirmed')));
+              showToast(`${ids.length} booking${ids.length !== 1 ? 's' : ''} confirmed`, 'success');
+            }}
+            onNavigateToBookings={() => setActiveTab('bookings')}
+            onNavigateToAddBooking={() => { setActiveTab('bookings'); setShowAddModal(true); }}
           />
         )}
 
@@ -1342,13 +1353,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           {canUpdateStatus && (
                             <button
                               onClick={() => updateStatus(inq.id, inq.status === 'confirmed' ? 'pending' : 'confirmed')}
-                              className="p-1 sm:p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 transition-all cursor-pointer"
-                              title={inq.status === 'confirmed' ? 'Mark as pending' : 'Mark as confirmed'}
+                              className={`px-2 py-1 text-[10px] font-bold rounded border transition-all cursor-pointer flex items-center gap-1 ${
+                                inq.status === 'confirmed'
+                                  ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                                  : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                              }`}
+                              title={inq.status === 'confirmed' ? 'Mark as pending' : 'Confirm booking'}
                             >
                               {inq.status === 'confirmed' ? (
-                                <XCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600" />
+                                <><XCircle className="w-3 h-3" /> Unconfirm</>
                               ) : (
-                                <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600" />
+                                <><CheckCircle className="w-3 h-3" /> Confirm</>
                               )}
                             </button>
                           )}
@@ -2069,9 +2084,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
       )}
 
-      {activeTab === 'floor-plan' && (
-        <FloorPlanView bookings={inquiries} />
-      )}
     </div>
   );
 }
