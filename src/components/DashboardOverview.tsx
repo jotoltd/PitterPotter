@@ -183,8 +183,10 @@ function DailySheet({
     const map = new Map<string, BookingInquiry[]>();
     studioBookings.forEach(b => {
       if (b.tableId) {
-        if (!map.has(b.tableId)) map.set(b.tableId, []);
-        map.get(b.tableId)!.push(b);
+        b.tableId.split(',').map(t => t.trim()).filter(Boolean).forEach(tid => {
+          if (!map.has(tid)) map.set(tid, []);
+          map.get(tid)!.push(b);
+        });
       }
     });
     return map;
