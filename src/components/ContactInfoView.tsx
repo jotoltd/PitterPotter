@@ -15,11 +15,7 @@ const studios = [
     tel: '02087881635',
     directionsUrl: 'https://www.google.com/maps/dir/?api=1&destination=234+Upper+Richmond+Road+Putney+SW15+6TG',
     embedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2487.7!2d-0.2164!3d51.4613!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48760f5c5e5e5e5b%3A0x1!2s234+Upper+Richmond+Rd%2C+Putney%2C+London+SW15+6TG!5e0!3m2!1sen!2suk!4v1',
-    travel: [
-      { icon: '🚆', label: 'Train', detail: '3 minutes walk from Putney Railway Station' },
-      { icon: '🚇', label: 'Tube', detail: '7 minutes walk from East Putney Underground Station (District line)' },
-      { icon: '🚌', label: 'Bus', detail: 'Bus 337 & 430 stop directly outside. Buses 14, 37, 74, 85, 93, 39 and 424 stop nearby.' },
-    ],
+    directions: '3 minutes walk from Putney Railway Station. 7 minutes walk from East Putney Underground Station (District line). Bus 337 and 430 stop directly outside; buses 14, 37, 74, 85, 93, 39 and 424 stop nearby.',
   },
   {
     name: 'Wimbledon Studio',
@@ -28,11 +24,7 @@ const studios = [
     tel: '02037704499',
     directionsUrl: 'https://www.google.com/maps/dir/?api=1&destination=52+Wimbledon+Hill+Road+Wimbledon+SW19+7PA',
     embedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2489.1!2d-0.2041!3d51.4214!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48760f5c5e5e5e5c%3A0x2!2s52+Wimbledon+Hill+Rd%2C+Wimbledon%2C+London+SW19+7PA!5e0!3m2!1sen!2suk!4v1',
-    travel: [
-      { icon: '🚆', label: 'Train', detail: 'Placeholder — update with walking time from Wimbledon Station' },
-      { icon: '🚇', label: 'Tube', detail: 'Placeholder — update with nearest tube station & walking time' },
-      { icon: '🚌', label: 'Bus', detail: 'Placeholder — update with bus routes that stop nearby' },
-    ],
+    directions: 'Wimbledon Station (National Rail, District line, Tramlink) is a short walk away. Bus routes 93, 200, 131, 163 and the 219 stop nearby on Wimbledon Hill Road.',
   },
 ];
 
@@ -86,18 +78,8 @@ export default function ContactInfoView({ setCurrentPage, adminMode = false }: C
               />
             </div>
 
-            {/* Travel info */}
-            <div className="space-y-2">
-              {studio.travel.map((t) => (
-                <div key={t.label} className="flex items-start gap-3 bg-[#F8FAFB] border border-[#1B2D3C]/10 rounded-lg px-4 py-3">
-                  <span className="text-base shrink-0">{t.icon}</span>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C] mb-0.5">{t.label}</p>
-                    <p className="text-xs text-[#1B2D3C]/80 font-medium leading-relaxed">{t.detail}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {/* Directions */}
+            <p className="text-sm text-[#1B2D3C]/80 leading-relaxed">{studio.directions}</p>
 
             <a
               href={studio.directionsUrl}

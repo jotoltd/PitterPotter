@@ -44,36 +44,12 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
     <div id="parties-view" className="space-y-20 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
       {/* Page Title Header */}
       <div className="text-center space-y-4 max-w-3xl mx-auto">
-        <EditableText contentKey="parties_title" page="parties" defaultValue="Parties & Group Events" adminMode={adminMode} className="font-heading text-3xl md:text-4xl font-black text-[#1B2D3C] tracking-tight" />
+        <EditableText contentKey="parties_title" page="parties" defaultValue="Parties & Events" adminMode={adminMode} className="font-heading text-3xl md:text-4xl font-black text-[#1B2D3C] tracking-tight" />
       </div>
 
       {/* Main Services Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Baby Showers & Hen Parties */}
-        <div className="bg-[#DBE7E4] border border-[#1B2D3C] p-8 flex flex-col justify-between space-y-6 rounded-xl">
-          <div className="space-y-4">
-            <h3 className="font-heading text-xl text-[#1B2D3C]">
-              <EditableText contentKey="baby_shower_title" page="parties" defaultValue="Baby Shower / Hen Party / Stag Do" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" />
-            </h3>
-            <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
-              <EditableImage contentKey="baby_shower_image" page="parties" defaultSrc={Images.clayImprint} alt="Baby shower and hen party" className="w-full h-full object-cover rounded-lg" adminMode={adminMode} />
-            </div>
-            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
-              <EditableText contentKey="baby_shower_desc1" page="parties" defaultValue="For the bride, groom or parents to be who are seeking a creative alternative to a traditional celebration. Get everyone to paint a piece for the happy couple or the new addition to the family." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
-            </p>
-            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
-              <EditableText contentKey="baby_shower_desc2" page="parties" defaultValue="The same terms apply as per our weekend birthday party package above. If you would like your event to run after hours, there is a surcharge and a minimum 10 painters is required. You are welcome to provide your own nibbles/drinks or we are happy to organise catering for you upon request." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
-            </p>
-          </div>
-          <button
-            onClick={() => handleBookParty('baby-shower-hen')}
-            className="w-full py-2.5 bg-[#1B2D3C] text-white border border-[#1B2D3C] text-xs uppercase tracking-widest hover:bg-[#486581] transition-colors rounded-lg cursor-pointer"
-          >
-            <EditableText contentKey="baby_shower_button" page="parties" defaultValue="Book Party" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
-          </button>
-        </div>
-
-        {/* Birthday Parties */}
+        {/* Birthday Parties — first/left */}
         <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-between space-y-6 rounded-xl">
           <div className="space-y-4">
             <h3 className="font-heading text-xl text-[#1B2D3C]">
@@ -97,6 +73,30 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
             className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
           >
             <EditableText contentKey="birthday_button" page="parties" defaultValue="Book Party" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
+          </button>
+        </div>
+
+        {/* Baby Showers & Hen Parties */}
+        <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-between space-y-6 rounded-xl">
+          <div className="space-y-4">
+            <h3 className="font-heading text-xl text-[#1B2D3C]">
+              <EditableText contentKey="baby_shower_title" page="parties" defaultValue="Baby Shower / Hen Party / Stag Do" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" />
+            </h3>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
+              <EditableImage contentKey="baby_shower_image" page="parties" defaultSrc={Images.clayImprint} alt="Baby shower and hen party" className="w-full h-full object-cover rounded-lg" adminMode={adminMode} />
+            </div>
+            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
+              <EditableText contentKey="baby_shower_desc1" page="parties" defaultValue="For the bride, groom or parents to be who are seeking a creative alternative to a traditional celebration. Get everyone to paint a piece for the happy couple or the new addition to the family." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
+            </p>
+            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
+              <EditableText contentKey="baby_shower_desc2" page="parties" defaultValue="The same terms apply as per our weekend birthday party package above. If you would like your event to run after hours, there is a surcharge and a minimum 10 painters is required. You are welcome to provide your own nibbles/drinks or we are happy to organise catering for you upon request." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
+            </p>
+          </div>
+          <button
+            onClick={() => handleBookParty('baby-shower-hen')}
+            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
+          >
+            <EditableText contentKey="baby_shower_button" page="parties" defaultValue="Book Party" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
         </div>
 
