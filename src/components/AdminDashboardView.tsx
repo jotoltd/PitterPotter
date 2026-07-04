@@ -114,6 +114,21 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
   const closeConfirmDialog = () => setConfirmDialog(d => ({ ...d, isOpen: false }));
 
+  const handleUnauthorized = () => {
+    showToast('Your session has expired. Please log in again.', 'error');
+    localStorage.removeItem('pp_current_staff');
+    onLogout();
+  };
+
+  // Check session expiry on mount
+  useEffect(() => {
+    if (staff?.sessionExpiresAt) {
+      if (new Date(staff.sessionExpiresAt) < new Date()) {
+        handleUnauthorized();
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 250);
     return () => clearTimeout(timer);
@@ -175,6 +190,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         body: JSON.stringify({ action: 'load', username: staff.username, sessionToken: staff.sessionToken, key: 'stripe_mode' }),
       });
       const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
       if (!response.ok || data.error) {
         console.error('Failed to load stripe mode:', data.error);
         return;
@@ -221,6 +237,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         body: JSON.stringify({ action: 'loadCapacity', username: staff.username, sessionToken: staff.sessionToken }),
       });
       const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
       if (!response.ok || data.error) {
         console.error('Failed to load capacity:', data.error);
         return;
@@ -273,7 +290,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         bookings = bookings.filter(b => staffAllowedStudios.includes(b.studio));
       }
       setInquiries(bookings);
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.message === 'Unauthorized') { handleUnauthorized(); return; }
       console.error('Failed to load inquiries:', err);
     }
   };
@@ -290,6 +308,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           body: JSON.stringify({ action: 'list', username: staff.username, sessionToken: staff.sessionToken }),
         });
         const data = await response.json();
+        if (response.status === 401) { handleUnauthorized(); return; }
         if (!response.ok || data.error) {
           console.error('Gift cards list error:', data.error);
         } else if (data.giftCards) {
@@ -478,6 +497,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         body: JSON.stringify({ action: 'list', username: staff.username, sessionToken: staff.sessionToken }),
       });
       const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
       if (!response.ok || data.error) {
         console.error('Staff list error:', data.error);
       } else if (data.staff) {
