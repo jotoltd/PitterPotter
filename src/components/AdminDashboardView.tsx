@@ -64,7 +64,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'staff' | 'settings' | 'content' | 'analytics' | 'capacity'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics'>('dashboard');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
   const [capacitySaving, setCapacitySaving] = useState(false);
@@ -157,7 +157,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'capacity') {
+    if (activeTab === 'settings') {
       loadCapacity();
     }
   }, [activeTab]);
@@ -942,9 +942,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <div className="w-px h-5 bg-[#1B2D3C]/10 mx-1 shrink-0" />
                 {[
                   { value: 'analytics', label: 'Analytics' },
-                  { value: 'content', label: 'Content' },
-                  { value: 'capacity', label: 'Capacity' },
-                  { value: 'staff', label: 'Staff' },
                   { value: 'settings', label: 'Settings' },
                 ].map((tab) => (
                   <button
@@ -1364,8 +1361,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           </>
         )}
 
-        {/* Staff Management - super admin only */}
-        {activeTab === 'staff' && canManageStaff && (
+        {/* Settings tab — Staff + Capacity + Stripe + Content */}
+        {activeTab === 'settings' && canManageStaff && (
           <div className="bg-white p-6 border border-[#1B2D3C]/20 shadow-sm mt-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading text-lg font-black text-[#1B2D3C] uppercase tracking-wider">Staff Management</h2>
@@ -1830,84 +1827,31 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
       )}
 
+      {/* Capacity section — inside settings tab */}
       {activeTab === 'settings' && canManageStaff && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
-          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl max-w-xl space-y-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-8 space-y-6">
+          {/* Capacity */}
+          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
             <div>
-              <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Stripe Mode</h2>
-              <p className="text-xs text-[#1B2D3C]/70 mt-1">Switch between sandbox (test) and live payments.</p>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => updateStripeMode('sandbox')}
-                className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer rounded-lg ${
-                  stripeMode === 'sandbox'
-                    ? 'bg-[#DBE7E4] border-[#DBE7E4] text-[#1B2D3C]'
-                    : 'bg-white border-[#1B2D3C]/20 text-[#1B2D3C] hover:border-[#DBE7E4]'
-                }`}
-              >
-                Sandbox
-              </button>
-              <button
-                onClick={() => updateStripeMode('live')}
-                className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer rounded-lg ${
-                  stripeMode === 'live'
-                    ? 'bg-[#DBE7E4] border-[#DBE7E4] text-[#1B2D3C]'
-                    : 'bg-white border-[#1B2D3C]/20 text-[#1B2D3C] hover:border-[#DBE7E4]'
-                }`}
-              >
-                Live
-              </button>
-            </div>
-
-            <div className={`p-3 rounded-lg text-xs font-bold ${stripeMode === 'live' ? 'bg-red-50 text-red-700' : 'bg-[#DBE7E4]/30 text-[#1B2D3C]'}`}>
-              {stripeMode === 'live'
-                ? 'Live mode is active. Real payments will be processed. Make sure live Stripe keys are configured in Supabase secrets.'
-                : 'Sandbox mode is active. Use test card details for payments.'}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'content' && canManageStaff && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
-          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-6">
-            <div>
-              <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Content Management</h2>
-              <p className="text-xs text-[#1B2D3C]/70 mt-1">Edit website content directly. Toggle "Edit Mode" in the navbar to edit inline on the site.</p>
-            </div>
-            <div className="p-4 bg-[#DBE7E4]/30 rounded-lg text-xs font-bold text-[#1B2D3C]">
-              <p>Use the "Edit Mode" toggle in the top navigation bar to click and edit text/images directly on the website.</p>
-              <p className="mt-2">Changes are saved to the database and persist across all users.</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'capacity' && canManageStaff && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
-          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-6">
-            <div>
-              <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Capacity Management</h2>
-              <p className="text-xs text-[#1B2D3C]/70 mt-1">Set the maximum number of painters per studio and session type.</p>
+              <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Capacity</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Maximum painters per studio and session type.</p>
             </div>
             {capacityRows.length === 0 ? (
-              <p className="text-xs text-stone-500">Loading capacity settings...</p>
+              <p className="text-xs text-stone-500">Loading capacity settings…</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {capacityRows.map((row, index) => (
                   <div key={`${row.studio}-${row.session_type}`} className="flex items-center gap-4 p-4 bg-[#DBE7E4]/30 rounded-lg">
                     <div className="flex-1">
-                      <p className="text-xs font-bold uppercase text-[#1B2D3C]/70">Studio</p>
+                      <p className="text-[10px] font-bold uppercase text-[#1B2D3C]/50">Studio</p>
                       <p className="text-sm font-bold text-[#1B2D3C]">{row.studio}</p>
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs font-bold uppercase text-[#1B2D3C]/70">Session Type</p>
+                      <p className="text-[10px] font-bold uppercase text-[#1B2D3C]/50">Session Type</p>
                       <p className="text-sm font-bold text-[#1B2D3C]">{row.session_type}</p>
                     </div>
-                    <div className="w-32">
-                      <label className="text-xs font-bold uppercase text-[#1B2D3C]/70">Max Painters</label>
+                    <div className="w-28">
+                      <p className="text-[10px] font-bold uppercase text-[#1B2D3C]/50">Max Painters</p>
                       <input
                         type="number"
                         min={1}
@@ -1918,13 +1862,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           updated[index] = { ...row, max_painters: Number.isNaN(value) ? row.max_painters : value };
                           setCapacityRows(updated);
                         }}
-                        className="w-full px-2 py-1 border-2 border-[#1B2D3C] bg-white text-[#1B2D3C] text-sm font-bold focus:outline-none"
+                        className="w-full px-2 py-1 border-2 border-[#1B2D3C] bg-white text-[#1B2D3C] text-sm font-bold focus:outline-none mt-0.5"
                       />
                     </div>
                     <button
                       onClick={() => updateCapacity(capacityRows[index])}
                       disabled={capacitySaving}
-                      className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#1B2D3C]/90 disabled:opacity-50 cursor-pointer"
+                      className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#1B2D3C]/90 disabled:opacity-50 cursor-pointer rounded-lg"
                     >
                       Save
                     </button>
@@ -1932,6 +1876,37 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Stripe Mode */}
+          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 max-w-xl">
+            <div>
+              <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Stripe Mode</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Switch between sandbox (test) and live payments.</p>
+            </div>
+            <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
+              {(['sandbox', 'live'] as const).map(mode => (
+                <button key={mode} onClick={() => updateStripeMode(mode)}
+                  className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    stripeMode === mode ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                  }`}>
+                  {mode}
+                </button>
+              ))}
+            </div>
+            <div className={`p-3 rounded-lg text-xs font-bold ${stripeMode === 'live' ? 'bg-red-50 text-red-700' : 'bg-[#DBE7E4]/30 text-[#1B2D3C]'}`}>
+              {stripeMode === 'live'
+                ? 'Live mode active — real payments will be processed.'
+                : 'Sandbox mode active — use test card details.'}
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 max-w-xl">
+            <div>
+              <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Content Editing</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Toggle "Edit Mode" in the navbar to click and edit text or images directly on the site. Changes save to the database automatically.</p>
+            </div>
           </div>
         </div>
       )}
