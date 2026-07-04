@@ -160,9 +160,14 @@ export function computePartyAreaCapacity(
 ): { used: number; total: number; remaining: number; percentage: number } {
   const total = PARTY_CAPACITY;
   const tableIds = new Set(areaTables.map(t => `T${t.id}`));
-  const blockedIds = new Set(blockedTables.filter(b => b.date === date && tableIds.has(b.tableId)).map(b => b.tableId));
+  const blockedIds = new Set(
+    blockedTables
+      .filter(b => b.date === date)
+      .flatMap(b => b.tableId.split(',').map(t => t.trim()).filter(tid => tableIds.has(tid)))
+  );
   const used = bookings
-    .filter(b => b.date === date && b.tableId && tableIds.has(b.tableId))
+    .filter(b => b.date === date && b.tableId)
+    .filter(b => b.tableId.split(',').map(t => t.trim()).some(tid => tableIds.has(tid)))
     .reduce((sum, b) => sum + b.paintersCount, 0);
   const remaining = Math.max(0, total - used);
   return { used, total, remaining, percentage: (used / total) * 100 };

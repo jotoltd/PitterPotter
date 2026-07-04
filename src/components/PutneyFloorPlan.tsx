@@ -129,8 +129,10 @@ export function useTableAnalytics(bookings: BookingInquiry[] = []) {
     const painterCounts: Record<string, number> = {};
     bookings.forEach(b => {
       if (!b.tableId) return;
-      counts[b.tableId] = (counts[b.tableId] || 0) + 1;
-      painterCounts[b.tableId] = (painterCounts[b.tableId] || 0) + b.paintersCount;
+      b.tableId.split(',').map(t => t.trim()).filter(Boolean).forEach(tid => {
+        counts[tid] = (counts[tid] || 0) + 1;
+        painterCounts[tid] = (painterCounts[tid] || 0) + b.paintersCount;
+      });
     });
     const entries = Object.entries(counts).map(([tableId, bookingsCount]) => ({
       tableId, bookingsCount, paintersCount: painterCounts[tableId] || 0,
