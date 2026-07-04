@@ -68,6 +68,15 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
   const [capacitySaving, setCapacitySaving] = useState(false);
+  const [showGiftCardModal, setShowGiftCardModal] = useState(false);
+  const [newGiftCard, setNewGiftCard] = useState({
+    amount: 50,
+    recipientName: '',
+    recipientEmail: '',
+    senderName: '',
+    message: '',
+  });
+  const [giftCardCreating, setGiftCardCreating] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -441,6 +450,42 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     a.download = `gift_cards_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const createGiftCardCheckout = async () => {
+    if (!newGiftCard.amount || newGiftCard.amount <= 0) {
+      showToast('Please enter a valid amount', 'error');
+      return;
+    }
+    setGiftCardCreating(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-gift-card-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          amount: newGiftCard.amount,
+          recipientName: newGiftCard.recipientName,
+          recipientEmail: newGiftCard.recipientEmail,
+          senderName: newGiftCard.senderName,
+          message: newGiftCard.message,
+          successUrl: `${window.location.origin}/gift-card-success`,
+          cancelUrl: `${window.location.origin}/admin`,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        showToast(data.error || 'Failed to create checkout', 'error');
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      showToast('Failed to create checkout', 'error');
+    } finally {
+      setGiftCardCreating(false);
+    }
   };
 
   const updateGiftCardStatus = async (id: string, status: 'active' | 'redeemed' | 'expired') => {
@@ -1107,6 +1152,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-heading text-lg font-black text-[#1B2D3C] uppercase tracking-wider">Gift Cards</h2>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowGiftCardModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1B2D3C] text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-all cursor-pointer"
+              >
+                <Plus className="w-3 h-3" /> Create Gift Card
+              </button>
               <button
                 onClick={exportGiftCardsCSV}
                 className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hover:text-[#486581] underline"
@@ -1978,6 +2029,79 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 className="flex-1 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
                 Add Staff
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gift Card Creation Modal */}
+      {showGiftCardModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg">
+            <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Create Gift Card</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Amount (£) *</label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={newGiftCard.amount}
+                  onChange={(e) => setNewGiftCard({ ...newGiftCard, amount: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Recipient Name</label>
+                <input
+                  type="text"
+                  value={newGiftCard.recipientName}
+                  onChange={(e) => setNewGiftCard({ ...newGiftCard, recipientName: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Recipient Email</label>
+                <input
+                  type="email"
+                  value={newGiftCard.recipientEmail}
+                  onChange={(e) => setNewGiftCard({ ...newGiftCard, recipientEmail: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Sender Name</label>
+                <input
+                  type="text"
+                  value={newGiftCard.senderName}
+                  onChange={(e) => setNewGiftCard({ ...newGiftCard, senderName: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Message</label>
+                <textarea
+                  value={newGiftCard.message}
+                  onChange={(e) => setNewGiftCard({ ...newGiftCard, message: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 resize-none"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowGiftCardModal(false)}
+                className="flex-1 px-4 py-2 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createGiftCardCheckout}
+                disabled={giftCardCreating}
+                className="flex-1 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer disabled:opacity-50"
+              >
+                {giftCardCreating ? 'Creating...' : 'Proceed to Payment'}
               </button>
             </div>
           </div>
