@@ -68,7 +68,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
   const [capacitySaving, setCapacitySaving] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
@@ -582,7 +582,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     });
   };
 
-  const updateStatus = async (id: string, status: 'confirmed' | 'pending') => {
+  const updateStatus = async (id: string, status: 'confirmed' | 'pending' | 'cancelled') => {
     setConfirmingIds(prev => new Set(prev).add(id));
     try {
       if (status === 'confirmed') {
@@ -598,7 +598,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       }
       await updateBookingStatus(id, status, staff);
       setInquiries(prev => prev.map((i) => (i.id === id ? { ...i, status } : i)));
-      showToast(status === 'confirmed' ? 'Booking confirmed' : 'Booking marked as pending', 'success');
+      showToast(status === 'confirmed' ? 'Booking confirmed' : status === 'cancelled' ? 'Booking cancelled' : 'Booking marked as awaiting', 'success');
     } catch {
       showToast('Failed to update status', 'error');
     } finally {
@@ -608,7 +608,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const filteredInquiries = useMemo(() => inquiries
     .filter((inq) => {
-      const statusMatch = filter === 'all' || inq.status === filter;
+      const statusMatch = filter === 'all' || inq.status === (filter === 'cancelled' ? 'cancelled' : filter);
       const studioMatch = studioFilter === 'all' || inq.studio === studioFilter;
       const searchMatch = debouncedSearchTerm === '' ||
         inq.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -921,12 +921,22 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <Plus className="w-3.5 h-3.5" /> New Booking
               </button>
             )}
+            {staff?.sessionExpiresAt && (() => {
+              const mins = Math.round((new Date(staff.sessionExpiresAt).getTime() - Date.now()) / 60000);
+              if (mins < 60) return (
+                <span className="hidden sm:flex items-center gap-1 text-[10px] font-bold text-amber-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  Session expires in {mins}m
+                </span>
+              );
+              return null;
+            })()}
             <button
               onClick={onLogout}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold rounded-lg transition-all cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Logout</span>
+              Logout
             </button>
           </div>
         </div>
@@ -1185,7 +1195,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           </div>
           {/* Status filter */}
           <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
-            {([['all','All'],['pending','Awaiting'],['confirmed','Confirmed']] as const).map(([val, label]) => (
+            {([['all','All'],['pending','Awaiting'],['confirmed','Confirmed'],['cancelled','Cancelled']] as const).map(([val, label]) => (
               <button key={val} onClick={() => setFilter(val as any)}
                 className={`px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
                   filter === val ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
@@ -1300,13 +1310,24 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         }`}>
                         {inq.tableId ? `Table ${inq.tableId}` : 'Assign Table'}
                       </button>
-                      {canUpdateStatus && (
-                        <button onClick={() => updateStatus(inq.id, inq.status === 'confirmed' ? 'pending' : 'confirmed')}
+                      {canUpdateStatus && inq.status !== 'confirmed' && inq.status !== 'cancelled' && (
+                        <button onClick={() => updateStatus(inq.id, 'confirmed')}
                           disabled={confirmingIds.has(inq.id)}
-                          className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 disabled:opacity-60 ${
-                            inq.status === 'confirmed' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-600 text-white border-emerald-600'
-                          }`}>
-                          {confirmingIds.has(inq.id) ? <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> : inq.status === 'confirmed' ? <><XCircle className="w-3 h-3" /> Unconfirm</> : <><CheckCircle className="w-3 h-3" /> Confirm</>}
+                          className="px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 disabled:opacity-60 bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700">
+                          {confirmingIds.has(inq.id) ? <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <><CheckCircle className="w-3 h-3" /> Confirm</>}
+                        </button>
+                      )}
+                      {canUpdateStatus && inq.status === 'confirmed' && (
+                        <button onClick={() => updateStatus(inq.id, 'pending')}
+                          disabled={confirmingIds.has(inq.id)}
+                          className="px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 disabled:opacity-60 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100">
+                          <XCircle className="w-3 h-3" /> Unconfirm
+                        </button>
+                      )}
+                      {canUpdateStatus && inq.status !== 'cancelled' && (
+                        <button onClick={() => updateStatus(inq.id, 'cancelled')}
+                          className="px-2.5 py-1 text-[10px] font-bold rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all cursor-pointer flex items-center gap-1">
+                          <XCircle className="w-3 h-3" /> Cancel
                         </button>
                       )}
                       {canEdit && (
@@ -1404,13 +1425,24 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                                 <svg className="w-3.5 h-3.5 text-[#1B2D3C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                               </button>
                             )}
-                            {canUpdateStatus && (
-                              <button onClick={() => updateStatus(inq.id, inq.status === 'confirmed' ? 'pending' : 'confirmed')}
+                            {canUpdateStatus && inq.status !== 'confirmed' && inq.status !== 'cancelled' && (
+                              <button onClick={() => updateStatus(inq.id, 'confirmed')}
                                 disabled={confirmingIds.has(inq.id)}
-                                className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 disabled:opacity-60 ${
-                                  inq.status === 'confirmed' ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
-                                }`}>
-                                {confirmingIds.has(inq.id) ? <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" /> : inq.status === 'confirmed' ? <><XCircle className="w-3 h-3" /> Unconfirm</> : <><CheckCircle className="w-3 h-3" /> Confirm</>}
+                                className="px-2 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 disabled:opacity-60 bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700">
+                                {confirmingIds.has(inq.id) ? <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" /> : <><CheckCircle className="w-3 h-3" /> Confirm</>}
+                              </button>
+                            )}
+                            {canUpdateStatus && inq.status === 'confirmed' && (
+                              <button onClick={() => updateStatus(inq.id, 'pending')}
+                                disabled={confirmingIds.has(inq.id)}
+                                className="px-2 py-1 text-[10px] font-bold rounded-lg border bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 transition-all cursor-pointer flex items-center gap-1">
+                                <XCircle className="w-3 h-3" /> Unconfirm
+                              </button>
+                            )}
+                            {canUpdateStatus && inq.status !== 'cancelled' && (
+                              <button onClick={() => updateStatus(inq.id, 'cancelled')}
+                                className="px-2 py-1 text-[10px] font-bold rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all cursor-pointer flex items-center gap-1">
+                                <XCircle className="w-3 h-3" /> Cancel
                               </button>
                             )}
                             {canDelete && (

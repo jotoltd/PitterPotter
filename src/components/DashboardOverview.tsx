@@ -270,10 +270,15 @@ function DailySheet({
 export default function DashboardOverview({ bookings, onAssignTable, onConfirm, onBulkConfirm, onNavigateToBookings, onNavigateToAddBooking }: DashboardOverviewProps) {
   const [viewDate, setViewDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [bulkConfirming, setBulkConfirming] = useState(false);
+  const [nameSearch, setNameSearch] = useState('');
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
-  const todayBookings = useMemo(() => bookings.filter(b => b.date === viewDate), [bookings, viewDate]);
+  const todayBookings = useMemo(() => {
+    const byDate = bookings.filter(b => b.date === viewDate);
+    if (!nameSearch.trim()) return byDate;
+    return byDate.filter(b => b.name.toLowerCase().includes(nameSearch.toLowerCase()));
+  }, [bookings, viewDate, nameSearch]);
   const putneyToday = useMemo(() => todayBookings.filter(b => b.studio === 'Putney'), [todayBookings]);
   const wimbledonToday = useMemo(() => todayBookings.filter(b => b.studio === 'Wimbledon'), [todayBookings]);
 
@@ -373,40 +378,33 @@ export default function DashboardOverview({ bookings, onAssignTable, onConfirm, 
         </div>
       </div>
 
-      {/* Unified studio view — floor plan + bookings together */}
-      {todayBookings.length === 0 ? (
-        <div className="bg-white border border-[#1B2D3C]/10 rounded-xl px-8 py-14 text-center space-y-4">
-          <CalendarDays className="w-12 h-12 text-[#1B2D3C]/10 mx-auto" />
-          <p className="text-sm font-bold text-[#1B2D3C]/40">No bookings for {viewDate === today ? 'today' : format(new Date(viewDate), 'EEEE do MMMM')}</p>
-          <div className="flex items-center justify-center gap-3">
-            {onNavigateToAddBooking && (
-              <button onClick={onNavigateToAddBooking} className="flex items-center gap-2 px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold rounded-lg hover:bg-[#1B2D3C]/80 transition-all cursor-pointer">
-                <Plus className="w-4 h-4" /> Add Booking
-              </button>
-            )}
-            {onNavigateToBookings && (
-              <button onClick={onNavigateToBookings} className="flex items-center gap-2 px-4 py-2 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold rounded-lg hover:bg-[#DBE7E4] transition-all cursor-pointer">
-                View All Bookings
-              </button>
-            )}
-          </div>
-        </div>
-      ) : (
-        <DailySheet
-          studio="Putney"
-          studioBookings={putneyToday}
-          onConfirm={onConfirm}
-          onNavigateToAddBooking={onNavigateToAddBooking}
+      {/* Name search */}
+      <div className="relative max-w-xs">
+        <input
+          type="text"
+          placeholder="Find by name…"
+          value={nameSearch}
+          onChange={e => setNameSearch(e.target.value)}
+          className="w-full pl-3 pr-7 py-2 border border-[#1B2D3C]/20 text-xs font-semibold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/40 bg-white"
         />
-      )}
-      {wimbledonToday.length > 0 && (
-        <DailySheet
-          studio="Wimbledon"
-          studioBookings={wimbledonToday}
-          onConfirm={onConfirm}
-          onNavigateToAddBooking={onNavigateToAddBooking}
-        />
-      )}
+        {nameSearch && (
+          <button onClick={() => setNameSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#1B2D3C]/30 hover:text-[#1B2D3C] cursor-pointer text-base leading-none">×</button>
+        )}
+      </div>
+
+      {/* Both studios — always shown */}
+      <DailySheet
+        studio="Putney"
+        studioBookings={putneyToday}
+        onConfirm={onConfirm}
+        onNavigateToAddBooking={onNavigateToAddBooking}
+      />
+      <DailySheet
+        studio="Wimbledon"
+        studioBookings={wimbledonToday}
+        onConfirm={onConfirm}
+        onNavigateToAddBooking={onNavigateToAddBooking}
+      />
 
       {/* Upcoming 7 days */}
       <div className="bg-white border border-[#1B2D3C]/20 rounded-xl overflow-hidden">
