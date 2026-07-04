@@ -71,6 +71,7 @@ export interface Staff {
   canEditBookings: boolean;
   canAddWalkIns: boolean;
   canDeleteBookings: boolean;
+  allowedStudios?: ('Putney' | 'Wimbledon')[];
   sessionToken?: string;
   sessionExpiresAt?: string;
   createdAt: string;

@@ -267,7 +267,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const loadInquiries = async () => {
     try {
-      const bookings = await loadBookings(staff);
+      let bookings = await loadBookings(staff);
+      if (staffAllowedStudios) {
+        bookings = bookings.filter(b => staffAllowedStudios.includes(b.studio));
+      }
       setInquiries(bookings);
     } catch (err) {
       console.error('Failed to load inquiries:', err);
@@ -636,6 +639,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const isSuperAdmin = staff.role === 'super_admin';
 
+  const staffAllowedStudios: ('Putney' | 'Wimbledon')[] | null =
+    isSuperAdmin ? null : (staff.allowedStudios && staff.allowedStudios.length > 0 ? staff.allowedStudios : null);
+
   const canEdit = isSuperAdmin || staff.canEditBookings;
   const canUpdateStatus = isSuperAdmin || staff.canUpdateStatus;
   const canDelete = isSuperAdmin || staff.canDeleteBookings;
@@ -767,6 +773,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     canEditBookings: false,
     canAddWalkIns: false,
     canDeleteBookings: false,
+    allowedStudios: [] as ('Putney' | 'Wimbledon')[],
   });
 
   const addStaffMember = async () => {
@@ -800,6 +807,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               canEditBookings: newStaff.canEditBookings,
               canAddWalkIns: newStaff.canAddWalkIns,
               canDeleteBookings: newStaff.canDeleteBookings,
+              allowedStudios: newStaff.role === 'super_admin' ? null : (newStaff.allowedStudios.length > 0 ? newStaff.allowedStudios : null),
             },
           }),
         });
@@ -826,6 +834,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       canEditBookings: false,
       canAddWalkIns: false,
       canDeleteBookings: false,
+      allowedStudios: [],
     });
     setShowStaffModal(false);
   };
@@ -1368,6 +1377,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-2">Name</th>
                       <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-2">Username</th>
                       <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-2">Role</th>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-2">Studios</th>
                       <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-2">Actions</th>
                     </tr>
                   </thead>
@@ -1382,6 +1392,19 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           }`}>
                             {roleLabel[member.role]}
                           </span>
+                        </td>
+                        <td className="py-2">
+                          {member.role === 'super_admin' ? (
+                            <span className="text-[10px] text-purple-600 font-bold">All</span>
+                          ) : member.allowedStudios && member.allowedStudios.length > 0 ? (
+                            <div className="flex gap-1">
+                              {member.allowedStudios.map(s => (
+                                <span key={s} className="px-1.5 py-0.5 bg-[#DBE7E4] text-[#1B2D3C] text-[9px] font-bold rounded">{s}</span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-[#1B2D3C]/50 font-semibold">All</span>
+                          )}
                         </td>
                         <td className="py-2">
                           <button
@@ -1717,7 +1740,28 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </select>
               </div>
               {newStaff.role === 'staff' && (
-                <div className="space-y-2">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider">Studio Access</label>
+                    <p className="text-[10px] text-[#1B2D3C]/50">Leave both unchecked to allow access to all studios.</p>
+                    {(['Putney', 'Wimbledon'] as const).map(s => (
+                      <label key={s} className="flex items-center gap-2 text-xs font-semibold text-[#1B2D3C] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newStaff.allowedStudios.includes(s)}
+                          onChange={(e) => setNewStaff({
+                            ...newStaff,
+                            allowedStudios: e.target.checked
+                              ? [...newStaff.allowedStudios, s]
+                              : newStaff.allowedStudios.filter(x => x !== s)
+                          })}
+                          className="w-4 h-4 accent-[#1B2D3C]"
+                        />
+                        {s} only
+                      </label>
+                    ))}
+                  </div>
+                  <div className="space-y-2">
                   <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider">Permissions</label>
                   <label className="flex items-center gap-2 text-xs font-semibold text-[#1B2D3C] cursor-pointer">
                     <input
@@ -1755,6 +1799,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     />
                     Delete bookings
                   </label>
+                  </div>
                 </div>
               )}
             </div>
