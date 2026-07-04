@@ -52,7 +52,8 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
         setPhone(parsed.phone || '');
         setPaintersCount(parsed.paintersCount || 1);
         if (parsed.sessionType) setSessionType(parsed.sessionType);
-        if (parsed.currentStep) setStep(parsed.currentStep);
+        // If date already chosen on studio page, skip straight to contact details
+        if (parsed.date) setStep(2);
       } catch (err) {
         console.error('Failed to load draft:', err);
       }
@@ -401,8 +402,8 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
             {step === 1 && (
               <div className="space-y-6">
                 <div className="border-b-2 border-[#1B2D3C]/10 pb-3">
-                  <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Choose your session</h2>
-                  <p className="text-xs text-stone-500 mt-1 font-semibold">Select your studio, session type and number of painters.</p>
+                  <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Session details</h2>
+                  <p className="text-xs text-stone-500 mt-1 font-semibold">Pick your studio and session type. For date &amp; time, visit your studio page first.</p>
                 </div>
 
                 {/* Studio */}
