@@ -2198,7 +2198,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       {drawerBooking && (
         <>
           <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setDrawerBooking(null)} />
-          <div className="fixed right-0 top-0 h-full w-full max-w-sm bg-white shadow-2xl z-50 flex flex-col overflow-hidden">
+          <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-2xl z-50 flex flex-col overflow-hidden">
             {/* Header */}
             <div className="px-5 py-4 bg-[#1B2D3C] text-white flex items-start justify-between">
               <div>
@@ -2271,7 +2271,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-2">Seating</p>
                   <div className="border border-[#1B2D3C]/10 rounded-xl overflow-hidden bg-[#F8FAFA]">
-                    <div className="scale-[0.6] origin-top-left" style={{ width: '167%' }}>
+                    <div className="scale-[0.75] origin-top-left" style={{ width: '133%' }}>
                       {drawerBooking.studio === 'Wimbledon' ? (
                         <WimbledonFloorPlan
                           bookings={inquiries}
