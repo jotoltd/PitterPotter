@@ -133,13 +133,18 @@ export function useTableAnalytics(bookings: BookingInquiry[] = []) {
   }, [bookings]);
 }
 
-function Chair({ cx, cy, status }: { cx: number; cy: number; status: TableStatus }) {
-  const fill = status === 'blocked' ? '#9ca3af' : status === 'full' ? '#fca5a5' : status === 'partial' ? '#fde047' : status === 'selected' ? '#486581' : '#D6E2E9';
-  return <circle cx={cx} cy={cy} r={CHAIR_R} fill={fill} stroke="#1B2D3C" strokeWidth={1.2} />;
+function Chair({ cx, cy, status, occupied }: { cx: number; cy: number; status: TableStatus; occupied: boolean }) {
+  const baseFill = status === 'blocked' ? '#9ca3af' : status === 'selected' ? '#486581' : '#D6E2E9';
+  const fill = occupied ? '#1B2D3C' : baseFill;
+  return (
+    <circle cx={cx} cy={cy} r={CHAIR_R} fill={fill} stroke="#1B2D3C" strokeWidth={1.2}>
+      {occupied && <title>Occupied</title>}
+    </circle>
+  );
 }
 
-function TableShape({ def, status, count, onClick }: {
-  def: PositionedTable; status: TableStatus; count: number; onClick: () => void;
+function TableShape({ def, status, count, paintersAtTime, onClick }: {
+  def: PositionedTable; status: TableStatus; count: number; paintersAtTime: number; onClick: () => void;
 }) {
   const w = tableWidth(def.size);
   const h = tableHeight(def.size);
@@ -163,11 +168,13 @@ function TableShape({ def, status, count, onClick }: {
     chairs.push({ cx: def.x + w + CHAIR_R + CHAIR_GAP, cy: def.y + (h / (rightCount + 1)) * (i + 1) });
   }
 
-  const label = status === 'blocked' ? 'BLOCKED' : status === 'full' ? 'FULL' : count > 0 ? `${count} booked` : 'free';
+  const totalSeats = def.chairs.length;
+  const occupied = Math.min(paintersAtTime, totalSeats);
+  const label = status === 'blocked' ? 'BLOCKED' : occupied > 0 ? `${occupied}/${totalSeats}` : 'free';
 
   return (
     <g onClick={onClick} className="cursor-pointer" role="button" aria-label={`Table ${def.id}`}>
-      {chairs.map((c, i) => <Chair key={i} cx={c.cx} cy={c.cy} status={status} />)}
+      {chairs.map((c, i) => <Chair key={i} cx={c.cx} cy={c.cy} status={status} occupied={i < occupied} />)}
       <rect x={def.x} y={def.y} width={w} height={h} rx={4}
         fill={STATUS_FILL[status]} stroke={STATUS_STROKE[status]} strokeWidth={status === 'selected' ? 2.5 : 1.5} />
       <text x={def.x + w / 2} y={def.y + h / 2 - 6} textAnchor="middle" dominantBaseline="middle"
@@ -276,9 +283,13 @@ export default function PutneyFloorPlan({
   const renderTable = (t: PositionedTable) => {
     const tid = `T${t.id}`;
     const status = getStatus(tid);
-    const count = status === 'blocked' ? 0 : (bookingsByTable.get(tid)?.length || 0);
+    const bookingsForTable = bookingsByTable.get(tid) || [];
+    const count = status === 'blocked' ? 0 : bookingsForTable.length;
+    const paintersAtTime = selectedTime
+      ? bookingsForTable.filter(b => b.time === selectedTime).reduce((sum, b) => sum + b.paintersCount, 0)
+      : bookingsForTable.reduce((sum, b) => sum + b.paintersCount, 0);
     return (
-      <TableShape key={t.id} def={t} status={status} count={count} onClick={() => handleClick(t.id)} />
+      <TableShape key={t.id} def={t} status={status} count={count} paintersAtTime={paintersAtTime} onClick={() => handleClick(t.id)} />
     );
   };
 
