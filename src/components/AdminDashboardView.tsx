@@ -757,7 +757,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
 
     try {
-      await createBooking(booking);
+      await createBooking(booking, staff);
       let finalBooking = booking;
       if (booking.studio === 'Wimbledon') {
         const blocked = JSON.parse(localStorage.getItem('pitter_potter_blocked_tables') || '[]');
