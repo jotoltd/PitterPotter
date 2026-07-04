@@ -115,6 +115,7 @@ Deno.serve(async (req) => {
       canEditBookings: staff.can_edit_bookings,
       canAddWalkIns: staff.can_add_walk_ins,
       canDeleteBookings: staff.can_delete_bookings,
+      allowedStudios: staff.allowed_studios ?? null,
       sessionToken: token,
       sessionExpiresAt: expiresAt.toISOString(),
     }), {

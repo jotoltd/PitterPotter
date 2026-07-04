@@ -164,6 +164,9 @@ VALUES
   ('Wimbledon', 'party', 40)
 ON CONFLICT (studio, session_type) DO NOTHING;
 
+-- Add allowed_studios to staff table (null = all studios)
+ALTER TABLE staff ADD COLUMN IF NOT EXISTS allowed_studios TEXT[];
+
 -- Audit log for staff actions
 CREATE TABLE IF NOT EXISTS audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

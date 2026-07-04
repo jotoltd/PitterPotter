@@ -490,6 +490,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           canEditBookings: !!row.can_edit_bookings,
           canAddWalkIns: !!row.can_add_walk_ins,
           canDeleteBookings: !!row.can_delete_bookings,
+          allowedStudios: Array.isArray(row.allowed_studios) && row.allowed_studios.length > 0
+            ? row.allowed_studios as ('Putney' | 'Wimbledon')[]
+            : undefined,
           createdAt: row.created_at,
         }));
         setStaffList(mapped);

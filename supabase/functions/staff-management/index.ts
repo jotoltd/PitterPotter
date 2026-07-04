@@ -82,13 +82,16 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const role = isOneOf(staffData.role, ['super_admin', 'admin'] as const) ? staffData.role : 'admin';
+      const role = isOneOf(staffData.role, ['super_admin', 'admin', 'staff'] as const) ? staffData.role : 'staff';
+      const isSuperAdmin = role === 'super_admin';
       const permissions = {
-        can_update_status: isBoolean(staffData.canUpdateStatus) ? staffData.canUpdateStatus : false,
-        can_edit_bookings: isBoolean(staffData.canEditBookings) ? staffData.canEditBookings : false,
-        can_add_walk_ins: isBoolean(staffData.canAddWalkIns) ? staffData.canAddWalkIns : false,
-        can_delete_bookings: isBoolean(staffData.canDeleteBookings) ? staffData.canDeleteBookings : false,
+        can_update_status: isSuperAdmin || (isBoolean(staffData.canUpdateStatus) ? staffData.canUpdateStatus : false),
+        can_edit_bookings: isSuperAdmin || (isBoolean(staffData.canEditBookings) ? staffData.canEditBookings : false),
+        can_add_walk_ins: isSuperAdmin || (isBoolean(staffData.canAddWalkIns) ? staffData.canAddWalkIns : false),
+        can_delete_bookings: isSuperAdmin || (isBoolean(staffData.canDeleteBookings) ? staffData.canDeleteBookings : false),
       };
+      const allowedStudios = isSuperAdmin ? null :
+        (Array.isArray(staffData.allowedStudios) && staffData.allowedStudios.length > 0 ? staffData.allowedStudios : null);
       const passwordHash = await hashPassword(staffData.password);
       const { error } = await supabase.from('staff').insert({
         name: staffData.name,
@@ -96,6 +99,7 @@ Deno.serve(async (req) => {
         password_hash: passwordHash,
         role,
         ...permissions,
+        allowed_studios: allowedStudios,
       });
       if (error) throw error;
       await logAudit(supabase, staff, 'create', 'staff', staffData.username, { name: staffData.name, role });
@@ -111,13 +115,17 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const updateData: Record<string, string | boolean> = {
+      const updatedRole = isOneOf(staffData.role, ['super_admin', 'admin', 'staff'] as const) ? staffData.role : 'staff';
+      const isUpdatedSuperAdmin = updatedRole === 'super_admin';
+      const updateData: Record<string, unknown> = {
         name: staffData.name,
-        role: isOneOf(staffData.role, ['super_admin', 'admin'] as const) ? staffData.role : 'admin',
-        can_update_status: isBoolean(staffData.canUpdateStatus) ? staffData.canUpdateStatus : false,
-        can_edit_bookings: isBoolean(staffData.canEditBookings) ? staffData.canEditBookings : false,
-        can_add_walk_ins: isBoolean(staffData.canAddWalkIns) ? staffData.canAddWalkIns : false,
-        can_delete_bookings: isBoolean(staffData.canDeleteBookings) ? staffData.canDeleteBookings : false,
+        role: updatedRole,
+        can_update_status: isUpdatedSuperAdmin || (isBoolean(staffData.canUpdateStatus) ? staffData.canUpdateStatus : false),
+        can_edit_bookings: isUpdatedSuperAdmin || (isBoolean(staffData.canEditBookings) ? staffData.canEditBookings : false),
+        can_add_walk_ins: isUpdatedSuperAdmin || (isBoolean(staffData.canAddWalkIns) ? staffData.canAddWalkIns : false),
+        can_delete_bookings: isUpdatedSuperAdmin || (isBoolean(staffData.canDeleteBookings) ? staffData.canDeleteBookings : false),
+        allowed_studios: isUpdatedSuperAdmin ? null :
+          (Array.isArray(staffData.allowedStudios) && staffData.allowedStudios.length > 0 ? staffData.allowedStudios : null),
       };
       if (isNonEmptyString(staffData.password)) {
         updateData.password_hash = await hashPassword(staffData.password);

@@ -14,5 +14,6 @@ export interface StaffRecord {
   can_edit_bookings: boolean;
   can_add_walk_ins: boolean;
   can_delete_bookings: boolean;
+  allowed_studios: string[] | null;
   created_at: string;
 }
