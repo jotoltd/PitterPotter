@@ -393,8 +393,8 @@ export default function PutneyFloorPlan({
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <svg width="470" height="700" className="block mx-auto">
+      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <svg viewBox="0 0 470 700" className="w-full max-w-[470px] h-auto mx-auto" style={{ minHeight: '400px' }}>
           {/* Main area border */}
           <rect x={10} y={10} width={440} height={490} rx={8} fill="#F8FAFB" stroke="#1B2D3C" strokeWidth={1} strokeDasharray="4 3" />
           <text x={225} y={30} textAnchor="middle" fontSize={10} fontWeight="700" fill="#1B2D3C99" letterSpacing="2">MAIN AREA</text>

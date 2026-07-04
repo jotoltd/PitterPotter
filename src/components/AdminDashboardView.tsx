@@ -1054,24 +1054,25 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     <div className="min-h-screen bg-[#FFFFFF]">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-[#1B2D3C] text-white py-3 px-4 sm:px-6 shadow-md">
-        <div className="max-w-7xl mx-auto flex justify-between items-center gap-4">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
             <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
               <span className="font-heading font-black text-sm">PP</span>
             </div>
             <div className="min-w-0">
               <p className="font-heading font-black text-sm leading-tight">Pitter Potter</p>
-              <p className="text-[10px] text-white/50 truncate">{staff.name} · {roleLabel[staff.role]}</p>
+              <p className="text-[10px] text-white/50 truncate hidden sm:block">{staff.name} · {roleLabel[staff.role]}</p>
+              <p className="text-[10px] text-white/50 truncate sm:hidden">{staff.name}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             {canAddWalkIn && (
               <>
                 <button
                   onClick={() => { setActiveTab('bookings'); setShowAddModal(true); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
                 >
-                  <Plus className="w-3.5 h-3.5" /> New Booking
+                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">New Booking</span><span className="sm:hidden">Booking</span>
                 </button>
                 <button
                   onClick={() => {
@@ -1079,9 +1080,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     setNewBooking(prev => ({ ...prev, sessionType: 'party' as any }));
                     setShowAddModal(true);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
                 >
-                  <Gift className="w-3.5 h-3.5" /> New Party
+                  <Gift className="w-4 h-4" /> <span className="hidden sm:inline">New Party</span><span className="sm:hidden">Party</span>
                 </button>
               </>
             )}
@@ -1093,10 +1094,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             )}
             <button
               onClick={onLogout}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold rounded-lg transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
             >
-              <LogOut className="w-3.5 h-3.5" />
-              Logout
+              <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
@@ -1275,8 +1275,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             </div>
           </div>
           {giftCards.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+              <table className="w-full text-left min-w-[600px]">
                 <thead>
                   <tr className="border-b border-[#1B2D3C]/10">
                     <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-2">Code</th>
@@ -1406,7 +1406,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   for (const id of ids) await updateStatus(id, 'confirmed');
                   setSelectedIds(new Set());
                 }}
-                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 sm:px-3 sm:py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5 min-h-[44px]"
               >
                 <CheckCircle className="w-3.5 h-3.5" /> Confirm All
               </button>
@@ -1419,7 +1419,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 ].join('\n');
                 const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='bookings-selection.csv'; a.click();
               }}
-              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer"
+              className="px-4 py-2 sm:px-3 sm:py-1.5 bg-white/20 hover:bg-white/30 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer min-h-[44px]"
             >
               Export CSV
             </button>
@@ -1449,7 +1449,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     },
                   });
                 }}
-                className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 sm:px-3 sm:py-1.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5 min-h-[44px]"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Delete
               </button>
@@ -1601,7 +1601,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 text-xs font-bold uppercase tracking-wider border border-[#1B2D3C]/20 rounded hover:bg-[#D6E2E9] disabled:opacity-50 cursor-pointer"
+                  className="px-4 py-2 sm:px-3 sm:py-1 text-xs font-bold uppercase tracking-wider border border-[#1B2D3C]/20 rounded hover:bg-[#D6E2E9] disabled:opacity-50 cursor-pointer min-h-[44px]"
                 >
                   Previous
                 </button>
@@ -1609,7 +1609,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 text-xs font-bold uppercase tracking-wider border border-[#1B2D3C]/20 rounded hover:bg-[#D6E2E9] disabled:opacity-50 cursor-pointer"
+                  className="px-4 py-2 sm:px-3 sm:py-1 text-xs font-bold uppercase tracking-wider border border-[#1B2D3C]/20 rounded hover:bg-[#D6E2E9] disabled:opacity-50 cursor-pointer min-h-[44px]"
                 >
                   Next
                 </button>
@@ -1634,8 +1634,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               </button>
             </div>
             {staffList.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
+              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                <table className="w-full text-left min-w-[500px]">
                   <thead>
                     <tr className="border-b border-[#1B2D3C]/10">
                       <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-2">Name</th>
@@ -1703,8 +1703,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
       {/* Add Booking Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 sm:p-6">
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg max-h-[90vh] overflow-y-auto sm:rounded-xl">
             <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Add Booking</h3>
             <div className="space-y-3">
               <div>
@@ -1848,8 +1848,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
       {/* Edit Booking Modal */}
       {showEditModal && editingBooking && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 sm:p-6">
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg max-h-[90vh] overflow-y-auto sm:rounded-xl">
             <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Edit Booking</h3>
             <div className="space-y-3">
               <div>
@@ -1982,8 +1982,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
       {/* Assign Table Modal */}
       {assignModalBooking && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-          <div className="bg-white border border-[#1B2D3C]/20 max-w-lg w-full shadow-xl rounded-xl overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 sm:p-6">
+          <div className="bg-white border border-[#1B2D3C]/20 max-w-lg w-full shadow-xl rounded-xl overflow-hidden max-h-[90vh] flex flex-col sm:rounded-xl">
             <div className="px-6 py-4 border-b border-[#1B2D3C]/10 flex items-center justify-between">
               <div>
                 <h3 className="font-heading text-lg font-black text-[#1B2D3C]">Assign Table</h3>
@@ -2041,8 +2041,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
       {/* Add Staff Modal */}
       {showStaffModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 sm:p-6">
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg max-h-[90vh] overflow-y-auto sm:rounded-xl">
             <h3 className="font-heading text-xl font-black text-[#1B2D3C]">{editingStaff ? 'Edit Staff Member' : 'Add Staff Member'}</h3>
             <div className="space-y-3">
               <div>
@@ -2203,8 +2203,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
       {/* Gift Card Creation Modal */}
       {showGiftCardModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 sm:p-6">
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg max-h-[90vh] overflow-y-auto sm:rounded-xl">
             <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Create Gift Card</h3>
             <div className="space-y-3">
               <div>
@@ -2506,8 +2506,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <p className="text-xs text-stone-400 mt-1">Activity will appear here as staff perform actions</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
+              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                <table className="w-full text-left min-w-[600px]">
                   <thead className="bg-[#D6E2E9] border-b border-[#1B2D3C]/20">
                     <tr>
                       <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Timestamp</th>
