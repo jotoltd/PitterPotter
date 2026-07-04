@@ -246,7 +246,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                 onSelect={handleDateSelect}
                 month={calendarMonth}
                 onMonthChange={setCalendarMonth}
-                disabled={[{ dayOfWeek: [1] }, ...busyDates]}
+                disabled={[{ dayOfWeek: [1] }, { before: new Date() }, ...busyDates]}
                 weekStartsOn={1}
               />
             </div>
@@ -283,14 +283,11 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
 
             <div className="space-y-2">
               <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="putney_painters_label" page="putney" defaultValue="Number of Painters" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={painters}
-                onChange={(e) => setPainters(e.target.value === '' ? '' : Math.max(1, Math.min(20, parseInt(e.target.value) || 1)))}
-                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20"
-              />
+              <div className="flex items-center border border-[#1B2D3C]/20 bg-white overflow-hidden">
+                <button type="button" onClick={() => setPainters(p => Math.max(1, (p === '' ? 1 : p) - 1))} className="px-4 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">−</button>
+                <span className="flex-1 text-center text-sm font-black text-[#1B2D3C]">{painters === '' ? 1 : painters}</span>
+                <button type="button" onClick={() => setPainters(p => Math.min(MAX_PAINTERS, (p === '' ? 1 : p) + 1))} className="px-4 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">+</button>
+              </div>
             </div>
 
             {date && time && (

@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { Mail, Phone, MapPin, Clock, CheckCircle2, Copy } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, CheckCircle2, Copy, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from './ToastContext';
 import { format } from 'date-fns';
 import { BookingInquiry, GiftCard } from '../types';
@@ -15,6 +15,7 @@ interface ContactViewProps {
 
 export default function ContactView({ initialPainters = 1, adminMode = false }: ContactViewProps) {
   const { showToast } = useToast();
+  const [step, setStep] = useState(1);
   // Booking details from previous stage
   const [studio, setStudio] = useState<'Putney' | 'Wimbledon'>('Putney');
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -30,6 +31,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
 
   const [submittedInquiry, setSubmittedInquiry] = useState<BookingInquiry | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const [giftCardCode, setGiftCardCode] = useState('');
@@ -50,11 +52,11 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
         setPhone(parsed.phone || '');
         setPaintersCount(parsed.paintersCount || 1);
         if (parsed.sessionType) setSessionType(parsed.sessionType);
+        if (parsed.currentStep) setStep(parsed.currentStep);
       } catch (err) {
         console.error('Failed to load draft:', err);
       }
     }
-
   }, []);
 
   const SESSION_TYPE_LABELS: Record<string, string> = {
@@ -149,6 +151,24 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
     setGiftCardCode('');
   };
 
+  const handleNext = () => {
+    setError('');
+    if (step === 1) {
+      if (!date) { setError('Please select a date and time to continue.'); return; }
+      setStep(2);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (step === 2) {
+      if (!name || !phone) {
+        setError(`Please fill in: ${[!name && 'Name', !phone && 'Phone'].filter(Boolean).join(', ')}`);
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (email && !emailRegex.test(email)) { setError('Please enter a valid email address'); return; }
+      setStep(3);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
@@ -167,6 +187,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
       setError('Please enter a valid email address');
       return;
     }
+    setSubmitting(true);
 
     const remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time);
     if (paintersCount > remaining) {
@@ -241,8 +262,10 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save booking. Please try again.';
       setError(message);
+      setSubmitting(false);
       return;
     }
+    setSubmitting(false);
 
     console.log('📧 Confirmation Email Sent:');
     console.log(`To: ${email}`);
@@ -250,37 +273,43 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
     console.log(`Body: Thank you ${name}! Your booking for ${format(date, 'PPP')} at ${time} has been received. We'll confirm your table within 24 hours.`);
   };
 
-  return (
-    <div id="contact-view" className="space-y-16 pb-20 pt-6">
-      {/* Title Header */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8 text-center space-y-4">
-        <h1 className="font-heading text-3xl md:text-4xl font-black italic tracking-tight text-[#1B2D3C]"><EditableText contentKey="contact_title" page="contact" defaultValue="Book a Session" adminMode={adminMode} className="font-heading text-3xl md:text-4xl italic text-[#1B2D3C]" /></h1>
-      </div>
+  const STEPS = ['Session', 'Your Details', 'Review'];
 
-      {/* Location Picker */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8">
-        <p className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C] mb-4 text-center"><EditableText contentKey="contact_choose_studio" page="contact" defaultValue="Choose Your Studio" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></p>
-        <div className="grid grid-cols-2 gap-4">
-          {(['Putney', 'Wimbledon'] as const).map((loc) => (
-            <button
-              key={loc}
-              type="button"
-              onClick={() => setStudio(loc)}
-              className={`p-5 border-2 text-left transition-all cursor-pointer rounded-xl ${
-                studio === loc
-                  ? 'border-[#1B2D3C] bg-[#1B2D3C] text-white'
-                  : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
-              }`}
-            >
-              <p className="font-heading font-black italic tracking-tight text-lg"><EditableText contentKey={`contact_${loc.toLowerCase()}_studio_button`} page="contact" defaultValue={`${loc} Studio`} adminMode={adminMode} className="font-heading text-lg italic text-[#1B2D3C]" /></p>
-              <p className={`text-[11px] font-semibold mt-1 ${studio === loc ? 'text-white/80' : 'text-[#1B2D3C]/60'}`}>
-                <EditableText contentKey={`contact_${loc.toLowerCase()}_short_address`} page="contact" defaultValue={loc === 'Putney' ? '234 Upper Richmond Road, SW15 6TG' : '52 Wimbledon Hill Road, SW19 7PA'} adminMode={adminMode} className="text-[11px] font-semibold" />
-              </p>
-              <p className={`text-[11px] font-bold mt-2 ${studio === loc ? 'text-white/90' : 'text-[#1B2D3C]'}`}>
-                <EditableText contentKey={`contact_${loc.toLowerCase()}_short_phone`} page="contact" defaultValue={loc === 'Putney' ? '020 87881635' : '020 37704499'} adminMode={adminMode} className="text-[11px] font-bold" />
-              </p>
-            </button>
-          ))}
+  return (
+    <div id="contact-view" className="pb-20 pt-6">
+      {/* Title + Step Progress */}
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 mb-8">
+        <h1 className="font-heading text-3xl md:text-4xl font-black italic tracking-tight text-[#1B2D3C] text-center mb-6">
+          <EditableText contentKey="contact_title" page="contact" defaultValue="Book a Session" adminMode={adminMode} className="font-heading text-3xl md:text-4xl italic text-[#1B2D3C]" />
+        </h1>
+        {/* Step indicator */}
+        <div className="flex items-center gap-0">
+          {STEPS.map((label, i) => {
+            const num = i + 1;
+            const isActive = step === num;
+            const isDone = step > num;
+            return (
+              <div key={num} className="flex items-center flex-1 last:flex-none">
+                <div className="flex flex-col items-center gap-1">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all ${
+                    isDone ? 'bg-[#1B2D3C] border-[#1B2D3C] text-white'
+                    : isActive ? 'bg-white border-[#1B2D3C] text-[#1B2D3C]'
+                    : 'bg-white border-[#1B2D3C]/20 text-[#1B2D3C]/30'
+                  }`}>
+                    {isDone ? '✓' : num}
+                  </div>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                    isActive ? 'text-[#1B2D3C]' : isDone ? 'text-[#1B2D3C]/60' : 'text-[#1B2D3C]/30'
+                  }`}>{label}</span>
+                </div>
+                {i < STEPS.length - 1 && (
+                  <div className={`flex-1 h-0.5 mx-2 mb-5 transition-all ${
+                    step > num ? 'bg-[#1B2D3C]' : 'bg-[#1B2D3C]/15'
+                  }`} />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -360,12 +389,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
 
         {/* Booking Form - Right */}
         <div id="booking-form-section" className="lg:col-span-8 bg-white p-6 md:p-8 border border-[#1B2D3C]/20 space-y-6 rounded-2xl">
-          <div className="border-b-2 border-[#1B2D3C]/20 pb-4">
-            <h2 className="font-heading text-2xl font-black text-[#1B2D3C]"><EditableText contentKey="contact_form_heading" page="contact" defaultValue="Complete Your Booking" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" /></h2>
-            <p className="text-xs text-stone-500 mt-1 leading-normal font-semibold">
-              <EditableText contentKey="contact_form_subheading" page="contact" defaultValue="Confirm your selected session below and enter your contact details." adminMode={adminMode} className="text-xs text-stone-500 leading-normal" />
-            </p>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
@@ -373,144 +396,190 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                 {error}
               </div>
             )}
-            {/* Booking Summary */}
-            <div className="bg-[#D6E2E9]/50 p-4 border border-[#1B2D3C]/20 space-y-2">
-              <h4 className="font-heading text-sm font-black text-[#1B2D3C] uppercase tracking-wider"><EditableText contentKey="contact_selected_session_label" page="contact" defaultValue="Selected Session" adminMode={adminMode} className="font-heading text-sm uppercase tracking-wider text-[#1B2D3C]" /></h4>
-              <div className="text-xs text-[#1B2D3C] space-y-1 font-semibold">
-                <p><strong><EditableText contentKey="contact_summary_studio" page="contact" defaultValue="Studio:" adminMode={adminMode} className="text-xs text-[#1B2D3C] font-bold" /></strong> {studio}</p>
-                <p><strong><EditableText contentKey="contact_summary_date" page="contact" defaultValue="Date:" adminMode={adminMode} className="text-xs text-[#1B2D3C] font-bold" /></strong> {date ? format(date, 'PPP') : <EditableText contentKey="contact_summary_not_selected" page="contact" defaultValue="Not selected" adminMode={adminMode} className="text-xs text-[#1B2D3C]" />}</p>
-                <p><strong><EditableText contentKey="contact_summary_time" page="contact" defaultValue="Time:" adminMode={adminMode} className="text-xs text-[#1B2D3C] font-bold" /></strong> {time} - {parseInt(time.split(':')[0], 10) + 2}:00</p>
-                <p><strong><EditableText contentKey="contact_summary_painters" page="contact" defaultValue="Painters:" adminMode={adminMode} className="text-xs text-[#1B2D3C] font-bold" /></strong> {paintersCount}</p>
-                <p><strong><EditableText contentKey="contact_summary_session" page="contact" defaultValue="Session:" adminMode={adminMode} className="text-xs text-[#1B2D3C] font-bold" /></strong> {SESSION_TYPE_LABELS[sessionType]}</p>
-              </div>
 
-              <div className="border-t border-[#1B2D3C]/10 pt-3 mt-3 space-y-1">
-                <div className="flex justify-between">
-                  <span><EditableText contentKey="contact_summary_estimated" page="contact" defaultValue="Estimated price:" adminMode={adminMode} className="text-xs text-[#1B2D3C]" /></span>
-                  <span>£{estimatedPrice.toFixed(2)}</span>
+            {/* ── STEP 1: Session ── */}
+            {step === 1 && (
+              <div className="space-y-6">
+                <div className="border-b-2 border-[#1B2D3C]/10 pb-3">
+                  <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Choose your session</h2>
+                  <p className="text-xs text-stone-500 mt-1 font-semibold">Select your studio, session type and number of painters.</p>
                 </div>
-                {appliedGiftCard && (
-                  <div className="flex justify-between text-emerald-700">
-                    <span><EditableText contentKey="contact_summary_giftcard" page="contact" defaultValue={`Gift card (${appliedGiftCard.code}):`} adminMode={adminMode} className="text-xs text-emerald-700" /></span>
-                    <span>-£{giftCardDiscount.toFixed(2)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm font-black pt-1">
-                  <span><EditableText contentKey="contact_summary_total" page="contact" defaultValue="Total due:" adminMode={adminMode} className="text-sm text-[#1B2D3C] font-black" /></span>
-                  <span>£{finalPrice.toFixed(2)}</span>
-                </div>
-              </div>
 
-              <div className="pt-2">
-                {appliedGiftCard ? (
-                  <div className="flex items-center justify-between bg-emerald-50 p-2 rounded-lg border border-emerald-200">
-                    <div className="text-xs text-emerald-800 font-semibold">
-                      <EditableText contentKey="contact_applied_giftcard" page="contact" defaultValue={`Applied: ${appliedGiftCard.code}`} adminMode={adminMode} className="text-xs text-emerald-800 font-semibold" />
-                      <span className="block text-[10px] font-normal"><EditableText contentKey="contact_giftcard_balance" page="contact" defaultValue={`Balance after use: £${Math.max(0, appliedGiftCard.balance - giftCardDiscount).toFixed(2)}`} adminMode={adminMode} className="text-[10px] text-emerald-800" /></span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={removeGiftCard}
-                      className="text-[10px] font-black uppercase text-emerald-800 hover:text-emerald-900 underline"
-                    >
-                      <EditableText contentKey="contact_remove_giftcard" page="contact" defaultValue="Remove" adminMode={adminMode} className="text-[10px] uppercase text-emerald-800" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="contact_giftcard_label" page="contact" defaultValue="Gift Card Code" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={giftCardCode}
-                        onChange={(e) => setGiftCardCode(e.target.value)}
-                        placeholder="PP-XXXX-XXXX-XXXX"
-                        className="flex-1 py-2.5 px-3 border border-[#1B2D3C]/20 rounded-lg text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C] uppercase"
-                      />
-                      <button
-                        type="button"
-                        onClick={applyGiftCard}
-                        className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-[10px] uppercase tracking-widest rounded-lg border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all"
-                      >
-                        <EditableText contentKey="contact_apply_giftcard" page="contact" defaultValue="Apply" adminMode={adminMode} className="text-[10px] uppercase tracking-widest" />
+                {/* Studio */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Studio *</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['Putney', 'Wimbledon'] as const).map((loc) => (
+                      <button key={loc} type="button" onClick={() => setStudio(loc)}
+                        className={`p-4 border-2 text-left transition-all cursor-pointer rounded-xl ${
+                          studio === loc ? 'border-[#1B2D3C] bg-[#1B2D3C] text-white' : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
+                        }`}>
+                        <p className="font-heading font-black italic text-base">{loc} Studio</p>
+                        <p className={`text-[11px] font-semibold mt-0.5 ${studio === loc ? 'text-white/70' : 'text-[#1B2D3C]/50'}`}>
+                          {loc === 'Putney' ? '234 Upper Richmond Rd' : '52 Wimbledon Hill Rd'}
+                        </p>
                       </button>
-                    </div>
-                    {giftCardError && <p className="text-[10px] text-red-600 font-semibold">{giftCardError}</p>}
+                    ))}
+                  </div>
+                </div>
+
+                {/* Session Type */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Session Type *</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {(['painting', 'birthday-party', 'baby-shower-hen', 'clay-imprints', 'corporate'] as const).map((type) => (
+                      <button key={type} type="button" onClick={() => setSessionType(type)}
+                        className={`py-2.5 px-3 border-2 text-left text-xs font-bold transition-all rounded-lg cursor-pointer ${
+                          sessionType === type ? 'border-[#1B2D3C] bg-[#1B2D3C] text-white' : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
+                        }`}>
+                        {SESSION_TYPE_LABELS[type]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Painters */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Number of Painters *</label>
+                  <div className="flex items-center border border-[#1B2D3C]/20 bg-white overflow-hidden rounded-lg max-w-[180px]">
+                    <button type="button" onClick={() => setPaintersCount(p => Math.max(1, p - 1))} className="px-5 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">−</button>
+                    <span className="flex-1 text-center text-sm font-black text-[#1B2D3C]">{paintersCount}</span>
+                    <button type="button" onClick={() => setPaintersCount(p => p + 1)} className="px-5 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">+</button>
+                  </div>
+                </div>
+
+                {/* Date/time summary from draft */}
+                {date && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs font-semibold text-emerald-800 space-y-0.5">
+                    <p className="font-black">Session pre-selected ✓</p>
+                    <p>{format(date, 'EEEE, do MMMM yyyy')} · {time} – {parseInt(time.split(':')[0], 10) + 2}:00</p>
+                    <p className="text-emerald-600 text-[11px]">Selected from {studio} studio page</p>
                   </div>
                 )}
-              </div>
-            </div>
+                {!date && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs font-semibold text-amber-800">
+                    <p className="font-black">No date selected yet</p>
+                    <p className="text-amber-600 text-[11px] mt-0.5">Go to your studio page to pick a date and time slot first.</p>
+                  </div>
+                )}
 
-            {/* Session Type */}
-            <div className="space-y-2">
-              <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Session Type *</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {(['painting', 'birthday-party', 'baby-shower-hen', 'clay-imprints', 'corporate'] as const).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setSessionType(type)}
-                    className={`py-2.5 px-3 border-2 text-left text-xs font-bold transition-all rounded-lg cursor-pointer ${
-                      sessionType === type
-                        ? 'border-[#1B2D3C] bg-[#1B2D3C] text-white'
-                        : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
-                    }`}
-                  >
-                    {SESSION_TYPE_LABELS[type]}
+                <button type="button" onClick={handleNext}
+                  className="w-full py-4 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2">
+                  Continue to Your Details <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* ── STEP 2: Contact Details ── */}
+            {step === 2 && (
+              <div className="space-y-6">
+                <div className="border-b-2 border-[#1B2D3C]/10 pb-3">
+                  <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Your details</h2>
+                  <p className="text-xs text-stone-500 mt-1 font-semibold">We'll use these to confirm your booking.</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Full Name *</label>
+                    <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your full name"
+                      className="w-full py-3 px-4 border border-[#1B2D3C]/20 rounded-lg bg-white text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/60" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Phone Number *</label>
+                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                      placeholder="07xxx xxx xxx"
+                      className="w-full py-3 px-4 border border-[#1B2D3C]/20 rounded-lg bg-white text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/60" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Email Address *</label>
+                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      className="w-full py-3 px-4 border border-[#1B2D3C]/20 rounded-lg bg-white text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/60" />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => { setStep(1); setError(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    className="flex items-center gap-2 px-5 py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#D6E2E9]/40 transition-all cursor-pointer">
+                    <ArrowLeft className="w-3.5 h-3.5" /> Back
                   </button>
-                ))}
+                  <button type="button" onClick={handleNext}
+                    className="flex-1 py-4 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2">
+                    Review Booking <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Contact Details */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">
-                  <EditableText contentKey="contact_name_label" page="contact" defaultValue="Your Name *" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" />
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your full name"
-                  className="w-full py-3 px-4 border border-[#1B2D3C]/20 bg-white text-xs font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20"
-                />
+            {/* ── STEP 3: Review & Gift Card & Submit ── */}
+            {step === 3 && (
+              <div className="space-y-6">
+                <div className="border-b-2 border-[#1B2D3C]/10 pb-3">
+                  <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Review &amp; confirm</h2>
+                  <p className="text-xs text-stone-500 mt-1 font-semibold">Check everything looks right before submitting.</p>
+                </div>
+
+                {/* Summary card */}
+                <div className="bg-[#D6E2E9]/40 border border-[#1B2D3C]/15 rounded-xl p-5 space-y-3">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs font-semibold text-[#1B2D3C]">
+                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Studio</span>{studio}</div>
+                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Session</span>{SESSION_TYPE_LABELS[sessionType]}</div>
+                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Date</span>{date ? format(date, 'EEE d MMM yyyy') : '—'}</div>
+                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Time</span>{time} – {parseInt(time.split(':')[0], 10) + 2}:00</div>
+                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Painters</span>{paintersCount}</div>
+                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Name</span>{name}</div>
+                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Phone</span>{phone}</div>
+                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Email</span>{email || '—'}</div>
+                  </div>
+                  <div className="border-t border-[#1B2D3C]/10 pt-3 space-y-1 text-xs font-semibold text-[#1B2D3C]">
+                    <div className="flex justify-between"><span>Estimated price</span><span>£{estimatedPrice.toFixed(2)}</span></div>
+                    {appliedGiftCard && (
+                      <div className="flex justify-between text-emerald-700">
+                        <span>Gift card ({appliedGiftCard.code})</span><span>−£{giftCardDiscount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm font-black pt-1 border-t border-[#1B2D3C]/10">
+                      <span>Total due</span><span>£{finalPrice.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Gift card */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Gift Card Code <span className="text-[#1B2D3C]/40 font-semibold normal-case tracking-normal">(optional)</span></label>
+                  {appliedGiftCard ? (
+                    <div className="flex items-center justify-between bg-emerald-50 p-3 rounded-lg border border-emerald-200">
+                      <div className="text-xs text-emerald-800 font-semibold">
+                        <span className="font-black block">{appliedGiftCard.code} applied ✓</span>
+                        <span className="text-[11px] text-emerald-600">Balance after use: £{Math.max(0, appliedGiftCard.balance - giftCardDiscount).toFixed(2)}</span>
+                      </div>
+                      <button type="button" onClick={removeGiftCard} className="text-[10px] font-black uppercase text-emerald-800 hover:text-red-600 underline cursor-pointer">Remove</button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input type="text" value={giftCardCode} onChange={(e) => setGiftCardCode(e.target.value)}
+                        placeholder="PP-XXXX-XXXX-XXXX"
+                        className="flex-1 py-2.5 px-3 border border-[#1B2D3C]/20 rounded-lg text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C] uppercase" />
+                      <button type="button" onClick={applyGiftCard}
+                        className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-[10px] uppercase tracking-widest rounded-lg border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer">Apply</button>
+                    </div>
+                  )}
+                  {giftCardError && <p className="text-[10px] text-red-600 font-semibold">{giftCardError}</p>}
+                </div>
+
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => { setStep(2); setError(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    className="flex items-center gap-2 px-5 py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#D6E2E9]/40 transition-all cursor-pointer">
+                    <ArrowLeft className="w-3.5 h-3.5" /> Back
+                  </button>
+                  <button type="submit" disabled={submitting}
+                    className="flex-1 py-4 bg-[#1B2D3C] text-white font-bold text-sm uppercase tracking-widest rounded-xl hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                    {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : <>Confirm Booking <ArrowRight className="w-4 h-4" /></>}
+                  </button>
+                </div>
               </div>
-
-              <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">
-                  <EditableText contentKey="contact_phone_label" page="contact" defaultValue="Telephone Number *" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" />
-                </label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="07xxx xxx xxx"
-                  className="w-full py-3 px-4 border border-[#1B2D3C]/20 bg-white text-xs font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">
-                  <EditableText contentKey="contact_email_label" page="contact" defaultValue="Email Address *" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" />
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  className="w-full py-3 px-4 border border-[#1B2D3C]/20 bg-white text-xs font-bold text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20"
-                />
-              </div>
-
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest border border-[#1B2D3C]/20 hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
-            >
-              <EditableText contentKey="contact_submit_button" page="contact" defaultValue="Submit Booking Request" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
-            </button>
+            )}
           </form>
         </div>
 
