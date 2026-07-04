@@ -330,6 +330,11 @@ export default function WimbledonFloorPlan({
     return map;
   }, [bookings, selectedDate]);
 
+  const unassignedBookings = useMemo(() => {
+    if (!selectedDate) return [];
+    return bookings.filter(b => b.date === selectedDate && b.studio === 'Wimbledon' && !b.tableId);
+  }, [bookings, selectedDate]);
+
   const blockedIdsForDate = useMemo(() => {
     return new Set(blockedTables.filter(b => b.date === selectedDate).map(b => b.tableId));
   }, [blockedTables, selectedDate]);
@@ -438,6 +443,23 @@ export default function WimbledonFloorPlan({
           </div>
         )}
       </div>
+
+      {/* Unassigned bookings warning */}
+      {unassignedBookings.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wider mb-2">
+            {unassignedBookings.length} booking{unassignedBookings.length !== 1 ? 's' : ''} need table assignment
+          </p>
+          <div className="space-y-1">
+            {unassignedBookings.map(b => (
+              <div key={b.id} className="flex items-center justify-between text-[10px] text-amber-700 font-semibold">
+                <span>{b.name} · {b.time} · {b.paintersCount}p</span>
+                <span className="text-amber-600">{b.status}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Party area capacity bars */}
       {selectedDate && (
