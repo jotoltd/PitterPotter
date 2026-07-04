@@ -25,7 +25,7 @@ export default function Toast({ toast, onClose }: ToastProps) {
       setProgress((p) => {
         if (p <= step) {
           clearInterval(timer);
-          onClose();
+          setTimeout(onClose, 0);
           return 0;
         }
         return p - step;
