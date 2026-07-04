@@ -1,9 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Users, Clock, CheckCircle, CalendarDays, MapPin, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Phone, Mail, FileText, Gift, AlertCircle, Plus } from 'lucide-react';
+import { Users, CheckCircle, CalendarDays, MapPin, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Phone, Mail, FileText, Gift, AlertCircle, Plus } from 'lucide-react';
 import { BookingInquiry } from '../types';
-import WimbledonFloorPlan from './WimbledonFloorPlan';
-import PutneyFloorPlan from './PutneyFloorPlan';
 
 interface DashboardOverviewProps {
   bookings: BookingInquiry[];
@@ -104,45 +102,103 @@ function BookingRow({ b, onConfirm }: { b: BookingInquiry; onConfirm?: (id: stri
   );
 }
 
-function StudioPanel({
+// Table definitions for daily sheet view
+const PUTNEY_MAIN_TABLES = ['T1','T2','T3','T4','T5','T6'];
+const PUTNEY_PARTY_TABLES = ['T7','T8','T9','T10'];
+const WIMBLEDON_MAIN_TABLES = ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10'];
+const WIMBLEDON_PARTY1_TABLES = ['T11','T12'];
+const WIMBLEDON_PARTY2_TABLES = ['T13','T14','T15','T16','T17'];
+
+function TableCard({ tableId, bookings, onConfirm }: { tableId: string; bookings: BookingInquiry[]; onConfirm?: (id: string) => void }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const isEmpty = bookings.length === 0;
+  const hasPending = bookings.some(b => b.status === 'pending');
+
+  return (
+    <div className={`border-2 rounded-lg min-h-[90px] flex flex-col transition-all ${
+      isEmpty ? 'border-[#1B2D3C]/15 bg-white' : hasPending ? 'border-amber-300 bg-amber-50/40' : 'border-[#1B2D3C]/30 bg-white'
+    }`}>
+      {/* Table label */}
+      <div className={`px-2.5 py-1.5 border-b flex items-center justify-between ${
+        isEmpty ? 'border-[#1B2D3C]/10' : 'border-[#1B2D3C]/15'
+      }`}>
+        <span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50">{tableId}</span>
+        {!isEmpty && (
+          <span className={`w-1.5 h-1.5 rounded-full ${hasPending ? 'bg-amber-400' : 'bg-emerald-500'}`} />
+        )}
+      </div>
+      {/* Bookings */}
+      <div className="flex-1 p-2 space-y-1.5">
+        {isEmpty ? (
+          <p className="text-[10px] text-[#1B2D3C]/20 font-semibold text-center pt-2">—</p>
+        ) : (
+          bookings.map(b => (
+            <div key={b.id} className="space-y-0.5">
+              <button
+                onClick={() => setExpanded(prev => prev === b.id ? null : b.id)}
+                className="w-full text-left"
+              >
+                <div className="flex items-baseline justify-between gap-1">
+                  <span className="text-[10px] font-black text-[#1B2D3C] leading-tight truncate">{b.time} {b.name}</span>
+                  <span className={`shrink-0 text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 ${
+                    hasPending && b.status === 'pending' ? 'border-amber-400 text-amber-700' : 'border-[#1B2D3C]/40 text-[#1B2D3C]'
+                  }`}>{b.paintersCount}</span>
+                </div>
+              </button>
+              {expanded === b.id && (
+                <div className="bg-white/80 border border-[#1B2D3C]/10 rounded p-2 space-y-1">
+                  {b.phone && <p className="text-[9px] text-[#1B2D3C]/60 font-semibold">{b.phone}</p>}
+                  {b.email && <p className="text-[9px] text-[#1B2D3C]/60 font-semibold truncate">{b.email}</p>}
+                  {b.notes && <p className="text-[9px] text-[#1B2D3C]/70 italic">{b.notes}</p>}
+                  {b.status === 'pending' && onConfirm && (
+                    <button onClick={() => { onConfirm(b.id); setExpanded(null); }}
+                      className="mt-1 w-full flex items-center justify-center gap-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black rounded transition-all cursor-pointer">
+                      <CheckCircle className="w-2.5 h-2.5" /> Confirm
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DailySheet({
   studio,
   studioBookings,
-  slotsByStudio,
-  allTimesForStudio,
-  bookings,
-  viewDate,
   onConfirm,
   onNavigateToAddBooking,
-  FloorPlanComponent,
 }: {
   studio: 'Putney' | 'Wimbledon';
   studioBookings: BookingInquiry[];
-  slotsByStudio: Record<string, Record<string, BookingInquiry[]>>;
-  allTimesForStudio: (s: 'Putney' | 'Wimbledon') => string[];
-  bookings: BookingInquiry[];
-  viewDate: string;
   onConfirm?: (id: string) => void;
   onNavigateToAddBooking?: () => void;
-  FloorPlanComponent: React.ComponentType<{ bookings?: BookingInquiry[]; selectedDate?: string; selectedTime?: string; highlightTableId?: string; readOnly?: boolean; showTablePanel?: boolean; onTableClick?: (tableId: string) => void }>;
 }) {
-  const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string>('');
   const studioPending = studioBookings.filter(b => b.status === 'pending').length;
-  const times = allTimesForStudio(studio);
 
-  const tableBookings = useMemo(() => {
-    if (!selectedTable) return null;
-    return studioBookings.filter(b => b.tableId === selectedTable);
-  }, [selectedTable, studioBookings]);
+  const bookingsByTable = useMemo(() => {
+    const map = new Map<string, BookingInquiry[]>();
+    studioBookings.forEach(b => {
+      if (b.tableId) {
+        if (!map.has(b.tableId)) map.set(b.tableId, []);
+        map.get(b.tableId)!.push(b);
+      }
+    });
+    return map;
+  }, [studioBookings]);
 
-  const highlightedBookingIds = useMemo(() => {
-    if (!selectedTable) return new Set<string>();
-    return new Set(studioBookings.filter(b => b.tableId === selectedTable).map(b => b.id));
-  }, [selectedTable, studioBookings]);
+  const unassigned = studioBookings.filter(b => !b.tableId);
+  const mainTables = studio === 'Putney' ? PUTNEY_MAIN_TABLES : WIMBLEDON_MAIN_TABLES;
+  const partyTables = studio === 'Putney'
+    ? [{ label: 'Party Area', tables: PUTNEY_PARTY_TABLES }]
+    : [{ label: 'Party Area 1', tables: WIMBLEDON_PARTY1_TABLES }, { label: 'Party Area 2', tables: WIMBLEDON_PARTY2_TABLES }];
 
   return (
     <div className="bg-white border border-[#1B2D3C]/20 rounded-xl overflow-hidden">
-      {/* Studio header */}
+      {/* Header */}
       <div className="px-5 py-3 bg-[#1B2D3C] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MapPin className="w-4 h-4 text-white/70" />
@@ -158,111 +214,54 @@ function StudioPanel({
         </span>
       </div>
 
-      {/* Time slot filter */}
-      {times.length > 0 && (
-        <div className="px-4 pt-3 flex flex-wrap gap-1.5">
-          <button
-            onClick={() => setSelectedTime('')}
-            className={`px-2.5 py-1 text-[10px] font-bold rounded-full border transition-all cursor-pointer ${selectedTime === '' ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'}`}
-          >All times</button>
-          {times.map(t => (
-            <button
-              key={t}
-              onClick={() => setSelectedTime(t)}
-              className={`px-2.5 py-1 text-[10px] font-bold rounded-full border transition-all cursor-pointer ${selectedTime === t ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'}`}
-            >{t}</button>
-          ))}
-        </div>
-      )}
-
-      {/* Floor plan + booking list side by side */}
-      <div className="flex flex-col lg:flex-row gap-0 divide-y lg:divide-y-0 lg:divide-x divide-[#1B2D3C]/10">
-        {/* Floor plan */}
-        <div className="lg:w-[420px] shrink-0 p-3 overflow-x-auto">
-          <p className="text-[10px] font-bold text-[#1B2D3C]/40 uppercase tracking-wider mb-2">
-            {selectedTable ? `Showing bookings for ${selectedTable} — click another table or` : 'Click a table to see who\'s booked in'}
-            {selectedTable && <button onClick={() => setSelectedTable(null)} className="ml-1 underline cursor-pointer hover:text-[#1B2D3C]">clear</button>}
-          </p>
-          <FloorPlanComponent
-            bookings={bookings}
-            selectedDate={viewDate}
-            selectedTime={selectedTime || undefined}
-            highlightTableId={selectedTable ?? undefined}
-            readOnly
-            showTablePanel={false}
-            onTableClick={(tid) => setSelectedTable(prev => prev === tid ? null : tid)}
-          />
-        </div>
-
-        {/* Booking list */}
-        <div className="flex-1 min-w-0">
-          {selectedTable ? (
-            <div className="p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-[#1B2D3C] text-white text-[10px] font-black rounded">{selectedTable}</span>
-                <span className="text-xs font-bold text-[#1B2D3C]">
-                  {tableBookings && tableBookings.length > 0
-                    ? `${tableBookings.length} booking${tableBookings.length !== 1 ? 's' : ''}`
-                    : 'No bookings at this table today'}
-                </span>
+      <div className="p-4 space-y-5">
+        {studioBookings.length === 0 ? (
+          <div className="py-10 text-center space-y-3">
+            <CalendarDays className="w-8 h-8 text-[#1B2D3C]/15 mx-auto" />
+            <p className="text-xs text-[#1B2D3C]/40 font-semibold">No bookings for {studio} on this date</p>
+            {onNavigateToAddBooking && (
+              <button onClick={onNavigateToAddBooking} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold border border-[#1B2D3C]/20 rounded-lg hover:bg-[#DBE7E4] transition-all cursor-pointer text-[#1B2D3C]">
+                <Plus className="w-3 h-3" /> Add booking
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Main tables grid */}
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-widest text-[#1B2D3C]/30 mb-2">Main Area</p>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                {mainTables.map(tid => (
+                  <TableCard key={tid} tableId={tid} bookings={bookingsByTable.get(tid) || []} onConfirm={onConfirm} />
+                ))}
               </div>
-              {tableBookings && tableBookings.length > 0 ? (
-                <div className="space-y-2">
-                  {tableBookings.map(b => (
+            </div>
+
+            {/* Party areas */}
+            {partyTables.map(({ label, tables }) => (
+              <div key={label} className="border-t border-dashed border-[#1B2D3C]/15 pt-4">
+                <p className="text-[9px] font-black uppercase tracking-widest text-[#1B2D3C]/30 mb-2">{label}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {tables.map(tid => (
+                    <TableCard key={tid} tableId={tid} bookings={bookingsByTable.get(tid) || []} onConfirm={onConfirm} />
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Unassigned bookings */}
+            {unassigned.length > 0 && (
+              <div className="border-t border-dashed border-amber-200 pt-4">
+                <p className="text-[9px] font-black uppercase tracking-widest text-amber-600/70 mb-2">No Table Assigned ({unassigned.length})</p>
+                <div className="space-y-1.5">
+                  {unassigned.map(b => (
                     <BookingRow key={b.id} b={b} onConfirm={onConfirm} />
                   ))}
                 </div>
-              ) : (
-                <p className="text-xs text-[#1B2D3C]/40 font-semibold py-4 text-center">This table is free today</p>
-              )}
-            </div>
-          ) : (
-            <div className="divide-y divide-[#1B2D3C]/5">
-              {times.length === 0 ? (
-                <div className="px-5 py-10 text-center space-y-3">
-                  <CalendarDays className="w-8 h-8 text-[#1B2D3C]/15 mx-auto" />
-                  <p className="text-xs text-[#1B2D3C]/40 font-semibold">No bookings for {studio} on this date</p>
-                  {onNavigateToAddBooking && (
-                    <button onClick={onNavigateToAddBooking} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold border border-[#1B2D3C]/20 rounded-lg hover:bg-[#DBE7E4] transition-all cursor-pointer text-[#1B2D3C]">
-                      <Plus className="w-3 h-3" /> Add booking
-                    </button>
-                  )}
-                </div>
-              ) : (
-                (selectedTime ? [selectedTime] : times).map(time => {
-                  const slotBookings = (slotsByStudio[studio][time] || []);
-                  const painters = slotBookings.reduce((s, b) => s + b.paintersCount, 0);
-                  const slotPending = slotBookings.filter(b => b.status === 'pending').length;
-                  return (
-                    <div key={time} className="px-4 py-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-3.5 h-3.5 text-[#1B2D3C]/40" />
-                          <span className="text-xs font-black text-[#1B2D3C]">{time}</span>
-                          {slotPending > 0 && (
-                            <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-bold rounded-full">{slotPending} awaiting</span>
-                          )}
-                        </div>
-                        <span className="text-[10px] font-semibold text-[#1B2D3C]/40">{painters}p · {slotBookings.length} booking{slotBookings.length !== 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="space-y-1.5">
-                        {slotBookings.map(b => (
-                          <div
-                            key={b.id}
-                            onClick={() => b.tableId && setSelectedTable(prev => prev === b.tableId ? null : b.tableId!)}
-                            className={`transition-all rounded-lg ${b.tableId ? 'cursor-pointer' : ''} ${highlightedBookingIds.has(b.id) ? 'ring-2 ring-[#1B2D3C]' : ''}`}
-                          >
-                            <BookingRow b={b} onConfirm={onConfirm} />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
@@ -282,18 +281,6 @@ export default function DashboardOverview({ bookings, onAssignTable, onConfirm, 
   const pendingToday = todayBookings.filter(b => b.status === 'pending');
   const confirmedCount = todayBookings.filter(b => b.status === 'confirmed').length;
   const unassignedCount = todayBookings.filter(b => !b.tableId).length;
-
-  const slotsByStudio = useMemo(() => {
-    const group: Record<'Putney' | 'Wimbledon', Record<string, BookingInquiry[]>> = { Putney: {}, Wimbledon: {} };
-    todayBookings.forEach(b => {
-      if (!group[b.studio][b.time]) group[b.studio][b.time] = [];
-      group[b.studio][b.time].push(b);
-    });
-    return group;
-  }, [todayBookings]);
-
-  const allTimesForStudio = (studio: 'Putney' | 'Wimbledon') =>
-    TIME_ORDER.filter(t => slotsByStudio[studio][t]);
 
   const shiftDate = (days: number) => {
     const d = new Date(viewDate);
@@ -405,29 +392,19 @@ export default function DashboardOverview({ bookings, onAssignTable, onConfirm, 
           </div>
         </div>
       ) : (
-        <StudioPanel
+        <DailySheet
           studio="Putney"
           studioBookings={putneyToday}
-          slotsByStudio={slotsByStudio}
-          allTimesForStudio={allTimesForStudio}
-          bookings={bookings}
-          viewDate={viewDate}
           onConfirm={onConfirm}
           onNavigateToAddBooking={onNavigateToAddBooking}
-          FloorPlanComponent={PutneyFloorPlan}
         />
       )}
       {wimbledonToday.length > 0 && (
-        <StudioPanel
+        <DailySheet
           studio="Wimbledon"
           studioBookings={wimbledonToday}
-          slotsByStudio={slotsByStudio}
-          allTimesForStudio={allTimesForStudio}
-          bookings={bookings}
-          viewDate={viewDate}
           onConfirm={onConfirm}
           onNavigateToAddBooking={onNavigateToAddBooking}
-          FloorPlanComponent={WimbledonFloorPlan}
         />
       )}
 
