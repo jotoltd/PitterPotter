@@ -268,10 +268,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
     }
     setSubmitting(false);
 
-    console.log('📧 Confirmation Email Sent:');
-    console.log(`To: ${email}`);
-    console.log(`Subject: Booking Confirmation - Reference: ${newInquiry.id}`);
-    console.log(`Body: Thank you ${name}! Your booking for ${format(date, 'PPP')} at ${time} has been received. We'll confirm your table within 24 hours.`);
   };
 
   const STEPS = ['Session', 'Your Details', 'Review'];
