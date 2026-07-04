@@ -5,6 +5,16 @@ type TableSize = 'small' | 'large';
 type ChairSide = 'top' | 'bottom' | 'left' | 'right';
 type TableStatus = 'free' | 'partial' | 'full' | 'blocked' | 'selected';
 
+const BOOKING_COLOURS = [
+  '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
+  '#1abc9c', '#e67e22', '#e91e63', '#00bcd4', '#8bc34a',
+  '#ff5722', '#607d8b', '#795548', '#673ab7', '#009688',
+];
+
+function getBookingColour(index: number) {
+  return BOOKING_COLOURS[index % BOOKING_COLOURS.length];
+}
+
 interface TableDef {
   id: number;
   size: TableSize;
@@ -180,23 +190,24 @@ export function useTableAnalytics(bookings: BookingInquiry[] = []) {
   }, [bookings]);
 }
 
-function Chair({ cx, cy, status, occupied }: { cx: number; cy: number; status: TableStatus; occupied: boolean }) {
+function Chair({ cx, cy, status, colour }: { cx: number; cy: number; status: TableStatus; colour: string | null }) {
   const baseFill = status === 'blocked' ? '#9ca3af' : status === 'selected' ? '#486581' : '#D6E2E9';
-  const fill = occupied ? '#1B2D3C' : baseFill;
+  const fill = colour ?? baseFill;
+  const stroke = colour ? colour : '#1B2D3C';
   return (
-    <circle cx={cx} cy={cy} r={CHAIR_R} fill={fill} stroke="#1B2D3C" strokeWidth={1.2}>
-      {occupied && <title>Occupied</title>}
+    <circle cx={cx} cy={cy} r={CHAIR_R} fill={fill} stroke={stroke} strokeWidth={colour ? 1.8 : 1.2}>
+      {colour && <title>Occupied</title>}
     </circle>
   );
 }
 
 function TableShape({
-  def, status, count, paintersAtTime, onClick,
+  def, status, count, chairColours, onClick,
 }: {
   def: PositionedTable;
   status: TableStatus;
   count: number;
-  paintersAtTime: number;
+  chairColours: (string | null)[];
   onClick: () => void;
 }) {
   const w = tableWidth(def.size);
@@ -226,12 +237,12 @@ function TableShape({
   }
 
   const totalSeats = def.chairs.length;
-  const occupied = Math.min(paintersAtTime, totalSeats);
-  const label = status === 'blocked' ? 'BLOCKED' : occupied > 0 ? `${occupied}/${totalSeats}` : 'free';
+  const occupiedCount = chairColours.filter(Boolean).length;
+  const label = status === 'blocked' ? 'BLOCKED' : occupiedCount > 0 ? `${occupiedCount}/${totalSeats}` : 'free';
 
   return (
     <g onClick={onClick} className="cursor-pointer" role="button" aria-label={`Table ${def.id}`}>
-      {chairs.map((c, i) => <Chair key={i} cx={c.cx} cy={c.cy} status={status} occupied={i < occupied} />)}
+      {chairs.map((c, i) => <Chair key={i} cx={c.cx} cy={c.cy} status={status} colour={chairColours[i] ?? null} />)}
       <rect
         x={def.x} y={def.y} width={w} height={h} rx={4}
         fill={STATUS_FILL[status]}
@@ -366,21 +377,45 @@ export default function WimbledonFloorPlan({
     setBlockedTables(next);
   };
 
+  const bookingColourMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const relevantBookings = bookings.filter(
+      b => b.date === selectedDate && b.studio === 'Wimbledon' && (!selectedTime || b.time === selectedTime)
+    );
+    relevantBookings.forEach((b, i) => { map.set(b.id, getBookingColour(i)); });
+    return map;
+  }, [bookings, selectedDate, selectedTime]);
+
+  const bookingLegend = useMemo(() => {
+    return bookings
+      .filter(b => b.date === selectedDate && b.studio === 'Wimbledon' && (!selectedTime || b.time === selectedTime))
+      .map((b, i) => ({ name: b.name, painters: b.paintersCount, colour: getBookingColour(i), time: b.time }));
+  }, [bookings, selectedDate, selectedTime]);
+
   const renderTable = (t: PositionedTable) => {
     const tid = `T${t.id}`;
     const status = getStatus(tid);
     const bookingsForTable = bookingsByTable.get(tid) || [];
     const count = status === 'blocked' ? 0 : bookingsForTable.length;
-    const paintersAtTime = selectedTime
-      ? bookingsForTable.filter(b => b.time === selectedTime).reduce((sum, b) => sum + b.paintersCount, 0)
-      : bookingsForTable.reduce((sum, b) => sum + b.paintersCount, 0);
+    const totalSeats = t.chairs.length;
+    const chairColours: (string | null)[] = Array(totalSeats).fill(null);
+    let seatIdx = 0;
+    const relevantBookings = selectedTime
+      ? bookingsForTable.filter(b => b.time === selectedTime)
+      : bookingsForTable;
+    for (const b of relevantBookings) {
+      const colour = bookingColourMap.get(b.id) ?? '#1B2D3C';
+      for (let p = 0; p < b.paintersCount && seatIdx < totalSeats; p++, seatIdx++) {
+        chairColours[seatIdx] = colour;
+      }
+    }
     return (
       <TableShape
         key={t.id}
         def={t}
         status={status}
         count={count}
-        paintersAtTime={paintersAtTime}
+        chairColours={chairColours}
         onClick={() => handleClick(t.id)}
       />
     );
@@ -430,14 +465,26 @@ export default function WimbledonFloorPlan({
         </div>
       )}
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-3 text-[10px] font-semibold text-[#1B2D3C]/70">
-        <div className="flex items-center gap-1.5"><div className="w-4 h-3 bg-white border border-[#1B2D3C] rounded-sm" /><span>Free</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-4 h-3 bg-yellow-100 border border-yellow-600 rounded-sm" /><span>Has bookings</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-4 h-3 bg-red-500 border border-red-700 rounded-sm" /><span>Selected slot taken</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-4 h-3 bg-gray-500 border border-gray-700 rounded-sm" /><span>Blocked</span></div>
-        <div className="flex items-center gap-1.5"><div className="w-4 h-3 bg-[#1B2D3C] rounded-sm" /><span>Selected</span></div>
-      </div>
+      {/* Booking colour legend */}
+      {bookingLegend.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {bookingLegend.map((b, i) => (
+            <div key={i} className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold text-white" style={{ backgroundColor: b.colour }}>
+              <span>{b.name}</span>
+              <span className="opacity-70">· {b.painters}p</span>
+              {!selectedTime && <span className="opacity-70">· {b.time}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+      {bookingLegend.length === 0 && (
+        <div className="flex flex-wrap gap-3 text-[10px] font-semibold text-[#1B2D3C]/70">
+          <div className="flex items-center gap-1.5"><div className="w-4 h-3 bg-white border border-[#1B2D3C] rounded-sm" /><span>Free</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-3 bg-yellow-100 border border-yellow-600 rounded-sm" /><span>Has bookings</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-3 bg-red-500 border border-red-700 rounded-sm" /><span>Selected slot taken</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-4 h-3 bg-gray-500 border border-gray-700 rounded-sm" /><span>Blocked</span></div>
+        </div>
+      )}
 
       <div className="overflow-x-auto">
         <svg width="450" height="1080" className="block mx-auto">
