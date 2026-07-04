@@ -788,6 +788,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       showToast('Please fill in all fields', 'error');
       return;
     }
+    if (newStaff.role === 'staff' && newStaff.allowedStudios.length === 0) {
+      showToast('Please select a studio (Putney, Wimbledon, or Both)', 'error');
+      return;
+    }
 
     if (isSupabaseEnabled()) {
       try {
@@ -1745,24 +1749,26 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               {newStaff.role === 'staff' && (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider">Studio Access</label>
-                    <p className="text-[10px] text-[#1B2D3C]/50">Leave both unchecked to allow access to all studios.</p>
-                    {(['Putney', 'Wimbledon'] as const).map(s => (
-                      <label key={s} className="flex items-center gap-2 text-xs font-semibold text-[#1B2D3C] cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={newStaff.allowedStudios.includes(s)}
-                          onChange={(e) => setNewStaff({
-                            ...newStaff,
-                            allowedStudios: e.target.checked
-                              ? [...newStaff.allowedStudios, s]
-                              : newStaff.allowedStudios.filter(x => x !== s)
-                          })}
-                          className="w-4 h-4 accent-[#1B2D3C]"
-                        />
-                        {s} only
-                      </label>
-                    ))}
+                    <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider">Studio Access *</label>
+                    <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
+                      {([
+                        { label: 'Putney', value: ['Putney'] as ('Putney' | 'Wimbledon')[] },
+                        { label: 'Wimbledon', value: ['Wimbledon'] as ('Putney' | 'Wimbledon')[] },
+                        { label: 'Both', value: ['Putney', 'Wimbledon'] as ('Putney' | 'Wimbledon')[] },
+                      ]).map(opt => {
+                        const isSelected = opt.value.length === newStaff.allowedStudios.length &&
+                          opt.value.every(v => newStaff.allowedStudios.includes(v));
+                        return (
+                          <button key={opt.label} type="button"
+                            onClick={() => setNewStaff({ ...newStaff, allowedStudios: opt.value })}
+                            className={`flex-1 py-2 text-xs font-bold transition-all cursor-pointer ${
+                              isSelected ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                            }`}>
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                   <div className="space-y-2">
                   <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider">Permissions</label>
