@@ -956,7 +956,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         <div className="sticky top-[56px] z-20 bg-white border-b border-[#1B2D3C]/10 mb-6">
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {[
-              { value: 'dashboard', label: 'Today', badge: null },
+              { value: 'dashboard', label: 'Calendar', badge: null },
               { value: 'bookings', label: 'Bookings', badge: stats.pending > 0 ? stats.pending : null },
               { value: 'gift-cards', label: 'Gift Vouchers', badge: null },
             ].map((tab) => (
