@@ -77,6 +77,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     message: '',
   });
   const [giftCardCreating, setGiftCardCreating] = useState(false);
+  const [redeemingGiftCard, setRedeemingGiftCard] = useState(false);
+  const [giftCardDiscount, setGiftCardDiscount] = useState(0);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -452,6 +454,35 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     URL.revokeObjectURL(url);
   };
 
+  const redeemGiftCard = async (code: string, amount: number) => {
+    if (!code || amount <= 0) {
+      showToast('Invalid gift card code or amount', 'error');
+      return;
+    }
+    setRedeemingGiftCard(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redeem-gift-card`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ code, amount }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        showToast(data.error || 'Failed to redeem gift card', 'error');
+        return;
+      }
+      setGiftCardDiscount(data.discount);
+      showToast(`Gift card redeemed: £${data.discount.toFixed(2)} discount applied`, 'success');
+    } catch {
+      showToast('Failed to redeem gift card', 'error');
+    } finally {
+      setRedeemingGiftCard(false);
+    }
+  };
+
   const createGiftCardCheckout = async () => {
     if (!newGiftCard.amount || newGiftCard.amount <= 0) {
       showToast('Please enter a valid amount', 'error');
@@ -763,10 +794,15 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
 
     try {
-      await updateBooking(updatedBooking, staff);
-      setInquiries(inquiries.map((i) => i.id === updatedBooking.id ? updatedBooking : i));
+      const bookingWithDiscount = {
+        ...updatedBooking,
+        giftCardDiscount: giftCardDiscount > 0 ? giftCardDiscount : updatedBooking.giftCardDiscount,
+      };
+      await updateBooking(bookingWithDiscount, staff);
+      setInquiries(inquiries.map((i) => i.id === updatedBooking.id ? bookingWithDiscount : i));
       setShowEditModal(false);
       setEditingBooking(null);
+      setGiftCardDiscount(0);
       showToast('Booking updated', 'success');
     } catch {
       showToast('Failed to update booking', 'error');
@@ -774,55 +810,30 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const saveNewBooking = async () => {
-    if (!canAddWalkIn) {
-      showToast('You do not have permission to add bookings', 'error');
-      return;
-    }
-    if (!newBooking.name || !newBooking.phone || !newBooking.date || !newBooking.time || !newBooking.studio) {
+    if (!newBooking.name || !newBooking.email || !newBooking.phone || !newBooking.date || !newBooking.time) {
       showToast('Please fill in all required fields', 'error');
       return;
     }
-    const booking: BookingInquiry = {
-      id: `PP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
-      studio: newBooking.studio as 'Putney' | 'Wimbledon',
-      name: newBooking.name,
-      email: newBooking.email,
-      phone: newBooking.phone,
-      date: newBooking.date,
-      time: newBooking.time,
-      paintersCount: newBooking.paintersCount || 1,
-      sessionType: newBooking.sessionType as any,
-      status: 'confirmed',
-      source: 'walk-in',
-      requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-      estimatedPrice: (newBooking.paintersCount || 1) * 5.95,
-    };
-
-    const remaining = await getRemainingCapacity(booking.studio, booking.date, booking.time);
-    if (booking.paintersCount > remaining) {
-      showToast(`This session only has room for ${remaining} more painter${remaining === 1 ? '' : 's'}.`, 'error');
-      return;
-    }
-
     try {
+      const booking: BookingInquiry = {
+        id: crypto.randomUUID(),
+        studio: newBooking.studio || 'Putney',
+        name: newBooking.name,
+        email: newBooking.email,
+        phone: newBooking.phone,
+        date: newBooking.date,
+        time: newBooking.time,
+        paintersCount: newBooking.paintersCount || 1,
+        sessionType: newBooking.sessionType || 'painting',
+        notes: newBooking.notes,
+        status: 'pending',
+        requestDate: new Date().toISOString(),
+        source: 'walk-in',
+        giftCardCode: newBooking.giftCardCode,
+        giftCardDiscount: giftCardDiscount > 0 ? giftCardDiscount : undefined,
+      };
       await createBooking(booking, staff);
-      let finalBooking = booking;
-      const blocked = JSON.parse(localStorage.getItem(
-        booking.studio === 'Wimbledon' ? 'pitter_potter_blocked_tables' : 'pitter_potter_blocked_tables_putney'
-      ) || '[]');
-      let tableIds: string[] = [];
-      if (booking.studio === 'Wimbledon') {
-        const partyArea = booking.sessionType.includes('party') ? (booking.paintersCount > 8 ? 'party2' : 'party1') : undefined;
-        tableIds = findMultipleTables(inquiries, blocked, booking.date, booking.time, booking.paintersCount, partyArea);
-      } else {
-        const partyOnly = booking.sessionType.includes('party');
-        tableIds = findMultiplePutneyTables(inquiries, blocked, booking.date, booking.time, booking.paintersCount, partyOnly);
-      }
-      if (tableIds.length) {
-        finalBooking = { ...booking, tableId: tableIds.join(', ') };
-        await updateBooking(finalBooking, staff);
-      }
-      setInquiries([finalBooking, ...inquiries]);
+      setInquiries([booking, ...inquiries]);
       setShowAddModal(false);
       setNewBooking({
         studio: 'Putney',
@@ -833,11 +844,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         time: '10:00',
         paintersCount: 1,
         sessionType: 'painting',
-        status: 'confirmed',
+        status: 'pending',
       });
-      showToast('Booking added', 'success');
-    } catch {
-      showToast('Failed to add booking', 'error');
+      setGiftCardDiscount(0);
+      showToast('Booking added successfully', 'success');
+    } catch (err) {
+      console.error('Failed to add booking:', err);
+      showToast((err as Error).message || 'Failed to add booking', 'error');
     }
   };
 
@@ -1696,6 +1709,33 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 resize-none"
                 />
               </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Gift Card Code</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newBooking.giftCardCode ?? ''}
+                    onChange={(e) => setNewBooking({ ...newBooking, giftCardCode: e.target.value.toUpperCase() })}
+                    placeholder="PP-XXXXXXXXXX"
+                    className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 font-mono"
+                  />
+                  <button
+                    onClick={() => {
+                      if (newBooking.giftCardCode) {
+                        const estimatedPrice = newBooking.paintersCount * (newBooking.sessionType?.includes('party') ? 25 : 15);
+                        redeemGiftCard(newBooking.giftCardCode, estimatedPrice);
+                      }
+                    }}
+                    disabled={redeemingGiftCard || !newBooking.giftCardCode}
+                    className="px-3 py-2 bg-[#D6E2E9] text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {redeemingGiftCard ? 'Checking...' : 'Redeem'}
+                  </button>
+                </div>
+                {giftCardDiscount > 0 && (
+                  <p className="text-[10px] text-emerald-700 font-bold mt-1">£{giftCardDiscount.toFixed(2)} discount applied</p>
+                )}
+              </div>
               {newBooking.date && newBooking.time && (
                 <div className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 ${
                   capacityLoading ? 'bg-[#D6E2E9]/30 text-[#1B2D3C]/60' :
@@ -1802,6 +1842,33 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   placeholder="Allergies, special requests, etc."
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 resize-none"
                 />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Gift Card Code</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={editingBooking.giftCardCode ?? ''}
+                    onChange={(e) => setEditingBooking({ ...editingBooking, giftCardCode: e.target.value.toUpperCase() })}
+                    placeholder="PP-XXXXXXXXXX"
+                    className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 font-mono"
+                  />
+                  <button
+                    onClick={() => {
+                      if (editingBooking.giftCardCode) {
+                        const estimatedPrice = editingBooking.paintersCount * (editingBooking.sessionType?.includes('party') ? 25 : 15);
+                        redeemGiftCard(editingBooking.giftCardCode, estimatedPrice);
+                      }
+                    }}
+                    disabled={redeemingGiftCard || !editingBooking.giftCardCode}
+                    className="px-3 py-2 bg-[#D6E2E9] text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {redeemingGiftCard ? 'Checking...' : 'Redeem'}
+                  </button>
+                </div>
+                {giftCardDiscount > 0 && (
+                  <p className="text-[10px] text-emerald-700 font-bold mt-1">£{giftCardDiscount.toFixed(2)} discount applied</p>
+                )}
               </div>
               {editingBooking.date && editingBooking.time && (
                 <div className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 ${
