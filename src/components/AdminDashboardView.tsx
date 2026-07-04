@@ -1066,12 +1066,24 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           </div>
           <div className="flex items-center gap-2">
             {canAddWalkIn && (
-              <button
-                onClick={() => { setActiveTab('bookings'); setShowAddModal(true); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" /> New Booking
-              </button>
+              <>
+                <button
+                  onClick={() => { setActiveTab('bookings'); setShowAddModal(true); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> New Booking
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('bookings');
+                    setNewBooking(prev => ({ ...prev, sessionType: 'party' as any }));
+                    setShowAddModal(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
+                >
+                  <Gift className="w-3.5 h-3.5" /> New Party
+                </button>
+              </>
             )}
             {realtimeConnected && (
               <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-emerald-500/20 rounded-lg">
