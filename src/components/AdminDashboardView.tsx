@@ -81,6 +81,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [giftCardDiscount, setGiftCardDiscount] = useState(0);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [auditLogsLoading, setAuditLogsLoading] = useState(false);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -194,6 +195,37 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       loadAuditLogs();
     }
   }, [activeTab, staff.role]);
+
+  // Set up Supabase Realtime subscription for bookings
+  useEffect(() => {
+    if (!isSupabaseEnabled() || !supabase) return;
+
+    const channel = supabase
+      .channel('bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+        },
+        () => {
+          // Reload bookings when any change occurs
+          loadInquiries();
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setRealtimeConnected(true);
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          setRealtimeConnected(false);
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const loadStripeMode = async () => {
     if (!isSupabaseEnabled() || !staff?.sessionToken) return;
@@ -1047,6 +1079,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               >
                 <Plus className="w-3.5 h-3.5" /> New Booking
               </button>
+            )}
+            {realtimeConnected && (
+              <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-emerald-500/20 rounded-lg">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-bold text-emerald-300">Live</span>
+              </div>
             )}
             {staff?.sessionExpiresAt && (() => {
               const now = Date.now();
