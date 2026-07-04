@@ -64,7 +64,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs'>('dashboard');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
   const [capacitySaving, setCapacitySaving] = useState(false);
@@ -79,6 +79,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [giftCardCreating, setGiftCardCreating] = useState(false);
   const [redeemingGiftCard, setRedeemingGiftCard] = useState(false);
   const [giftCardDiscount, setGiftCardDiscount] = useState(0);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [auditLogsLoading, setAuditLogsLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -188,7 +190,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     if (activeTab === 'settings') {
       loadCapacity();
     }
-  }, [activeTab]);
+    if (activeTab === 'audit-logs' && staff.role === 'super_admin') {
+      loadAuditLogs();
+    }
+  }, [activeTab, staff.role]);
 
   const loadStripeMode = async () => {
     if (!isSupabaseEnabled() || !staff?.sessionToken) return;
@@ -305,6 +310,36 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     } catch (err: any) {
       if (err?.message === 'Unauthorized') { handleUnauthorized(); return; }
       console.error('Failed to load inquiries:', err);
+    }
+  };
+
+  const loadAuditLogs = async () => {
+    if (!canManageStaff || !staff?.sessionToken) return;
+    setAuditLogsLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'getAuditLogs',
+          username: staff.username,
+          sessionToken: staff.sessionToken,
+        }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        console.error('Audit logs error:', data.error);
+        return;
+      }
+      setAuditLogs(data.logs || []);
+    } catch (err) {
+      console.error('Failed to load audit logs:', err);
+    } finally {
+      setAuditLogsLoading(false);
     }
   };
 
@@ -1081,6 +1116,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               { value: 'dashboard', label: 'Calendar', badge: null },
               { value: 'bookings', label: 'Bookings', badge: stats.pending > 0 ? stats.pending : null },
               { value: 'gift-cards', label: 'Gift Vouchers', badge: null },
+              ...(canManageStaff ? [{ value: 'audit-logs', label: 'Audit Log', badge: null }] : []),
             ].map((tab) => (
               <button
                 key={tab.value}
@@ -2454,6 +2490,78 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               </>
             );
           })()}
+        </div>
+      )}
+
+      {activeTab === 'audit-logs' && canManageStaff && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-6">
+          <div>
+            <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Staff Activity Audit Log</h2>
+            <p className="text-xs text-[#1B2D3C]/70 mt-1">Track all staff actions and system changes.</p>
+          </div>
+
+          <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl overflow-hidden">
+            {auditLogsLoading ? (
+              <div className="p-12 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B2D3C] mx-auto mb-3"></div>
+                <p className="text-xs text-stone-500 font-semibold">Loading audit logs…</p>
+              </div>
+            ) : auditLogs.length === 0 ? (
+              <div className="p-12 text-center">
+                <p className="text-sm text-stone-500 font-semibold">No audit logs found</p>
+                <p className="text-xs text-stone-400 mt-1">Activity will appear here as staff perform actions</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-[#D6E2E9] border-b border-[#1B2D3C]/20">
+                    <tr>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Timestamp</th>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Staff</th>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Action</th>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Entity</th>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-xs font-semibold text-[#1B2D3C]">
+                    {auditLogs.map((log) => (
+                      <tr key={log.id} className="border-b border-[#1B2D3C]/5 hover:bg-stone-50">
+                        <td className="py-3 px-4 text-[#1B2D3C]/70">
+                          {new Date(log.created_at).toLocaleString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="font-bold">{log.username || 'Unknown'}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
+                            log.action === 'create' ? 'bg-emerald-100 text-emerald-700' :
+                            log.action === 'update' ? 'bg-amber-100 text-amber-700' :
+                            log.action === 'delete' ? 'bg-red-100 text-red-700' :
+                            'bg-stone-100 text-stone-600'
+                          }`}>
+                            {log.action}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="font-mono text-[10px]">{log.entity}</span>
+                          {log.entity_id && <span className="text-[#1B2D3C]/50 ml-1">({log.entity_id})</span>}
+                        </td>
+                        <td className="py-3 px-4 text-[#1B2D3C]/70">
+                          {log.details ? JSON.stringify(log.details) : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
