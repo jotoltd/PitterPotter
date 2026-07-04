@@ -321,9 +321,11 @@ export default function WimbledonFloorPlan({
       .filter(b => b.date === selectedDate && b.studio === 'Wimbledon')
       .forEach(b => {
         if (!b.tableId) return;
-        const list = map.get(b.tableId) || [];
-        list.push(b);
-        map.set(b.tableId, list);
+        b.tableId.split(',').map(t => t.trim()).filter(Boolean).forEach(tid => {
+          const list = map.get(tid) || [];
+          list.push(b);
+          map.set(tid, list);
+        });
       });
     return map;
   }, [bookings, selectedDate]);
@@ -332,8 +334,10 @@ export default function WimbledonFloorPlan({
     return new Set(blockedTables.filter(b => b.date === selectedDate).map(b => b.tableId));
   }, [blockedTables, selectedDate]);
 
+  const highlightIds = useMemo(() => new Set((highlightTableId ?? '').split(',').map(t => t.trim()).filter(Boolean)), [highlightTableId]);
+
   const getStatus = (tableId: string): TableStatus => {
-    if (localSelected === tableId || highlightTableId === tableId) return 'selected';
+    if (localSelected === tableId || highlightIds.has(tableId)) return 'selected';
     if (blockedIdsForDate.has(tableId)) return 'blocked';
     const list = bookingsByTable.get(tableId) || [];
     if (list.length === 0) return 'free';
