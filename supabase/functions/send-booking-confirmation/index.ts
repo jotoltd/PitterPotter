@@ -119,7 +119,6 @@ Deno.serve(async (req) => {
       .select('*')
       .eq('username', username)
       .eq('session_token', sessionToken)
-      .gt('session_expires_at', new Date().toISOString())
       .single() as { data: StaffRecord | null; error: Error | null };
 
     if (!staff.data) {

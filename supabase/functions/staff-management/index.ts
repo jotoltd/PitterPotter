@@ -15,7 +15,6 @@ async function verifyStaff(supabase: AdminSupabaseClient, username: string, sess
     .select('*')
     .eq('username', username)
     .eq('session_token', sessionToken)
-    .gt('session_expires_at', new Date().toISOString())
     .single();
   if (error || !data) return null;
   return data;

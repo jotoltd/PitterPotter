@@ -135,14 +135,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     onLogout();
   };
 
-  // Check session expiry on mount
-  useEffect(() => {
-    if (staff?.sessionExpiresAt) {
-      if (new Date(staff.sessionExpiresAt) < new Date()) {
-        handleUnauthorized();
-      }
-    }
-  }, []);
+  // Session no longer expires - removed expiry check
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 250);
@@ -1083,58 +1076,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             {realtimeConnected && (
               <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-emerald-500/20 rounded-lg">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-bold text-emerald-300">Live</span>
+                <span className="text-[10px] font-bold text-emerald-300">Connected</span>
               </div>
             )}
-            {staff?.sessionExpiresAt && (() => {
-              const now = Date.now();
-              const expiryTime = new Date(staff.sessionExpiresAt).getTime();
-              const minsRemaining = Math.round((expiryTime - now) / 60000);
-              const hoursRemaining = Math.floor(minsRemaining / 60);
-              const minsOnly = minsRemaining % 60;
-
-              const isExpiringSoon = minsRemaining < 60;
-              const isHealthy = minsRemaining > 240; // > 4 hours
-
-              const timeDisplay = hoursRemaining > 0
-                ? `${hoursRemaining}h ${minsOnly}m`
-                : `${minsRemaining}m`;
-
-              const bgColor = isExpiringSoon ? 'bg-red-500/20' : isHealthy ? 'bg-emerald-500/20' : 'bg-amber-500/20';
-              const textColor = isExpiringSoon ? 'text-red-300' : isHealthy ? 'text-emerald-300' : 'text-amber-300';
-              const dotColor = isExpiringSoon ? 'bg-red-400' : isHealthy ? 'bg-emerald-400' : 'bg-amber-400';
-              const animateDot = isExpiringSoon;
-
-              return (
-                <div className="hidden sm:flex items-center gap-2">
-                  <span className={`flex items-center gap-1.5 text-[10px] font-bold ${textColor} ${bgColor} px-2 py-1 rounded-lg`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${animateDot ? 'animate-pulse' : ''}`} />
-                    Session: {timeDisplay}
-                  </span>
-                  <button
-                    onClick={async () => {
-                      try {
-                        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-auth`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-                          body: JSON.stringify({ action: 'extend', username: staff.username, sessionToken: staff.sessionToken }),
-                        });
-                        const data = await res.json();
-                        if (data.sessionExpiresAt) {
-                          const updated = { ...staff, sessionExpiresAt: data.sessionExpiresAt };
-                          localStorage.setItem('pp_current_staff', JSON.stringify(updated));
-                          showToast('Session extended by 8 hours', 'success');
-                        } else {
-                          showToast('Could not extend session', 'error');
-                        }
-                      } catch { showToast('Could not extend session', 'error'); }
-                    }}
-                    className="px-2 py-1 text-[10px] font-black bg-white/10 hover:bg-white/20 text-white rounded-lg cursor-pointer transition-all">
-                    Extend
-                  </button>
-                </div>
-              );
-            })()}
             <button
               onClick={onLogout}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold rounded-lg transition-all cursor-pointer"

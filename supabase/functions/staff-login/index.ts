@@ -96,12 +96,10 @@ Deno.serve(async (req) => {
     }
 
     const token = generateToken();
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 8);
 
     const { error: updateError } = await supabase
       .from('staff')
-      .update({ session_token: token, session_expires_at: expiresAt.toISOString() })
+      .update({ session_token: token, session_expires_at: null })
       .eq('id', staff.id);
 
     if (updateError) throw updateError;
@@ -117,7 +115,6 @@ Deno.serve(async (req) => {
       canDeleteBookings: staff.can_delete_bookings,
       allowedStudios: staff.allowed_studios ?? null,
       sessionToken: token,
-      sessionExpiresAt: expiresAt.toISOString(),
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
