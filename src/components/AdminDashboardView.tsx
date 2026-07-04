@@ -855,6 +855,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const [showStaffModal, setShowStaffModal] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
   const [newStaff, setNewStaff] = useState({
     name: '',
     username: '',
@@ -867,13 +868,33 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     allowedStudios: [] as ('Putney' | 'Wimbledon')[],
   });
 
+  const handleEditStaff = (staffMember: Staff) => {
+    setEditingStaff(staffMember);
+    setNewStaff({
+      name: staffMember.name,
+      username: staffMember.username,
+      password: '',
+      role: staffMember.role,
+      canUpdateStatus: staffMember.canUpdateStatus,
+      canEditBookings: staffMember.canEditBookings,
+      canAddWalkIns: staffMember.canAddWalkIns,
+      canDeleteBookings: staffMember.canDeleteBookings,
+      allowedStudios: staffMember.allowedStudios || [],
+    });
+    setShowStaffModal(true);
+  };
+
   const addStaffMember = async () => {
     if (!canManageStaff || !staff?.sessionToken) {
       showToast('Only super admins can manage staff', 'error');
       return;
     }
-    if (!newStaff.name || !newStaff.username || !newStaff.password) {
-      showToast('Please fill in all fields', 'error');
+    if (!newStaff.name || !newStaff.username) {
+      showToast('Please fill in all required fields', 'error');
+      return;
+    }
+    if (!editingStaff && !newStaff.password) {
+      showToast('Password is required for new staff', 'error');
       return;
     }
     if (newStaff.role === 'staff' && newStaff.allowedStudios.length === 0) {
@@ -883,6 +904,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
     if (isSupabaseEnabled()) {
       try {
+        const action = editingStaff ? 'update' : 'create';
         const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/staff-management`, {
           method: 'POST',
           headers: {
@@ -890,13 +912,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
-            action: 'create',
+            action,
+            id: editingStaff?.id,
             username: staff.username,
             sessionToken: staff.sessionToken,
             staff: {
               name: newStaff.name,
               username: newStaff.username,
-              password: newStaff.password,
+              password: newStaff.password || undefined,
               role: newStaff.role,
               canUpdateStatus: newStaff.canUpdateStatus,
               canEditBookings: newStaff.canEditBookings,
@@ -908,13 +931,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         });
         const data = await response.json();
         if (!response.ok || data.error) {
-          console.error('Staff create error:', data.error);
-          showToast('Failed to add staff member. Username may already exist.', 'error');
+          console.error('Staff error:', data.error);
+          showToast(data.error || `Failed to ${editingStaff ? 'update' : 'add'} staff member`, 'error');
           return;
         }
       } catch (err) {
-        console.error('Create staff request failed:', err);
-        showToast('Failed to add staff member', 'error');
+        console.error('Staff request failed:', err);
+        showToast(`Failed to ${editingStaff ? 'update' : 'add'} staff member`, 'error');
         return;
       }
     }
@@ -931,7 +954,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       canDeleteBookings: false,
       allowedStudios: [],
     });
+    setEditingStaff(null);
     setShowStaffModal(false);
+    showToast(editingStaff ? 'Staff member updated' : 'Staff member added', 'success');
   };
 
   const deleteStaffMember = async (id: string) => {
@@ -1600,15 +1625,23 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           )}
                         </td>
                         <td className="py-2">
-                          <button
-                            onClick={() => deleteStaffMember(member.id)}
-                            disabled={member.id === staff.id}
-                            className={`text-[10px] font-bold uppercase tracking-wider ${
-                              member.id === staff.id ? 'text-stone-400 cursor-not-allowed' : 'text-red-600 hover:text-red-700 underline'
-                            }`}
-                          >
-                            Remove
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEditStaff(member)}
+                              className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hover:text-[#486581] underline"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => deleteStaffMember(member.id)}
+                              disabled={member.id === staff.id}
+                              className={`text-[10px] font-bold uppercase tracking-wider ${
+                                member.id === staff.id ? 'text-stone-400 cursor-not-allowed' : 'text-red-600 hover:text-red-700 underline'
+                              }`}
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1964,7 +1997,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       {showStaffModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg">
-            <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Add Staff Member</h3>
+            <h3 className="font-heading text-xl font-black text-[#1B2D3C]">{editingStaff ? 'Edit Staff Member' : 'Add Staff Member'}</h3>
             <div className="space-y-3">
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Name *</label>
@@ -1985,11 +2018,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Password *</label>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Password {editingStaff ? '(leave blank to keep current)' : '*'}</label>
                 <input
                   type="password"
                   value={newStaff.password}
                   onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
+                  placeholder={editingStaff ? '••••••••' : ''}
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
               </div>
@@ -2043,7 +2077,26 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     </div>
                   </div>
                   <div className="space-y-2">
-                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider">Permissions</label>
+                    <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider">Permission Presets</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {[
+                        { label: 'Manager', permissions: { canUpdateStatus: true, canEditBookings: true, canAddWalkIns: true, canDeleteBookings: true } },
+                        { label: 'Front Desk', permissions: { canUpdateStatus: true, canEditBookings: false, canAddWalkIns: true, canDeleteBookings: false } },
+                        { label: 'Studio Assistant', permissions: { canUpdateStatus: false, canEditBookings: false, canAddWalkIns: true, canDeleteBookings: false } },
+                      ].map(preset => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => setNewStaff({ ...newStaff, ...preset.permissions })}
+                          className="px-3 py-1.5 text-[10px] font-bold border border-[#1B2D3C]/20 rounded-lg hover:bg-[#D6E2E9] transition-all cursor-pointer text-[#1B2D3C]"
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider">Individual Permissions</label>
                   <label className="flex items-center gap-2 text-xs font-semibold text-[#1B2D3C] cursor-pointer">
                     <input
                       type="checkbox"
@@ -2086,7 +2139,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setShowStaffModal(false)}
+                onClick={() => { setShowStaffModal(false); setEditingStaff(null); }}
                 className="flex-1 px-4 py-2 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
                 Cancel
@@ -2095,7 +2148,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 onClick={addStaffMember}
                 className="flex-1 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
-                Add Staff
+                {editingStaff ? 'Save Changes' : 'Add Staff'}
               </button>
             </div>
           </div>
