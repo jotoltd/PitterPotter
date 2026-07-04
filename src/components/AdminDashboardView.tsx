@@ -172,27 +172,32 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   }, [showEditModal, editingBooking?.studio, editingBooking?.date, editingBooking?.time, fetchCapacity]);
 
   useEffect(() => {
+    let isMounted = true;
     const loadData = async () => {
       setLoading(true);
       await Promise.all([loadInquiries(), loadGiftCards(), loadStripeMode()]);
-      setLoading(false);
+      if (isMounted) setLoading(false);
     };
     loadData();
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
     if (activeTab === 'settings') {
       loadCapacity();
     }
     if (activeTab === 'audit-logs' && staff.role === 'super_admin') {
       loadAuditLogs();
     }
+    return () => { isMounted = false; };
   }, [activeTab, staff.role]);
 
   // Set up Supabase Realtime subscription for bookings
   useEffect(() => {
     if (!isSupabaseEnabled() || !supabase) return;
 
+    let isMounted = true;
     const channel = supabase
       .channel('bookings-changes')
       .on(
@@ -204,18 +209,21 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         },
         () => {
           // Reload bookings when any change occurs
-          loadInquiries();
+          if (isMounted) loadInquiries();
         }
       )
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          setRealtimeConnected(true);
-        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-          setRealtimeConnected(false);
+        if (isMounted) {
+          if (status === 'SUBSCRIBED') {
+            setRealtimeConnected(true);
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            setRealtimeConnected(false);
+          }
         }
       });
 
     return () => {
+      isMounted = false;
       supabase.removeChannel(channel);
     };
   }, []);
@@ -580,7 +588,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const updateGiftCardStatus = async (id: string, status: 'active' | 'redeemed' | 'expired') => {
-    if (!isSupabaseEnabled() || !staff.sessionToken) {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) {
       showToast('Gift card update unavailable', 'error');
       return;
     }
@@ -852,6 +860,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       showToast(`This session only has room for ${available} painter${available === 1 ? '' : 's'} after this edit.`, 'error');
       return;
     }
+    if (!oldBooking) {
+      showToast('Original booking not found', 'error');
+      return;
+    }
 
     try {
       const bookingWithDiscount = {
@@ -872,6 +884,31 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const saveNewBooking = async () => {
     if (!newBooking.name || !newBooking.email || !newBooking.phone || !newBooking.date || !newBooking.time) {
       showToast('Please fill in all required fields', 'error');
+      return;
+    }
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newBooking.email)) {
+      showToast('Please enter a valid email address', 'error');
+      return;
+    }
+    // Validate phone format (basic check for UK phone numbers)
+    const phoneRegex = /^(\+44|0)[1-9]\d{8,9}$/;
+    if (!phoneRegex.test(newBooking.phone.replace(/\s/g, ''))) {
+      showToast('Please enter a valid UK phone number', 'error');
+      return;
+    }
+    // Validate date is not in the past
+    const bookingDate = new Date(newBooking.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (bookingDate < today) {
+      showToast('Booking date cannot be in the past', 'error');
+      return;
+    }
+    // Validate painters count
+    if (newBooking.paintersCount < 1 || newBooking.paintersCount > 50) {
+      showToast('Number of painters must be between 1 and 50', 'error');
       return;
     }
     try {
