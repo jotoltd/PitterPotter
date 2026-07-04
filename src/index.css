@@ -1,29 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@200;300;400;500&family=Plus+Jakarta+Sans:wght@200;300;400;500&family=Space+Grotesk:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@200;300;400;500&family=Plus+Jakarta+Sans:wght@200;300;400;500&family=Space+Grotesk:wght@300;400;500&display=swap');
 @import "tailwindcss";
 
-@font-face {
-  font-family: 'Central Light';
-  src: url('https://db.onlinewebfonts.com/t/2c88fdeb29231364ceb3664d6e9bcfe9.woff2') format('woff2'),
-       url('https://db.onlinewebfonts.com/t/2c88fdeb29231364ceb3664d6e9bcfe9.woff') format('woff'),
-       url('https://db.onlinewebfonts.com/t/2c88fdeb29231364ceb3664d6e9bcfe9.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Arquitecta Standard Light';
-  src: url('https://db.onlinewebfonts.com/t/cf6dfd35b91cfb5faacaebe8de235b2e.woff2') format('woff2'),
-       url('https://db.onlinewebfonts.com/t/cf6dfd35b91cfb5faacaebe8de235b2e.woff') format('woff'),
-       url('https://db.onlinewebfonts.com/t/cf6dfd35b91cfb5faacaebe8de235b2e.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
 
 @theme {
   --font-heading: "Montserrat", "Outfit", "Plus Jakarta Sans", "Space Grotesk", "Inter", sans-serif;
-  --font-sans: "Arquitecta Standard Light", "Arquitecta", "Outfit", "Plus Jakarta Sans", "Inter", sans-serif;
+  --font-sans: "DM Sans", "Outfit", "Plus Jakarta Sans", "Inter", sans-serif;
   
   --color-clay-50: #FFFFFF;
   --color-clay-100: #D6E2E9;
