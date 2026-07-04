@@ -27,7 +27,7 @@ export default function EditableText({ contentKey, page, defaultValue, className
         .select('value')
         .eq('key', contentKey)
         .eq('page', page)
-        .single()
+        .maybeSingle()
         .then(({ data }) => {
           if (data?.value) {
             setValue(data.value);

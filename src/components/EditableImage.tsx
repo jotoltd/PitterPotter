@@ -29,7 +29,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
         .select('value')
         .eq('key', contentKey)
         .eq('page', page)
-        .single()
+        .maybeSingle()
         .then(({ data }) => {
           if (data?.value) {
             setSrc(data.value);
