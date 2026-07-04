@@ -2266,6 +2266,34 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </div>
               </div>
 
+              {/* Floor plan preview */}
+              {drawerBooking.tableId && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-2">Seating</p>
+                  <div className="border border-[#1B2D3C]/10 rounded-xl overflow-hidden bg-[#F8FAFA]">
+                    <div className="scale-[0.6] origin-top-left" style={{ width: '167%' }}>
+                      {drawerBooking.studio === 'Wimbledon' ? (
+                        <WimbledonFloorPlan
+                          bookings={inquiries}
+                          selectedDate={drawerBooking.date}
+                          selectedTime={drawerBooking.time}
+                          highlightTableId={drawerBooking.tableId}
+                          readOnly
+                        />
+                      ) : (
+                        <PutneyFloorPlan
+                          bookings={inquiries}
+                          selectedDate={drawerBooking.date}
+                          selectedTime={drawerBooking.time}
+                          highlightTableId={drawerBooking.tableId}
+                          readOnly
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Notes */}
               {drawerBooking.notes && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
