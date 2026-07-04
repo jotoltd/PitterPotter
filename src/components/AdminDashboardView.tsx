@@ -1901,13 +1901,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             </div>
           </div>
 
-          {/* Content */}
-          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 max-w-xl">
-            <div>
-              <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Content Editing</h2>
-              <p className="text-xs text-[#1B2D3C]/70 mt-1">Toggle "Edit Mode" in the navbar to click and edit text or images directly on the site. Changes save to the database automatically.</p>
-            </div>
-          </div>
         </div>
       )}
 
