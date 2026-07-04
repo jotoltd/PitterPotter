@@ -1266,15 +1266,19 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     confirmLabel: `Delete ${count}`,
                     variant: 'danger',
                     onConfirm: async () => {
+                      closeConfirmDialog();
                       const ids = [...selectedIds];
+                      const idsSet = new Set(ids);
+                      let deleted = 0;
                       for (const id of ids) {
                         try {
                           await deleteBooking(id, staff);
+                          deleted++;
                         } catch { /* continue */ }
                       }
-                      setInquiries(prev => prev.filter(i => !selectedIds.has(i.id)));
+                      setInquiries(prev => prev.filter(i => !idsSet.has(i.id)));
                       setSelectedIds(new Set());
-                      showToast(`${ids.length} booking${ids.length !== 1 ? 's' : ''} deleted`, 'success');
+                      showToast(`${deleted} booking${deleted !== 1 ? 's' : ''} deleted`, 'success');
                     },
                   });
                 }}
