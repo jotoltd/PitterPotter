@@ -75,13 +75,42 @@ export function findAvailablePutneyTable(
   const allTables = [...MAIN_TABLES, ...PARTY_TABLES];
   const blockedIds = new Set(blockedTables.filter(b => b.date === date).map(b => b.tableId));
   const assignedIds = new Set(
-    bookings.filter(b => b.date === date && b.time === time && b.tableId).map(b => b.tableId!)
+    bookings.filter(b => b.date === date && b.time === time && b.tableId)
+      .flatMap(b => b.tableId!.split(',').map(t => t.trim()))
   );
   for (const t of allTables) {
     const tid = `T${t.id}`;
     if (!blockedIds.has(tid) && !assignedIds.has(tid)) return tid;
   }
   return null;
+}
+
+export function findMultiplePutneyTables(
+  bookings: BookingInquiry[],
+  blockedTables: BlockedTable[],
+  date: string,
+  time: string,
+  paintersCount: number,
+  partyOnly = false,
+): string[] {
+  const allTables = partyOnly ? PARTY_TABLES : [...MAIN_TABLES, ...PARTY_TABLES];
+  const blockedIds = new Set(blockedTables.filter(b => b.date === date).map(b => b.tableId));
+  const assignedIds = new Set(
+    bookings.filter(b => b.date === date && b.time === time && b.tableId)
+      .flatMap(b => b.tableId!.split(',').map(t => t.trim()))
+  );
+  const available = allTables.filter(t => {
+    const tid = `T${t.id}`;
+    return !blockedIds.has(tid) && !assignedIds.has(tid);
+  });
+  const result: string[] = [];
+  let seated = 0;
+  for (const t of available) {
+    if (seated >= paintersCount) break;
+    result.push(`T${t.id}`);
+    seated += t.chairs.length;
+  }
+  return result;
 }
 
 export function useTableAnalytics(bookings: BookingInquiry[] = []) {

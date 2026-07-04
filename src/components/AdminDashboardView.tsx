@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import DashboardOverview from './DashboardOverview';
 import ConfirmDialog from './ConfirmDialog';
 import FloorPlanView from './FloorPlanView';
-import WimbledonFloorPlan, { findAvailableTable } from './WimbledonFloorPlan';
-import PutneyFloorPlan, { findAvailablePutneyTable } from './PutneyFloorPlan';
+import WimbledonFloorPlan, { findAvailableTable, findMultipleTables } from './WimbledonFloorPlan';
+import PutneyFloorPlan, { findAvailablePutneyTable, findMultiplePutneyTables } from './PutneyFloorPlan';
 import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, CalendarX, Gift, ChevronUp, ChevronDown, CalendarDays } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO } from 'date-fns';
@@ -539,23 +539,25 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const autoAssignTable = async (booking: BookingInquiry, silent = false): Promise<string | null> => {
     try {
-      let tableId: string | null = null;
+      let tableIds: string[] = [];
       if (booking.studio === 'Wimbledon') {
         const blocked = JSON.parse(localStorage.getItem('pitter_potter_blocked_tables') || '[]');
         const partyArea = booking.sessionType.includes('party') ? (booking.paintersCount > 8 ? 'party2' : 'party1') : undefined;
-        tableId = findAvailableTable(inquiries, blocked, booking.date, booking.time, partyArea);
+        tableIds = findMultipleTables(inquiries, blocked, booking.date, booking.time, booking.paintersCount, partyArea);
       } else {
         const blocked = JSON.parse(localStorage.getItem('pitter_potter_blocked_tables_putney') || '[]');
-        tableId = findAvailablePutneyTable(inquiries, blocked, booking.date, booking.time);
+        const partyOnly = booking.sessionType.includes('party');
+        tableIds = findMultiplePutneyTables(inquiries, blocked, booking.date, booking.time, booking.paintersCount, partyOnly);
       }
-      if (!tableId) {
-        if (!silent) showToast('No available table found', 'error');
+      if (!tableIds.length) {
+        if (!silent) showToast('No available tables found', 'error');
         return null;
       }
+      const tableId = tableIds.join(', ');
       const updated = { ...booking, tableId };
       await updateBooking(updated, staff);
       setInquiries(prev => prev.map(i => i.id === booking.id ? updated : i));
-      if (!silent) showToast(`Table ${tableId} assigned`, 'success');
+      if (!silent) showToast(`Table${tableIds.length > 1 ? 's' : ''} ${tableId} assigned`, 'success');
       return tableId;
     } catch {
       if (!silent) showToast('Auto-assign failed', 'error');
@@ -759,14 +761,20 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     try {
       await createBooking(booking, staff);
       let finalBooking = booking;
+      const blocked = JSON.parse(localStorage.getItem(
+        booking.studio === 'Wimbledon' ? 'pitter_potter_blocked_tables' : 'pitter_potter_blocked_tables_putney'
+      ) || '[]');
+      let tableIds: string[] = [];
       if (booking.studio === 'Wimbledon') {
-        const blocked = JSON.parse(localStorage.getItem('pitter_potter_blocked_tables') || '[]');
         const partyArea = booking.sessionType.includes('party') ? (booking.paintersCount > 8 ? 'party2' : 'party1') : undefined;
-        const tableId = findAvailableTable(inquiries, blocked, booking.date, booking.time, partyArea);
-        if (tableId) {
-          finalBooking = { ...booking, tableId };
-          await updateBooking(finalBooking, staff);
-        }
+        tableIds = findMultipleTables(inquiries, blocked, booking.date, booking.time, booking.paintersCount, partyArea);
+      } else {
+        const partyOnly = booking.sessionType.includes('party');
+        tableIds = findMultiplePutneyTables(inquiries, blocked, booking.date, booking.time, booking.paintersCount, partyOnly);
+      }
+      if (tableIds.length) {
+        finalBooking = { ...booking, tableId: tableIds.join(', ') };
+        await updateBooking(finalBooking, staff);
       }
       setInquiries([finalBooking, ...inquiries]);
       setShowAddModal(false);
