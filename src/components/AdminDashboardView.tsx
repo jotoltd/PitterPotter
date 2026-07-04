@@ -1820,6 +1820,18 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               <button onClick={() => setAssignModalBooking(null)} className="text-[#1B2D3C]/40 hover:text-[#1B2D3C] text-xl font-bold cursor-pointer">✕</button>
             </div>
             <div className="overflow-y-auto p-4 flex-1">
+              <div className="mb-3 flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    const assigned = await autoAssignTable(assignModalBooking, false);
+                    if (assigned) setAssignModalBooking(prev => prev ? { ...prev, tableId: assigned } : null);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black rounded-lg transition-all cursor-pointer"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" /> Auto-assign ({assignModalBooking.paintersCount} painters)
+                </button>
+                <span className="text-[10px] text-[#1B2D3C]/50 font-semibold">or click a table below</span>
+              </div>
               {assignModalBooking.tableId && (
                 <div className="mb-3 flex items-center justify-between bg-[#1B2D3C] text-white px-4 py-2 rounded-lg text-xs font-bold">
                   <span>Currently assigned: {assignModalBooking.tableId}</span>
