@@ -1256,6 +1256,33 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             >
               Export CSV
             </button>
+            {canDelete && (
+              <button
+                onClick={() => {
+                  const count = selectedIds.size;
+                  showConfirmDialog({
+                    title: `Delete ${count} booking${count !== 1 ? 's' : ''}?`,
+                    message: `This will permanently delete ${count} booking${count !== 1 ? 's' : ''}. This cannot be undone.`,
+                    confirmLabel: `Delete ${count}`,
+                    variant: 'danger',
+                    onConfirm: async () => {
+                      const ids = [...selectedIds];
+                      for (const id of ids) {
+                        try {
+                          await deleteBooking(id, staff);
+                        } catch { /* continue */ }
+                      }
+                      setInquiries(prev => prev.filter(i => !selectedIds.has(i.id)));
+                      setSelectedIds(new Set());
+                      showToast(`${ids.length} booking${ids.length !== 1 ? 's' : ''} deleted`, 'success');
+                    },
+                  });
+                }}
+                className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete
+              </button>
+            )}
             <button onClick={() => setSelectedIds(new Set())} className="text-white/60 hover:text-white text-xs cursor-pointer">✕ Clear</button>
           </div>
         )}
