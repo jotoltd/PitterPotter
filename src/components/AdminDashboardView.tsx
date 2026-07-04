@@ -100,6 +100,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [assignModalBooking, setAssignModalBooking] = useState<BookingInquiry | null>(null);
   const [confirmingIds, setConfirmingIds] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [drawerBooking, setDrawerBooking] = useState<BookingInquiry | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -1410,10 +1411,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   </thead>
                   <tbody>
                     {paginatedInquiries.map((inq) => (
-                      <tr key={inq.id} className={`border-b border-[#1B2D3C]/10 transition-colors ${
-                        selectedIds.has(inq.id) ? 'bg-[#D6E2E9]/30' : 'hover:bg-stone-50'
-                      }`}>
-                        <td className="px-4 py-3">
+                      <tr key={inq.id}
+                        onClick={() => setDrawerBooking(inq)}
+                        className={`border-b border-[#1B2D3C]/10 transition-colors cursor-pointer ${
+                          selectedIds.has(inq.id) ? 'bg-[#D6E2E9]/30' : 'hover:bg-stone-50'
+                        }`}>
+                        <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                           <input type="checkbox" checked={selectedIds.has(inq.id)}
                             onChange={e => setSelectedIds(prev => { const s = new Set(prev); e.target.checked ? s.add(inq.id) : s.delete(inq.id); return s; })}
                             className="w-4 h-4 accent-[#1B2D3C] cursor-pointer" />
@@ -1434,17 +1437,15 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-full ${
-                            inq.status === 'confirmed'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : inq.status === 'cancelled'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-amber-100 text-amber-800'
+                            inq.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800'
+                              : inq.status === 'cancelled' ? 'bg-red-100 text-red-700'
+                              : 'bg-amber-100 text-amber-800'
                           }`}>
                             {inq.status === 'confirmed' ? <CheckCircle className="w-3 h-3" /> : inq.status === 'cancelled' ? <XCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                             {inq.status === 'confirmed' ? 'Confirmed' : inq.status === 'cancelled' ? 'Cancelled' : 'Awaiting'}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                           <button onClick={() => setAssignModalBooking(inq)}
                             className={`px-2 py-1 text-[10px] font-bold border transition-all cursor-pointer rounded-lg ${
                               inq.tableId ? 'bg-[#1B2D3C] text-white border-[#1B2D3C] hover:bg-[#486581]' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
@@ -1452,45 +1453,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                             {inq.tableId ?? 'Assign'}
                           </button>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-1.5">
-                            <button onClick={() => { navigator.clipboard.writeText(inq.id); showToast('Booking reference copied', 'success'); }}
-                              className="p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 rounded-lg transition-all cursor-pointer" title="Copy reference">
-                              <Copy className="w-3.5 h-3.5 text-[#1B2D3C]" />
-                            </button>
-                            {canEdit && (
-                              <button onClick={() => handleEditBooking(inq)}
-                                className="p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 rounded-lg transition-all cursor-pointer" title="Edit booking">
-                                <svg className="w-3.5 h-3.5 text-[#1B2D3C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                              </button>
-                            )}
-                            {canUpdateStatus && inq.status !== 'confirmed' && inq.status !== 'cancelled' && (
-                              <button onClick={() => updateStatus(inq.id, 'confirmed')}
-                                disabled={confirmingIds.has(inq.id)}
-                                className="px-2 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 disabled:opacity-60 bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700">
-                                {confirmingIds.has(inq.id) ? <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" /> : <><CheckCircle className="w-3 h-3" /> Confirm</>}
-                              </button>
-                            )}
-                            {canUpdateStatus && inq.status === 'confirmed' && (
-                              <button onClick={() => updateStatus(inq.id, 'pending')}
-                                disabled={confirmingIds.has(inq.id)}
-                                className="px-2 py-1 text-[10px] font-bold rounded-lg border bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 transition-all cursor-pointer flex items-center gap-1">
-                                <XCircle className="w-3 h-3" /> Unconfirm
-                              </button>
-                            )}
-                            {canUpdateStatus && inq.status !== 'cancelled' && (
-                              <button onClick={() => updateStatus(inq.id, 'cancelled')}
-                                className="px-2 py-1 text-[10px] font-bold rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all cursor-pointer flex items-center gap-1">
-                                <XCircle className="w-3 h-3" /> Cancel
-                              </button>
-                            )}
-                            {canDelete && (
-                              <button onClick={() => deleteInquiry(inq.id)}
-                                className="p-1.5 hover:bg-red-50 border border-[#1B2D3C]/20 rounded-lg transition-all cursor-pointer" title="Delete booking">
-                                <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                              </button>
-                            )}
-                          </div>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-[#1B2D3C]/30 text-base font-black">⋯</span>
                         </td>
                       </tr>
                     ))}
@@ -2229,6 +2193,142 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         onConfirm={confirmDialog.onConfirm}
         onCancel={closeConfirmDialog}
       />
+
+      {/* Booking detail drawer */}
+      {drawerBooking && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setDrawerBooking(null)} />
+          <div className="fixed right-0 top-0 h-full w-full max-w-sm bg-white shadow-2xl z-50 flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="px-5 py-4 bg-[#1B2D3C] text-white flex items-start justify-between">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Booking</p>
+                <p className="font-heading font-black text-lg leading-tight">{drawerBooking.name}</p>
+                <p className="text-xs text-white/60 mt-0.5">{drawerBooking.id}</p>
+              </div>
+              <button onClick={() => setDrawerBooking(null)} className="text-white/50 hover:text-white text-2xl leading-none cursor-pointer mt-1">✕</button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              {/* Status badge */}
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-full ${
+                  drawerBooking.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800'
+                  : drawerBooking.status === 'cancelled' ? 'bg-red-100 text-red-700'
+                  : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {drawerBooking.status === 'confirmed' ? <CheckCircle className="w-3.5 h-3.5" /> : drawerBooking.status === 'cancelled' ? <XCircle className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                  {drawerBooking.status === 'confirmed' ? 'Confirmed' : drawerBooking.status === 'cancelled' ? 'Cancelled' : 'Awaiting confirmation'}
+                </span>
+                {drawerBooking.tableId && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-black bg-[#1B2D3C] text-white rounded-full">
+                    {drawerBooking.tableId}
+                  </span>
+                )}
+              </div>
+
+              {/* Details */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-[#F8FAFA] rounded-lg p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-1">Date</p>
+                    <p className="text-sm font-black text-[#1B2D3C]">{drawerBooking.date}</p>
+                  </div>
+                  <div className="bg-[#F8FAFA] rounded-lg p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-1">Time</p>
+                    <p className="text-sm font-black text-[#1B2D3C]">{drawerBooking.time}</p>
+                  </div>
+                  <div className="bg-[#F8FAFA] rounded-lg p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-1">Studio</p>
+                    <p className="text-sm font-black text-[#1B2D3C]">{drawerBooking.studio}</p>
+                  </div>
+                  <div className="bg-[#F8FAFA] rounded-lg p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-1">Painters</p>
+                    <p className="text-sm font-black text-[#1B2D3C]">{drawerBooking.paintersCount}</p>
+                  </div>
+                </div>
+                <div className="bg-[#F8FAFA] rounded-lg p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-1">Session Type</p>
+                  <p className="text-sm font-black text-[#1B2D3C]">{SESSION_LABELS[drawerBooking.sessionType] ?? drawerBooking.sessionType}</p>
+                </div>
+              </div>
+
+              {/* Contact */}
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-2">Contact</p>
+                <div className="space-y-2">
+                  <a href={`mailto:${drawerBooking.email}`} className="flex items-center gap-2 text-xs font-semibold text-[#1B2D3C] hover:underline">
+                    <Mail className="w-3.5 h-3.5 text-[#1B2D3C]/40 shrink-0" />{drawerBooking.email}
+                  </a>
+                  <a href={`tel:${drawerBooking.phone}`} className="flex items-center gap-2 text-xs font-semibold text-[#1B2D3C] hover:underline">
+                    <Phone className="w-3.5 h-3.5 text-[#1B2D3C]/40 shrink-0" />{drawerBooking.phone}
+                  </a>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {drawerBooking.notes && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-1">Notes</p>
+                  <p className="text-xs text-amber-900">{drawerBooking.notes}</p>
+                </div>
+              )}
+
+              {/* Meta */}
+              <div className="text-[10px] text-[#1B2D3C]/40 space-y-1 border-t border-[#1B2D3C]/10 pt-3">
+                {drawerBooking.requestDate && <p>Booked on {drawerBooking.requestDate}</p>}
+                {drawerBooking.source && <p>Source: {drawerBooking.source}</p>}
+                {drawerBooking.estimatedPrice != null && <p>Est. price: £{drawerBooking.estimatedPrice.toFixed(2)}</p>}
+                <button onClick={() => { navigator.clipboard.writeText(drawerBooking.id); showToast('Reference copied', 'success'); }}
+                  className="flex items-center gap-1 text-[#1B2D3C]/40 hover:text-[#1B2D3C] cursor-pointer">
+                  <Copy className="w-3 h-3" /> Copy reference
+                </button>
+              </div>
+            </div>
+
+            {/* Action footer */}
+            <div className="border-t border-[#1B2D3C]/10 p-4 space-y-2">
+              <div className="flex gap-2">
+                <button onClick={() => { setAssignModalBooking(drawerBooking); setDrawerBooking(null); }}
+                  className={`flex-1 px-3 py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${drawerBooking.tableId ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                  {drawerBooking.tableId ? `Tables: ${drawerBooking.tableId}` : 'Assign Table'}
+                </button>
+                {canEdit && (
+                  <button onClick={() => { handleEditBooking(drawerBooking); setDrawerBooking(null); }}
+                    className="px-3 py-2 text-xs font-bold rounded-lg border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer">
+                    Edit
+                  </button>
+                )}
+              </div>
+              {canUpdateStatus && drawerBooking.status !== 'confirmed' && drawerBooking.status !== 'cancelled' && (
+                <button onClick={async () => { await updateStatus(drawerBooking.id, 'confirmed'); setDrawerBooking(prev => prev ? { ...prev, status: 'confirmed' } : null); }}
+                  disabled={confirmingIds.has(drawerBooking.id)}
+                  className="w-full px-3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60">
+                  <CheckCircle className="w-4 h-4" /> Confirm Booking
+                </button>
+              )}
+              {canUpdateStatus && drawerBooking.status === 'confirmed' && (
+                <button onClick={async () => { await updateStatus(drawerBooking.id, 'pending'); setDrawerBooking(prev => prev ? { ...prev, status: 'pending' } : null); }}
+                  className="w-full px-3 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-black rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2">
+                  <XCircle className="w-4 h-4" /> Mark as Awaiting
+                </button>
+              )}
+              {canUpdateStatus && drawerBooking.status !== 'cancelled' && (
+                <button onClick={async () => { await updateStatus(drawerBooking.id, 'cancelled'); setDrawerBooking(prev => prev ? { ...prev, status: 'cancelled' } : null); }}
+                  className="w-full px-3 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-black rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2">
+                  <XCircle className="w-4 h-4" /> Cancel Booking
+                </button>
+              )}
+              {canDelete && (
+                <button onClick={() => { deleteInquiry(drawerBooking.id); setDrawerBooking(null); }}
+                  className="w-full px-3 py-2 text-[10px] font-bold text-red-400 hover:text-red-600 transition-all cursor-pointer text-center">
+                  Delete booking
+                </button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

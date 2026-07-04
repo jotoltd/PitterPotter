@@ -29,7 +29,7 @@ export interface BookingInquiry {
   paintersCount: number;
   sessionType: 'painting' | 'birthday-party' | 'baby-shower-hen' | 'clay-imprints' | 'corporate';
   notes?: string;
-  status: 'pending' | 'confirmed';
+  status: 'pending' | 'confirmed' | 'cancelled';
   requestDate: string;
   estimatedPrice?: number;
   source?: 'online' | 'walk-in';
