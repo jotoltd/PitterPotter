@@ -99,6 +99,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [loading, setLoading] = useState(true);
   const [assignModalBooking, setAssignModalBooking] = useState<BookingInquiry | null>(null);
   const [confirmingIds, setConfirmingIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -1196,14 +1197,47 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
 
 
-        {/* Bookings Table */}
+        {/* Bulk action bar */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-[#1B2D3C] text-white rounded-xl">
+            <span className="text-xs font-black">{selectedIds.size} selected</span>
+            <div className="flex-1" />
+            {canUpdateStatus && (
+              <button
+                onClick={async () => {
+                  const ids = [...selectedIds].filter(id => inquiries.find(i => i.id === id)?.status !== 'confirmed');
+                  for (const id of ids) await updateStatus(id, 'confirmed');
+                  setSelectedIds(new Set());
+                }}
+                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <CheckCircle className="w-3.5 h-3.5" /> Confirm All
+              </button>
+            )}
+            <button
+              onClick={() => {
+                const rows = filteredInquiries.filter(i => selectedIds.has(i.id));
+                const csv = ['Date,Time,Studio,Name,Email,Phone,Painters,Session,Status,Table',
+                  ...rows.map(i => [i.date,i.time,i.studio,i.name,i.email,i.phone,i.paintersCount,i.sessionType,i.status,i.tableId||''].join(','))
+                ].join('\n');
+                const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='bookings-selection.csv'; a.click();
+              }}
+              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer"
+            >
+              Export CSV
+            </button>
+            <button onClick={() => setSelectedIds(new Set())} className="text-white/60 hover:text-white text-xs cursor-pointer">✕ Clear</button>
+          </div>
+        )}
+
+        {/* Bookings count */}
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-bold text-[#1B2D3C]/50">
             {filteredInquiries.length} booking{filteredInquiries.length !== 1 ? 's' : ''}
             {filter !== 'all' || studioFilter !== 'all' || searchTerm || dateRange.start ? ' (filtered)' : ''}
           </p>
         </div>
-        <div className="bg-white border border-[#1B2D3C]/20 shadow-sm overflow-hidden">
+        <div className="bg-white border border-[#1B2D3C]/20 shadow-sm overflow-hidden rounded-xl">
           {filteredInquiries.length === 0 ? (
             <div className="p-10 sm:p-14 text-center">
               <Inbox className="w-10 h-10 text-stone-300 mx-auto mb-3" />
@@ -1211,125 +1245,168 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               <p className="text-xs text-stone-400 mt-1">Adjust your filters or add a new booking</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px]">
-                <thead className="bg-[#D6E2E9] border-b border-[#1B2D3C]/20">
-                  <tr>
-                    <SortHeader field="date" label="Date" sort={sort} setSort={setSort} />
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Time · Studio</th>
-                    <SortHeader field="name" label="Guest" sort={sort} setSort={setSort} />
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hidden sm:table-cell">Session</th>
-                    <SortHeader field="status" label="Status" sort={sort} setSort={setSort} />
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Table</th>
-                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedInquiries.map((inq) => (
-                    <tr key={inq.id} className="border-b border-[#1B2D3C]/10 hover:bg-[#FFFFFF]/50">
-                      <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <p className="text-[10px] sm:text-xs font-bold text-[#1B2D3C]">{inq.time}</p>
-                        <p className="text-[9px] text-[#1B2D3C]/50 font-semibold">{inq.date}</p>
-                        <p className="text-[9px] text-[#1B2D3C]/40 font-semibold">{inq.studio}</p>
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <p className="text-[10px] sm:text-xs font-bold text-[#1B2D3C]">{inq.name}</p>
-                        <p className="text-[9px] text-[#1B2D3C]/50 font-semibold hidden sm:block">{inq.email}</p>
-                        <p className="text-[9px] text-[#1B2D3C]/40 font-semibold">{inq.phone} · {inq.paintersCount}p</p>
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 hidden sm:table-cell">
-                        <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold ${SESSION_BADGE[inq.sessionType] ?? 'bg-gray-100 text-gray-600'}`}>
-                          {SESSION_LABELS[inq.sessionType] ?? inq.sessionType}
-                        </span>
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <span
-                          className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border ${
-                            inq.status === 'confirmed'
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                              : 'bg-amber-50 text-amber-800 border-amber-200'
-                          }`}
-                        >
-                          {inq.status === 'confirmed' ? (
-                            <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                          ) : (
-                            <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                          )}
-                          {inq.status === 'confirmed' ? 'Confirmed' : 'Awaiting'}
-                        </span>
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <button
-                          onClick={() => setAssignModalBooking(inq)}
-                          className={`px-2 py-1 text-[10px] font-bold border transition-all cursor-pointer rounded ${
-                            inq.tableId
-                              ? 'bg-[#1B2D3C] text-white border-[#1B2D3C] hover:bg-[#486581]'
-                              : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                          }`}
-                          title="Assign table"
-                        >
-                          {inq.tableId ?? 'Assign'}
-                        </button>
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        <div className="flex gap-1 sm:gap-2">
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(inq.id);
-                              showToast('Booking reference copied', 'success');
-                            }}
-                            className="p-1 sm:p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 transition-all cursor-pointer"
-                            title="Copy reference"
-                          >
-                            <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1B2D3C]" />
-                          </button>
-                          {canEdit && (
-                            <button
-                              onClick={() => handleEditBooking(inq)}
-                              className="p-1 sm:p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 transition-all cursor-pointer"
-                              title="Edit booking"
-                            >
-                              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1B2D3C]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                          )}
-                          {canUpdateStatus && (
-                            <button
-                              onClick={() => updateStatus(inq.id, inq.status === 'confirmed' ? 'pending' : 'confirmed')}
-                              disabled={confirmingIds.has(inq.id)}
-                              className={`px-2 py-1 text-[10px] font-bold rounded border transition-all cursor-pointer flex items-center gap-1 disabled:opacity-60 ${
-                                inq.status === 'confirmed'
-                                  ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                                  : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
-                              }`}
-                              title={inq.status === 'confirmed' ? 'Revert to awaiting confirmation' : 'Confirm booking'}
-                            >
-                              {confirmingIds.has(inq.id) ? (
-                                <><span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" /> Working…</>
-                              ) : inq.status === 'confirmed' ? (
-                                <><XCircle className="w-3 h-3" /> Unconfirm</>
-                              ) : (
-                                <><CheckCircle className="w-3 h-3" /> Confirm</>
-                              )}
-                            </button>
-                          )}
-                          {canDelete && (
-                            <button
-                              onClick={() => deleteInquiry(inq.id)}
-                              className="p-1 sm:p-1.5 hover:bg-red-50 border border-[#1B2D3C]/20 transition-all cursor-pointer"
-                              title="Delete booking"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600" />
-                            </button>
-                          )}
+            <>
+              {/* ── Mobile cards (< md) ── */}
+              <div className="md:hidden divide-y divide-[#1B2D3C]/10">
+                {paginatedInquiries.map((inq) => (
+                  <div key={inq.id} className={`p-4 space-y-2.5 transition-colors ${selectedIds.has(inq.id) ? 'bg-[#D6E2E9]/30' : ''}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
+                        <input type="checkbox" checked={selectedIds.has(inq.id)}
+                          onChange={e => setSelectedIds(prev => { const s = new Set(prev); e.target.checked ? s.add(inq.id) : s.delete(inq.id); return s; })}
+                          className="w-4 h-4 accent-[#1B2D3C] shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-black text-[#1B2D3C] truncate">{inq.name}</p>
+                          <p className="text-[11px] text-[#1B2D3C]/50 font-semibold">{inq.phone}</p>
                         </div>
-                      </td>
+                      </label>
+                      <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-full ${
+                        inq.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {inq.status === 'confirmed' ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                        {inq.status === 'confirmed' ? 'Confirmed' : 'Awaiting'}
+                      </span>
+                    </div>
+                    <div className="flex gap-3 text-[11px] text-[#1B2D3C]/70 font-semibold">
+                      <span className="font-black text-[#1B2D3C]">{inq.studio}</span>
+                      <span>{inq.date}</span>
+                      <span>{inq.time}</span>
+                      <span>{inq.paintersCount}p</span>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <button onClick={() => setAssignModalBooking(inq)}
+                        className={`px-2.5 py-1 text-[10px] font-bold border rounded-lg transition-all cursor-pointer ${
+                          inq.tableId ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-amber-50 text-amber-700 border-amber-200'
+                        }`}>
+                        {inq.tableId ? `Table ${inq.tableId}` : 'Assign Table'}
+                      </button>
+                      {canUpdateStatus && (
+                        <button onClick={() => updateStatus(inq.id, inq.status === 'confirmed' ? 'pending' : 'confirmed')}
+                          disabled={confirmingIds.has(inq.id)}
+                          className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 disabled:opacity-60 ${
+                            inq.status === 'confirmed' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-600 text-white border-emerald-600'
+                          }`}>
+                          {confirmingIds.has(inq.id) ? <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> : inq.status === 'confirmed' ? <><XCircle className="w-3 h-3" /> Unconfirm</> : <><CheckCircle className="w-3 h-3" /> Confirm</>}
+                        </button>
+                      )}
+                      {canEdit && (
+                        <button onClick={() => handleEditBooking(inq)}
+                          className="p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 rounded-lg transition-all cursor-pointer">
+                          <svg className="w-3.5 h-3.5 text-[#1B2D3C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button onClick={() => deleteInquiry(inq.id)}
+                          className="p-1.5 hover:bg-red-50 border border-[#1B2D3C]/20 rounded-lg transition-all cursor-pointer">
+                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Desktop table (>= md) ── */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full min-w-[600px]">
+                  <thead className="bg-[#D6E2E9] border-b border-[#1B2D3C]/20">
+                    <tr>
+                      <th className="px-4 py-3">
+                        <input type="checkbox"
+                          checked={paginatedInquiries.length > 0 && paginatedInquiries.every(i => selectedIds.has(i.id))}
+                          onChange={e => {
+                            if (e.target.checked) setSelectedIds(prev => new Set([...prev, ...paginatedInquiries.map(i => i.id)]));
+                            else setSelectedIds(prev => { const s = new Set(prev); paginatedInquiries.forEach(i => s.delete(i.id)); return s; });
+                          }}
+                          className="w-4 h-4 accent-[#1B2D3C] cursor-pointer" />
+                      </th>
+                      <SortHeader field="date" label="Date" sort={sort} setSort={setSort} />
+                      <SortHeader field="name" label="Guest" sort={sort} setSort={setSort} />
+                      <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hidden lg:table-cell">Session</th>
+                      <SortHeader field="status" label="Status" sort={sort} setSort={setSort} />
+                      <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Table</th>
+                      <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {paginatedInquiries.map((inq) => (
+                      <tr key={inq.id} className={`border-b border-[#1B2D3C]/10 transition-colors ${
+                        selectedIds.has(inq.id) ? 'bg-[#D6E2E9]/30' : 'hover:bg-stone-50'
+                      }`}>
+                        <td className="px-4 py-3">
+                          <input type="checkbox" checked={selectedIds.has(inq.id)}
+                            onChange={e => setSelectedIds(prev => { const s = new Set(prev); e.target.checked ? s.add(inq.id) : s.delete(inq.id); return s; })}
+                            className="w-4 h-4 accent-[#1B2D3C] cursor-pointer" />
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-xs font-black text-[#1B2D3C]">{inq.date}</p>
+                          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{inq.time} · {inq.studio}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-xs font-black text-[#1B2D3C]">{inq.name}</p>
+                          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold hidden lg:block">{inq.email}</p>
+                          <p className="text-[10px] text-[#1B2D3C]/40 font-semibold">{inq.phone} · {inq.paintersCount}p</p>
+                        </td>
+                        <td className="px-4 py-3 hidden lg:table-cell">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${SESSION_BADGE[inq.sessionType] ?? 'bg-gray-100 text-gray-600'}`}>
+                            {SESSION_LABELS[inq.sessionType] ?? inq.sessionType}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-full ${
+                            inq.status === 'confirmed'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : inq.status === 'cancelled'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {inq.status === 'confirmed' ? <CheckCircle className="w-3 h-3" /> : inq.status === 'cancelled' ? <XCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                            {inq.status === 'confirmed' ? 'Confirmed' : inq.status === 'cancelled' ? 'Cancelled' : 'Awaiting'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button onClick={() => setAssignModalBooking(inq)}
+                            className={`px-2 py-1 text-[10px] font-bold border transition-all cursor-pointer rounded-lg ${
+                              inq.tableId ? 'bg-[#1B2D3C] text-white border-[#1B2D3C] hover:bg-[#486581]' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                            }`}>
+                            {inq.tableId ?? 'Assign'}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-1.5">
+                            <button onClick={() => { navigator.clipboard.writeText(inq.id); showToast('Booking reference copied', 'success'); }}
+                              className="p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 rounded-lg transition-all cursor-pointer" title="Copy reference">
+                              <Copy className="w-3.5 h-3.5 text-[#1B2D3C]" />
+                            </button>
+                            {canEdit && (
+                              <button onClick={() => handleEditBooking(inq)}
+                                className="p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 rounded-lg transition-all cursor-pointer" title="Edit booking">
+                                <svg className="w-3.5 h-3.5 text-[#1B2D3C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                              </button>
+                            )}
+                            {canUpdateStatus && (
+                              <button onClick={() => updateStatus(inq.id, inq.status === 'confirmed' ? 'pending' : 'confirmed')}
+                                disabled={confirmingIds.has(inq.id)}
+                                className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 disabled:opacity-60 ${
+                                  inq.status === 'confirmed' ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' : 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                                }`}>
+                                {confirmingIds.has(inq.id) ? <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" /> : inq.status === 'confirmed' ? <><XCircle className="w-3 h-3" /> Unconfirm</> : <><CheckCircle className="w-3 h-3" /> Confirm</>}
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button onClick={() => deleteInquiry(inq.id)}
+                                className="p-1.5 hover:bg-red-50 border border-[#1B2D3C]/20 rounded-lg transition-all cursor-pointer" title="Delete booking">
+                                <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
 
           {filteredInquiries.length > 0 && (
