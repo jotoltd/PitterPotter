@@ -332,8 +332,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         bookings = bookings.filter(b => staffAllowedStudios.includes(b.studio));
       }
       setInquiries(bookings);
-    } catch (err: any) {
-      if (err?.message === 'Unauthorized') { handleUnauthorized(); return; }
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'message' in err && err.message === 'Unauthorized') { handleUnauthorized(); return; }
       console.error('Failed to load inquiries:', err);
     }
   };

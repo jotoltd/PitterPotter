@@ -324,7 +324,7 @@ export default function PutneyFloorPlan({
     const tid = `T${t.id}`;
     const status = getStatus(tid);
     const bookingsForTable = bookingsByTable.get(tid) || [];
-    const count = status === 'blocked' ? 0 : bookingsForTable.length;
+    const count: number = status === 'blocked' ? 0 : bookingsForTable.length;
     const totalSeats = t.chairs.length;
     const chairColours: (string | null)[] = Array(totalSeats).fill(null);
     let seatIdx = 0;
