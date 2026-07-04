@@ -933,10 +933,33 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             {staff?.sessionExpiresAt && (() => {
               const mins = Math.round((new Date(staff.sessionExpiresAt).getTime() - Date.now()) / 60000);
               if (mins < 60) return (
-                <span className="hidden sm:flex items-center gap-1 text-[10px] font-bold text-amber-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                  Session expires in {mins}m
-                </span>
+                <div className="hidden sm:flex items-center gap-2">
+                  <span className="flex items-center gap-1 text-[10px] font-bold text-amber-300">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    Session expires in {mins}m
+                  </span>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-auth`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+                          body: JSON.stringify({ action: 'extend', username: staff.username, sessionToken: staff.sessionToken }),
+                        });
+                        const data = await res.json();
+                        if (data.sessionExpiresAt) {
+                          const updated = { ...staff, sessionExpiresAt: data.sessionExpiresAt };
+                          localStorage.setItem('pp_current_staff', JSON.stringify(updated));
+                          showToast('Session extended by 8 hours', 'success');
+                        } else {
+                          showToast('Could not extend session', 'error');
+                        }
+                      } catch { showToast('Could not extend session', 'error'); }
+                    }}
+                    className="px-2 py-1 text-[10px] font-black bg-amber-400/20 hover:bg-amber-400/40 text-amber-200 rounded-lg cursor-pointer transition-all">
+                    Extend
+                  </button>
+                </div>
               );
               return null;
             })()}
@@ -1319,69 +1342,36 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               {/* ── Mobile cards (< md) ── */}
               <div className="md:hidden divide-y divide-[#1B2D3C]/10">
                 {paginatedInquiries.map((inq) => (
-                  <div key={inq.id} className={`p-4 space-y-2.5 transition-colors ${selectedIds.has(inq.id) ? 'bg-[#D6E2E9]/30' : ''}`}>
+                  <div key={inq.id}
+                    onClick={() => setDrawerBooking(inq)}
+                    className={`p-4 space-y-2 cursor-pointer transition-colors ${selectedIds.has(inq.id) ? 'bg-[#D6E2E9]/30' : 'hover:bg-stone-50'}`}>
                     <div className="flex items-start justify-between gap-2">
-                      <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-1 min-w-0" onClick={e => e.stopPropagation()}>
                         <input type="checkbox" checked={selectedIds.has(inq.id)}
                           onChange={e => setSelectedIds(prev => { const s = new Set(prev); e.target.checked ? s.add(inq.id) : s.delete(inq.id); return s; })}
-                          className="w-4 h-4 accent-[#1B2D3C] shrink-0" />
+                          className="w-4 h-4 accent-[#1B2D3C] shrink-0 cursor-pointer" />
                         <div className="min-w-0">
                           <p className="text-sm font-black text-[#1B2D3C] truncate">{inq.name}</p>
                           <p className="text-[11px] text-[#1B2D3C]/50 font-semibold">{inq.phone}</p>
                         </div>
-                      </label>
-                      <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-full ${
-                        inq.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {inq.status === 'confirmed' ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                        {inq.status === 'confirmed' ? 'Confirmed' : 'Awaiting'}
-                      </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-full ${
+                          inq.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' : inq.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {inq.status === 'confirmed' ? <CheckCircle className="w-3 h-3" /> : inq.status === 'cancelled' ? <XCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                          {inq.status === 'confirmed' ? 'Confirmed' : inq.status === 'cancelled' ? 'Cancelled' : 'Awaiting'}
+                        </span>
+                        <span className="text-[#1B2D3C]/30 text-base font-black">⋯</span>
+                      </div>
                     </div>
-                    <div className="flex gap-3 text-[11px] text-[#1B2D3C]/70 font-semibold">
+                    <div className="flex gap-2 flex-wrap text-[11px] text-[#1B2D3C]/70 font-semibold">
                       <span className="font-black text-[#1B2D3C]">{inq.studio}</span>
                       <span>{inq.date}</span>
                       <span>{inq.time}</span>
-                      <span>{inq.paintersCount}p</span>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <button onClick={() => setAssignModalBooking(inq)}
-                        className={`px-2.5 py-1 text-[10px] font-bold border rounded-lg transition-all cursor-pointer ${
-                          inq.tableId ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-amber-50 text-amber-700 border-amber-200'
-                        }`}>
-                        {inq.tableId ? `Table ${inq.tableId}` : 'Assign Table'}
-                      </button>
-                      {canUpdateStatus && inq.status !== 'confirmed' && inq.status !== 'cancelled' && (
-                        <button onClick={() => updateStatus(inq.id, 'confirmed')}
-                          disabled={confirmingIds.has(inq.id)}
-                          className="px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 disabled:opacity-60 bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700">
-                          {confirmingIds.has(inq.id) ? <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <><CheckCircle className="w-3 h-3" /> Confirm</>}
-                        </button>
-                      )}
-                      {canUpdateStatus && inq.status === 'confirmed' && (
-                        <button onClick={() => updateStatus(inq.id, 'pending')}
-                          disabled={confirmingIds.has(inq.id)}
-                          className="px-2.5 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer flex items-center gap-1 disabled:opacity-60 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100">
-                          <XCircle className="w-3 h-3" /> Unconfirm
-                        </button>
-                      )}
-                      {canUpdateStatus && inq.status !== 'cancelled' && (
-                        <button onClick={() => updateStatus(inq.id, 'cancelled')}
-                          className="px-2.5 py-1 text-[10px] font-bold rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-all cursor-pointer flex items-center gap-1">
-                          <XCircle className="w-3 h-3" /> Cancel
-                        </button>
-                      )}
-                      {canEdit && (
-                        <button onClick={() => handleEditBooking(inq)}
-                          className="p-1.5 hover:bg-[#D6E2E9] border border-[#1B2D3C]/20 rounded-lg transition-all cursor-pointer">
-                          <svg className="w-3.5 h-3.5 text-[#1B2D3C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                        </button>
-                      )}
-                      {canDelete && (
-                        <button onClick={() => deleteInquiry(inq.id)}
-                          className="p-1.5 hover:bg-red-50 border border-[#1B2D3C]/20 rounded-lg transition-all cursor-pointer">
-                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                        </button>
-                      )}
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#D6E2E9] text-[#1B2D3C] rounded-full text-[10px] font-black"><Users className="w-2.5 h-2.5" />{inq.paintersCount}</span>
+                      {inq.source === 'walk-in' && <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold">Walk-in</span>}
+                      {inq.tableId && <span className="px-1.5 py-0.5 bg-[#1B2D3C] text-white rounded-full text-[10px] font-bold">{inq.tableId}</span>}
                     </div>
                   </div>
                 ))}
@@ -1428,7 +1418,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         <td className="px-4 py-3">
                           <p className="text-xs font-black text-[#1B2D3C]">{inq.name}</p>
                           <p className="text-[10px] text-[#1B2D3C]/50 font-semibold hidden lg:block">{inq.email}</p>
-                          <p className="text-[10px] text-[#1B2D3C]/40 font-semibold">{inq.phone} · {inq.paintersCount}p</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#D6E2E9] text-[#1B2D3C] rounded-full text-[10px] font-black"><Users className="w-2.5 h-2.5" />{inq.paintersCount}</span>
+                            {inq.source === 'walk-in' && <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold">Walk-in</span>}
+                          </div>
                         </td>
                         <td className="px-4 py-3 hidden lg:table-cell">
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${SESSION_BADGE[inq.sessionType] ?? 'bg-gray-100 text-gray-600'}`}>
@@ -1642,6 +1635,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
               </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Notes</label>
+                <textarea
+                  rows={2}
+                  value={newBooking.notes ?? ''}
+                  onChange={(e) => setNewBooking({ ...newBooking, notes: e.target.value })}
+                  placeholder="Allergies, special requests, etc."
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 resize-none"
+                />
+              </div>
               {newBooking.date && newBooking.time && (
                 <div className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 ${
                   capacityLoading ? 'bg-[#D6E2E9]/30 text-[#1B2D3C]/60' :
@@ -1737,6 +1740,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   value={editingBooking.paintersCount}
                   onChange={(e) => setEditingBooking({ ...editingBooking, paintersCount: parseInt(e.target.value) })}
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Notes</label>
+                <textarea
+                  rows={2}
+                  value={editingBooking.notes ?? ''}
+                  onChange={(e) => setEditingBooking({ ...editingBooking, notes: e.target.value })}
+                  placeholder="Allergies, special requests, etc."
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 resize-none"
                 />
               </div>
               {editingBooking.date && editingBooking.time && (
