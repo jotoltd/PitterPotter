@@ -179,8 +179,10 @@ export function useTableAnalytics(bookings: BookingInquiry[] = []) {
     const painterCounts: Record<string, number> = {};
     bookings.forEach(b => {
       if (!b.tableId) return;
-      counts[b.tableId] = (counts[b.tableId] || 0) + 1;
-      painterCounts[b.tableId] = (painterCounts[b.tableId] || 0) + b.paintersCount;
+      b.tableId.split(',').map(t => t.trim()).filter(Boolean).forEach(tid => {
+        counts[tid] = (counts[tid] || 0) + 1;
+        painterCounts[tid] = (painterCounts[tid] || 0) + b.paintersCount;
+      });
     });
     const entries = Object.entries(counts).map(([tableId, bookingsCount]) => ({
       tableId,
@@ -341,7 +343,11 @@ export default function WimbledonFloorPlan({
   }, [bookings, selectedDate]);
 
   const blockedIdsForDate = useMemo(() => {
-    return new Set(blockedTables.filter(b => b.date === selectedDate).map(b => b.tableId));
+    return new Set(
+      blockedTables
+        .filter(b => b.date === selectedDate)
+        .flatMap(b => b.tableId.split(',').map(t => t.trim()))
+    );
   }, [blockedTables, selectedDate]);
 
   const highlightIds = useMemo(() => new Set((highlightTableId ?? '').split(',').map(t => t.trim()).filter(Boolean)), [highlightTableId]);
@@ -369,7 +375,7 @@ export default function WimbledonFloorPlan({
 
   const selectedTable = localSelected ? allTables.find(t => `T${t.id}` === localSelected) : null;
   const selectedBookings = localSelected ? (bookingsByTable.get(localSelected) || []).sort((a, b) => a.time.localeCompare(b.time)) : [];
-  const selectedBlock = localSelected ? blockedTables.find(b => b.tableId === localSelected && b.date === selectedDate) : null;
+  const selectedBlock = localSelected ? blockedTables.find(b => b.tableId.split(',').map(t => t.trim()).includes(localSelected) && b.date === selectedDate) : null;
 
   const party1Capacity = selectedDate ? computePartyAreaCapacity(bookings, blockedTables, selectedDate, PARTY_1_TABLES) : null;
   const party2Capacity = selectedDate ? computePartyAreaCapacity(bookings, blockedTables, selectedDate, PARTY_2_TABLES) : null;

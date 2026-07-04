@@ -258,7 +258,11 @@ export default function PutneyFloorPlan({
   }, [bookings, selectedDate]);
 
   const blockedIdsForDate = useMemo(() => {
-    return new Set(blockedTables.filter(b => b.date === selectedDate).map(b => b.tableId));
+    return new Set(
+      blockedTables
+        .filter(b => b.date === selectedDate)
+        .flatMap(b => b.tableId.split(',').map(t => t.trim()))
+    );
   }, [blockedTables, selectedDate]);
 
   const highlightIds = useMemo(() => new Set((highlightTableId ?? '').split(',').map(t => t.trim()).filter(Boolean)), [highlightTableId]);
@@ -283,7 +287,7 @@ export default function PutneyFloorPlan({
 
   const selectedTable = localSelected ? allTables.find(t => `T${t.id}` === localSelected) : null;
   const selectedBookings = localSelected ? (bookingsByTable.get(localSelected) || []).sort((a, b) => a.time.localeCompare(b.time)) : [];
-  const selectedBlock = localSelected ? blockedTables.find(b => b.tableId === localSelected && b.date === selectedDate) : null;
+  const selectedBlock = localSelected ? blockedTables.find(b => b.tableId.split(',').map(t => t.trim()).includes(localSelected) && b.date === selectedDate) : null;
 
   const handleBlock = () => {
     if (!localSelected || !selectedDate) return;
