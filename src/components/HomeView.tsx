@@ -71,9 +71,8 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  {/* Clean Location Cards */}
  <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
- <button
- onClick={() => setCurrentPage('putney')}
- className="group text-left bg-white p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer"
+ <div
+ className="group text-left bg-white p-8 shadow-sm transition-all duration-300 flex flex-col"
  >
  <div className="relative aspect-[4/3] overflow-hidden mb-6">
  <EditableImage
@@ -99,7 +98,9 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  </div>
  <div className="flex items-start gap-2.5">
  <Phone className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
- <span><EditableText contentKey="putney_card_phone" page="home" defaultValue="020 87881635" adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" /></span>
+ <a href="tel:02087881635" className="text-sm text-[#1B2D3C]/80 hover:text-[#1B2D3C] hover:underline">
+ <EditableText contentKey="putney_card_phone" page="home" defaultValue="020 87881635" adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" />
+ </a>
  </div>
  <div className="flex items-start gap-2.5">
  <Clock className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
@@ -112,15 +113,17 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  </table>
  </div>
  </div>
- <span className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#1B2D3C] pt-2">
- <EditableText contentKey="putney_card_link" page="home" defaultValue="View Studio" adminMode={adminMode} className="text-xs uppercase tracking-widest text-[#1B2D3C]" /> <ArrowRight className="w-4 h-4" />
- </span>
- </div>
- </button>
-
  <button
- onClick={() => setCurrentPage('wimbledon')}
- className="group text-left bg-white p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer"
+ onClick={() => setCurrentPage('putney')}
+ className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#1B2D3C] pt-2 hover:text-[#1B2D3C]/80 cursor-pointer"
+ >
+ <EditableText contentKey="putney_card_link" page="home" defaultValue="View Studio" adminMode={adminMode} className="text-xs uppercase tracking-widest text-[#1B2D3C]" /> <ArrowRight className="w-4 h-4" />
+ </button>
+ </div>
+ </div>
+
+ <div
+ className="group text-left bg-white p-8 shadow-sm transition-all duration-300 flex flex-col"
  >
  <div className="relative aspect-[4/3] overflow-hidden mb-6">
  <EditableImage
@@ -146,7 +149,9 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  </div>
  <div className="flex items-start gap-2.5">
  <Phone className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
- <span><EditableText contentKey="wimbledon_card_phone" page="home" defaultValue="020 37704499" adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" /></span>
+ <a href="tel:02037704499" className="text-sm text-[#1B2D3C]/80 hover:text-[#1B2D3C] hover:underline">
+ <EditableText contentKey="wimbledon_card_phone" page="home" defaultValue="020 37704499" adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" />
+ </a>
  </div>
  <div className="flex items-start gap-2.5">
  <Clock className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
@@ -159,11 +164,14 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  </table>
  </div>
  </div>
- <span className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#1B2D3C] pt-2">
+ <button
+ onClick={() => setCurrentPage('wimbledon')}
+ className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#1B2D3C] pt-2 hover:text-[#1B2D3C]/80 cursor-pointer"
+ >
  <EditableText contentKey="wimbledon_card_link" page="home" defaultValue="View Studio" adminMode={adminMode} className="text-xs uppercase tracking-widest text-[#1B2D3C]" /> <ArrowRight className="w-4 h-4" />
- </span>
- </div>
  </button>
+ </div>
+ </div>
  </div>
  </section>
 
