@@ -210,7 +210,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
       time,
       paintersCount,
       sessionType,
-      status: 'pending',
+      status: ['birthday-party', 'baby-shower-hen', 'corporate'].includes(sessionType) ? 'pending' : 'confirmed',
       source: 'online',
       requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
       estimatedPrice: currentEstimatedPrice > 0 ? currentEstimatedPrice : undefined,

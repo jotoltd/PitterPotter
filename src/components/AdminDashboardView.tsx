@@ -922,7 +922,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         paintersCount: newBooking.paintersCount || 1,
         sessionType: newBooking.sessionType || 'painting',
         notes: newBooking.notes,
-        status: 'pending',
+        status: ['birthday-party', 'baby-shower-hen', 'corporate'].includes(newBooking.sessionType || 'painting') ? 'pending' : 'confirmed',
         requestDate: new Date().toISOString(),
         source: 'walk-in',
         giftCardCode: newBooking.giftCardCode,
