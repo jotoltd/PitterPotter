@@ -57,7 +57,7 @@ export default function Calendar({
   const hasMark = (day: Date) => marks.some((d) => isSameDay(d, day));
 
   return (
-    <div className="w-full max-w-md mx-auto select-none">
+    <div className="w-full select-none">
       <div className="flex items-center justify-between mb-4 px-2">
         <button
           onClick={() => onMonthChange(subMonths(month, 1))}
@@ -78,7 +78,7 @@ export default function Calendar({
         </button>
       </div>
 
-      <div className="grid grid-cols-7 mb-2">
+      <div className="grid grid-cols-7 mb-1">
         {WEEKDAYS.map((day) => (
           <div key={day} className="text-center text-xs font-medium text-[#1B2D3C]/60 py-2">
             {day}
@@ -86,13 +86,15 @@ export default function Calendar({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-y-1">
+      <div className="grid grid-cols-7 border border-[#1B2D3C]/10 rounded-lg overflow-hidden bg-white">
         {days.map((day) => {
           const disabledDay = isDisabled(day);
           const selectedDay = selected && isSameDay(day, selected);
           const today = isToday(day);
           const inMonth = isSameMonth(day, month);
           const mark = hasMark(day);
+          const dayOfWeek = day.getDay();
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
           return (
             <button
@@ -100,21 +102,30 @@ export default function Calendar({
               onClick={() => !disabledDay && onSelect(day)}
               disabled={disabledDay}
               className={`
-                relative flex flex-col items-center justify-center py-2 rounded-full transition-colors
-                ${disabledDay ? 'text-[#1B2D3C]/20 cursor-not-allowed' : 'text-[#1B2D3C] cursor-pointer hover:bg-[#1B2D3C]/5'}
-                ${!inMonth ? 'opacity-0 pointer-events-none' : ''}
-                ${selectedDay ? 'bg-[#1B2D3C] text-white hover:bg-[#1B2D3C]' : ''}
-                ${today && !selectedDay ? 'font-black' : 'font-medium'}
+                relative flex flex-col items-center justify-center min-h-[4.5rem] border-r border-b border-[#1B2D3C]/5 transition-colors
+                ${!inMonth ? 'opacity-0 pointer-events-none bg-white' : ''}
+                ${disabledDay && inMonth ? 'bg-stone-100 text-stone-400 cursor-not-allowed' : ''}
+                ${!disabledDay && inMonth ? 'text-[#1B2D3C] cursor-pointer hover:bg-[#D6E2E9]/30' : ''}
+                ${selectedDay && inMonth ? 'bg-[#1B2D3C] text-white hover:bg-[#1B2D3C]' : ''}
+                ${today && !selectedDay && inMonth ? 'bg-[#D6E2E9]/50 font-black' : ''}
+                ${isWeekend && !disabledDay && !selectedDay && inMonth ? 'bg-[#FAFAFA]' : ''}
               `}
             >
               <span className={`
                 w-8 h-8 flex items-center justify-center text-sm rounded-full
-                ${today && !selectedDay ? 'bg-[#1B2D3C] text-white' : ''}
+                ${today && !selectedDay && inMonth ? 'bg-[#1B2D3C] text-white' : ''}
+                ${selectedDay && inMonth ? 'font-bold' : ''}
               `}>
                 {format(day, 'd')}
               </span>
-              {mark && (
-                <span className={`mt-0.5 w-1 h-1 rounded-full ${selectedDay ? 'bg-white' : 'bg-[#1B2D3C]/60'}`} />
+              {disabledDay && inMonth && (
+                <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-stone-400">Blocked</span>
+              )}
+              {!disabledDay && mark && inMonth && (
+                <span className={`mt-1 w-1.5 h-1.5 rounded-full ${selectedDay ? 'bg-white' : 'bg-[#1B2D3C]/60'}`} />
+              )}
+              {!disabledDay && !mark && inMonth && (
+                <span className="mt-1 text-[9px] font-medium text-[#1B2D3C]/40">Available</span>
               )}
             </button>
           );
