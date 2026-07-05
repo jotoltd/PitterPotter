@@ -77,9 +77,9 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
               <button
                 id="cta-book-session"
                 onClick={() => handleNavClick('book')}
-                className="ml-4 px-5 py-2.5 bg-[#DBE7E4] text-[#1B2D3C] font-normal text-[13px] uppercase tracking-widest border border-[#1B2D3C] hover:bg-[#D6E2E9] transition-all cursor-pointer"
+                className="ml-4 inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#DBE7E4] text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer rounded-lg"
               >
-                <EditableText contentKey="nav_book_button" page="navbar" defaultValue="Booking" adminMode={adminMode} className="text-[13px] font-normal uppercase tracking-widest" />
+                <EditableText contentKey="nav_book_button" page="navbar" defaultValue="Booking" adminMode={adminMode} className="text-sm uppercase tracking-widest" />
               </button>
               {currentStaff && (
                 <button
@@ -132,7 +132,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                 <button
                   id="mobile-cta-book"
                   onClick={() => handleNavClick('book')}
-                  className="w-full py-4 bg-[#DBE7E4] text-[#1B2D3C] font-normal text-lg uppercase tracking-widest text-center border border-[#1B2D3C] transition-all cursor-pointer"
+                  className="w-full py-4 bg-[#DBE7E4] text-[#1B2D3C] font-normal text-lg uppercase tracking-widest text-center transition-all cursor-pointer rounded-lg"
                 >
                   <EditableText contentKey="mobile_nav_book_button" page="navbar" defaultValue="Book Studio" adminMode={adminMode} className="text-lg font-normal uppercase tracking-widest" />
                 </button>
