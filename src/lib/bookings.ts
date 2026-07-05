@@ -25,6 +25,13 @@ export function toBookingInquiry(row: any): BookingInquiry {
     giftCardDiscount: row.gift_card_discount ? Number(row.gift_card_discount) : undefined,
     finalPrice: row.final_price ? Number(row.final_price) : undefined,
     tableId: row.table_id || undefined,
+    depositAmount: row.deposit_amount ? Number(row.deposit_amount) : undefined,
+    finalSeats: row.final_seats || undefined,
+    finalBalance: row.final_balance ? Number(row.final_balance) : undefined,
+    paymentLinkUrl: row.payment_link_url || undefined,
+    paymentLinkSentAt: row.payment_link_sent_at || undefined,
+    paymentStatus: row.payment_status || undefined,
+    stripePaymentIntentId: row.stripe_payment_intent_id || undefined,
   };
 }
 
@@ -48,6 +55,13 @@ export function toBookingRow(booking: BookingInquiry): any {
     gift_card_discount: booking.giftCardDiscount ?? null,
     final_price: booking.finalPrice ?? null,
     table_id: booking.tableId || null,
+    deposit_amount: booking.depositAmount ?? null,
+    final_seats: booking.finalSeats ?? null,
+    final_balance: booking.finalBalance ?? null,
+    payment_link_url: booking.paymentLinkUrl || null,
+    payment_link_sent_at: booking.paymentLinkSentAt || null,
+    payment_status: booking.paymentStatus || null,
+    stripe_payment_intent_id: booking.stripePaymentIntentId || null,
   };
 }
 

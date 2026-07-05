@@ -9,6 +9,8 @@ import { getRemainingCapacity, createPublicBooking, getBusyDates } from '../lib/
 import { Images } from '../images';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 type PartyType = 'birthday' | 'baby-shower-hen' | 'corporate';
 type Studio = 'Putney' | 'Wimbledon';
@@ -18,6 +20,43 @@ interface PartyBookingViewProps {
   studio: Studio;
   setCurrentPage: (page: Page) => void;
   adminMode?: boolean;
+}
+
+function PaymentForm({ onSuccess, amount, loading, setLoading }: { onSuccess: () => void; amount: number; loading: boolean; setLoading: (v: boolean) => void }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    setLoading(true);
+    setError('');
+    const { error: submitError } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url: window.location.href },
+      redirect: 'if_required',
+    });
+    if (submitError) {
+      setError(submitError.message || 'Payment failed');
+      setLoading(false);
+      return;
+    }
+    onSuccess();
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="border border-[#1B2D3C]/10 rounded-lg p-4 bg-[#FAFAFA]">
+        <PaymentElement options={{ layout: 'tabs' }} />
+      </div>
+      {error && <p className="text-xs font-bold text-red-600">{error}</p>}
+      <button type="submit" disabled={!stripe || loading} className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer rounded-lg disabled:opacity-50">
+        {loading ? 'Processing...' : `Pay £${amount.toFixed(2)} deposit`}
+      </button>
+      <p className="text-[10px] text-[#1B2D3C]/50 text-center">Payments processed securely by Stripe.</p>
+    </form>
+  );
 }
 
 const PARTY_INFO: Record<PartyType, { title: string; price: string; description: string; icon: typeof Gift }> = {
@@ -70,6 +109,13 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
   const [error, setError] = useState('');
   const [busyDates, setBusyDates] = useState<Date[]>([]);
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [partyPrice, setPartyPrice] = useState<number>(28.95);
+  const [depositAmount] = useState<number>(50);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+  const [showPayment, setShowPayment] = useState(false);
+  const [pendingBooking, setPendingBooking] = useState<BookingInquiry | null>(null);
 
   const info = PARTY_INFO[partyType];
   const IconComponent = info.icon;
@@ -113,6 +159,22 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
       setBusyDates(dates.map((d) => new Date(d)));
     });
   }, [calendarMonth, studio]);
+
+  useEffect(() => {
+    const loadPartyPrice = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-party-price`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        });
+        const data = await response.json();
+        if (data.price) setPartyPrice(Number(data.price));
+      } catch (err) {
+        console.error('Failed to load party price:', err);
+      }
+    };
+    loadPartyPrice();
+  }, []);
 
   const handleSubmit = async () => {
     setError('');
@@ -170,21 +232,56 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
         ? (partyType === 'birthday' && childAge !== ''
           ? `[${info.title}] ${partyArea} | Age: ${childAge} | ${notes}`.trim()
           : `[${info.title}] ${partyArea} | ${notes}`.trim())
-        : (partyType === 'birthday' && childAge !== '' 
+        : (partyType === 'birthday' && childAge !== ''
           ? `[${info.title}] Age: ${childAge} | ${notes}`.trim()
           : `[${info.title}] ${notes}`.trim()),
       status: 'pending',
       source: 'online',
       requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+      depositAmount,
+      finalSeats: guestCount,
+      finalBalance: Math.max(0, guestCount * partyPrice - depositAmount),
+      paymentStatus: 'pending',
     };
 
     setSubmitting(true);
     try {
-      await createPublicBooking(booking);
-      setBookingRef(bookingId);
-      setSubmitted(true);
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-party-deposit-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ bookingId, amount: depositAmount }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        setError(data.error || 'Failed to set up deposit payment');
+        return;
+      }
+      setPendingBooking(booking);
+      setClientSecret(data.clientSecret);
+      setPaymentIntentId(data.paymentIntentId);
+      setStripePromise(loadStripe(data.publishableKey));
+      setShowPayment(true);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to submit booking. Please try again.';
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    if (!pendingBooking) return;
+    setSubmitting(true);
+    try {
+      await createPublicBooking({ ...pendingBooking, stripePaymentIntentId: paymentIntentId || undefined });
+      setBookingRef(pendingBooking.id);
+      setSubmitted(true);
+      setShowPayment(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Payment succeeded but booking failed. Please contact us.';
       setError(message);
     } finally {
       setSubmitting(false);
@@ -233,6 +330,39 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
             <EditableText contentKey="party_success_home" page="party-booking" defaultValue="Back to Home" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
         </div>
+      </div>
+    );
+  }
+
+  if (showPayment && clientSecret && stripePromise) {
+    const guestCount = guests === '' ? 1 : guests;
+    return (
+      <div className="min-h-screen bg-[#FFFFFF]">
+        <section className="max-w-2xl mx-auto px-4 py-12 space-y-6">
+          <div className="text-center space-y-2">
+            <h2 className="font-heading text-2xl md:text-3xl font-black text-[#1B2D3C]">Pay £{depositAmount.toFixed(2)} deposit</h2>
+            <p className="text-sm text-[#1B2D3C]/70 font-medium max-w-md mx-auto">
+              Secure your party booking with a £{depositAmount.toFixed(2)} deposit. The remaining balance will be payable 48 hours before your party.
+            </p>
+          </div>
+          <div className="bg-[#D6E2E9]/50 p-4 rounded-lg text-sm font-bold text-[#1B2D3C] space-y-2">
+            <p>{info.title} · {studio} Studio</p>
+            <p>{date && format(date, 'EEEE, do MMMM yyyy')} · {time}</p>
+            <p>{guestCount} guest{guestCount !== 1 ? 's' : ''}</p>
+            <p>Total estimated: £{(guestCount * partyPrice).toFixed(2)}</p>
+            <p>Deposit today: £{depositAmount.toFixed(2)}</p>
+            <p className="text-[#1B2D3C]/60 text-xs font-medium">Final balance due 48 hours before your party: £{Math.max(0, guestCount * partyPrice - depositAmount).toFixed(2)}</p>
+          </div>
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg text-xs font-medium text-blue-800">
+            We only take a £50 deposit today because final guest numbers can change. We will email you 48 hours before the party to confirm final seats and collect the remaining balance.
+          </div>
+          <Elements stripe={stripePromise} options={{ clientSecret }}>
+            <PaymentForm onSuccess={handlePaymentSuccess} amount={depositAmount} loading={submitting} setLoading={setSubmitting} />
+          </Elements>
+          <button onClick={() => setShowPayment(false)} className="w-full py-3 bg-white text-[#1B2D3C] font-bold text-xs uppercase tracking-widest border border-[#1B2D3C]/20 hover:bg-[#D6E2E9]/20 transition-all cursor-pointer rounded-lg">
+            Back to booking details
+          </button>
+        </section>
       </div>
     );
   }
@@ -413,6 +543,8 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
             <p>{info.title} · {studio} Studio{studio === 'Wimbledon' && ` - ${partyArea}`}</p>
             <p>{format(date, 'EEEE, do MMMM yyyy')} · {time}</p>
             <p>{guests === '' ? 1 : guests} guest{(guests === '' ? 1 : guests) !== 1 ? 's' : ''}</p>
+            <p>£{partyPrice.toFixed(2)} per person · estimated total £{((guests === '' ? 1 : guests) * partyPrice).toFixed(2)}</p>
+            <p>£{depositAmount.toFixed(2)} deposit today, balance payable 48 hours before the party</p>
             <div className={`inline-block px-2 py-1 rounded text-xs font-bold ${
               (slotCapacity[time] ?? PARTY_GUEST_LIMIT[studio]) <= 5 
                 ? 'bg-orange-100 text-orange-700' 
@@ -422,6 +554,19 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
             </div>
           </div>
         )}
+
+        {/* Deposit note */}
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+          <div className="flex gap-3">
+            <div className="text-blue-600 text-xl flex-shrink-0">ℹ️</div>
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-blue-900">£50 deposit only</p>
+              <p className="text-xs font-medium text-blue-800 leading-relaxed">
+                We only take a £50 deposit to secure your party. We know RSVPs can change, so we will email you 48 hours before the party to confirm final numbers and collect the remaining balance.
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Contact Details */}
         <div className="space-y-4 border-t border-[#1B2D3C]/10 pt-8">
@@ -499,7 +644,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
           disabled={!date || !time || !name || !phone || submitting}
           className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {submitting ? <EditableText contentKey="party_submitting" page="party-booking" defaultValue="Submitting..." adminMode={adminMode} className="text-xs uppercase tracking-widest" /> : <><EditableText contentKey={`party_submit_button_${partyType}`} page="party-booking" defaultValue={info.title === 'Corporate Event' ? 'Submit Enquiry' : 'Book Party'} adminMode={adminMode} className="text-xs uppercase tracking-widest" /> <ArrowRight className="w-4 h-4" /></>}
+          {submitting ? <EditableText contentKey="party_submitting" page="party-booking" defaultValue="Submitting..." adminMode={adminMode} className="text-xs uppercase tracking-widest" /> : <><EditableText contentKey={`party_submit_button_${partyType}`} page="party-booking" defaultValue={info.title === 'Corporate Event' ? 'Submit Enquiry' : `Book Party & Pay £${depositAmount.toFixed(2)} Deposit`} adminMode={adminMode} className="text-xs uppercase tracking-widest" /> <ArrowRight className="w-4 h-4" /></>}
         </button>
 
         <button

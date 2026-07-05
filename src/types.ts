@@ -37,6 +37,13 @@ export interface BookingInquiry {
   giftCardDiscount?: number;
   finalPrice?: number;
   tableId?: string;
+  depositAmount?: number;
+  finalSeats?: number;
+  finalBalance?: number;
+  paymentLinkUrl?: string;
+  paymentLinkSentAt?: string;
+  paymentStatus?: 'pending' | 'paid' | 'refunded';
+  stripePaymentIntentId?: string;
 }
 
 export interface GalleryItem {

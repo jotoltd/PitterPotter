@@ -67,6 +67,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs'>('dashboard');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
+  const [partyPrice, setPartyPrice] = useState<number>(28.95);
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
   const [capacitySaving, setCapacitySaving] = useState(false);
   const [showGiftCardModal, setShowGiftCardModal] = useState(false);
@@ -114,6 +115,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [loading, setLoading] = useState(true);
   const [assignModalBooking, setAssignModalBooking] = useState<BookingInquiry | null>(null);
   const [confirmingIds, setConfirmingIds] = useState<Set<string>>(new Set());
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [reminderBooking, setReminderBooking] = useState<BookingInquiry | null>(null);
+  const [reminderFinalSeats, setReminderFinalSeats] = useState<number>(1);
+  const [sendingReminder, setSendingReminder] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [drawerBooking, setDrawerBooking] = useState<BookingInquiry | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -176,7 +181,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     let isMounted = true;
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([loadInquiries(), loadGiftCards(), loadStripeMode()]);
+      await Promise.all([loadInquiries(), loadGiftCards(), loadStripeMode(), loadPartyPrice()]);
       if (isMounted) setLoading(false);
     };
     loadData();
@@ -273,6 +278,53 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     } catch (err) {
       console.error('Failed to update stripe mode:', err);
       showToast('Failed to update Stripe mode', 'error');
+    }
+  };
+
+  const loadPartyPrice = async () => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'load', username: staff.username, sessionToken: staff.sessionToken, key: 'party_price_per_person' }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        console.error('Failed to load party price:', data.error);
+        return;
+      }
+      if (data.value) setPartyPrice(Number(data.value));
+    } catch (err) {
+      console.error('Failed to load party price:', err);
+    }
+  };
+
+  const updatePartyPrice = async (value: number) => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'update', username: staff.username, sessionToken: staff.sessionToken, key: 'party_price_per_person', value: String(value) }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        showToast('Failed to update party price', 'error');
+        return;
+      }
+      setPartyPrice(value);
+      showToast('Party price updated', 'success');
+    } catch (err) {
+      console.error('Failed to update party price:', err);
+      showToast('Failed to update party price', 'error');
     }
   };
 
@@ -726,6 +778,46 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         }
       },
     });
+  };
+
+  const openReminderModal = (booking: BookingInquiry) => {
+    setReminderBooking(booking);
+    setReminderFinalSeats(booking.finalSeats || booking.paintersCount);
+    setShowReminderModal(true);
+  };
+
+  const sendPartyReminder = async () => {
+    if (!reminderBooking || !staff?.sessionToken) return;
+    setSendingReminder(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-party-final-reminder`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          username: staff.username,
+          sessionToken: staff.sessionToken,
+          bookingId: reminderBooking.id,
+          finalSeats: reminderFinalSeats,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        showToast(data.error || 'Failed to send reminder', 'error');
+        return;
+      }
+      setInquiries(inquiries.map(i => i.id === reminderBooking.id ? { ...i, finalSeats: reminderFinalSeats, finalBalance: data.finalBalance, paymentLinkUrl: data.paymentLinkUrl, paymentLinkSentAt: new Date().toISOString() } : i));
+      setShowReminderModal(false);
+      setReminderBooking(null);
+      showToast('Final payment reminder sent', 'success');
+    } catch (err) {
+      console.error('Failed to send reminder:', err);
+      showToast('Failed to send reminder', 'error');
+    } finally {
+      setSendingReminder(false);
+    }
   };
 
   const updateStatus = async (id: string, status: 'confirmed' | 'pending' | 'cancelled') => {
@@ -2398,6 +2490,31 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             </div>
           </div>
 
+          {/* Party Price */}
+          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 max-w-xl">
+            <div>
+              <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Party Price</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Price per person for party bookings (birthday, baby shower/hen, corporate).</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-[#1B2D3C]">£</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={partyPrice}
+                onChange={(e) => setPartyPrice(Math.max(0, Number(e.target.value)))}
+                className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+              />
+              <button
+                onClick={() => updatePartyPrice(partyPrice)}
+                className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-all cursor-pointer"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+
         </div>
       )}
 
@@ -2746,6 +2863,26 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   <Copy className="w-3 h-3" /> Copy reference
                 </button>
               </div>
+
+              {/* Party payment */}
+              {['birthday-party', 'baby-shower-hen', 'corporate'].includes(drawerBooking.sessionType) && (
+                <div className="bg-[#F8FAFA] rounded-lg p-3 space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-1">Party Payment</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-[#1B2D3C]">
+                    <div><span className="text-[#1B2D3C]/50">Seats</span> {drawerBooking.finalSeats ?? drawerBooking.paintersCount}</div>
+                    <div><span className="text-[#1B2D3C]/50">Deposit</span> £{(drawerBooking.depositAmount ?? 50).toFixed(2)}</div>
+                    <div><span className="text-[#1B2D3C]/50">Total</span> £{((drawerBooking.finalSeats ?? drawerBooking.paintersCount) * partyPrice).toFixed(2)}</div>
+                    <div><span className="text-[#1B2D3C]/50">Balance</span> £{(drawerBooking.finalBalance ?? Math.max(0, (drawerBooking.finalSeats ?? drawerBooking.paintersCount) * partyPrice - (drawerBooking.depositAmount ?? 50))).toFixed(2)}</div>
+                  </div>
+                  {drawerBooking.paymentLinkUrl && (
+                    <div className="text-[10px] text-[#1B2D3C]/60">
+                      Reminder sent: {drawerBooking.paymentLinkSentAt ? new Date(drawerBooking.paymentLinkSentAt).toLocaleDateString('en-GB') : '—'}
+                      <br />
+                      <a href={drawerBooking.paymentLinkUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">Payment link</a>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Action footer */}
@@ -2775,6 +2912,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   <XCircle className="w-4 h-4" /> Mark as Awaiting
                 </button>
               )}
+              {['birthday-party', 'baby-shower-hen', 'corporate'].includes(drawerBooking.sessionType) && drawerBooking.status !== 'cancelled' && (
+                <button onClick={() => openReminderModal(drawerBooking)}
+                  className="w-full px-3 py-2.5 bg-[#D6E2E9] hover:bg-[#D6E2E9]/80 text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs font-black rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2">
+                  <Mail className="w-4 h-4" /> Send final payment reminder
+                </button>
+              )}
               {canUpdateStatus && drawerBooking.status !== 'cancelled' && (
                 <button onClick={async () => { await updateStatus(drawerBooking.id, 'cancelled'); setDrawerBooking(prev => prev ? { ...prev, status: 'cancelled' } : null); }}
                   className="w-full px-3 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-black rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2">
@@ -2790,6 +2933,44 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             </div>
           </div>
         </>
+      )}
+
+      {/* Party final payment reminder modal */}
+      {showReminderModal && reminderBooking && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg rounded-xl">
+            <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Send final payment reminder</h3>
+            <p className="text-xs text-[#1B2D3C]/70 font-medium">
+              Confirm the final number of seats for {reminderBooking.name}. The customer will receive an email with a payment link for the remaining balance.
+            </p>
+            <div>
+              <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Final seats</label>
+              <input
+                type="number"
+                min={1}
+                value={reminderFinalSeats}
+                onChange={(e) => setReminderFinalSeats(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+              />
+            </div>
+            <div className="bg-[#F8FAFA] rounded-lg p-3 text-xs font-semibold text-[#1B2D3C] space-y-1">
+              <p>Price per person: £{partyPrice.toFixed(2)}</p>
+              <p>Total: £{(reminderFinalSeats * partyPrice).toFixed(2)}</p>
+              <p>Deposit paid: £{(reminderBooking.depositAmount ?? 50).toFixed(2)}</p>
+              <p className="font-black">Final balance: £{Math.max(0, reminderFinalSeats * partyPrice - (reminderBooking.depositAmount ?? 50)).toFixed(2)}</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setShowReminderModal(false)}
+                className="flex-1 py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9]/40 transition-all cursor-pointer">
+                Cancel
+              </button>
+              <button onClick={sendPartyReminder} disabled={sendingReminder}
+                className="flex-1 py-3 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-all cursor-pointer disabled:opacity-50">
+                {sendingReminder ? 'Sending...' : 'Send reminder'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
