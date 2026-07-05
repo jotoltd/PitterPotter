@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Images } from '../images';
 import { Page } from '../types';
-import { DayPicker } from 'react-day-picker';
+import Calendar from './Calendar';
 import { format, getDay } from 'date-fns';
 import {Clock, Calendar as CalendarIcon, ArrowRight, ChevronLeft, ChevronRight, X} from 'lucide-react';
-import 'react-day-picker/dist/style.css';
 import { getRemainingCapacity, getBusyDates } from '../lib/bookings';
 import { useToast } from './ToastContext';
 import EditableText from './EditableText';
@@ -240,14 +239,15 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
             </div>
 
             <div className="bg-[#FFFFFF] p-3 flex items-start justify-center">
-              <DayPicker
-                mode="single"
+              <Calendar
                 selected={date}
                 onSelect={handleDateSelect}
                 month={calendarMonth}
                 onMonthChange={setCalendarMonth}
-                disabled={[{ dayOfWeek: [1] }, { before: new Date() }, ...busyDates]}
-                weekStartsOn={1}
+                disabled={busyDates}
+                minDate={new Date()}
+                dayOfWeekDisabled={[1]}
+                marks={busyDates}
               />
             </div>
 

@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Page, BookingInquiry } from '../types';
-import { DayPicker } from 'react-day-picker';
+import Calendar from './Calendar';
 import { format, getDay } from 'date-fns';
 import { Clock, Calendar as CalendarIcon, ArrowRight, Users, MapPin, Gift, Heart, Briefcase, Copy } from 'lucide-react';
 import { useToast } from './ToastContext';
-import 'react-day-picker/dist/style.css';
 import { getRemainingCapacity, createPublicBooking, getBusyDates } from '../lib/bookings';
 import { Images } from '../images';
 import EditableText from './EditableText';
@@ -401,14 +400,15 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
             <h3 className="font-heading text-xl font-black text-[#1B2D3C]"><EditableText contentKey="party_date_heading" page="party-booking" defaultValue="Choose a Date" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" /></h3>
           </div>
           <div className="bg-[#FFFFFF] border border-[#1B2D3C]/10 rounded-lg p-3 flex items-start justify-center">
-            <DayPicker
-              mode="single"
+            <Calendar
               selected={date}
               onSelect={handleDateSelect}
               month={calendarMonth}
               onMonthChange={setCalendarMonth}
-              disabled={[{ dayOfWeek: [1], before: new Date() }, ...busyDates]}
-              weekStartsOn={1}
+              disabled={busyDates}
+              minDate={new Date()}
+              dayOfWeekDisabled={[1]}
+              marks={busyDates}
             />
           </div>
         </div>
