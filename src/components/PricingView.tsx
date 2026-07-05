@@ -33,7 +33,7 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
         </div>
         <div className="bg-[#DBE7E4]/40 border border-[#1B2D3C]/10 p-4 rounded-lg text-center">
           <p className="text-sm text-[#1B2D3C]/90 leading-relaxed">
-            <EditableText contentKey="pricing_studio_fee_notice" page="pricing" defaultValue="A £5.95 per painter studio fee applies to all sessions." adminMode={adminMode} className="text-sm text-[#1B2D3C]/90 leading-relaxed" />
+            <EditableText contentKey="pricing_studio_fee_notice" page="pricing" defaultValue="A £5.95 per person studio fee applies to all sessions." adminMode={adminMode} className="text-sm text-[#1B2D3C]/90 leading-relaxed" />
           </p>
         </div>
       </div>

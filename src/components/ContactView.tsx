@@ -192,7 +192,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
 
     const remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time);
     if (paintersCount > remaining) {
-      setError(`This session only has room for ${remaining} more painter${remaining === 1 ? '' : 's'}. Please choose a different time or reduce the number of painters.`);
+      setError(`This session only has room for ${remaining} more seat${remaining === 1 ? '' : 's'}. Please choose a different time or reduce the number of people.`);
       return;
     }
 
@@ -435,9 +435,10 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                   </div>
                 </div>
 
-                {/* Painters */}
+                {/* Seats */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Number of Painters *</label>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">How many people need a seat? *</label>
+                  <p className="text-[10px] text-[#1B2D3C]/60 font-semibold">Include anyone attending, even if they are not painting.</p>
                   <div className="flex items-center border border-[#1B2D3C]/20 bg-white overflow-hidden rounded-lg max-w-[180px]">
                     <button type="button" onClick={() => setPaintersCount(p => Math.max(1, p - 1))} className="px-5 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">−</button>
                     <span className="flex-1 text-center text-sm font-black text-[#1B2D3C]">{paintersCount}</span>
@@ -524,7 +525,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Session</span>{SESSION_TYPE_LABELS[sessionType]}</div>
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Date</span>{date ? format(date, 'EEE d MMM yyyy') : '—'}</div>
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Time</span>{time} – {parseInt(time.split(':')[0], 10) + 2}:00</div>
-                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Painters</span>{paintersCount}</div>
+                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">People</span>{paintersCount}</div>
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Name</span>{name}</div>
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Phone</span>{phone}</div>
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Email</span>{email || '—'}</div>
