@@ -28,7 +28,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
 
   const [sessionType, setSessionType] = useState<'painting' | 'birthday-party' | 'baby-shower-hen' | 'clay-imprints' | 'corporate'>('painting');
   const [paintersCount, setPaintersCount] = useState<number>(initialPainters);
-  const [paintingCount, setPaintingCount] = useState<number>(1);
 
   const [submittedInquiry, setSubmittedInquiry] = useState<BookingInquiry | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -52,7 +51,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
         setEmail(parsed.email || '');
         setPhone(parsed.phone || '');
         setPaintersCount(parsed.paintersCount || 1);
-        setPaintingCount(parsed.paintingCount || 1);
         if (parsed.sessionType) setSessionType(parsed.sessionType);
         // If date already chosen on studio page, skip straight to contact details
         if (parsed.date) setStep(2);
@@ -80,7 +78,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
       time,
       sessionType,
       paintersCount,
-      paintingCount,
     };
     localStorage.setItem('pp_booking_draft', JSON.stringify(draft));
   };
@@ -212,7 +209,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
       date: format(date, 'yyyy-MM-dd'),
       time,
       paintersCount,
-      paintingCount,
       sessionType,
       status: 'pending',
       source: 'online',
@@ -441,25 +437,13 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
 
                 {/* Seats */}
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">How many people need a seat? *</label>
-                  <p className="text-[10px] text-[#1B2D3C]/60 font-semibold">Include anyone attending, even if they are not painting.</p>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">How many seats? *</label>
                   <div className="flex items-center border border-[#1B2D3C]/20 bg-white overflow-hidden rounded-lg max-w-[180px]">
                     <button type="button" onClick={() => setPaintersCount(p => Math.max(1, p - 1))} className="px-5 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">−</button>
                     <span className="flex-1 text-center text-sm font-black text-[#1B2D3C]">{paintersCount}</span>
                     <button type="button" onClick={() => setPaintersCount(p => p + 1)} className="px-5 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">+</button>
                   </div>
                 </div>
-
-                {/* Painters */}
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">How many people will be painting?</label>
-                  <div className="flex items-center border border-[#1B2D3C]/20 bg-white overflow-hidden rounded-lg max-w-[180px]">
-                    <button type="button" onClick={() => setPaintingCount(p => Math.max(0, p - 1))} className="px-5 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">−</button>
-                    <span className="flex-1 text-center text-sm font-black text-[#1B2D3C]">{paintingCount}</span>
-                    <button type="button" onClick={() => setPaintingCount(p => p + 1)} className="px-5 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">+</button>
-                  </div>
-                </div>
-
                 {/* Date/time summary from draft */}
                 {date && (
                   <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs font-semibold text-emerald-800 space-y-0.5">
@@ -539,8 +523,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Session</span>{SESSION_TYPE_LABELS[sessionType]}</div>
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Date</span>{date ? format(date, 'EEE d MMM yyyy') : '—'}</div>
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Time</span>{time} – {parseInt(time.split(':')[0], 10) + 2}:00</div>
-                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">People</span>{paintersCount}</div>
-                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Painting</span>{paintingCount}</div>
+                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Seats</span>{paintersCount}</div>
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Name</span>{name}</div>
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Phone</span>{phone}</div>
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Email</span>{email || '—'}</div>
