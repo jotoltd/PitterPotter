@@ -52,14 +52,14 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  <button
  id="hero-book-button"
  onClick={() => setCurrentPage('book')}
- className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#DBE7E4] text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer rounded-lg"
+ className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#DBE7E4] transition-all cursor-pointer rounded-lg"
  >
  <EditableText contentKey="hero_book_button" page="home" defaultValue="Book a Session" adminMode={adminMode} className="text-sm uppercase tracking-widest" />
  </button>
  <button
  id="hero-contact-button"
  onClick={() => setCurrentPage('contact-info')}
- className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#DBE7E4] text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer rounded-lg"
+ className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#DBE7E4] transition-all cursor-pointer rounded-lg"
  >
  <EditableText contentKey="hero_contact_button" page="home" defaultValue="Contact Us" adminMode={adminMode} className="text-sm uppercase tracking-widest" />
  </button>
