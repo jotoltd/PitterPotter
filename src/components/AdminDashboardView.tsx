@@ -104,6 +104,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     date: format(new Date(), 'yyyy-MM-dd'),
     time: '10:00',
     paintersCount: 1,
+    paintingCount: 1,
     sessionType: 'painting',
     status: 'pending',
   });
@@ -856,7 +857,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     const remaining = await getRemainingCapacity(updatedBooking.studio, updatedBooking.date, updatedBooking.time);
     const available = oldBooking ? remaining + oldBooking.paintersCount : remaining;
     if (updatedBooking.paintersCount > available) {
-      showToast(`This session only has room for ${available} painter${available === 1 ? '' : 's'} after this edit.`, 'error');
+      showToast(`This session only has room for ${available} seat${available === 1 ? '' : 's'} after this edit.`, 'error');
       return;
     }
     if (!oldBooking) {
@@ -905,9 +906,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       showToast('Booking date cannot be in the past', 'error');
       return;
     }
-    // Validate painters count
+    // Validate seats count
     if (newBooking.paintersCount < 1 || newBooking.paintersCount > 50) {
-      showToast('Number of painters must be between 1 and 50', 'error');
+      showToast('Number of seats must be between 1 and 50', 'error');
       return;
     }
     try {
@@ -920,6 +921,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         date: newBooking.date,
         time: newBooking.time,
         paintersCount: newBooking.paintersCount || 1,
+        paintingCount: newBooking.paintingCount ?? 1,
         sessionType: newBooking.sessionType || 'painting',
         notes: newBooking.notes,
         status: 'pending',
@@ -939,6 +941,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         date: format(new Date(), 'yyyy-MM-dd'),
         time: '10:00',
         paintersCount: 1,
+        paintingCount: 1,
         sessionType: 'painting',
         status: 'pending',
       });
@@ -1462,8 +1465,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             <button
               onClick={() => {
                 const rows = filteredInquiries.filter(i => selectedIds.has(i.id));
-                const csv = ['Date,Time,Studio,Name,Email,Phone,Painters,Session,Status,Table',
-                  ...rows.map(i => [i.date,i.time,i.studio,i.name,i.email,i.phone,i.paintersCount,i.sessionType,i.status,i.tableId||''].join(','))
+                const csv = ['Date,Time,Studio,Name,Email,Phone,Seats,Painting,Session,Status,Table',
+                  ...rows.map(i => [i.date,i.time,i.studio,i.name,i.email,i.phone,i.paintersCount,i.paintingCount ?? '',i.sessionType,i.status,i.tableId||''].join(','))
                 ].join('\n');
                 const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='bookings-selection.csv'; a.click();
               }}
@@ -1816,13 +1819,24 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Painters *</label>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Seats *</label>
                 <input
                   type="number"
                   min="1"
                   max="50"
                   value={newBooking.paintersCount}
                   onChange={(e) => setNewBooking({ ...newBooking, paintersCount: parseInt(e.target.value) || 1 })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Painting</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="50"
+                  value={newBooking.paintingCount}
+                  onChange={(e) => setNewBooking({ ...newBooking, paintingCount: parseInt(e.target.value) || 0 })}
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
               </div>
@@ -1950,13 +1964,24 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Painters</label>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Seats</label>
                 <input
                   type="number"
                   min="1"
                   max="50"
                   value={editingBooking.paintersCount}
                   onChange={(e) => setEditingBooking({ ...editingBooking, paintersCount: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Painting</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="50"
+                  value={editingBooking.paintingCount ?? 0}
+                  onChange={(e) => setEditingBooking({ ...editingBooking, paintingCount: parseInt(e.target.value) || 0 })}
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
               </div>

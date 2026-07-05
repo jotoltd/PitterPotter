@@ -79,7 +79,7 @@ export default function FloorPlanView({ bookings = [] }: FloorPlanViewProps) {
                   <span>{stat.tableId}</span>
                   <span className="text-[#1B2D3C]/50">{stat.bookingsCount} bookings</span>
                 </div>
-                <p className="text-[10px] text-[#1B2D3C]/60 font-semibold mt-1">{stat.paintersCount} painters seated</p>
+                <p className="text-[10px] text-[#1B2D3C]/60 font-semibold mt-1">{stat.paintersCount} seats filled</p>
               </div>
             ))}
             {analytics.tableStats.length === 0 && (

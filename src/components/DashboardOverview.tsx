@@ -38,7 +38,7 @@ function BookingRow({ b, onConfirm }: { b: BookingInquiry; onConfirm?: (id: stri
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <span className={`shrink-0 w-2 h-2 rounded-full ${b.status === 'confirmed' ? 'bg-emerald-500' : 'bg-amber-400'}`} />
           <span className="text-xs font-bold text-[#1B2D3C] truncate">{b.name}</span>
-          <span className="text-[10px] text-[#1B2D3C]/50 font-semibold shrink-0">{b.paintersCount}p</span>
+          <span className="text-[10px] text-[#1B2D3C]/50 font-semibold shrink-0">{b.paintersCount}s</span>
           <span className={`hidden sm:inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 ${SESSION_BADGE[b.sessionType] ?? 'bg-gray-100 text-gray-600'}`}>
             {SESSION_LABELS[b.sessionType] ?? b.sessionType}
           </span>
@@ -212,7 +212,7 @@ function DailySheet({
           )}
         </div>
         <span className="text-[10px] font-bold text-white/70">
-          {studioBookings.length} booking{studioBookings.length !== 1 ? 's' : ''} · {studioBookings.reduce((s, b) => s + b.paintersCount, 0)} painters
+          {studioBookings.length} booking{studioBookings.length !== 1 ? 's' : ''} · {studioBookings.reduce((s, b) => s + b.paintersCount, 0)} seats
         </span>
       </div>
 
@@ -284,7 +284,7 @@ export default function DashboardOverview({ bookings, onAssignTable, onConfirm, 
   const putneyToday = useMemo(() => todayBookings.filter(b => b.studio === 'Putney'), [todayBookings]);
   const wimbledonToday = useMemo(() => todayBookings.filter(b => b.studio === 'Wimbledon'), [todayBookings]);
 
-  const totalPainters = todayBookings.reduce((s, b) => s + b.paintersCount, 0);
+  const totalSeats = todayBookings.reduce((s, b) => s + b.paintersCount, 0);
   const pendingToday = todayBookings.filter(b => b.status === 'pending');
   const confirmedCount = todayBookings.filter(b => b.status === 'confirmed').length;
   const unassignedCount = todayBookings.filter(b => !b.tableId).length;
@@ -364,8 +364,8 @@ export default function DashboardOverview({ bookings, onAssignTable, onConfirm, 
           <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{putneyToday.length} Putney · {wimbledonToday.length} Wimbledon</p>
         </div>
         <div className="bg-white border border-[#1B2D3C]/20 rounded-xl p-4 space-y-1">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">Painters</p>
-          <p className="text-3xl font-black text-[#1B2D3C]">{totalPainters}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">Seats</p>
+          <p className="text-3xl font-black text-[#1B2D3C]">{totalSeats}</p>
           <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">across all sessions</p>
         </div>
         <div className={`border rounded-xl p-4 space-y-1 ${pendingToday.length > 0 ? 'bg-amber-50 border-amber-200' : 'bg-white border-[#1B2D3C]/20'}`}>
@@ -445,7 +445,7 @@ export default function DashboardOverview({ bookings, onAssignTable, onConfirm, 
                       <span className="flex items-center gap-1 text-[10px] font-bold text-[#1B2D3C]">
                         <Users className="w-3 h-3" />{dayBookings.length}
                       </span>
-                      <span className="text-[10px] font-semibold text-[#1B2D3C]/50">{painters} painters</span>
+                      <span className="text-[10px] font-semibold text-[#1B2D3C]/50">{painters} seats</span>
                     </div>
                   ) : (
                     <span className="text-[10px] text-[#1B2D3C]/25 font-semibold">No bookings</span>

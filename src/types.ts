@@ -27,6 +27,7 @@ export interface BookingInquiry {
   date: string;
   time: string;
   paintersCount: number;
+  paintingCount?: number;
   sessionType: 'painting' | 'birthday-party' | 'baby-shower-hen' | 'clay-imprints' | 'corporate';
   notes?: string;
   status: 'pending' | 'confirmed' | 'cancelled';
