@@ -7,10 +7,11 @@ import PutneyFloorPlan, { findAvailablePutneyTable, findMultiplePutneyTables } f
 import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO } from 'date-fns';
-import { BookingInquiry, GiftCard, Staff } from '../types';
+import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { loadBookings, createBooking, updateBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
 import { useToast } from './ToastContext';
+import Skeleton from './Skeleton';
 import 'react-day-picker/dist/style.css';
 
 interface AdminDashboardProps {
@@ -79,7 +80,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [giftCardCreating, setGiftCardCreating] = useState(false);
   const [redeemingGiftCard, setRedeemingGiftCard] = useState(false);
   const [giftCardDiscount, setGiftCardDiscount] = useState(0);
-  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [auditLogsLoading, setAuditLogsLoading] = useState(false);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
@@ -392,14 +393,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         if (!response.ok || data.error) {
           console.error('Gift cards list error:', data.error);
         } else if (data.giftCards) {
-          const mapped: GiftCard[] = data.giftCards.map((row: any) => ({
+          const mapped: GiftCard[] = data.giftCards.map((row: GiftCardApiRow) => ({
             id: row.id,
             code: row.code,
             amount: Number(row.amount),
             balance: Number(row.balance),
-            recipientName: row.recipient_name,
-            recipientEmail: row.recipient_email,
-            senderName: row.sender_name,
+            recipientName: row.recipient_name || '',
+            recipientEmail: row.recipient_email || '',
+            senderName: row.sender_name || '',
             message: row.message,
             purchaseDate: row.purchase_date ? new Date(row.purchase_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '',
             expiryDate: row.expiry_date ? new Date(row.expiry_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : undefined,
@@ -646,19 +647,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       if (!response.ok || data.error) {
         console.error('Staff list error:', data.error);
       } else if (data.staff) {
-        const mapped: Staff[] = data.staff.map((row: any) => ({
+        const mapped: Staff[] = data.staff.map((row: StaffApiRow) => ({
           id: row.id,
           name: row.name,
           username: row.username,
           passwordHash: '',
           role: row.role,
-          canUpdateStatus: !!row.can_update_status,
-          canEditBookings: !!row.can_edit_bookings,
-          canAddWalkIns: !!row.can_add_walk_ins,
-          canDeleteBookings: !!row.can_delete_bookings,
-          allowedStudios: Array.isArray(row.allowed_studios) && row.allowed_studios.length > 0
-            ? row.allowed_studios as ('Putney' | 'Wimbledon')[]
-            : undefined,
+          canUpdateStatus: row.can_update_status,
+          canEditBookings: row.can_edit_bookings,
+          canAddWalkIns: row.can_add_walk_ins,
+          canDeleteBookings: row.can_delete_bookings,
+          allowedStudios: row.allowed_studios && row.allowed_studios.length > 0 ? row.allowed_studios : undefined,
           createdAt: row.created_at,
         }));
         setStaffList(mapped);
@@ -1191,8 +1190,20 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
 
         {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B2D3C]"></div>
+          <div className="space-y-6 animate-pulse">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+            </div>
+            <Skeleton className="h-8 w-48" />
+            <div className="space-y-3">
+              <Skeleton className="h-12" />
+              <Skeleton className="h-12" />
+              <Skeleton className="h-12" />
+              <Skeleton className="h-12" />
+              <Skeleton className="h-12" />
+            </div>
           </div>
         )}
 
@@ -2321,7 +2332,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               <p className="text-xs text-[#1B2D3C]/70 mt-1">Maximum painters per studio and session type.</p>
             </div>
             {capacityRows.length === 0 ? (
-              <p className="text-xs text-stone-500">Loading capacity settings…</p>
+              <div className="space-y-3">
+                <Skeleton className="h-16" />
+                <Skeleton className="h-16" />
+                <Skeleton className="h-16" />
+              </div>
             ) : (
               <div className="space-y-3">
                 {capacityRows.map((row, index) => (
@@ -2533,9 +2548,18 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
           <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl overflow-hidden">
             {auditLogsLoading ? (
-              <div className="p-12 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B2D3C] mx-auto mb-3"></div>
-                <p className="text-xs text-stone-500 font-semibold">Loading audit logs…</p>
+              <div className="p-4 space-y-3">
+                <div className="grid grid-cols-12 gap-3">
+                  <Skeleton className="col-span-3 h-8" />
+                  <Skeleton className="col-span-2 h-8" />
+                  <Skeleton className="col-span-2 h-8" />
+                  <Skeleton className="col-span-5 h-8" />
+                </div>
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
               </div>
             ) : auditLogs.length === 0 ? (
               <div className="p-12 text-center">

@@ -78,3 +78,40 @@ export interface Staff {
 }
 
 export type StaffRole = Staff['role'];
+
+export interface AuditLog {
+  id: string;
+  username: string;
+  action: string;
+  entity: string;
+  entity_id?: string;
+  details?: unknown;
+  created_at: string;
+}
+
+export interface GiftCardApiRow {
+  id: string;
+  code: string;
+  amount: number;
+  balance: number;
+  recipient_name?: string;
+  recipient_email?: string;
+  sender_name?: string;
+  message?: string;
+  purchase_date?: string;
+  expiry_date?: string;
+  status: 'active' | 'redeemed' | 'expired';
+}
+
+export interface StaffApiRow {
+  id: string;
+  name: string;
+  username: string;
+  role: 'super_admin' | 'staff';
+  can_update_status: boolean;
+  can_edit_bookings: boolean;
+  can_add_walk_ins: boolean;
+  can_delete_bookings: boolean;
+  allowed_studios?: ('Putney' | 'Wimbledon')[];
+  created_at: string;
+}

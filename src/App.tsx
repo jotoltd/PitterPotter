@@ -172,7 +172,11 @@ export default function App() {
  return <PartyBookingView partyType="corporate" studio="Wimbledon" setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'admin':
             if (currentStaff) {
-              return <AdminDashboardView staff={currentStaff} onLogout={handleAdminLogout} />;
+              return (
+                <ErrorBoundary onReset={() => { setCurrentStaff(null); handleAdminLogout(); }}>
+                  <AdminDashboardView staff={currentStaff} onLogout={handleAdminLogout} />
+                </ErrorBoundary>
+              );
             }
             return <AdminLoginView onLogin={handleAdminLogin} />;
  default:

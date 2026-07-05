@@ -11,6 +11,18 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom', 'motion'],
+            ui: ['lucide-react', 'react-day-picker', '@stripe/react-stripe-js', '@stripe/stripe-js'],
+            supabase: ['@supabase/supabase-js'],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 600,
+    },
     test: {
       setupFiles: ['./src/test-setup.ts'],
     },
