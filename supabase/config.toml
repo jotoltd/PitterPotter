@@ -141,3 +141,27 @@ entrypoint = "./functions/send-booking-confirmation/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/send-booking-confirmation/*.html" ]
+
+[functions.create-party-deposit-payment]
+enabled = true
+verify_jwt = true
+import_map = "./functions/create-party-deposit-payment/deno.json"
+entrypoint = "./functions/create-party-deposit-payment/index.ts"
+
+[functions.get-party-price]
+enabled = true
+verify_jwt = true
+import_map = "./functions/get-party-price/deno.json"
+entrypoint = "./functions/get-party-price/index.ts"
+
+[functions.send-party-final-reminder]
+enabled = true
+verify_jwt = true
+import_map = "./functions/send-party-final-reminder/deno.json"
+entrypoint = "./functions/send-party-final-reminder/index.ts"
+
+[functions.stripe-party-webhook]
+enabled = true
+verify_jwt = true
+import_map = "./functions/stripe-party-webhook/deno.json"
+entrypoint = "./functions/stripe-party-webhook/index.ts"
