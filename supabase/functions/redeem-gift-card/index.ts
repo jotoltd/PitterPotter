@@ -22,9 +22,11 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { code, amount } = await req.json();
-    if (!code || typeof amount !== 'number' || amount <= 0) {
-      return new Response(JSON.stringify({ error: 'Invalid request' }), {
+    const body = await req.json();
+    const { action, code, amount, username, sessionToken } = body;
+
+    if (!code) {
+      return new Response(JSON.stringify({ error: 'Gift card code required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -36,6 +38,40 @@ Deno.serve(async (req) => {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    if (action === 'balance') {
+      return new Response(JSON.stringify({
+        success: true,
+        balance: Number(card.balance),
+        amount: Number(card.amount),
+        status: card.status,
+        code: card.code,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (typeof amount !== 'number' || amount <= 0) {
+      return new Response(JSON.stringify({ error: 'Invalid amount' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (username && sessionToken) {
+      const { data: staff, error: staffError } = await supabase
+        .from('staff')
+        .select('*')
+        .eq('username', username)
+        .eq('session_token', sessionToken)
+        .single();
+      if (staffError || !staff) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     if (card.status !== 'active') {
@@ -64,7 +100,7 @@ Deno.serve(async (req) => {
 
     if (updateError) throw updateError;
 
-    return new Response(JSON.stringify({ discount, balance: newBalance, status: newStatus }), {
+    return new Response(JSON.stringify({ success: true, discount, balance: newBalance, status: newStatus, code: card.code }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
