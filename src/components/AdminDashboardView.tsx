@@ -2494,7 +2494,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 max-w-xl">
             <div>
               <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Party Price</h2>
-              <p className="text-xs text-[#1B2D3C]/70 mt-1">Price per person for party bookings (birthday, baby shower/hen, corporate).</p>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Price per person for party bookings (birthday, baby shower/hen, corporate). This includes the £5.95 studio fee.</p>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-xs font-bold text-[#1B2D3C]">£</span>

@@ -349,6 +349,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
             <p>{info.title} · {studio} Studio</p>
             <p>{date && format(date, 'EEEE, do MMMM yyyy')} · {time}</p>
             <p>{guestCount} guest{guestCount !== 1 ? 's' : ''}</p>
+            <p>£{partyPrice.toFixed(2)} per person (includes the £5.95 studio fee)</p>
             <p>Total estimated: £{(guestCount * partyPrice).toFixed(2)}</p>
             <p>Deposit today: £{depositAmount.toFixed(2)}</p>
             <p className="text-[#1B2D3C]/60 text-xs font-medium">Final balance due 48 hours before your party: £{Math.max(0, guestCount * partyPrice - depositAmount).toFixed(2)}</p>
@@ -543,7 +544,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
             <p>{info.title} · {studio} Studio{studio === 'Wimbledon' && ` - ${partyArea}`}</p>
             <p>{format(date, 'EEEE, do MMMM yyyy')} · {time}</p>
             <p>{guests === '' ? 1 : guests} guest{(guests === '' ? 1 : guests) !== 1 ? 's' : ''}</p>
-            <p>£{partyPrice.toFixed(2)} per person · estimated total £{((guests === '' ? 1 : guests) * partyPrice).toFixed(2)}</p>
+            <p>£{partyPrice.toFixed(2)} per person (includes the £5.95 studio fee) · estimated total £{((guests === '' ? 1 : guests) * partyPrice).toFixed(2)}</p>
             <p>£{depositAmount.toFixed(2)} deposit today, balance payable 48 hours before the party</p>
             <div className={`inline-block px-2 py-1 rounded text-xs font-bold ${
               (slotCapacity[time] ?? PARTY_GUEST_LIMIT[studio]) <= 5 
