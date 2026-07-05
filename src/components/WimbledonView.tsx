@@ -323,7 +323,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
             <div className="aspect-video w-full bg-[#D6E2E9]/50 overflow-hidden rounded-lg">
               <iframe
                 title="Wimbledon Studio Location"
-                src="https://maps.google.com/maps?q=52+Wimbledon+Hill+Road%2C+Wimbledon+SW19+7PA&t=&z=15&ie=UTF8&iwloc=near&output=embed"
+                src="https://maps.google.com/maps?q=52+Wimbledon+Hill+Road%2C+Wimbledon+SW19+7PA&t=&z=15&ie=UTF8&iwloc=B&output=embed"
                 className="w-full h-full border-0"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"

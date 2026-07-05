@@ -322,7 +322,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
             <div className="aspect-video w-full bg-[#D6E2E9]/50 overflow-hidden rounded-lg">
               <iframe
                 title="Putney Studio Location"
-                src="https://maps.google.com/maps?q=234+Upper+Richmond+Road%2C+Putney+SW15+6TG&t=&z=15&ie=UTF8&iwloc=near&output=embed"
+                src="https://maps.google.com/maps?q=234+Upper+Richmond+Road%2C+Putney+SW15+6TG&t=&z=15&ie=UTF8&iwloc=B&output=embed"
                 className="w-full h-full border-0"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
