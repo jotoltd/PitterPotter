@@ -2,6 +2,7 @@ package com.pitterpotter.clover.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,12 +35,15 @@ import androidx.compose.ui.unit.dp
 import com.pitterpotter.clover.PosViewModel
 import com.pitterpotter.clover.Screen
 import com.pitterpotter.clover.data.GiftCard
+import com.pitterpotter.clover.ui.theme.Success
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaymentScreen(viewModel: PosViewModel, card: GiftCard) {
     var amount by remember { mutableStateOf("") }
-    val balance = card.balance
+    val totalAmount = amount.toDoubleOrNull() ?: 0.0
+    val giftCardDiscount = if (card.status == "active") minOf(card.balance, totalAmount) else 0.0
+    val remainingAmount = totalAmount - giftCardDiscount
     val statusText = if (card.status == "active") "Active" else card.status.replaceFirstChar { it.uppercase() }
 
     Scaffold(
@@ -71,7 +75,7 @@ fun PaymentScreen(viewModel: PosViewModel, card: GiftCard) {
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
-                text = "Balance: £${"%.2f".format(balance)}",
+                text = "Balance: £${"%.2f".format(card.balance)}",
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -86,7 +90,7 @@ fun PaymentScreen(viewModel: PosViewModel, card: GiftCard) {
             OutlinedTextField(
                 value = amount,
                 onValueChange = { amount = it },
-                label = { Text("Amount to charge (£)") },
+                label = { Text("Total amount to charge (£)") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,
@@ -94,6 +98,13 @@ fun PaymentScreen(viewModel: PosViewModel, card: GiftCard) {
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
+            if (totalAmount > 0 && card.status == "active") {
+                PaymentBreakdown(
+                    total = totalAmount,
+                    giftCardDiscount = giftCardDiscount,
+                    remaining = remainingAmount
+                )
+            }
             if (viewModel.errorMessage != null) {
                 Text(
                     text = viewModel.errorMessage!!,
@@ -104,20 +115,25 @@ fun PaymentScreen(viewModel: PosViewModel, card: GiftCard) {
             Button(
                 onClick = {
                     val parsed = amount.toDoubleOrNull()
-                    if (parsed != null) {
-                        viewModel.setPaymentAmount(parsed)
-                        viewModel.payWithGiftCard()
+                    if (parsed != null && parsed > 0) {
+                        viewModel.setTotalAmount(parsed)
+                        viewModel.processPayment()
                     } else {
-                        viewModel.navigateTo(Screen.Result(false, "Invalid amount"))
+                        viewModel.errorMessage = "Enter a valid amount"
                     }
                 },
-                enabled = !viewModel.isLoading && card.status == "active" && amount.isNotBlank(),
+                enabled = !viewModel.isLoading && card.status == "active" && amount.isNotBlank() && totalAmount > 0,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (viewModel.isLoading) {
                     CircularProgressIndicator()
                 } else {
-                    Text("Charge Gift Card")
+                    Text(
+                        when {
+                            remainingAmount > 0 -> "Pay with Gift Card + Clover"
+                            else -> "Pay with Gift Card"
+                        }
+                    )
                 }
             }
             OutlinedButton(
@@ -127,5 +143,43 @@ fun PaymentScreen(viewModel: PosViewModel, card: GiftCard) {
                 Text("Cancel")
             }
         }
+    }
+}
+
+@Composable
+private fun PaymentBreakdown(total: Double, giftCardDiscount: Double, remaining: Double) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        BreakdownRow("Total", "£${"%.2f".format(total)}")
+        BreakdownRow("Gift card discount", "-£${"%.2f".format(giftCardDiscount)}")
+        if (remaining > 0) {
+            BreakdownRow("Remaining on Clover", "£${"%.2f".format(remaining)}", isBold = true)
+        } else {
+            Text(
+                text = "Gift card covers full amount",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Success
+            )
+        }
+    }
+}
+
+@Composable
+private fun BreakdownRow(label: String, value: String, isBold: Boolean = false) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = if (isBold) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium
+        )
+        Text(
+            text = value,
+            style = if (isBold) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium,
+            color = if (isBold) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+        )
     }
 }

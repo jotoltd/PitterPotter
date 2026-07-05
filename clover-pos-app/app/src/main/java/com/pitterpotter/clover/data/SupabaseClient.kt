@@ -77,7 +77,14 @@ class SupabaseClient(
         }
     }
 
-    suspend fun redeem(code: String, amount: Double, staff: Staff): Result<RedeemResponse> {
+    suspend fun redeem(
+        code: String,
+        amount: Double,
+        staff: Staff,
+        totalAmount: Double? = null,
+        remainingAmount: Double? = null,
+        cloverPaymentId: String? = null
+    ): Result<RedeemResponse> {
         return try {
             val response = client.post("$supabaseUrl/functions/v1/redeem-gift-card") {
                 setBody(
@@ -85,7 +92,10 @@ class SupabaseClient(
                         code = code,
                         amount = amount,
                         username = staff.username,
-                        sessionToken = staff.sessionToken
+                        sessionToken = staff.sessionToken,
+                        totalAmount = totalAmount,
+                        remainingAmount = remainingAmount,
+                        cloverPaymentId = cloverPaymentId
                     )
                 )
             }

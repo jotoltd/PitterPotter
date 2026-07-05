@@ -30,9 +30,29 @@ The app uses the same Supabase backend as the main web app:
 - `POST /functions/v1/staff-login` - authenticate staff
 - `POST /functions/v1/redeem-gift-card` - check balance and redeem
 
-The `redeem-gift-card` edge function now supports an `action` field:
+### Split payments
+
+When a gift card does not cover the full amount:
+
+1. The app calculates the remaining balance after the gift card discount
+2. It charges the remaining amount on the Clover device via the Clover SDK
+3. It then redeems the gift card portion
+4. Both payments are recorded in the `pos_transactions` table
+
+### Transaction recording
+
+A migration creates the `pos_transactions` table. The `redeem-gift-card` edge function records each POS transaction with:
+
+- staff member
+- gift card code
+- total amount
+- gift card discount
+- remaining amount charged on Clover
+- Clover payment ID
+
+### Edge function actions
+
+The `redeem-gift-card` function supports an `action` field:
 
 - `action: 'balance'` - returns card balance without deducting
 - `action: 'redeem'` (or omitted) - deducts the requested amount from the card balance
-
-When staff credentials are provided with a redemption, the function validates the active session token before processing.

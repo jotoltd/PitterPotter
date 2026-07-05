@@ -33,7 +33,10 @@ data class RedeemRequest(
     val code: String,
     val amount: Double,
     val username: String,
-    val sessionToken: String
+    val sessionToken: String,
+    val totalAmount: Double? = null,
+    val remainingAmount: Double? = null,
+    val cloverPaymentId: String? = null
 )
 
 @Serializable

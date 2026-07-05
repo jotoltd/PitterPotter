@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { action, code, amount, username, sessionToken } = body;
+    const { action, code, amount, username, sessionToken, totalAmount, remainingAmount, cloverPaymentId } = body;
 
     if (!code) {
       return new Response(JSON.stringify({ error: 'Gift card code required' }), {
@@ -99,6 +99,28 @@ Deno.serve(async (req) => {
     }).eq('code', code);
 
     if (updateError) throw updateError;
+
+    // Record POS transaction if Clover payment details are provided
+    if (cloverPaymentId || (typeof totalAmount === 'number' && totalAmount > 0)) {
+      let staffId = null;
+      if (username && sessionToken) {
+        const { data: staff } = await supabase
+          .from('staff')
+          .select('id')
+          .eq('username', username)
+          .eq('session_token', sessionToken)
+          .single();
+        if (staff) staffId = staff.id;
+      }
+      await supabase.from('pos_transactions').insert({
+        staff_id: staffId,
+        gift_card_code: code,
+        total_amount: typeof totalAmount === 'number' ? totalAmount : amount,
+        gift_card_discount: discount,
+        remaining_amount: typeof remainingAmount === 'number' ? remainingAmount : 0,
+        clover_payment_id: cloverPaymentId || null,
+      });
+    }
 
     return new Response(JSON.stringify({ success: true, discount, balance: newBalance, status: newStatus, code: card.code }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

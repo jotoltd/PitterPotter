@@ -24,7 +24,7 @@ fun CloverPosApp(viewModel: PosViewModel) {
             is Screen.Scan -> ScanScreen(viewModel)
             is Screen.ManualEntry -> ManualEntryScreen(viewModel)
             is Screen.Payment -> PaymentScreen(viewModel, screen.card)
-            is Screen.Result -> ResultScreen(viewModel, screen.success, screen.message)
+            is Screen.Result -> ResultScreen(viewModel, screen.summary)
         }
     }
 }

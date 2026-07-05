@@ -2,12 +2,14 @@ package com.pitterpotter.clover.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
@@ -21,9 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.pitterpotter.clover.PosViewModel
 import com.pitterpotter.clover.Screen
+import com.pitterpotter.clover.TransactionSummary
 
 @Composable
-fun ResultScreen(viewModel: PosViewModel, success: Boolean, message: String) {
+fun ResultScreen(viewModel: PosViewModel, summary: TransactionSummary) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -32,20 +35,46 @@ fun ResultScreen(viewModel: PosViewModel, success: Boolean, message: String) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            imageVector = if (success) Icons.Default.CheckCircle else Icons.Default.Error,
-            contentDescription = if (success) "Success" else "Error",
-            tint = if (success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+            imageVector = if (summary.success) Icons.Default.CheckCircle else Icons.Default.Error,
+            contentDescription = if (summary.success) "Success" else "Error",
+            tint = if (summary.success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
             modifier = Modifier.size(80.dp)
         )
         Text(
-            text = if (success) "Payment Successful" else "Payment Failed",
+            text = if (summary.success) "Payment Successful" else "Payment Failed",
             style = MaterialTheme.typography.headlineMedium,
-            color = if (success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+            color = if (summary.success) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
         )
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge
-        )
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ResultRow("Total", "£${"%.2f".format(summary.totalAmount)}")
+            ResultRow("Gift card", "-£${"%.2f".format(summary.giftCardDiscount)}")
+            if (summary.remainingAmount > 0) {
+                ResultRow("Clover card", "£${"%.2f".format(summary.remainingAmount)}")
+            }
+            if (summary.giftCardBalanceAfter != null) {
+                ResultRow("Gift card balance", "£${"%.2f".format(summary.giftCardBalanceAfter)}")
+            }
+            summary.cloverPaymentId?.let { id ->
+                Text(
+                    text = "Clover payment: ${id.take(12)}…",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+        }
+
+        if (summary.errorMessage != null) {
+            Text(
+                text = summary.errorMessage,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = { viewModel.navigateTo(Screen.Home) },
@@ -53,5 +82,20 @@ fun ResultScreen(viewModel: PosViewModel, success: Boolean, message: String) {
         ) {
             Text("Done")
         }
+    }
+}
+
+@Composable
+private fun ResultRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = label, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
