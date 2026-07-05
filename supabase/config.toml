@@ -165,3 +165,9 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/stripe-party-webhook/deno.json"
 entrypoint = "./functions/stripe-party-webhook/index.ts"
+
+[functions.process-party-reminders]
+enabled = true
+verify_jwt = true
+import_map = "./functions/process-party-reminders/deno.json"
+entrypoint = "./functions/process-party-reminders/index.ts"
