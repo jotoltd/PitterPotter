@@ -116,12 +116,12 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
               <EditableText contentKey="corporate_desc2" page="parties" defaultValue="Please contact us to tailor a package for you." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
             </p>
           </div>
-          <button
-            onClick={() => handleBookParty('corporate')}
-            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
+          <a
+            href="mailto:info@pitterpotter.co.uk?subject=Corporate%20Event%20Enquiry"
+            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer text-center inline-block"
           >
-            <EditableText contentKey="corporate_button" page="parties" defaultValue="Book Party" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
-          </button>
+            <EditableText contentKey="corporate_button" page="parties" defaultValue="Enquire" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
+          </a>
         </div>
 
         {/* After Hour & Exclusive Hire */}
