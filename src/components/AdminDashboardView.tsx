@@ -1767,6 +1767,28 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </select>
               </div>
               <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Date *</label>
+                <input
+                  type="date"
+                  value={newBooking.date}
+                  onChange={(e) => setNewBooking({ ...newBooking, date: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Time *</label>
+                <select
+                  value={newBooking.time}
+                  onChange={(e) => setNewBooking({ ...newBooking, time: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                >
+                  <option value="10:00">10:00 am</option>
+                  <option value="12:00">12:00 pm</option>
+                  <option value="14:00">2:00 pm</option>
+                  <option value="16:00">4:00 pm</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Name *</label>
                 <input
                   type="text"
@@ -1792,28 +1814,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   onChange={(e) => setNewBooking({ ...newBooking, phone: e.target.value })}
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Date *</label>
-                <input
-                  type="date"
-                  value={newBooking.date}
-                  onChange={(e) => setNewBooking({ ...newBooking, date: e.target.value })}
-                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Time *</label>
-                <select
-                  value={newBooking.time}
-                  onChange={(e) => setNewBooking({ ...newBooking, time: e.target.value })}
-                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
-                >
-                  <option value="10:00">10:00 am</option>
-                  <option value="12:00">12:00 pm</option>
-                  <option value="14:00">2:00 pm</option>
-                  <option value="16:00">4:00 pm</option>
-                </select>
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Seats *</label>
