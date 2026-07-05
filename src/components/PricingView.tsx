@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { POTTERY_ITEMS } from '../data';
 import { Page, PotteryItem } from '../types';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import EditableText from './EditableText';
 
 interface PricingViewProps {
@@ -27,9 +27,15 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
   return (
     <div id="pricing-view" className="space-y-12 pb-20 pt-6">
       {/* Header */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8 text-center">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8 text-center space-y-6">
         <div className="mb-2">
           <EditableText contentKey="pricing_title" page="pricing" defaultValue="Prices" adminMode={adminMode} className="font-heading text-3xl md:text-4xl text-[#1B2D3C] tracking-tight" />
+        </div>
+        <div className="bg-[#DBE7E4]/40 border border-[#1B2D3C]/10 p-4 rounded-lg flex items-start gap-3 text-left">
+          <Info className="w-5 h-5 text-[#1B2D3C] shrink-0 mt-0.5" />
+          <p className="text-sm text-[#1B2D3C]/90 leading-relaxed">
+            <EditableText contentKey="pricing_studio_fee_notice" page="pricing" defaultValue="A £5.95 per painter studio fee applies to all sessions." adminMode={adminMode} className="text-sm text-[#1B2D3C]/90 leading-relaxed" />
+          </p>
         </div>
       </div>
 
