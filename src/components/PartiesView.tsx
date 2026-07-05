@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, MapPin, X } from 'lucide-react';
+import { MapPin, X } from 'lucide-react';
 import { Page } from '../types';
 import { Images } from '../images';
 import EditableText from './EditableText';
@@ -48,7 +48,7 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
       </div>
 
       {/* Main Services Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-start">
         {/* Birthday Parties — first/left */}
         <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-between space-y-6 rounded-xl">
           <div className="space-y-4">
@@ -123,18 +123,26 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
             <EditableText contentKey="corporate_button" page="parties" defaultValue="Book Party" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
         </div>
-      </div>
 
-      {/* Safety Notice Callout & Fine print */}
-      <div className="bg-white border border-[#1B2D3C]/20 p-6 rounded-lg flex gap-4 items-start">
-        <AlertCircle className="w-5 h-5 text-[#1B2D3C] shrink-0 mt-0.5" />
-        <div className="space-y-1.5">
-          <h4 className="font-bold text-[#1B2D3C] text-sm">
-            <EditableText contentKey="callout_heading" page="parties" defaultValue="Need Additional Personalizations?" adminMode={adminMode} className="text-sm text-[#1B2D3C]" />
-          </h4>
-          <p className="text-stone-600 text-xs leading-relaxed font-semibold">
-            <EditableText contentKey="callout_text" page="parties" defaultValue="Interested in after-hours parties, custom pottery requests, or bespoke writing and decorative lettering? Our professionals are on hand to provide writing services starting from £10.00 per item! Write to us details on info@pitterpotter.co.uk." adminMode={adminMode} className="text-xs text-stone-600 leading-relaxed" />
-          </p>
+        {/* After Hour & Exclusive Hire */}
+        <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-between space-y-6 rounded-xl">
+          <div className="space-y-4">
+            <h3 className="font-heading text-xl text-[#1B2D3C]">
+              <EditableText contentKey="after_hours_title" page="parties" defaultValue="After Hour & Exclusive Hire" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" />
+            </h3>
+            <div className="relative aspect-[4/3] overflow-hidden rounded-lg">
+              <EditableImage contentKey="after_hours_image" page="parties" defaultSrc={Images.studioHero} alt="After hour and exclusive hire" className="w-full h-full object-cover rounded-lg" adminMode={adminMode} />
+            </div>
+            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
+              <EditableText contentKey="after_hours_desc" page="parties" defaultValue="Interested in after-hours parties, custom pottery requests, or bespoke writing and decorative lettering? Our professionals are on hand to provide writing services starting from £10.00 per item! Write to us details on info@pitterpotter.co.uk." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
+            </p>
+          </div>
+          <a
+            href="mailto:info@pitterpotter.co.uk?subject=After%20Hour%20%26%20Exclusive%20Hire%20Enquiry"
+            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer text-center inline-block"
+          >
+            <EditableText contentKey="after_hours_button" page="parties" defaultValue="Enquire" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
+          </a>
         </div>
       </div>
 
