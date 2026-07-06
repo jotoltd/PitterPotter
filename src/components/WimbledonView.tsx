@@ -361,8 +361,8 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
               <EditableText contentKey="wimbledon_hours_heading" page="wimbledon" defaultValue="Opening Hours" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" />
             </h3>
             <div className="divide-y divide-[#1B2D3C]/10 text-sm text-[#1B2D3C] font-medium">
-              {OPENING_HOURS.map(({ day, time }) => (
-                <div key={day} className="flex justify-between py-2.5">
+              {OPENING_HOURS.map(({ day, time }, index) => (
+                <div key={`${day}-${index}`} className="flex justify-between py-2.5">
                   <span className="font-bold"><EditableText contentKey={`wimbledon_hours_${day.toLowerCase().replace(/[^a-z]/g, '_')}`} page="wimbledon" defaultValue={day} adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></span>
                   <span className={time.includes('Closed') ? 'text-stone-500' : ''}><EditableText contentKey={`wimbledon_hours_${day.toLowerCase().replace(/[^a-z]/g, '_')}_time`} page="wimbledon" defaultValue={time} adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></span>
                 </div>

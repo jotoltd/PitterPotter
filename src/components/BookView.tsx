@@ -85,8 +85,8 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
  <span className="text-xs font-black uppercase tracking-widest"><EditableText contentKey={`book_${studio.id.toLowerCase()}_hours_label`} page="book" defaultValue="Opening Hours" adminMode={adminMode} className="text-xs uppercase tracking-widest text-[#1B2D3C]" /></span>
  </div>
  <div className="divide-y divide-[#1B2D3C]/10 text-sm text-[#1B2D3C] font-medium">
- {studio.hours.map(({ day, time }) => (
- <div key={day} className="flex justify-between py-2">
+ {studio.hours.map(({ day, time }, index) => (
+ <div key={`${day}-${index}`} className="flex justify-between py-2">
  <span className="font-bold"><EditableText contentKey={`book_${studio.id.toLowerCase()}_hours_${day.toLowerCase().replace(/[^a-z]/g, '_')}`} page="book" defaultValue={day} adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></span>
  <span className={time.includes('Closed') ? 'text-stone-500 ' : ''}><EditableText contentKey={`book_${studio.id.toLowerCase()}_hours_${day.toLowerCase().replace(/[^a-z]/g, '_')}_time`} page="book" defaultValue={time} adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></span>
  </div>

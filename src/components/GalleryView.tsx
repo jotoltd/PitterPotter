@@ -27,8 +27,8 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
       {/* Masonry columns */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <div className="columns-2 md:columns-3 lg:columns-4 gap-3">
-          {resolvedGalleryItems.map((item) => (
-            <div key={item.id} className="break-inside-avoid mb-3">
+          {resolvedGalleryItems.map((item, index) => (
+            <div key={`${item.id}-${index}`} className="break-inside-avoid mb-3">
               <EditableImage
                 contentKey={`gallery_${item.id}_image`}
                 page="gallery"
