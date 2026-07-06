@@ -25,7 +25,10 @@ interface AdminCalendarProps {
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+const PARTY_TYPES = new Set(['birthday-party', 'baby-shower-hen', 'corporate']);
+
 export default function AdminCalendar({
+  bookings,
   selectedDate,
   onSelectDate,
   month,
@@ -37,12 +40,30 @@ export default function AdminCalendar({
     return eachDayOfInterval({ start, end });
   }, [month]);
 
+  const bookingsByDate = useMemo(() => {
+    const map: Record<string, { painting: boolean; babyPrints: boolean; party: boolean }> = {};
+    for (const b of bookings) {
+      if (!map[b.date]) map[b.date] = { painting: false, babyPrints: false, party: false };
+      if (b.sessionType === 'painting') map[b.date].painting = true;
+      else if (b.sessionType === 'clay-imprints') map[b.date].babyPrints = true;
+      else if (PARTY_TYPES.has(b.sessionType)) map[b.date].party = true;
+    }
+    return map;
+  }, [bookings]);
+
   return (
     <div className="bg-white border border-[#1B2D3C]/20 rounded-xl overflow-hidden">
       <div className="px-5 py-4 border-b border-[#1B2D3C]/10 flex items-center justify-between">
-        <h2 className="font-heading text-xl font-black text-[#1B2D3C]">
-          {format(month, 'MMMM yyyy')}
-        </h2>
+        <div className="flex items-center gap-4">
+          <h2 className="font-heading text-xl font-black text-[#1B2D3C]">
+            {format(month, 'MMMM yyyy')}
+          </h2>
+          <div className="hidden sm:flex items-center gap-3">
+            <span className="flex items-center gap-1 text-[10px] font-bold text-[#1B2D3C]/60"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />Painting</span>
+            <span className="flex items-center gap-1 text-[10px] font-bold text-[#1B2D3C]/60"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block" />Baby Prints</span>
+            <span className="flex items-center gap-1 text-[10px] font-bold text-[#1B2D3C]/60"><span className="w-2 h-2 rounded-full bg-purple-500 inline-block" />Party</span>
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => onMonthChange(subMonths(month, 1))}
@@ -80,6 +101,8 @@ export default function AdminCalendar({
           const inMonth = isSameMonth(day, month);
           const selected = selectedDate && isSameDay(day, selectedDate);
           const today = isToday(day);
+          const dateKey = format(day, 'yyyy-MM-dd');
+          const types = bookingsByDate[dateKey];
 
           return (
             <button
@@ -99,6 +122,13 @@ export default function AdminCalendar({
               `}>
                 {format(day, 'd')}
               </span>
+              {types && (
+                <div className="flex gap-0.5 mt-1 flex-wrap">
+                  {types.painting && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                  {types.babyPrints && <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />}
+                  {types.party && <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
+                </div>
+              )}
             </button>
           );
         })}
