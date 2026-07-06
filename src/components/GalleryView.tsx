@@ -29,6 +29,9 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
   const [loading, setLoading] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [imageUrl, setImageUrl] = useState('');
+  const [addMethod, setAddMethod] = useState<'file' | 'url'>('file');
 
   useEffect(() => {
     loadGalleryItems();
@@ -115,6 +118,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
 
   const handleAddImages = async (files: File[]) => {
     setLoading(true);
+    setUploadProgress(0);
     try {
       const newItems: GalleryItem[] = [];
       
@@ -123,7 +127,8 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
         
         if (staff?.sessionToken) {
-          for (const file of files) {
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
             const newId = `gallery${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             const reader = new FileReader();
             const base64 = await new Promise<string>((resolve) => {
@@ -140,6 +145,8 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
             if (data.url) {
               newItems.push({ id: newId, title: '', imageUrl: data.url });
             }
+            
+            setUploadProgress(Math.round(((i + 1) / files.length) * 100));
           }
         }
       }
@@ -154,6 +161,43 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
       showToast('Failed to add images', 'error');
     } finally {
       setLoading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleAddFromUrl = async (url: string) => {
+    setLoading(true);
+    setUploadProgress(0);
+    try {
+      const newId = `gallery${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      if (isSupabaseEnabled() && adminMode) {
+        const savedStaff = localStorage.getItem('pp_current_staff');
+        const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
+        
+        if (staff?.sessionToken) {
+          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ action: 'save', username: staff.username, sessionToken: staff.sessionToken, key: `gallery_${newId}_image`, page: 'gallery', value: url, type: 'image' }),
+          });
+          
+          if (res.ok) {
+            setItems([...items, { id: newId, title: '', imageUrl: url }]);
+            await saveOrder([...items, { id: newId, title: '', imageUrl: url }]);
+            setUploadProgress(100);
+            showToast('Image added from URL!', 'success');
+          } else {
+            throw new Error('Failed to save image URL');
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to add image from URL:', err);
+      showToast('Failed to add image from URL', 'error');
+    } finally {
+      setLoading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -255,35 +299,98 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
           <div className="bg-white border-2 border-[#1B2D3C]/20 rounded-xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-heading text-base font-black text-[#1B2D3C]">Add New Image</h3>
-              <button onClick={() => setIsAdding(false)} className="p-1.5 rounded-full hover:bg-[#1B2D3C]/5 cursor-pointer">
+              <button onClick={() => { setIsAdding(false); setUploadProgress(0); setImageUrl(''); }} className="p-1.5 rounded-full hover:bg-[#1B2D3C]/5 cursor-pointer">
                 <Trash2 className="w-4 h-4 text-[#1B2D3C]/50" />
               </button>
             </div>
-            <div>
-              <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Image</label>
-              <div className="flex items-center gap-4">
+            
+            {/* Method Toggle */}
+            <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setAddMethod('file')}
+                className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 ${addMethod === 'file' ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'}`}
+              >
+                <Upload className="w-3 h-3" /> Upload File
+              </button>
+              <button
+                type="button"
+                onClick={() => setAddMethod('url')}
+                className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 ${addMethod === 'url' ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'}`}
+              >
+                <Plus className="w-3 h-3" /> From URL
+              </button>
+            </div>
+            
+            {addMethod === 'file' ? (
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Images</label>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.multiple = true;
+                      input.onchange = (e) => {
+                        const files = Array.from((e.target as HTMLInputElement).files || []);
+                        if (files.length > 0) {
+                          handleAddImages(files);
+                          setIsAdding(false);
+                        }
+                      };
+                      input.click();
+                    }}
+                    disabled={loading}
+                    className="w-20 h-20 border-2 border-dashed border-[#1B2D3C]/20 rounded-lg flex items-center justify-center hover:border-[#1B2D3C] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Upload className="w-5 h-5 text-[#1B2D3C]/40" />
+                  </button>
+                  <p className="text-xs text-[#1B2D3C]/60">Click to upload images (multiple allowed)</p>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Image URL</label>
+                <input
+                  type="url"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className="w-full px-4 py-3 border-2 border-[#1B2D3C]/20 rounded-xl text-sm text-[#1B2D3C] font-medium focus:outline-none focus:border-amber-400"
+                  disabled={loading}
+                />
                 <button
                   onClick={() => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = 'image/*';
-                    input.multiple = true;
-                    input.onchange = (e) => {
-                      const files = Array.from((e.target as HTMLInputElement).files || []);
-                      if (files.length > 0) {
-                        handleAddImages(files);
-                        setIsAdding(false);
-                      }
-                    };
-                    input.click();
+                    if (imageUrl.trim()) {
+                      handleAddFromUrl(imageUrl.trim());
+                      setImageUrl('');
+                      setIsAdding(false);
+                    }
                   }}
-                  className="w-20 h-20 border-2 border-dashed border-[#1B2D3C]/20 rounded-lg flex items-center justify-center hover:border-[#1B2D3C] cursor-pointer transition-colors"
+                  disabled={loading || !imageUrl.trim()}
+                  className="mt-3 w-full py-3 bg-[#1B2D3C] text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#486581] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Upload className="w-5 h-5 text-[#1B2D3C]/40" />
+                  {loading ? 'Adding...' : 'Add Image'}
                 </button>
-                <p className="text-xs text-[#1B2D3C]/60">Click to upload images (multiple allowed)</p>
               </div>
-            </div>
+            )}
+            
+            {/* Progress Bar */}
+            {loading && uploadProgress > 0 && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-[#1B2D3C]/60">
+                  <span>Uploading...</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="w-full bg-[#1B2D3C]/10 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-[#1B2D3C] h-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
