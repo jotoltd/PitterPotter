@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Page, BookingInquiry } from '../types';
 import Calendar from './Calendar';
 import { format, getDay } from 'date-fns';
-import { Clock, Calendar as CalendarIcon, ArrowRight, Users, MapPin, Gift, Heart, Briefcase, Copy } from 'lucide-react';
+import { Clock, Calendar as CalendarIcon, ArrowRight, Users, MapPin, Gift, Heart, Briefcase, Copy, Download, Share2 } from 'lucide-react';
 import { useToast } from './ToastContext';
 import { getRemainingCapacity, createPublicBooking, getBusyDates } from '../lib/bookings';
 import { getSlots } from '../lib/timeSlots';
@@ -287,6 +287,101 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
 
   const timeSlots = date ? getTimeSlots(date) : [];
 
+  const handleDownloadInvitation = () => {
+    const guestCount = guests === '' ? 1 : guests;
+    const dateStr = date ? format(date, 'EEEE, do MMMM yyyy') : '';
+    const studioAddress = studio === 'Putney'
+      ? '234 Upper Richmond Road, Putney SW15 6TG'
+      : '52 Wimbledon Hill Road, Wimbledon SW19 7PA';
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Party Invitation – ${bookingRef}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #fff; }
+  @page { size: A5 landscape; margin: 0; }
+  .card {
+    width: 210mm; height: 148mm;
+    background: linear-gradient(135deg, #1B2D3C 0%, #2d4a5e 60%, #1B2D3C 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 28px 40px; position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: ''; position: absolute; top: -60px; right: -60px;
+    width: 220px; height: 220px; border-radius: 50%;
+    background: rgba(219,231,228,0.08);
+  }
+  .card::after {
+    content: ''; position: absolute; bottom: -40px; left: -40px;
+    width: 160px; height: 160px; border-radius: 50%;
+    background: rgba(219,231,228,0.06);
+  }
+  .logo { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700; color: #DBE7E4; letter-spacing: 6px; text-transform: uppercase; margin-bottom: 6px; }
+  .divider { width: 60px; height: 1px; background: #DBE7E4; opacity: 0.4; margin: 0 auto 16px; }
+  .you-are-invited { font-family: 'Playfair Display', serif; font-size: 11px; font-weight: 400; color: #DBE7E4; opacity: 0.7; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 10px; }
+  .event-title { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 900; color: #fff; text-align: center; line-height: 1.1; margin-bottom: 20px; }
+  .details-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; width: 100%; margin-bottom: 18px; }
+  .detail-item { text-align: center; }
+  .detail-label { font-size: 8px; font-weight: 700; color: #DBE7E4; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; }
+  .detail-value { font-size: 11px; font-weight: 700; color: #fff; line-height: 1.3; }
+  .ref-line { font-size: 8px; color: #DBE7E4; opacity: 0.5; letter-spacing: 1px; margin-top: 4px; }
+  .address-line { font-size: 9px; font-weight: 600; color: #DBE7E4; opacity: 0.65; text-align: center; margin-top: 2px; }
+  .hosted-by { font-size: 10px; font-weight: 600; color: #DBE7E4; opacity: 0.8; margin-top: 8px; }
+  .accent-bar { width: 100%; height: 3px; background: linear-gradient(90deg, transparent, #DBE7E4, transparent); opacity: 0.3; margin: 14px 0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <p class="logo">Pitter Potter</p>
+  <p class="you-are-invited">You're invited</p>
+  <div class="divider"></div>
+  <h1 class="event-title">${info.title}</h1>
+  <div class="details-grid">
+    <div class="detail-item">
+      <p class="detail-label">Date</p>
+      <p class="detail-value">${dateStr}</p>
+    </div>
+    <div class="detail-item">
+      <p class="detail-label">Time</p>
+      <p class="detail-value">${time}</p>
+    </div>
+    <div class="detail-item">
+      <p class="detail-label">Guests</p>
+      <p class="detail-value">${guestCount}</p>
+    </div>
+  </div>
+  <div class="accent-bar"></div>
+  <p class="detail-label">Location</p>
+  <p class="detail-value" style="text-align:center;margin-top:3px">${studio} Studio</p>
+  <p class="address-line">${studioAddress}</p>
+  <p class="hosted-by">Hosted by ${name}</p>
+  <p class="ref-line">Ref: ${bookingRef}</p>
+</div>
+</body>
+</html>`;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank');
+    if (win) { win.onload = () => { win.print(); }; }
+  };
+
+  const handleShareInvitation = async () => {
+    const guestCount = guests === '' ? 1 : guests;
+    const dateStr = date ? format(date, 'EEEE, do MMMM yyyy') : '';
+    const shareText = `🎉 You're invited to a ${info.title} at Pitter Potter ${studio}!\n📅 ${dateStr}\n⏰ ${time}\n👥 ${guestCount} guest${guestCount !== 1 ? 's' : ''}\n\nRef: ${bookingRef}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `${info.title} at Pitter Potter`, text: shareText });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(shareText);
+      showToast('Invitation text copied to clipboard!', 'success');
+    }
+  };
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-[#FFFFFF] flex items-center justify-center px-4 py-20">
@@ -294,7 +389,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
           <div className="p-4 bg-[#D6E2E9] rounded-full inline-block">
             <IconComponent className="w-8 h-8 text-[#1B2D3C]" />
           </div>
-          <h2 className="font-heading text-2xl font-black text-[#1B2D3C]"><EditableText contentKey={`party_${partyType}_success_title`} page="party-booking" defaultValue="Booking Request Sent!" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" /></h2>
+          <h2 className="font-heading text-2xl font-black text-[#1B2D3C]"><EditableText contentKey={`party_${partyType}_success_title`} page="party-booking" defaultValue="Booking Confirmed!" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" /></h2>
           <p className="text-sm text-[#1B2D3C]/70 font-medium">
             <EditableText contentKey={`party_${partyType}_success_message`} page="party-booking" defaultValue={`Your ${info.title.toLowerCase()} booking at our ${studio} studio has been submitted. We'll be in touch shortly to confirm your event.`} adminMode={adminMode} className="text-sm text-[#1B2D3C]/70" />
           </p>
@@ -320,6 +415,27 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
             <p><span className="font-bold"><EditableText contentKey="party_name_label" page="party-booking" defaultValue="Name:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {name}</p>
             <p><span className="font-bold"><EditableText contentKey="party_phone_label" page="party-booking" defaultValue="Phone:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {phone}</p>
           </div>
+
+          {/* Invitation actions */}
+          <div className="bg-[#1B2D3C] rounded-xl p-5 space-y-3">
+            <p className="text-white font-black text-sm">Your Party Invitation</p>
+            <p className="text-white/60 text-xs font-medium">Download a beautifully designed invitation card to share with your guests.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleDownloadInvitation}
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-white transition-all cursor-pointer"
+              >
+                <Download className="w-4 h-4" /> Download PDF
+              </button>
+              <button
+                onClick={handleShareInvitation}
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-white/10 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-white/20 transition-all cursor-pointer border border-white/20"
+              >
+                <Share2 className="w-4 h-4" /> Share
+              </button>
+            </div>
+          </div>
+
           <button
             onClick={() => setCurrentPage('home')}
             className="w-full py-3 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer"
