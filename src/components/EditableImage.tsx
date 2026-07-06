@@ -221,9 +221,9 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
                 </div>
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-                  {existingImages.map((img) => (
+                  {existingImages.map((img, index) => (
                     <button
-                      key={img.id}
+                      key={`${img.id}-${index}`}
                       onClick={() => handleSelectImage(img.value)}
                       className="relative aspect-square rounded-lg overflow-hidden border-2 border-[#1B2D3C]/10 hover:border-amber-400 transition-all cursor-pointer group"
                       title={`${img.page} / ${img.key}`}
