@@ -26,7 +26,6 @@ interface AdminCalendarProps {
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function AdminCalendar({
-  bookings,
   selectedDate,
   onSelectDate,
   month,
@@ -37,16 +36,6 @@ export default function AdminCalendar({
     const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
     return eachDayOfInterval({ start, end });
   }, [month]);
-
-  const bookingsByDate = useMemo(() => {
-    const map = new Map<string, BookingInquiry[]>();
-    for (const b of bookings) {
-      const list = map.get(b.date) || [];
-      list.push(b);
-      map.set(b.date, list);
-    }
-    return map;
-  }, [bookings]);
 
   return (
     <div className="bg-white border border-[#1B2D3C]/20 rounded-xl overflow-hidden">
@@ -88,12 +77,9 @@ export default function AdminCalendar({
 
       <div className="grid grid-cols-7 auto-rows-fr">
         {days.map((day) => {
-          const dateStr = format(day, 'yyyy-MM-dd');
-          const dayBookings = bookingsByDate.get(dateStr) || [];
           const inMonth = isSameMonth(day, month);
           const selected = selectedDate && isSameDay(day, selectedDate);
           const today = isToday(day);
-          const pending = dayBookings.filter((b) => b.status === 'pending').length;
 
           return (
             <button
@@ -107,37 +93,12 @@ export default function AdminCalendar({
                 hover:bg-[#F8FAFB]
               `}
             >
-              <div className="flex items-center justify-between mb-1">
-                <span className={`
-                  w-7 h-7 flex items-center justify-center text-sm font-black rounded-full
-                  ${today ? 'bg-[#1B2D3C] text-white' : 'text-[#1B2D3C]'}
-                `}>
-                  {format(day, 'd')}
-                </span>
-                {dayBookings.length > 0 && (
-                  <span className={`
-                    text-[9px] font-bold px-1.5 py-0.5 rounded-full
-                    ${pending > 0 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}
-                  `}>
-                    {dayBookings.length}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-1 justify-center mt-1">
-                {dayBookings.slice(0, 5).map((b) => (
-                  <span
-                    key={b.id}
-                    className={`
-                      w-1.5 h-1.5 rounded-full
-                      ${b.status === 'pending' ? 'bg-amber-400' : 'bg-[#1B2D3C]/60'}
-                    `}
-                  />
-                ))}
-                {dayBookings.length > 5 && (
-                  <span className="text-[9px] font-bold text-[#1B2D3C]/60">+{dayBookings.length - 5}</span>
-                )}
-              </div>
+              <span className={`
+                w-7 h-7 flex items-center justify-center text-sm font-black rounded-full
+                ${today ? 'bg-[#1B2D3C] text-white' : 'text-[#1B2D3C]'}
+              `}>
+                {format(day, 'd')}
+              </span>
             </button>
           );
         })}
