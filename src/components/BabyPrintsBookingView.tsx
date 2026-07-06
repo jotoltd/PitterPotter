@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { MapPin, CalendarDays, ArrowRight, CheckCircle2, Copy, Loader2, Users } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Copy, Loader2 } from 'lucide-react';
 import { useToast } from './ToastContext';
 import { format, getDay, isBefore, startOfDay } from 'date-fns';
 import { BookingInquiry } from '../types';
@@ -26,7 +26,7 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState<string>('');
   const [babiesCount, setBabiesCount] = useState<number>(1);
-  const [pramsCount, setPramsCount] = useState<number>(0);
+  const [adultsCount, setAdultsCount] = useState<number>(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -98,7 +98,7 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
       status: 'confirmed',
       source: 'online',
       requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-      notes: `Babies: ${babiesCount}, Prams: ${pramsCount}${notes ? ` | ${notes}` : ''}`,
+      notes: `Babies: ${babiesCount}, Adults: ${adultsCount}${notes ? ` | ${notes}` : ''}`,
       estimatedPrice: babiesCount * 5.95,
     };
 
@@ -113,7 +113,7 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
       setDate(undefined);
       setTime('');
       setBabiesCount(1);
-      setPramsCount(0);
+      setAdultsCount(1);
       setNotes('');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save booking. Please try again.';
@@ -127,8 +127,8 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
     <div id="baby-prints-booking" className="pb-20 pt-6">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-8">
-          <h1 className="font-heading text-3xl md:text-4xl font-black italic tracking-tight text-[#1B2D3C]">
-            <EditableText contentKey="babyprints_book_title" page="baby-prints-book" defaultValue="Book a Baby Print Session" adminMode={adminMode} className="font-heading text-3xl md:text-4xl italic text-[#1B2D3C]" />
+          <h1 className="font-heading text-3xl md:text-4xl font-black tracking-tight text-[#1B2D3C]">
+            <EditableText contentKey="babyprints_book_title" page="baby-prints-book" defaultValue="Book a Baby Print Session" adminMode={adminMode} className="font-heading text-3xl md:text-4xl text-[#1B2D3C]" />
           </h1>
           <p className="text-xs text-stone-500 mt-2 font-semibold">
             <EditableText contentKey="babyprints_book_subtitle" page="baby-prints-book" defaultValue="Choose your studio, date and let us know how many little ones to expect." adminMode={adminMode} className="text-xs text-stone-500" />
@@ -151,8 +151,8 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
                 onChange={(e) => setStudio(e.target.value as 'Putney' | 'Wimbledon')}
                 className="w-full py-3 px-4 border border-[#1B2D3C]/20 rounded-lg bg-white text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/60 appearance-none cursor-pointer"
               >
-                <option value="Putney">Putney Studio — 234 Upper Richmond Rd</option>
-                <option value="Wimbledon">Wimbledon Studio — 52 Wimbledon Hill Rd</option>
+                <option value="Putney">Putney</option>
+                <option value="Wimbledon">Wimbledon</option>
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                 <svg className="w-4 h-4 text-[#1B2D3C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
@@ -198,7 +198,7 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
             )}
           </div>
 
-          {/* Babies and Prams */}
+          {/* Babies and Adults */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">How many babies? *</label>
@@ -209,11 +209,11 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
               </div>
             </div>
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">How many prams?</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">How many adults?</label>
               <div className="flex items-center border border-[#1B2D3C]/20 bg-white overflow-hidden rounded-lg max-w-[180px]">
-                <button type="button" onClick={() => setPramsCount((c) => Math.max(0, c - 1))} className="px-5 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">−</button>
-                <span className="flex-1 text-center text-sm font-black text-[#1B2D3C]">{pramsCount}</span>
-                <button type="button" onClick={() => setPramsCount((c) => c + 1)} className="px-5 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">+</button>
+                <button type="button" onClick={() => setAdultsCount((c) => Math.max(0, c - 1))} className="px-5 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">−</button>
+                <span className="flex-1 text-center text-sm font-black text-[#1B2D3C]">{adultsCount}</span>
+                <button type="button" onClick={() => setAdultsCount((c) => c + 1)} className="px-5 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">+</button>
               </div>
             </div>
           </div>
