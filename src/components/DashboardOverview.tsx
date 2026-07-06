@@ -30,9 +30,9 @@ const SESSION_BADGE: Record<string, string> = {
 };
 
 const SESSION_TYPE_BUTTONS = [
-  { label: 'Painting', type: 'painting', color: 'bg-emerald-500 hover:bg-emerald-600' },
-  { label: 'Party', type: 'birthday-party', color: 'bg-purple-500 hover:bg-purple-600' },
-  { label: 'Baby Prints', type: 'clay-imprints', color: 'bg-orange-500 hover:bg-orange-600' },
+  { label: 'New Booking', type: 'painting', color: 'bg-emerald-500 hover:bg-emerald-600' },
+  { label: 'New Party', type: 'birthday-party', color: 'bg-purple-500 hover:bg-purple-600' },
+  { label: 'New Baby Print', type: 'clay-imprints', color: 'bg-orange-500 hover:bg-orange-600' },
 ];
 
 function BookingModal({
@@ -120,7 +120,6 @@ function BookingModal({
         {/* Add booking buttons — always shown when handler present */}
         {onNavigateToAddBooking && sorted.length > 0 && (
           <div className="px-5 py-3 border-b border-[#1B2D3C]/10">
-            <p className="text-[10px] font-bold text-[#1B2D3C]/40 uppercase tracking-wider mb-2">Add booking for this date</p>
             <div className="grid grid-cols-3 gap-1.5">
               {SESSION_TYPE_BUTTONS.map(btn => (
                 <button key={btn.type}
@@ -140,8 +139,7 @@ function BookingModal({
               <p className="text-sm font-bold text-[#1B2D3C]/40">No bookings for this date</p>
               {onNavigateToAddBooking && (
                 <div className="space-y-2">
-                  <p className="text-[10px] font-bold text-[#1B2D3C]/40 uppercase tracking-wider">Add a booking for this date</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {SESSION_TYPE_BUTTONS.map(btn => (
                       <button key={btn.type}
                         onClick={() => { onClose(); onNavigateToAddBooking({ date, sessionType: btn.type }); }}
