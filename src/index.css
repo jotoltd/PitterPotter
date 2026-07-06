@@ -95,9 +95,9 @@ textarea:focus-visible {
 }
 
 /* Disable all links and navigation when in admin edit mode */
-body.admin-mode-active a:not([data-editable]),
-body.admin-mode-active button:not([data-editable]):not([role="button"]):not(.cursor-pointer),
-body.admin-mode-active [role="button"]:not([data-editable]) {
+body.admin-mode-active a:not([data-editable]):not(.z-\[200\] *),
+body.admin-mode-active button:not([data-editable]):not([role="button"]):not(.cursor-pointer):not(.z-\[200\] *),
+body.admin-mode-active [role="button"]:not([data-editable]):not(.z-\[200\] *) {
   pointer-events: none;
   opacity: 0.7;
 }
