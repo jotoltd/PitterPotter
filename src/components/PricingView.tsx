@@ -46,7 +46,8 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
     price: '',
     category: 'tableware',
     description: '',
-    isPartyEligible: false
+    isPartyEligible: false,
+    imageFile: null as File | null
   });
 
   useEffect(() => {
@@ -156,6 +157,31 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
     setLoading(true);
     try {
       const newId = `item${Date.now()}`;
+      let imageUrl = '';
+      
+      // Upload image first if provided
+      if (newItem.imageFile && isSupabaseEnabled() && adminMode) {
+        const savedStaff = localStorage.getItem('pp_current_staff');
+        const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
+        
+        if (staff?.sessionToken) {
+          const reader = new FileReader();
+          const base64 = await new Promise<string>((resolve) => {
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.readAsDataURL(newItem.imageFile!);
+          });
+          
+          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ action: 'upload', username: staff.username, sessionToken: staff.sessionToken, key: `item_${newId}_image_0`, page: 'pricing', fileData: base64, fileName: newItem.imageFile.name }),
+          });
+          const data = await res.json();
+          if (data.url) {
+            imageUrl = data.url;
+          }
+        }
+      }
       
       if (isSupabaseEnabled() && adminMode) {
         const savedStaff = localStorage.getItem('pp_current_staff');
@@ -187,10 +213,10 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
         price: newItem.price,
         category: newItem.category,
         description: newItem.description,
-        imageUrls: [],
+        imageUrls: imageUrl ? [imageUrl] : [],
         isPartyEligible: newItem.isPartyEligible
       }]);
-      setNewItem({ name: '', price: '', category: 'tableware', description: '', isPartyEligible: false });
+      setNewItem({ name: '', price: '', category: 'tableware', description: '', isPartyEligible: false, imageFile: null });
       setIsAdding(false);
       showToast('Item added!', 'success');
     } catch (err) {
@@ -425,6 +451,41 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
                 className="w-full px-4 py-3 border-2 border-[#1B2D3C]/20 rounded-xl text-sm text-[#1B2D3C] font-medium focus:outline-none focus:border-amber-400 resize-y"
                 placeholder="Item description..."
               />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Image (optional)</label>
+              <div className="flex items-center gap-4">
+                {newItem.imageFile ? (
+                  <div className="relative w-20 h-20">
+                    <img src={URL.createObjectURL(newItem.imageFile)} alt="Preview" className="w-full h-full object-cover rounded-lg border-2 border-[#1B2D3C]/20" />
+                    <button
+                      onClick={() => setNewItem({ ...newItem, imageFile: null })}
+                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) {
+                          setNewItem({ ...newItem, imageFile: file });
+                        }
+                      };
+                      input.click();
+                    }}
+                    className="w-20 h-20 border-2 border-dashed border-[#1B2D3C]/20 rounded-lg flex items-center justify-center hover:border-[#1B2D3C] cursor-pointer transition-colors"
+                  >
+                    <Upload className="w-5 h-5 text-[#1B2D3C]/40" />
+                  </button>
+                )}
+                <p className="text-xs text-[#1B2D3C]/60">Upload an image for this item (optional)</p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <input
