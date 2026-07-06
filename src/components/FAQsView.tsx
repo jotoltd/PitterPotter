@@ -1,10 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FAQ_ITEMS } from '../data';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import EditableText from './EditableText';
+import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import { Staff } from '../types';
+import { useToast } from './ToastContext';
 
 import { Page } from '../types';
+
+interface FAQItem {
+  id: string;
+  question: string;
+  answer: string;
+}
 
 interface FAQsViewProps {
   adminMode?: boolean;
@@ -12,78 +21,278 @@ interface FAQsViewProps {
 }
 
 export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsViewProps) {
- const [expandedId, setExpandedId] = useState<string | null>('f1');
+  const { showToast } = useToast();
+  const [expandedId, setExpandedId] = useState<string | null>('f1');
+  const [faqs, setFaqs] = useState<FAQItem[]>(FAQ_ITEMS);
+  const [isAdding, setIsAdding] = useState(false);
+  const [newQuestion, setNewQuestion] = useState('');
+  const [newAnswer, setNewAnswer] = useState('');
+  const [loading, setLoading] = useState(false);
 
- const toggleExpand = (id: string) => {
- setExpandedId(expandedId === id ? null : id);
- };
+  useEffect(() => {
+    loadFAQs();
+  }, []);
 
- return (
- <div id="faqs-view" className="space-y-8 pb-20 pt-6 max-w-3xl mx-auto px-4">
- {/* Title Header */}
- <div className="text-center">
- <EditableText contentKey="faqs_title" page="faqs" defaultValue="FAQs" adminMode={adminMode} className="font-heading text-3xl font-black text-[#1B2D3C]" />
- </div>
+  const loadFAQs = async () => {
+    if (!isSupabaseEnabled()) return;
+    
+    try {
+      const { data } = await supabase!
+        .from('content')
+        .select('key, value')
+        .eq('page', 'faqs')
+        .like('key', 'faq_%_question');
+      
+      if (data && data.length > 0) {
+        const loadedFaqs: FAQItem[] = [];
+        const ids = new Set<string>();
+        
+        data.forEach(item => {
+          const id = item.key.replace('_question', '');
+          if (!ids.has(id)) {
+            ids.add(id);
+            loadedFaqs.push({
+              id,
+              question: item.value,
+              answer: ''
+            });
+          }
+        });
+        
+        // Load answers
+        const { data: answerData } = await supabase!
+          .from('content')
+          .select('key, value')
+          .eq('page', 'faqs')
+          .like('key', 'faq_%_answer_0');
+        
+        if (answerData) {
+          answerData.forEach(item => {
+            const id = item.key.replace('_answer_0', '');
+            const faq = loadedFaqs.find(f => f.id === id);
+            if (faq) {
+              faq.answer = item.value;
+            }
+          });
+        }
+        
+        if (loadedFaqs.length > 0) {
+          setFaqs(loadedFaqs);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load FAQs:', err);
+    }
+  };
 
- {/* Accordion list */}
- <div className="divide-y divide-[#1B2D3C]/10">
- {FAQ_ITEMS.map((faq) => {
- const isExpanded = expandedId === faq.id;
- return (
- <div key={faq.id} id={`faq-item-${faq.id}`}>
- <button
- onClick={() => toggleExpand(faq.id)}
- className="w-full py-4 flex justify-between items-center text-left focus:outline-none cursor-pointer"
- >
- <span className="text-[#1B2D3C] text-sm md:text-base leading-snug pr-4">
- <EditableText contentKey={`faq_${faq.id}_question`} page="faqs" defaultValue={faq.question} adminMode={adminMode} className="text-sm md:text-base text-[#1B2D3C] leading-snug" />
- </span>
- <div className="shrink-0 text-[#1B2D3C]">
- {isExpanded ? (
- <ChevronUp className="w-5 h-5" />
- ) : (
- <ChevronDown className="w-5 h-5" />
- )}
- </div>
- </button>
+  const toggleExpand = (id: string) => {
+    setExpandedId(expandedId === id ? null : id);
+  };
 
- <AnimatePresence initial={false}>
- {isExpanded && (
- <motion.div
- initial={{ height: 0, opacity: 0 }}
- animate={{ height: 'auto', opacity: 1 }}
- exit={{ height: 0, opacity: 0 }}
- transition={{ duration: 0.25, ease: 'easeInOut' }}
- className="overflow-hidden"
- >
- <div className="pb-4 text-xs md:text-sm text-[#1B2D3C]/80 leading-relaxed font-medium space-y-2">
- {faq.answer.split('\n\n').map((para, pIdx) => (
- <p key={pIdx}><EditableText contentKey={`faq_${faq.id}_answer_${pIdx}`} page="faqs" defaultValue={para} adminMode={adminMode} className="text-xs md:text-sm text-[#1B2D3C]/80 leading-relaxed" /></p>
- ))}
- </div>
- </motion.div>
- )}
- </AnimatePresence>
- </div>
- );
- })}
- </div>
+  const handleAddFAQ = async () => {
+    if (!newQuestion.trim() || !newAnswer.trim()) {
+      showToast('Please fill in both question and answer', 'error');
+      return;
+    }
 
- {/* Help Callout */}
- <div className="bg-white border border-[#1B2D3C]/20 p-6 rounded-lg flex items-center justify-between gap-6 flex-col md:flex-row text-center md:text-left">
- <div className="space-y-1">
- <p className="font-bold text-[#1B2D3C] text-sm uppercase tracking-wider"><EditableText contentKey="help_callout_title" page="faqs" defaultValue="Still have questions?" adminMode={adminMode} className="text-sm uppercase tracking-wider text-[#1B2D3C]" /></p>
- <p className="text-xs text-stone-500 font-semibold"><EditableText contentKey="help_callout_text" page="faqs" defaultValue="Contact us if you have any more questions." adminMode={adminMode} className="text-xs text-stone-500" /></p>
- </div>
- <div className="flex gap-3">
- <button
- onClick={() => setCurrentPage('contact-info')}
- className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#DBE7E4] text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer rounded-lg whitespace-nowrap"
- >
- <EditableText contentKey="help_callout_button" page="faqs" defaultValue="Contact Us" adminMode={adminMode} className="text-sm uppercase tracking-widest text-[#1B2D3C]" />
- </button>
- </div>
- </div>
- </div>
- );
+    setLoading(true);
+    try {
+      const newId = `f${Date.now()}`;
+      
+      if (isSupabaseEnabled() && adminMode) {
+        const savedStaff = localStorage.getItem('pp_current_staff');
+        const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
+        
+        if (staff?.sessionToken) {
+          // Save question
+          const qRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ action: 'save', username: staff.username, sessionToken: staff.sessionToken, key: `faq_${newId}_question`, page: 'faqs', value: newQuestion, type: 'text' }),
+          });
+          if (!qRes.ok) throw new Error('Failed to save question');
+          
+          // Save answer
+          const aRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ action: 'save', username: staff.username, sessionToken: staff.sessionToken, key: `faq_${newId}_answer_0`, page: 'faqs', value: newAnswer, type: 'text' }),
+          });
+          if (!aRes.ok) throw new Error('Failed to save answer');
+        }
+      }
+      
+      setFaqs([...faqs, { id: newId, question: newQuestion, answer: newAnswer }]);
+      setNewQuestion('');
+      setNewAnswer('');
+      setIsAdding(false);
+      showToast('FAQ added!', 'success');
+    } catch (err) {
+      console.error('Failed to add FAQ:', err);
+      showToast('Failed to add FAQ', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteFAQ = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this FAQ?')) return;
+    
+    setLoading(true);
+    try {
+      if (isSupabaseEnabled() && adminMode) {
+        const savedStaff = localStorage.getItem('pp_current_staff');
+        const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
+        
+        if (staff?.sessionToken) {
+          // Delete question and answer
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ action: 'delete', username: staff.username, sessionToken: staff.sessionToken, key: `faq_${id}_question`, page: 'faqs' }),
+          });
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ action: 'delete', username: staff.username, sessionToken: staff.sessionToken, key: `faq_${id}_answer_0`, page: 'faqs' }),
+          });
+        }
+      }
+      
+      setFaqs(faqs.filter(f => f.id !== id));
+      if (expandedId === id) setExpandedId(null);
+      showToast('FAQ deleted', 'success');
+    } catch (err) {
+      console.error('Failed to delete FAQ:', err);
+      showToast('Failed to delete FAQ', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div id="faqs-view" className="space-y-8 pb-20 pt-6 max-w-3xl mx-auto px-4">
+      {/* Title Header */}
+      <div className="text-center flex items-center justify-between gap-4">
+        <EditableText contentKey="faqs_title" page="faqs" defaultValue="FAQs" adminMode={adminMode} className="font-heading text-3xl font-black text-[#1B2D3C]" />
+        {adminMode && (
+          <button
+            onClick={() => setIsAdding(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> Add FAQ
+          </button>
+        )}
+      </div>
+
+      {/* Add FAQ Form */}
+      {isAdding && (
+        <div className="bg-white border-2 border-[#1B2D3C]/20 rounded-xl p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-heading text-base font-black text-[#1B2D3C]">Add New FAQ</h3>
+            <button onClick={() => setIsAdding(false)} className="p-1.5 rounded-full hover:bg-[#1B2D3C]/5 cursor-pointer">
+              <X className="w-4 h-4 text-[#1B2D3C]/50" />
+            </button>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Question</label>
+            <input
+              type="text"
+              value={newQuestion}
+              onChange={(e) => setNewQuestion(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-[#1B2D3C]/20 rounded-xl text-sm text-[#1B2D3C] font-medium focus:outline-none focus:border-amber-400"
+              placeholder="Enter your question..."
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Answer</label>
+            <textarea
+              value={newAnswer}
+              onChange={(e) => setNewAnswer(e.target.value)}
+              rows={4}
+              className="w-full px-4 py-3 border-2 border-[#1B2D3C]/20 rounded-xl text-sm text-[#1B2D3C] font-medium focus:outline-none focus:border-amber-400 resize-y"
+              placeholder="Enter the answer..."
+            />
+          </div>
+          <button
+            onClick={handleAddFAQ}
+            disabled={loading}
+            className="w-full py-3 bg-[#1B2D3C] text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#486581] cursor-pointer transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Adding...' : 'Add FAQ'}
+          </button>
+        </div>
+      )}
+
+      {/* Accordion list */}
+      <div className="divide-y divide-[#1B2D3C]/10">
+        {faqs.map((faq) => {
+          const isExpanded = expandedId === faq.id;
+          return (
+            <div key={faq.id} id={`faq-item-${faq.id}`} className="relative">
+              <button
+                onClick={() => toggleExpand(faq.id)}
+                className="w-full py-4 flex justify-between items-center text-left focus:outline-none cursor-pointer pr-12"
+              >
+                <span className="text-[#1B2D3C] text-sm md:text-base leading-snug pr-4">
+                  <EditableText contentKey={`faq_${faq.id}_question`} page="faqs" defaultValue={faq.question} adminMode={adminMode} className="text-sm md:text-base text-[#1B2D3C] leading-snug" />
+                </span>
+                <div className="shrink-0 text-[#1B2D3C]">
+                  {isExpanded ? (
+                    <ChevronUp className="w-5 h-5" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5" />
+                  )}
+                </div>
+              </button>
+
+              {adminMode && (
+                <button
+                  onClick={() => handleDeleteFAQ(faq.id)}
+                  className="absolute top-4 right-0 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                  title="Delete FAQ"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+
+              <AnimatePresence initial={false}>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: 'easeInOut' }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pb-4 text-xs md:text-sm text-[#1B2D3C]/80 leading-relaxed font-medium space-y-2">
+                      {faq.answer.split('\n\n').map((para, pIdx) => (
+                        <p key={pIdx}><EditableText contentKey={`faq_${faq.id}_answer_${pIdx}`} page="faqs" defaultValue={para} adminMode={adminMode} className="text-xs md:text-sm text-[#1B2D3C]/80 leading-relaxed" /></p>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Help Callout */}
+      <div className="bg-white border border-[#1B2D3C]/20 p-6 rounded-lg flex items-center justify-between gap-6 flex-col md:flex-row text-center md:text-left">
+        <div className="space-y-1">
+          <p className="font-bold text-[#1B2D3C] text-sm uppercase tracking-wider"><EditableText contentKey="help_callout_title" page="faqs" defaultValue="Still have questions?" adminMode={adminMode} className="text-sm uppercase tracking-wider text-[#1B2D3C]" /></p>
+          <p className="text-xs text-stone-500 font-semibold"><EditableText contentKey="help_callout_text" page="faqs" defaultValue="Contact us if you have any more questions." adminMode={adminMode} className="text-xs text-stone-500" /></p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setCurrentPage('contact-info')}
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#DBE7E4] text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer rounded-lg whitespace-nowrap"
+          >
+            <EditableText contentKey="help_callout_button" page="faqs" defaultValue="Contact Us" adminMode={adminMode} className="text-sm uppercase tracking-widest text-[#1B2D3C]" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }

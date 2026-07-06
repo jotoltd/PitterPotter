@@ -155,6 +155,27 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'delete') {
+      if (!isNonEmptyString(key) || !isNonEmptyString(page)) {
+        return new Response(JSON.stringify({ error: 'Missing key or page' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (staff.role !== 'super_admin') {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { error } = await supabase.from('content').delete().eq('key', key).eq('page', page);
+      if (error) throw error;
+      await logAudit(supabase, staff, 'delete', 'content', `${page}:${key}`);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     return new Response(JSON.stringify({ error: 'Unknown action' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
