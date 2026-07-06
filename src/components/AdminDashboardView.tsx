@@ -102,6 +102,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [sort, setSort] = useState<{ field: 'date' | 'name' | 'studio' | 'status'; direction: 'asc' | 'desc' }>({ field: 'date', direction: 'desc' });
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [lockedSessionType, setLockedSessionType] = useState<string | null>(null);
   const defaultStudio = (staff.allowedStudios && staff.allowedStudios.length > 0 && staff.role !== 'super_admin')
     ? staff.allowedStudios[0]
     : 'Putney';
@@ -1257,7 +1258,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             {canAddWalkIn && (
               <>
                 <button
-                  onClick={() => { setActiveTab('dashboard'); setShowAddModal(true); }}
+                  onClick={() => { setActiveTab('dashboard'); setLockedSessionType(null); setShowAddModal(true); }}
                   className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
                 >
                   <Plus className="w-4 h-4" /> <span className="hidden sm:inline">New Booking</span><span className="sm:hidden">Booking</span>
@@ -1265,7 +1266,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <button
                   onClick={() => {
                     setActiveTab('dashboard');
-                    setNewBooking(prev => ({ ...prev, sessionType: 'party' as any }));
+                    setNewBooking(prev => ({ ...prev, sessionType: 'birthday-party' as any }));
+                    setLockedSessionType('birthday-party');
                     setShowAddModal(true);
                   }}
                   className="flex items-center gap-1.5 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
@@ -1276,6 +1278,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   onClick={() => {
                     setActiveTab('dashboard');
                     setNewBooking(prev => ({ ...prev, sessionType: 'clay-imprints' as any }));
+                    setLockedSessionType('clay-imprints');
                     setShowAddModal(true);
                   }}
                   className="flex items-center gap-1.5 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
@@ -1404,6 +1407,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 date: opts?.date ?? prev.date,
                 sessionType: (opts?.sessionType as BookingInquiry['sessionType']) ?? prev.sessionType,
               }));
+              setLockedSessionType(opts?.sessionType ?? null);
               setShowAddModal(true);
             }}
           />
@@ -1919,7 +1923,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 sm:p-6">
           <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg max-h-[90vh] overflow-y-auto sm:rounded-xl">
-            <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Add Booking</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Add Booking</h3>
+              <button onClick={() => setShowAddModal(false)} className="p-1.5 rounded-full hover:bg-[#1B2D3C]/5 transition-colors cursor-pointer">
+                <XIcon className="w-5 h-5 text-[#1B2D3C]/60" />
+              </button>
+            </div>
             <div className="space-y-3">
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Studio *</label>
@@ -1943,20 +1952,32 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Session Type *</label>
-                <select
-                  value={newBooking.sessionType}
-                  onChange={(e) => setNewBooking({ ...newBooking, sessionType: e.target.value as BookingInquiry['sessionType'], time: undefined })}
-                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
-                >
-                  <option value="painting">Painting</option>
-                  <option value="birthday-party">Birthday Party</option>
-                  <option value="baby-shower-hen">Baby Shower / Hen Party</option>
-                  <option value="corporate">Corporate Event</option>
-                  <option value="clay-imprints">Baby Prints (Clay Imprints)</option>
-                </select>
-              </div>
+              {lockedSessionType ? (
+                <div className="px-3 py-2 rounded-lg bg-[#DBE7E4]/50 border border-[#1B2D3C]/10 text-xs font-bold text-[#1B2D3C]">
+                  Session: {{
+                    'painting': 'Painting',
+                    'birthday-party': 'Birthday Party',
+                    'baby-shower-hen': 'Baby Shower / Hen Party',
+                    'corporate': 'Corporate Event',
+                    'clay-imprints': 'Baby Prints (Clay Imprints)',
+                  }[lockedSessionType] ?? lockedSessionType}
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Session Type *</label>
+                  <select
+                    value={newBooking.sessionType}
+                    onChange={(e) => setNewBooking({ ...newBooking, sessionType: e.target.value as BookingInquiry['sessionType'], time: undefined })}
+                    className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  >
+                    <option value="painting">Painting</option>
+                    <option value="birthday-party">Birthday Party</option>
+                    <option value="baby-shower-hen">Baby Shower / Hen Party</option>
+                    <option value="corporate">Corporate Event</option>
+                    <option value="clay-imprints">Baby Prints (Clay Imprints)</option>
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Time *</label>
                 <select
@@ -2060,7 +2081,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setShowAddModal(false)}
+                onClick={() => { setShowAddModal(false); setLockedSessionType(null); }}
                 className="flex-1 px-4 py-2 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
                 Cancel
