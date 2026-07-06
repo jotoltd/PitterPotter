@@ -10,7 +10,7 @@ import { format, isSameDay, parseISO } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { loadBookings, createBooking, updateBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
-import { getAllSlots, setSlots, DEFAULT_SLOTS, SlotSessionType } from '../lib/timeSlots';
+import { getAllSlots, getSlots, setSlots, DEFAULT_SLOTS, SlotSessionType } from '../lib/timeSlots';
 import { useToast } from './ToastContext';
 import Skeleton from './Skeleton';
 import 'react-day-picker/dist/style.css';
@@ -1935,16 +1935,31 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 />
               </div>
               <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Session Type *</label>
+                <select
+                  value={newBooking.sessionType}
+                  onChange={(e) => setNewBooking({ ...newBooking, sessionType: e.target.value as BookingInquiry['sessionType'], time: undefined })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                >
+                  <option value="painting">Painting</option>
+                  <option value="birthday-party">Birthday Party</option>
+                  <option value="baby-shower-hen">Baby Shower / Hen Party</option>
+                  <option value="corporate">Corporate Event</option>
+                  <option value="clay-imprints">Baby Prints (Clay Imprints)</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Time *</label>
                 <select
                   value={newBooking.time}
                   onChange={(e) => setNewBooking({ ...newBooking, time: e.target.value })}
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 >
-                  <option value="10:00">10:00 am</option>
-                  <option value="12:00">12:00 pm</option>
-                  <option value="14:00">2:00 pm</option>
-                  <option value="16:00">4:00 pm</option>
+                  {(() => {
+                    const sType = newBooking.sessionType || 'painting';
+                    const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : 'painting';
+                    return getSlots(slotKey).map(s => <option key={s} value={s}>{s}</option>);
+                  })()}
                 </select>
               </div>
               <div>
@@ -2101,10 +2116,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   onChange={(e) => setEditingBooking({ ...editingBooking, time: e.target.value })}
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 >
-                  <option value="10:00">10:00 am</option>
-                  <option value="12:00">12:00 pm</option>
-                  <option value="14:00">2:00 pm</option>
-                  <option value="16:00">4:00 pm</option>
+                  {(() => {
+                    const sType = editingBooking.sessionType || 'painting';
+                    const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : 'painting';
+                    const slots = getSlots(slotKey);
+                    const existing = editingBooking.time;
+                    const allSlots = existing && !slots.includes(existing) ? [existing, ...slots] : slots;
+                    return allSlots.map(s => <option key={s} value={s}>{s}</option>);
+                  })()}
                 </select>
               </div>
               <div>
