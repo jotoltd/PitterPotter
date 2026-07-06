@@ -3,7 +3,7 @@ import { GALLERY_ITEMS } from '../data';
 import { Images } from '../images';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
-import { Plus, Trash2, Upload, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Upload, GripVertical, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { Staff } from '../types';
 import { useToast } from './ToastContext';
@@ -28,6 +28,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     loadGalleryItems();
@@ -280,21 +281,26 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
               onDragEnd={handleDragEnd}
               className={`break-inside-avoid mb-3 relative group ${adminMode ? 'cursor-move' : ''}`}
             >
-              <EditableImage
-                contentKey={`gallery_${item.id}_image`}
-                page="gallery"
-                defaultSrc={item.imageUrl}
-                alt={item.title}
-                className="w-full rounded-lg object-cover"
-                adminMode={adminMode}
-              />
+              <button
+                onClick={() => setLightboxIndex(index)}
+                className="w-full text-left cursor-pointer"
+              >
+                <EditableImage
+                  contentKey={`gallery_${item.id}_image`}
+                  page="gallery"
+                  defaultSrc={item.imageUrl}
+                  alt={item.title}
+                  className="w-full rounded-lg object-cover"
+                  adminMode={adminMode}
+                />
+              </button>
               {adminMode && (
                 <>
                   <div className="absolute top-2 left-2 p-1 bg-white/90 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
                     <GripVertical className="w-4 h-4 text-[#1B2D3C]" />
                   </div>
                   <button
-                    onClick={() => handleDeleteImage(item.id)}
+                    onClick={(e) => { e.stopPropagation(); handleDeleteImage(item.id); }}
                     className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -305,6 +311,52 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
           ))}
         </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+          <button
+            onClick={() => setLightboxIndex(null)}
+            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          
+          <button
+            onClick={() => setLightboxIndex(lightboxIndex === 0 ? items.length - 1 : lightboxIndex - 1)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"
+          >
+            <ChevronLeft className="w-8 h-8" />
+          </button>
+          
+          <button
+            onClick={() => setLightboxIndex(lightboxIndex === items.length - 1 ? 0 : lightboxIndex + 1)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"
+          >
+            <ChevronRight className="w-8 h-8" />
+          </button>
+          
+          <div className="max-w-5xl max-h-[90vh] w-full">
+            <img
+              src={items[lightboxIndex].imageUrl}
+              alt={items[lightboxIndex].title}
+              className="w-full h-full object-contain max-h-[90vh]"
+            />
+          </div>
+          
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+            {items.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setLightboxIndex(idx)}
+                className={`w-2 h-2 rounded-full transition-colors cursor-pointer ${
+                  idx === lightboxIndex ? 'bg-white' : 'bg-white/30'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
