@@ -130,7 +130,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
-            onClick={() => setCurrentPage('book')}
+            onClick={() => setCurrentPage('baby-prints-book')}
             className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#F8FAFC] transition-all cursor-pointer rounded-lg"
           >
             <Calendar className="w-4 h-4" />

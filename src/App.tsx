@@ -9,6 +9,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomeView from './components/HomeView';
 import BabyPrintsView from './components/BabyPrintsView';
+import BabyPrintsBookingView from './components/BabyPrintsBookingView';
 import PartiesView from './components/PartiesView';
 import PricingView from './components/PricingView';
 import FAQsView from './components/FAQsView';
@@ -61,7 +62,7 @@ export default function App() {
 
     const params = new URLSearchParams(window.location.search);
     const pageParam = params.get('page') as Page | null;
-    const validPages: Page[] = ['home', 'baby-prints', 'parties', 'pricing', 'faqs', 'gallery', 'contact', 'contact-info', 'book', 'gift-cards', 'buy-gift-card', 'gift-card-success', 'gift-card-balance', 'putney', 'wimbledon', 'admin'];
+    const validPages: Page[] = ['home', 'baby-prints', 'parties', 'pricing', 'faqs', 'gallery', 'contact', 'contact-info', 'book', 'gift-cards', 'buy-gift-card', 'gift-card-success', 'gift-card-balance', 'putney', 'wimbledon', 'admin', 'baby-prints-book'];
     if (pageParam && validPages.includes(pageParam)) {
       setCurrentPage(pageParam);
     }
@@ -130,6 +131,8 @@ export default function App() {
  return <HomeView setCurrentPage={setCurrentPage} setVisitPreset={handleVisitPreset} adminMode={adminMode} />;
  case 'baby-prints':
  return <BabyPrintsView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
+ case 'baby-prints-book':
+ return <BabyPrintsBookingView adminMode={adminMode} />;
  case 'parties':
  return <PartiesView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'pricing':
