@@ -119,6 +119,7 @@ export default function EditableText({ contentKey, page, defaultValue, className
   return (
     <>
       <span
+        data-editable="true"
         className={`${className} relative cursor-pointer outline outline-2 outline-dashed outline-amber-400/60 outline-offset-2 rounded hover:outline-amber-500 hover:bg-amber-50/30 transition-all`}
         onClick={() => { setEditValue(value); setIsEditing(true); }}
         title="Click to edit"

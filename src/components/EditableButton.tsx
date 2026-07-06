@@ -135,6 +135,7 @@ export default function EditableButton({
     <>
       <button
         type="button"
+        data-editable="true"
         onClick={handleButtonClick}
         className={`${className} ${adminMode ? 'outline outline-2 outline-dashed outline-amber-400/70 outline-offset-2 cursor-pointer' : ''}`}
         title={adminMode ? 'Click to edit button' : undefined}

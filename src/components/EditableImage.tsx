@@ -179,7 +179,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
 
   return (
     <>
-      <div className="relative group inline-block cursor-pointer" onClick={handleOpenGallery} title="Click to change image">
+      <div data-editable="true" className="relative group inline-block cursor-pointer" onClick={handleOpenGallery} title="Click to change image">
         <img src={src} alt={alt} className={className} />
         <div className={`absolute inset-0 flex flex-col items-center justify-center gap-2 rounded transition-opacity ${
           loading ? 'bg-black/40 opacity-100' : 'bg-black/0 group-hover:bg-black/40 opacity-0 group-hover:opacity-100'

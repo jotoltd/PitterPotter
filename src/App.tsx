@@ -42,6 +42,14 @@ export default function App() {
  const isAdminLoggedIn = !!currentStaff;
 
  useEffect(() => {
+    if (adminMode) {
+      document.body.classList.add('admin-mode-active');
+    } else {
+      document.body.classList.remove('admin-mode-active');
+    }
+  }, [adminMode]);
+
+ useEffect(() => {
     const saved = localStorage.getItem('pp_current_staff');
     if (saved) {
       try {
