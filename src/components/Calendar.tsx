@@ -119,7 +119,7 @@ export default function Calendar({
                 {format(day, 'do')}
               </span>
               {disabledDay && inMonth && (
-                <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-stone-400">Blocked</span>
+                <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-stone-400">Closed</span>
               )}
               {!disabledDay && mark && inMonth && (
                 <span className={`mt-1 w-1.5 h-1.5 rounded-full ${selectedDay ? 'bg-white' : 'bg-[#1B2D3C]/60'}`} />
