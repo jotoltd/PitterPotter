@@ -87,6 +87,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
+  const [bookingTypeTab, setBookingTypeTab] = useState<'all' | 'painting' | 'baby-prints' | 'party'>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -901,7 +902,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         inq.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         inq.phone.includes(debouncedSearchTerm);
       const dateMatch = (!dateRange.start || inq.date >= dateRange.start) && (!dateRange.end || inq.date <= dateRange.end);
-      return statusMatch && studioMatch && searchMatch && dateMatch;
+      const typeMatch = bookingTypeTab === 'all' ||
+        (bookingTypeTab === 'painting' && inq.sessionType === 'painting') ||
+        (bookingTypeTab === 'baby-prints' && inq.sessionType === 'clay-imprints') ||
+        (bookingTypeTab === 'party' && ['birthday-party', 'baby-shower-hen', 'corporate'].includes(inq.sessionType || ''));
+      return statusMatch && studioMatch && searchMatch && dateMatch && typeMatch;
     })
     .sort((a, b) => {
       const dir = sort.direction === 'asc' ? 1 : -1;
@@ -913,7 +918,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       if (sort.field === 'name') return a.name.localeCompare(b.name) * dir;
       if (sort.field === 'studio') return a.studio.localeCompare(b.studio) * dir;
       return a.status.localeCompare(b.status) * dir;
-    }), [inquiries, filter, studioFilter, debouncedSearchTerm, dateRange, sort]);
+    }), [inquiries, filter, studioFilter, bookingTypeTab, debouncedSearchTerm, dateRange, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filteredInquiries.length / ITEMS_PER_PAGE));
   const paginatedInquiries = filteredInquiries.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -1536,6 +1541,36 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
         {activeTab === 'bookings' && (
           <>
+        {/* Booking type tabs */}
+        <div className="flex gap-2 mb-5">
+          {([
+            { value: 'all', label: 'All Bookings' },
+            { value: 'painting', label: 'Painting' },
+            { value: 'baby-prints', label: 'Baby Prints' },
+            { value: 'party', label: 'Party' },
+          ] as const).map(({ value, label }) => {
+            const count = value === 'all' ? inquiries.length
+              : value === 'painting' ? inquiries.filter(i => i.sessionType === 'painting').length
+              : value === 'baby-prints' ? inquiries.filter(i => i.sessionType === 'clay-imprints').length
+              : inquiries.filter(i => ['birthday-party','baby-shower-hen','corporate'].includes(i.sessionType || '')).length;
+            return (
+              <button
+                key={value}
+                onClick={() => setBookingTypeTab(value)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                  bookingTypeTab === value
+                    ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                    : 'bg-white text-[#1B2D3C]/60 border-[#1B2D3C]/20 hover:text-[#1B2D3C] hover:border-[#1B2D3C]/40'
+                }`}
+              >
+                {label}
+                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
+                  bookingTypeTab === value ? 'bg-white/20 text-white' : 'bg-[#1B2D3C]/10 text-[#1B2D3C]/70'
+                }`}>{count}</span>
+              </button>
+            );
+          })}
+        </div>
         {/* Bookings toolbar — all filters in one row */}
         <div className="flex flex-wrap items-center gap-2 mb-5">
           {/* Search */}
