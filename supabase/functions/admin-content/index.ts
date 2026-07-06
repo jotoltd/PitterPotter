@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const { action, username, sessionToken, key, page, value, type } = body;
+    const { action, username, sessionToken, key, page, value, type, metadata } = body;
 
     if (!isNonEmptyString(action)) {
       return new Response(JSON.stringify({ error: 'Missing or invalid action' }), {
@@ -99,6 +99,7 @@ Deno.serve(async (req) => {
         page,
         value,
         type: type || 'text',
+        metadata: metadata || null,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'key' });
       if (error) throw error;
