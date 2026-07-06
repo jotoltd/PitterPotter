@@ -21,7 +21,6 @@ import AdminLoginView from './components/AdminLoginView';
 import AdminDashboardView from './components/AdminDashboardView';
 import PutneyView from './components/PutneyView';
 import WimbledonView from './components/WimbledonView';
-import GiftCardView from './components/GiftCardView';
 import GiftCardPurchaseView from './components/GiftCardPurchaseView';
 import GiftCardSuccessView from './components/GiftCardSuccessView';
 import NotFoundView from './components/NotFoundView';
@@ -62,7 +61,7 @@ export default function App() {
 
     const params = new URLSearchParams(window.location.search);
     const pageParam = params.get('page') as Page | null;
-    const validPages: Page[] = ['home', 'baby-prints', 'parties', 'pricing', 'faqs', 'gallery', 'contact', 'contact-info', 'book', 'gift-cards', 'buy-gift-card', 'gift-card-success', 'gift-card-balance', 'putney', 'wimbledon', 'admin', 'baby-prints-book'];
+    const validPages: Page[] = ['home', 'baby-prints', 'parties', 'pricing', 'faqs', 'gallery', 'contact', 'contact-info', 'book', 'buy-gift-card', 'gift-card-success', 'gift-card-balance', 'putney', 'wimbledon', 'admin', 'baby-prints-book'];
     if (pageParam && validPages.includes(pageParam)) {
       setCurrentPage(pageParam);
     }
@@ -149,8 +148,6 @@ export default function App() {
  return <ContactInfoView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'book':
  return <BookView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
- case 'gift-cards':
- return <GiftCardView adminMode={adminMode} />;
  case 'buy-gift-card':
  return <GiftCardPurchaseView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'gift-card-success':
