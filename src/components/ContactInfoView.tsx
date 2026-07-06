@@ -14,7 +14,7 @@ const studios = [
     phone: '020 87881635',
     tel: '02087881635',
     directionsUrl: 'https://www.google.com/maps/dir/?api=1&destination=234+Upper+Richmond+Road+Putney+SW15+6TG',
-    embedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2487.7!2d-0.2164!3d51.4613!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48760f5c5e5e5e5b%3A0x1!2s234+Upper+Richmond+Rd%2C+Putney%2C+London+SW15+6TG!5e0!3m2!1sen!2suk!4v1',
+    embedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d997.0880836578488!2d-0.21721568632808!3d51.460949299319135!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48760f5b14e7fad3%3A0x8e5b9e8da3a26e5e!2sPitter%20Potter%20Putney!5e0!3m2!1sen!2suk!4v1700000000001',
     directions: '3 minutes walk from Putney Railway Station. 7 minutes walk from East Putney Underground Station (District line). Bus 337 and 430 stop directly outside; buses 14, 37, 74, 85, 93, 39 and 424 stop nearby.',
   },
   {
@@ -23,7 +23,7 @@ const studios = [
     phone: '020 37704499',
     tel: '02037704499',
     directionsUrl: 'https://www.google.com/maps/dir/?api=1&destination=52+Wimbledon+Hill+Road+Wimbledon+SW19+7PA',
-    embedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2489.1!2d-0.2041!3d51.4214!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48760f5c5e5e5e5c%3A0x2!2s52+Wimbledon+Hill+Rd%2C+Wimbledon%2C+London+SW19+7PA!5e0!3m2!1sen!2suk!4v1',
+    embedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2489.217522906646!2d-0.20657568632808!3d51.421349299319!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48760787c2a2c569%3A0x6b4b3e3b0b3b3b3b!2sPitter%20Potter%20Wimbledon!5e0!3m2!1sen!2suk!4v1700000000002',
     directions: 'Wimbledon Station (National Rail, District line, Tramlink) is a short walk away. Bus routes 93, 200, 131, 163 and the 219 stop nearby on Wimbledon Hill Road.',
   },
 ];

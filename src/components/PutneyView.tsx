@@ -322,7 +322,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
             <div className="aspect-video w-full bg-[#D6E2E9]/50 overflow-hidden rounded-lg">
               <iframe
                 title="Putney Studio Location"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2487.7!2d-0.2164!3d51.4613!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48760f5c5e5e5e5b%3A0x1!2s234+Upper+Richmond+Rd%2C+Putney%2C+London+SW15+6TG!5e0!3m2!1sen!2suk!4v1"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d997.0880836578488!2d-0.21721568632808!3d51.460949299319135!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48760f5b14e7fad3%3A0x8e5b9e8da3a26e5e!2sPitter%20Potter%20Putney!5e0!3m2!1sen!2suk!4v1700000000001"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
