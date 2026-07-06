@@ -68,6 +68,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs'>('dashboard');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [partyPrice, setPartyPrice] = useState<number>(28.95);
+  const [tablePlanEnabled, setTablePlanEnabled] = useState<boolean>(false);
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
   const [capacitySaving, setCapacitySaving] = useState(false);
   const [showGiftCardModal, setShowGiftCardModal] = useState(false);
@@ -181,7 +182,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     let isMounted = true;
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([loadInquiries(), loadGiftCards(), loadStripeMode(), loadPartyPrice()]);
+      await Promise.all([loadInquiries(), loadGiftCards(), loadStripeMode(), loadPartyPrice(), loadTablePlanEnabled()]);
       if (isMounted) setLoading(false);
     };
     loadData();
@@ -325,6 +326,53 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     } catch (err) {
       console.error('Failed to update party price:', err);
       showToast('Failed to update party price', 'error');
+    }
+  };
+
+  const loadTablePlanEnabled = async () => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'load', username: staff.username, sessionToken: staff.sessionToken, key: 'table_plan_enabled' }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        console.error('Failed to load table plan setting:', data.error);
+        return;
+      }
+      setTablePlanEnabled(data.value === 'true');
+    } catch (err) {
+      console.error('Failed to load table plan setting:', err);
+    }
+  };
+
+  const updateTablePlanEnabled = async (enabled: boolean) => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'update', username: staff.username, sessionToken: staff.sessionToken, key: 'table_plan_enabled', value: String(enabled) }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        showToast('Failed to update table plan setting', 'error');
+        return;
+      }
+      setTablePlanEnabled(enabled);
+      showToast(`Table plan ${enabled ? 'enabled' : 'disabled'}`, 'success');
+    } catch (err) {
+      console.error('Failed to update table plan setting:', err);
+      showToast('Failed to update table plan setting', 'error');
     }
   };
 
@@ -825,7 +873,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     try {
       if (status === 'confirmed') {
         const booking = inquiries.find(i => i.id === id);
-        if (booking && !booking.tableId) {
+        if (tablePlanEnabled && booking && !booking.tableId) {
           const assigned = await autoAssignTable(booking, true);
           if (!assigned) {
             showToast('No tables available — studio may be full', 'error');
@@ -1318,7 +1366,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               for (const id of ids) {
                 const booking = inquiries.find(i => i.id === id);
                 if (!booking) continue;
-                if (!booking.tableId) {
+                if (tablePlanEnabled && !booking.tableId) {
                   const assigned = await autoAssignTable(booking, true);
                   if (!assigned) { failed++; continue; }
                 }
@@ -1649,7 +1697,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       <span>{inq.time}</span>
                       <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#D6E2E9] text-[#1B2D3C] rounded-full text-[10px] font-black"><Users className="w-2.5 h-2.5" />{inq.paintersCount}</span>
                       {inq.source === 'walk-in' && <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold">Walk-in</span>}
-                      {inq.tableId && <span className="px-1.5 py-0.5 bg-[#1B2D3C] text-white rounded-full text-[10px] font-bold">{inq.tableId}</span>}
+                      {tablePlanEnabled && inq.tableId && <span className="px-1.5 py-0.5 bg-[#1B2D3C] text-white rounded-full text-[10px] font-bold">{inq.tableId}</span>}
                     </div>
                   </div>
                 ))}
@@ -1673,7 +1721,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       <SortHeader field="name" label="Guest" sort={sort} setSort={setSort} />
                       <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hidden lg:table-cell">Session</th>
                       <SortHeader field="status" label="Status" sort={sort} setSort={setSort} />
-                      <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Table</th>
+                      {tablePlanEnabled && <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Table</th>}
                       <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]">Actions</th>
                     </tr>
                   </thead>
@@ -1716,14 +1764,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                             {inq.status === 'confirmed' ? 'Confirmed' : inq.status === 'cancelled' ? 'Cancelled' : 'Awaiting'}
                           </span>
                         </td>
-                        <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                          <button onClick={() => setAssignModalBooking(inq)}
-                            className={`px-2 py-1 text-[10px] font-bold border transition-all cursor-pointer rounded-lg ${
-                              inq.tableId ? 'bg-[#1B2D3C] text-white border-[#1B2D3C] hover:bg-[#486581]' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                            }`}>
-                            {inq.tableId ?? 'Assign'}
-                          </button>
-                        </td>
+                        {tablePlanEnabled && (
+                          <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                            <button onClick={() => setAssignModalBooking(inq)}
+                              className={`px-2 py-1 text-[10px] font-bold border transition-all cursor-pointer rounded-lg ${
+                                inq.tableId ? 'bg-[#1B2D3C] text-white border-[#1B2D3C] hover:bg-[#486581]' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                              }`}>
+                              {inq.tableId ?? 'Assign'}
+                            </button>
+                          </td>
+                        )}
                         <td className="px-4 py-3 text-center">
                           <span className="text-[#1B2D3C]/30 text-base font-black">⋯</span>
                         </td>
@@ -2122,7 +2172,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       )}
 
       {/* Assign Table Modal */}
-      {assignModalBooking && (
+      {tablePlanEnabled && assignModalBooking && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 sm:p-6">
           <div className="bg-white border border-[#1B2D3C]/20 max-w-lg w-full shadow-xl rounded-xl overflow-hidden max-h-[90vh] flex flex-col sm:rounded-xl">
             <div className="px-6 py-4 border-b border-[#1B2D3C]/10 flex items-center justify-between">
@@ -2518,6 +2568,30 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             </div>
           </div>
 
+          {/* Table Plan */}
+          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 max-w-xl">
+            <div>
+              <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Table Plan</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Show table assignment and floor plan controls in the admin dashboard.</p>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg border border-[#1B2D3C]/20">
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${tablePlanEnabled ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+                <span className="text-xs font-bold text-[#1B2D3C]">{tablePlanEnabled ? 'Enabled' : 'Disabled'}</span>
+              </div>
+              <button
+                onClick={() => updateTablePlanEnabled(!tablePlanEnabled)}
+                className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
+                  tablePlanEnabled
+                    ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
+                    : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                }`}
+              >
+                {tablePlanEnabled ? 'Disable' : 'Enable'}
+              </button>
+            </div>
+          </div>
+
         </div>
       )}
 
@@ -2821,7 +2895,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               </div>
 
               {/* Floor plan preview */}
-              {drawerBooking.tableId && (
+              {tablePlanEnabled && drawerBooking.tableId && (
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-2">Seating</p>
                   <div className="border border-[#1B2D3C]/10 rounded-xl overflow-hidden bg-[#F8FAFA]">
@@ -2891,10 +2965,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             {/* Action footer */}
             <div className="border-t border-[#1B2D3C]/10 p-4 space-y-2">
               <div className="flex gap-2">
-                <button onClick={() => { setAssignModalBooking(drawerBooking); setDrawerBooking(null); }}
-                  className={`flex-1 px-3 py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${drawerBooking.tableId ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                  {drawerBooking.tableId ? `Tables: ${drawerBooking.tableId}` : 'Assign Table'}
-                </button>
+                {tablePlanEnabled && (
+                  <button onClick={() => { setAssignModalBooking(drawerBooking); setDrawerBooking(null); }}
+                    className={`flex-1 px-3 py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${drawerBooking.tableId ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                    {drawerBooking.tableId ? `Tables: ${drawerBooking.tableId}` : 'Assign Table'}
+                  </button>
+                )}
                 {canEdit && (
                   <button onClick={() => { handleEditBooking(drawerBooking); setDrawerBooking(null); }}
                     className="px-3 py-2 text-xs font-bold rounded-lg border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer">
