@@ -2204,7 +2204,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   }}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black rounded-lg transition-all cursor-pointer"
                 >
-                  <CheckCircle className="w-3.5 h-3.5" /> Auto-assign ({assignModalBooking.paintersCount} painters)
+                  <CheckCircle className="w-3.5 h-3.5" /> Auto-assign ({assignModalBooking.paintersCount} seats)
                 </button>
                 <span className="text-[10px] text-[#1B2D3C]/50 font-semibold">or click a table below</span>
               </div>
@@ -2483,7 +2483,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
             <div>
               <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Capacity</h2>
-              <p className="text-xs text-[#1B2D3C]/70 mt-1">Maximum painters per studio and session type.</p>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Maximum seats per studio and session type.</p>
             </div>
             {capacityRows.length === 0 ? (
               <div className="space-y-3">
@@ -2504,7 +2504,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       <p className="text-sm font-bold text-[#1B2D3C]">{row.session_type}</p>
                     </div>
                     <div className="w-28">
-                      <p className="text-[10px] font-bold uppercase text-[#1B2D3C]/50">Max Painters</p>
+                      <p className="text-[10px] font-bold uppercase text-[#1B2D3C]/50">Max Seats</p>
                       <input
                         type="number"
                         min={1}
@@ -2882,7 +2882,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     <p className="text-sm font-black text-[#1B2D3C]">{drawerBooking.studio}</p>
                   </div>
                   <div className="bg-[#F8FAFA] rounded-lg p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-1">Painters</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-1">Seats</p>
                     <p className="text-sm font-black text-[#1B2D3C]">{drawerBooking.paintersCount}</p>
                   </div>
                 </div>

@@ -142,7 +142,7 @@ function BookingModal({
                     </div>
                     <p className="text-sm font-bold text-[#1B2D3C] mt-1">{b.name}</p>
                     <div className="flex items-center gap-3 mt-2 text-[10px] font-semibold text-[#1B2D3C]/70">
-                      <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {b.paintersCount} painters</span>
+                      <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {b.paintersCount} seats</span>
                       <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {b.studio}</span>
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[10px] font-semibold text-[#1B2D3C]/70">
