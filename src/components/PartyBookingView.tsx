@@ -5,6 +5,7 @@ import { format, getDay } from 'date-fns';
 import { Clock, Calendar as CalendarIcon, ArrowRight, Users, MapPin, Gift, Heart, Briefcase, Copy } from 'lucide-react';
 import { useToast } from './ToastContext';
 import { getRemainingCapacity, createPublicBooking, getBusyDates } from '../lib/bookings';
+import { getSlots } from '../lib/timeSlots';
 import { Images } from '../images';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
@@ -83,10 +84,7 @@ const PARTY_GUEST_LIMIT: Record<Studio, number> = { Putney: 20, Wimbledon: 40 };
 
 function getTimeSlots(date: Date): string[] {
   const day = getDay(date);
-  // Party slots: 2-hour blocks
-  if (day >= 2 || day === 0) {
-    return ['10:00-12:00', '12:30-14:30', '15:00-17:00'];
-  }
+  if (day >= 2 || day === 0) return getSlots('party');
   return [];
 }
 

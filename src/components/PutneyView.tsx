@@ -5,6 +5,7 @@ import Calendar from './Calendar';
 import { format, getDay } from 'date-fns';
 import {Clock, Calendar as CalendarIcon, ArrowRight, ChevronLeft, ChevronRight, X} from 'lucide-react';
 import { getRemainingCapacity, getBusyDates } from '../lib/bookings';
+import { getSlots } from '../lib/timeSlots';
 import { useToast } from './ToastContext';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
@@ -24,10 +25,7 @@ const OPENING_HOURS = [
 
 function getTimeSlots(date: Date): string[] {
   const day = getDay(date);
-  // Tue - Sun: 10am - 6pm, 2-hour sessions starting every 30 mins
-  if (day >= 2 || day === 0) {
-    return ['10:00', '10:30', '12:00', '12:30', '14:00', '14:30', '16:00', '16:30'];
-  }
+  if (day >= 2 || day === 0) return getSlots('painting');
   return [];
 }
 

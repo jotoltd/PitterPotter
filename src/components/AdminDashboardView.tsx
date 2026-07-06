@@ -4,12 +4,13 @@ import ConfirmDialog from './ConfirmDialog';
 import FloorPlanView from './FloorPlanView';
 import WimbledonFloorPlan, { findAvailableTable, findMultipleTables } from './WimbledonFloorPlan';
 import PutneyFloorPlan, { findAvailablePutneyTable, findMultiplePutneyTables } from './PutneyFloorPlan';
-import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { loadBookings, createBooking, updateBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
+import { getAllSlots, setSlots, DEFAULT_SLOTS, SlotSessionType } from '../lib/timeSlots';
 import { useToast } from './ToastContext';
 import Skeleton from './Skeleton';
 import 'react-day-picker/dist/style.css';
@@ -71,6 +72,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [tablePlanEnabled, setTablePlanEnabled] = useState<boolean>(false);
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
   const [capacitySaving, setCapacitySaving] = useState(false);
+  const [timeSlotConfig, setTimeSlotConfig] = useState<Record<SlotSessionType, string[]>>(() => getAllSlots());
+  const [newSlotInput, setNewSlotInput] = useState<Record<SlotSessionType, string>>({ painting: '', 'baby-prints': '', party: '' });
   const [showGiftCardModal, setShowGiftCardModal] = useState(false);
   const [newGiftCard, setNewGiftCard] = useState({
     amount: 50,
@@ -2529,6 +2532,86 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Time Slots */}
+          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-6">
+            <div>
+              <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Time Slots</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Configure available booking times for each session type. Changes take effect immediately for all new bookings.</p>
+            </div>
+            {(['painting', 'baby-prints', 'party'] as SlotSessionType[]).map((type) => {
+              const labels: Record<SlotSessionType, string> = { painting: 'Painting', 'baby-prints': 'Baby Prints', party: 'Party' };
+              return (
+                <div key={type} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">{labels[type]}</h3>
+                    <button
+                      onClick={() => {
+                        const reset = DEFAULT_SLOTS[type];
+                        setSlots(type, reset);
+                        setTimeSlotConfig(prev => ({ ...prev, [type]: reset }));
+                        showToast(`${labels[type]} slots reset to default`, 'success');
+                      }}
+                      className="text-[10px] font-bold text-[#1B2D3C]/50 hover:text-[#1B2D3C] uppercase tracking-wider cursor-pointer"
+                    >
+                      Reset to default
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {timeSlotConfig[type].map((slot) => (
+                      <span key={slot} className="flex items-center gap-1 px-2.5 py-1.5 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold rounded-lg">
+                        {slot}
+                        <button
+                          onClick={() => {
+                            const updated = timeSlotConfig[type].filter(s => s !== slot);
+                            setSlots(type, updated);
+                            setTimeSlotConfig(prev => ({ ...prev, [type]: updated }));
+                          }}
+                          className="ml-0.5 hover:text-red-600 cursor-pointer"
+                        >
+                          <XIcon className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newSlotInput[type]}
+                      onChange={e => setNewSlotInput(prev => ({ ...prev, [type]: e.target.value }))}
+                      placeholder={type === 'party' ? 'e.g. 10:00-12:00' : 'e.g. 10:00'}
+                      className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = newSlotInput[type].trim();
+                          if (!val || timeSlotConfig[type].includes(val)) return;
+                          const updated = [...timeSlotConfig[type], val];
+                          setSlots(type, updated);
+                          setTimeSlotConfig(prev => ({ ...prev, [type]: updated }));
+                          setNewSlotInput(prev => ({ ...prev, [type]: '' }));
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        const val = newSlotInput[type].trim();
+                        if (!val || timeSlotConfig[type].includes(val)) return;
+                        const updated = [...timeSlotConfig[type], val];
+                        setSlots(type, updated);
+                        setTimeSlotConfig(prev => ({ ...prev, [type]: updated }));
+                        setNewSlotInput(prev => ({ ...prev, [type]: '' }));
+                        showToast(`Slot added to ${labels[type]}`, 'success');
+                      }}
+                      className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#1B2D3C]/90 cursor-pointer flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Stripe Mode */}
