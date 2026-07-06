@@ -93,9 +93,20 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
           });
         }
         
-        if (loadedItems.length > 0) {
-          setItems(loadedItems);
-        }
+        // Merge with default items - keep defaults that aren't in Supabase, add Supabase items
+        const defaultIds = new Set(GALLERY_ITEMS.map(item => item.id));
+        const supabaseIds = new Set(loadedItems.map(item => item.id));
+        
+        const mergedItems = [
+          ...GALLERY_ITEMS.filter(item => !supabaseIds.has(item.id)).map(item => ({
+            id: item.id,
+            title: item.title,
+            imageUrl: item.imageUrl
+          })),
+          ...loadedItems
+        ];
+        
+        setItems(mergedItems);
       }
     } catch (err) {
       console.error('Failed to load gallery items:', err);
