@@ -23,22 +23,6 @@ interface AdminCalendarProps {
   onMonthChange: (date: Date) => void;
 }
 
-const SESSION_LABELS: Record<string, string> = {
-  'painting': 'Painting',
-  'birthday-party': 'Birthday',
-  'baby-shower-hen': 'Hen',
-  'clay-imprints': 'Clay',
-  'corporate': 'Corp',
-};
-
-const SESSION_BADGE: Record<string, string> = {
-  'painting': 'bg-blue-100 text-blue-800 border-blue-200',
-  'birthday-party': 'bg-pink-100 text-pink-800 border-pink-200',
-  'baby-shower-hen': 'bg-purple-100 text-purple-800 border-purple-200',
-  'clay-imprints': 'bg-orange-100 text-orange-800 border-orange-200',
-  'corporate': 'bg-slate-100 text-slate-800 border-slate-200',
-};
-
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function AdminCalendar({
@@ -140,23 +124,18 @@ export default function AdminCalendar({
                 )}
               </div>
 
-              <div className="space-y-1">
-                {dayBookings.slice(0, 4).map((b) => (
-                  <div
+              <div className="flex flex-wrap gap-1 justify-center mt-1">
+                {dayBookings.slice(0, 5).map((b) => (
+                  <span
                     key={b.id}
                     className={`
-                      px-1.5 py-0.5 rounded border text-[9px] font-bold truncate leading-tight
-                      ${SESSION_BADGE[b.sessionType] || 'bg-gray-100 text-gray-700 border-gray-200'}
-                      ${b.status === 'pending' ? 'border-l-2 border-l-amber-400' : ''}
+                      w-1.5 h-1.5 rounded-full
+                      ${b.status === 'pending' ? 'bg-amber-400' : 'bg-[#1B2D3C]/60'}
                     `}
-                  >
-                    {format(new Date(`2000-01-01T${b.time}`), 'HH:mm')} {b.name}
-                  </div>
+                  />
                 ))}
-                {dayBookings.length > 4 && (
-                  <div className="text-[9px] font-semibold text-[#1B2D3C]/50 pl-1">
-                    +{dayBookings.length - 4} more
-                  </div>
+                {dayBookings.length > 5 && (
+                  <span className="text-[9px] font-bold text-[#1B2D3C]/60">+{dayBookings.length - 5}</span>
                 )}
               </div>
             </button>
