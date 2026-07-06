@@ -398,7 +398,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
       {/* Masonry columns */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <div className="columns-2 md:columns-3 lg:columns-4 gap-3">
-          {items.map((item, index) => (
+          {items.filter(item => item.imageUrl).map((item, index) => (
             <div
               key={`${item.id}-${index}`}
               draggable={adminMode}
@@ -449,14 +449,14 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
           </button>
           
           <button
-            onClick={() => setLightboxIndex(lightboxIndex === 0 ? items.length - 1 : lightboxIndex - 1)}
+            onClick={() => setLightboxIndex(lightboxIndex === 0 ? items.filter(item => item.imageUrl).length - 1 : lightboxIndex - 1)}
             className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"
           >
             <ChevronLeft className="w-8 h-8" />
           </button>
           
           <button
-            onClick={() => setLightboxIndex(lightboxIndex === items.length - 1 ? 0 : lightboxIndex + 1)}
+            onClick={() => setLightboxIndex(lightboxIndex === items.filter(item => item.imageUrl).length - 1 ? 0 : lightboxIndex + 1)}
             className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"
           >
             <ChevronRight className="w-8 h-8" />
@@ -464,14 +464,14 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
           
           <div className="max-w-5xl max-h-[90vh] w-full">
             <img
-              src={items[lightboxIndex].imageUrl}
-              alt={items[lightboxIndex].title}
+              src={items.filter(item => item.imageUrl)[lightboxIndex].imageUrl}
+              alt={items.filter(item => item.imageUrl)[lightboxIndex].title}
               className="w-full h-full object-contain max-h-[90vh]"
             />
           </div>
           
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {items.map((_, idx) => (
+            {items.filter(item => item.imageUrl).map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setLightboxIndex(idx)}
