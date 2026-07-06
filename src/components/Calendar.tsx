@@ -88,7 +88,9 @@ export default function Calendar({
 
       <div className="grid grid-cols-7 border border-[#1B2D3C]/10 rounded-lg overflow-hidden bg-white">
         {days.map((day) => {
-          const disabledDay = isDisabled(day);
+          const isPast = minDate ? isBefore(day, minDate) : false;
+          const isClosedDay = !isPast && (dayOfWeekDisabled.includes(getDay(day)) || disabled.some((d) => isSameDay(d, day)));
+          const disabledDay = isPast || isClosedDay;
           const selectedDay = selected && isSameDay(day, selected);
           const today = isToday(day);
           const inMonth = isSameMonth(day, month);
@@ -118,7 +120,7 @@ export default function Calendar({
               `}>
                 {format(day, 'do')}
               </span>
-              {disabledDay && inMonth && (
+              {isClosedDay && inMonth && (
                 <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-stone-400">Closed</span>
               )}
               {!disabledDay && mark && inMonth && (
