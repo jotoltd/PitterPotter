@@ -1264,7 +1264,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             {canAddWalkIn && (
               <>
                 <button
-                  onClick={() => { setActiveTab('dashboard'); setLockedSessionType(null); setShowAddModal(true); }}
+                  onClick={() => { setActiveTab('dashboard'); setNewBooking(prev => ({ ...prev, sessionType: 'painting' as any })); setLockedSessionType('painting'); setShowAddModal(true); }}
                   className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
                 >
                   <Plus className="w-4 h-4" /> <span className="hidden sm:inline">New Booking</span><span className="sm:hidden">Booking</span>
