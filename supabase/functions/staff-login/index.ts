@@ -1,5 +1,5 @@
 import { createClient } from 'supabase';
-import { compare, hash, genSalt } from 'bcrypt';
+import bcryptjs from 'bcrypt';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 import type { StaffRecord } from '../_shared/types.ts';
@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       const passwordHash = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
       passwordValid = passwordHash.toLowerCase() === storedHash.toLowerCase();
     } else {
-      passwordValid = await compare(password, storedHash);
+      passwordValid = await bcryptjs.compare(password, storedHash);
     }
 
     if (!passwordValid) {
@@ -87,8 +87,7 @@ Deno.serve(async (req) => {
     // Migrate legacy SHA-256 hashes to bcrypt on successful login
     if (isLegacyHash) {
       try {
-        const salt = await genSalt(10);
-        const newHash = await hash(password, salt);
+        const newHash = await bcryptjs.hash(password, 10);
         await supabase.from('staff').update({ password_hash: newHash }).eq('id', staff.id);
       } catch (err) {
         console.error('Failed to migrate password hash:', err);

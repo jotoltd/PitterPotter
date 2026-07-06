@@ -1,5 +1,5 @@
 import { createClient } from 'supabase';
-import { hash, genSalt } from 'bcrypt';
+import bcryptjs from 'bcrypt';
 import { isObject, isNonEmptyString, isOneOf, isBoolean } from '../_shared/validate.ts';
 import { logAudit } from '../_shared/audit.ts';
 import type { AdminSupabaseClient, StaffRecord } from '../_shared/types.ts';
@@ -21,8 +21,7 @@ async function verifyStaff(supabase: AdminSupabaseClient, username: string, sess
 }
 
 async function hashPassword(password: string): Promise<string> {
-  const salt = await genSalt(10);
-  return hash(password, salt);
+  return bcryptjs.hash(password, 10);
 }
 
 Deno.serve(async (req) => {
