@@ -118,6 +118,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     status: 'pending',
   });
 
+  const [newBabiesCount, setNewBabiesCount] = useState(1);
+  const [newAdultsCount, setNewAdultsCount] = useState(1);
   const [newBookingCapacity, setNewBookingCapacity] = useState<number | null>(null);
   const [editBookingCapacity, setEditBookingCapacity] = useState<number | null>(null);
   const [capacityLoading, setCapacityLoading] = useState(false);
@@ -1072,9 +1074,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         phone: newBooking.phone,
         date: newBooking.date,
         time: newBooking.time,
-        paintersCount: newBooking.paintersCount || 1,
+        paintersCount: newBooking.sessionType === 'clay-imprints' ? newBabiesCount : (newBooking.paintersCount || 1),
         sessionType: newBooking.sessionType || 'painting',
-        notes: newBooking.notes,
+        notes: newBooking.sessionType === 'clay-imprints'
+          ? `Babies: ${newBabiesCount}, Adults: ${newAdultsCount}${newBooking.notes ? ` | ${newBooking.notes}` : ''}`
+          : newBooking.notes,
         status: ['birthday-party', 'baby-shower-hen', 'corporate'].includes(newBooking.sessionType || 'painting') ? 'pending' : 'confirmed',
         requestDate: new Date().toISOString(),
         source: 'walk-in',
@@ -1095,6 +1099,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         sessionType: 'painting',
         status: 'pending',
       });
+      setNewBabiesCount(1);
+      setNewAdultsCount(1);
       setGiftCardDiscount(0);
       showToast('Booking added successfully', 'success');
     } catch (err) {
@@ -2019,16 +2025,37 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Seats *</label>
-                <input
-                  type="number"
-                  min="1"
-                                    value={newBooking.paintersCount}
-                  onChange={(e) => setNewBooking({ ...newBooking, paintersCount: parseInt(e.target.value) || 1 })}
-                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
-                />
-              </div>
+              {newBooking.sessionType === 'clay-imprints' ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Babies *</label>
+                    <div className="flex items-center border border-[#1B2D3C]/20 rounded-lg overflow-hidden">
+                      <button type="button" onClick={() => setNewBabiesCount(c => Math.max(1, c - 1))} className="px-3 py-2 text-sm font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 cursor-pointer">−</button>
+                      <span className="flex-1 text-center text-xs font-black text-[#1B2D3C]">{newBabiesCount}</span>
+                      <button type="button" onClick={() => setNewBabiesCount(c => c + 1)} className="px-3 py-2 text-sm font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 cursor-pointer">+</button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Adults</label>
+                    <div className="flex items-center border border-[#1B2D3C]/20 rounded-lg overflow-hidden">
+                      <button type="button" onClick={() => setNewAdultsCount(c => Math.max(0, c - 1))} className="px-3 py-2 text-sm font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 cursor-pointer">−</button>
+                      <span className="flex-1 text-center text-xs font-black text-[#1B2D3C]">{newAdultsCount}</span>
+                      <button type="button" onClick={() => setNewAdultsCount(c => c + 1)} className="px-3 py-2 text-sm font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 cursor-pointer">+</button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Seats *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newBooking.paintersCount}
+                    onChange={(e) => setNewBooking({ ...newBooking, paintersCount: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Notes</label>
                 <textarea
