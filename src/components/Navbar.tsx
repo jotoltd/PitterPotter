@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Menu, X, Phone, Calendar, Edit3 } from 'lucide-react';
 import { Page, Staff } from '../types';
 import { Images } from '../images';
+import EditableText from './EditableText';
+import EditableButton from './EditableButton';
 
 interface NavbarProps {
   currentPage: Page;
@@ -65,16 +67,19 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                       : 'text-[#1B2D3C] hover:text-[#1B2D3C]'
                   }`}
                 >
-                  {item.label}
+                  <EditableText contentKey={`nav_${item.keyPrefix}_label`} page="nav" defaultValue={item.label} adminMode={adminMode} className="text-[13px] font-normal uppercase tracking-widest" />
                   <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-[#1B2D3C] transition-all duration-300 ${isActive(item.value) ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
                 </button>
               ))}
-              <button
-                onClick={() => handleNavClick('book')}
-                className="ml-4 inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#DBE7E4] text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#D6E2E9] transition-all rounded-lg cursor-pointer"
-              >
-                Booking
-              </button>
+              <EditableButton
+                contentKey="nav_booking_button"
+                page="nav"
+                defaultLabel="Booking"
+                defaultHref="book"
+                adminMode={adminMode}
+                className="ml-4 inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#DBE7E4] text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#D6E2E9] transition-all rounded-lg"
+                onNavigate={() => handleNavClick('book')}
+              />
               {currentStaff && (
                 <button
                   onClick={() => setAdminMode(!adminMode)}
@@ -119,7 +124,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                       : 'text-[#1B2D3C] hover:bg-[#D6E2E9]/20 pl-5'
                   }`}
                 >
-                  {item.label}
+                  <EditableText contentKey={`nav_${item.keyPrefix}_label`} page="nav" defaultValue={item.label} adminMode={adminMode} className="text-lg font-normal uppercase tracking-widest" />
                 </button>
               ))}
               <div className="pt-2">
@@ -128,7 +133,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                   onClick={() => handleNavClick('book')}
                   className="w-full py-4 bg-[#DBE7E4] text-[#1B2D3C] font-normal text-lg uppercase tracking-widest text-center transition-all cursor-pointer rounded-lg"
                 >
-                  Book Studio
+                  <EditableText contentKey="nav_booking_button" page="nav" defaultValue="Book Studio" adminMode={adminMode} className="text-lg font-normal uppercase tracking-widest" />
                 </button>
               </div>
             </div>
@@ -144,7 +149,9 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
             className="flex flex-col items-center justify-center py-3 px-4 flex-1 min-w-0 text-[#1B2D3C] transition-all cursor-pointer active:bg-[#FFFFFF]"
           >
             <Phone className="w-5 h-5 mb-1" />
-            <span className="text-[9px] font-normal uppercase tracking-wider truncate w-full text-center">Call us</span>
+            <span className="text-[9px] font-normal uppercase tracking-wider truncate w-full text-center">
+              <EditableText contentKey="nav_call_label" page="nav" defaultValue="Call us" adminMode={adminMode} className="text-[9px] font-normal uppercase tracking-wider" />
+            </span>
           </button>
           <div className="w-px h-8 bg-[#1B2D3C]/10" />
           <button
@@ -152,7 +159,9 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
             className="flex flex-col items-center justify-center py-3 px-4 flex-1 min-w-0 bg-[#DBE7E4] text-[#1B2D3C] transition-all cursor-pointer active:bg-[#D6E2E9]"
           >
             <Calendar className="w-5 h-5 mb-1" />
-            <span className="text-[9px] font-normal uppercase tracking-wider truncate w-full text-center">Book</span>
+            <span className="text-[9px] font-normal uppercase tracking-wider truncate w-full text-center">
+              <EditableText contentKey="nav_book_label" page="nav" defaultValue="Book" adminMode={adminMode} className="text-[9px] font-normal uppercase tracking-wider" />
+            </span>
           </button>
         </div>
       </div>
@@ -161,7 +170,9 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
         <div className="md:hidden fixed inset-0 z-[60] bg-[#1B2D3C]/60 flex items-end justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-t-lg overflow-hidden shadow-lg animate-in slide-in-from-bottom-10">
             <div className="p-4 border-b border-[#1B2D3C]/10 flex justify-between items-center">
-              <p className="font-heading text-lg font-normal text-[#1B2D3C]">Call us</p>
+              <p className="font-heading text-lg font-normal text-[#1B2D3C]">
+                <EditableText contentKey="nav_call_title" page="nav" defaultValue="Call us" adminMode={adminMode} className="font-heading text-lg font-normal text-[#1B2D3C]" />
+              </p>
               <button
                 onClick={() => setShowCallOptions(false)}
                 className="p-2 hover:bg-[#FFFFFF] transition-colors cursor-pointer"
@@ -175,7 +186,9 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                 onClick={() => setShowCallOptions(false)}
                 className="block w-full py-3 px-4 bg-[#FFFFFF] text-[#1B2D3C] font-normal text-sm border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all"
               >
-                <span className="block text-[10px] text-[#1B2D3C] uppercase tracking-wider mb-1">Putney Studio</span>
+                <span className="block text-[10px] text-[#1B2D3C] uppercase tracking-wider mb-1">
+                  <EditableText contentKey="nav_putney_label" page="nav" defaultValue="Putney Studio" adminMode={adminMode} className="text-[10px] text-[#1B2D3C] uppercase tracking-wider" />
+                </span>
                 020 8788 1635
               </a>
               <a
@@ -183,14 +196,16 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                 onClick={() => setShowCallOptions(false)}
                 className="block w-full py-3 px-4 bg-[#FFFFFF] text-[#1B2D3C] font-normal text-sm border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all"
               >
-                <span className="block text-[10px] text-[#1B2D3C] uppercase tracking-wider mb-1">Wimbledon Studio</span>
+                <span className="block text-[10px] text-[#1B2D3C] uppercase tracking-wider mb-1">
+                  <EditableText contentKey="nav_wimbledon_label" page="nav" defaultValue="Wimbledon Studio" adminMode={adminMode} className="text-[10px] text-[#1B2D3C] uppercase tracking-wider" />
+                </span>
                 020 3770 4499
               </a>
               <button
                 onClick={() => setShowCallOptions(false)}
                 className="w-full py-3 text-[#1B2D3C] font-normal text-xs uppercase tracking-wider hover:bg-[#FFFFFF] transition-all cursor-pointer"
               >
-                Cancel
+                <EditableText contentKey="nav_cancel_label" page="nav" defaultValue="Cancel" adminMode={adminMode} className="text-xs uppercase tracking-wider text-[#1B2D3C]" />
               </button>
             </div>
           </div>
