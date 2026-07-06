@@ -1280,12 +1280,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </button>
               </>
             )}
-            {realtimeConnected && (
-              <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 bg-emerald-500/20 rounded-lg">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] font-bold text-emerald-300">Connected</span>
-              </div>
-            )}
             <button
               onClick={onLogout}
               className="flex items-center gap-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
@@ -3164,6 +3158,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           </div>
         </div>
       )}
+      {/* Admin Footer */}
+      <div className="border-t border-[#1B2D3C]/10 mt-8 px-4 py-3 flex items-center justify-between text-[10px] font-bold text-[#1B2D3C]/40 uppercase tracking-wider">
+        <span>Pitter Potter Admin</span>
+        <div className="flex items-center gap-1.5">
+          <span className={`w-2 h-2 rounded-full ${realtimeConnected ? 'bg-emerald-400 animate-pulse' : 'bg-stone-300'}`} />
+          <span className={realtimeConnected ? 'text-emerald-600' : 'text-stone-400'}>{realtimeConnected ? 'Realtime Connected' : 'Realtime Disconnected'}</span>
+        </div>
+      </div>
     </div>
   );
 }
