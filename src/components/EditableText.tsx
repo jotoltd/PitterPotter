@@ -40,6 +40,7 @@ export default function EditableText({ contentKey, page, defaultValue, className
 
   useEffect(() => {
     if (isEditing && editorRef.current) {
+      editorRef.current.innerHTML = value;
       editorRef.current.focus();
       setHistory([value]);
       setHistoryIndex(0);
@@ -249,19 +250,10 @@ export default function EditableText({ contentKey, page, defaultValue, className
             {/* Content Editable Area */}
             <div
               ref={editorRef}
-              contentEditable
-              className="w-full px-4 py-3 border-2 border-[#1B2D3C]/20 rounded-xl text-sm text-[#1B2D3C] font-medium focus:outline-none focus:border-amber-400 min-h-[120px] max-h-[400px] overflow-y-auto [&_*]:select-text"
-              style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
-              dangerouslySetInnerHTML={{ __html: value }}
-              onInput={() => {
-                if (editorRef.current) {
-                  const newContent = editorRef.current.innerHTML;
-                  const newHistory = history.slice(0, historyIndex + 1);
-                  newHistory.push(newContent);
-                  setHistory(newHistory);
-                  setHistoryIndex(newHistory.length - 1);
-                }
-              }}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              className="w-full px-4 py-3 border-2 border-[#1B2D3C]/20 rounded-xl text-sm text-[#1B2D3C] font-medium focus:outline-none focus:border-amber-400 min-h-[120px] max-h-[400px] overflow-y-auto"
+              style={{ userSelect: 'text', WebkitUserSelect: 'text', pointerEvents: 'auto' }}
             />
 
             <div className="flex gap-3">
