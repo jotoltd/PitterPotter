@@ -1250,14 +1250,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             {canAddWalkIn && (
               <>
                 <button
-                  onClick={() => { setActiveTab('bookings'); setShowAddModal(true); }}
+                  onClick={() => { setActiveTab('dashboard'); setShowAddModal(true); }}
                   className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
                 >
                   <Plus className="w-4 h-4" /> <span className="hidden sm:inline">New Booking</span><span className="sm:hidden">Booking</span>
                 </button>
                 <button
                   onClick={() => {
-                    setActiveTab('bookings');
+                    setActiveTab('dashboard');
                     setNewBooking(prev => ({ ...prev, sessionType: 'party' as any }));
                     setShowAddModal(true);
                   }}
@@ -1288,8 +1288,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         <div className="sticky top-[56px] z-20 bg-white border-b border-[#1B2D3C]/10 mb-6">
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {[
-              { value: 'dashboard', label: 'Calendar', badge: null },
-              { value: 'bookings', label: 'Bookings', badge: stats.pending > 0 ? stats.pending : null },
+              { value: 'dashboard', label: 'Dashboard', badge: stats.pending > 0 ? stats.pending : null },
               { value: 'gift-cards', label: 'Gift Vouchers', badge: null },
               ...(canManageStaff ? [{ value: 'audit-logs', label: 'Audit Log', badge: null }] : []),
             ].map((tab) => (
@@ -1353,6 +1352,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         )}
 
         {!loading && activeTab === 'dashboard' && (
+          <>
           <DashboardOverview
             bookings={inquiries}
             onAssignTable={(bookingId, tableId) => {
@@ -1386,46 +1386,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             }}
             onNavigateToBookings={(date) => {
               if (date) setDateRange({ start: date, end: date });
-              setActiveTab('bookings');
             }}
-            onNavigateToAddBooking={() => { setActiveTab('bookings'); setShowAddModal(true); }}
+            onNavigateToAddBooking={() => setShowAddModal(true)}
           />
-        )}
+          </>)}
 
-        {!loading && activeTab === 'bookings' && (
-          <>
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] sm:text-xs text-stone-500 font-bold uppercase tracking-wider">Total Bookings</p>
-                <p className="text-2xl sm:text-3xl font-black text-[#1B2D3C] mt-2">{stats.total}</p>
-              </div>
-              <Users className="w-6 h-6 sm:w-8 sm:h-8 text-[#1B2D3C]" />
-            </div>
-          </div>
-          <div className="bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] sm:text-xs text-stone-500 font-bold uppercase tracking-wider">Awaiting Confirmation</p>
-                <p className="text-2xl sm:text-3xl font-black text-amber-600 mt-2">{stats.pending}</p>
-              </div>
-              <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-amber-600" />
-            </div>
-          </div>
-          <div className="bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] sm:text-xs text-stone-500 font-bold uppercase tracking-wider">Confirmed</p>
-                <p className="text-2xl sm:text-3xl font-black text-emerald-600 mt-2">{stats.confirmed}</p>
-              </div>
-              <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-600" />
-            </div>
-          </div>
-        </div>
-          </>
-        )}
 
         {activeTab === 'gift-cards' && (
           <div className="bg-white p-6 border border-[#1B2D3C]/20 shadow-sm mb-8">
@@ -1539,10 +1504,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
         )}
 
-        {activeTab === 'bookings' && (
+        {activeTab === 'dashboard' && (
           <>
         {/* Booking type tabs */}
-        <div className="flex gap-2 mb-5">
+        <div className="flex gap-2 mb-5 mt-8">
           {([
             { value: 'all', label: 'All Bookings' },
             { value: 'painting', label: 'Painting' },

@@ -86,7 +86,7 @@ export default function AdminCalendar({
               key={day.toISOString()}
               onClick={() => onSelectDate(day)}
               className={`
-                min-h-[7rem] p-2 text-left border-r border-b border-[#1B2D3C]/5 transition-colors
+                min-h-[3.5rem] p-1.5 text-left border-r border-b border-[#1B2D3C]/5 transition-colors
                 ${!inMonth ? 'opacity-40 bg-[#F8FAFB]' : 'bg-white'}
                 ${selected ? 'bg-[#DBE7E4]/60' : ''}
                 ${today && !selected ? 'bg-[#D6E2E9]/20' : ''}
@@ -94,7 +94,7 @@ export default function AdminCalendar({
               `}
             >
               <span className={`
-                w-7 h-7 flex items-center justify-center text-sm font-black rounded-full
+                w-6 h-6 flex items-center justify-center text-xs font-black rounded-full
                 ${today ? 'bg-[#1B2D3C] text-white' : 'text-[#1B2D3C]'}
               `}>
                 {format(day, 'd')}
