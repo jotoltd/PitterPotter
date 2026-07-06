@@ -111,4 +111,8 @@ body.admin-mode-active .z-\[200\],
 body.admin-mode-active .z-\[200\] * {
   pointer-events: auto;
   opacity: 1;
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
 }
