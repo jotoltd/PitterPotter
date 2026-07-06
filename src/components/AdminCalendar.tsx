@@ -66,25 +66,27 @@ export default function AdminCalendar({
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => onMonthChange(subMonths(month, 1))}
-            className="p-2 rounded-lg hover:bg-[#1B2D3C]/5 transition-colors"
-            aria-label="Previous month"
-          >
-            <ChevronLeft className="w-5 h-5 text-[#1B2D3C]" />
-          </button>
-          <button
             onClick={() => onMonthChange(new Date())}
             className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[#1B2D3C]/20 rounded-lg hover:bg-[#DBE7E4] transition-all text-[#1B2D3C]"
           >
             Today
           </button>
-          <button
-            onClick={() => onMonthChange(addMonths(month, 1))}
-            className="p-2 rounded-lg hover:bg-[#1B2D3C]/5 transition-colors"
-            aria-label="Next month"
-          >
-            <ChevronRight className="w-5 h-5 text-[#1B2D3C]" />
-          </button>
+          <div className="flex items-center">
+            <button
+              onClick={() => onMonthChange(subMonths(month, 1))}
+              className="p-2 rounded-l-lg hover:bg-[#1B2D3C]/5 transition-colors border border-[#1B2D3C]/20"
+              aria-label="Previous month"
+            >
+              <ChevronLeft className="w-4 h-4 text-[#1B2D3C]" />
+            </button>
+            <button
+              onClick={() => onMonthChange(addMonths(month, 1))}
+              className="p-2 rounded-r-lg hover:bg-[#1B2D3C]/5 transition-colors border border-[#1B2D3C]/20 border-l-0"
+              aria-label="Next month"
+            >
+              <ChevronRight className="w-4 h-4 text-[#1B2D3C]" />
+            </button>
+          </div>
         </div>
       </div>
 
