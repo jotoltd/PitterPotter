@@ -146,7 +146,7 @@ export default function EditableButton({
 
       {isEditing && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setIsEditing(false); }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">

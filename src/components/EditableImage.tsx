@@ -198,7 +198,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
       </div>
 
       {showGallery && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowGallery(false); }}>
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) setShowGallery(false); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-[#1B2D3C]/10">
               <h3 className="font-heading text-base font-black text-[#1B2D3C] flex items-center gap-2">

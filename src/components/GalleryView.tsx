@@ -440,7 +440,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
 
       {/* Lightbox */}
       {lightboxIndex !== null && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/90 z-[120] flex items-center justify-center p-4">
           <button
             onClick={() => setLightboxIndex(null)}
             className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"

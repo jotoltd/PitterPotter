@@ -165,7 +165,7 @@ export default function EditableText({ contentKey, page, defaultValue, className
       </span>
 
       {isEditing && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) handleCancel(); }}>
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) handleCancel(); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-heading text-base font-black text-[#1B2D3C] flex items-center gap-2">
