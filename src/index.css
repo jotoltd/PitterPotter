@@ -106,7 +106,9 @@ body.admin-mode-active [role="button"]:not([data-editable]) {
 body.admin-mode-active [data-editable],
 body.admin-mode-active .cursor-pointer,
 body.admin-mode-active button[role="button"],
-body.admin-mode-active [contenteditable] {
+body.admin-mode-active [contenteditable],
+body.admin-mode-active .z-\[200\],
+body.admin-mode-active .z-\[200\] * {
   pointer-events: auto;
   opacity: 1;
 }
