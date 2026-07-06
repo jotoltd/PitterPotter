@@ -112,7 +112,8 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         setItems(mergedItems);
       }
     } catch (err) {
-      console.error('Failed to load gallery items:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Failed to load gallery items:', errorMessage, err);
     }
   };
 
@@ -157,8 +158,9 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         showToast(`${newItems.length} image${newItems.length > 1 ? 's' : ''} added!`, 'success');
       }
     } catch (err) {
-      console.error('Failed to add images:', err);
-      showToast('Failed to add images', 'error');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Failed to add images:', errorMessage, err);
+      showToast(`Failed to add images: ${errorMessage}`, 'error');
     } finally {
       setLoading(false);
       setUploadProgress(0);
@@ -193,8 +195,9 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         }
       }
     } catch (err) {
-      console.error('Failed to add image from URL:', err);
-      showToast('Failed to add image from URL', 'error');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Failed to add image from URL:', errorMessage, err);
+      showToast(`Failed to add image from URL: ${errorMessage}`, 'error');
     } finally {
       setLoading(false);
       setUploadProgress(0);
@@ -229,8 +232,9 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
       await saveOrder(newItems);
       showToast('Image removed', 'success');
     } catch (err) {
-      console.error('Failed to delete image:', err);
-      showToast('Failed to delete image', 'error');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Failed to delete image:', errorMessage, err);
+      showToast(`Failed to delete image: ${errorMessage}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -252,7 +256,8 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         });
       }
     } catch (err) {
-      console.error('Failed to save order:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Failed to save order:', errorMessage, err);
     }
   };
 
