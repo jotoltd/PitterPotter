@@ -3,6 +3,7 @@ import { Camera, Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { Staff } from '../types';
 import { useToast } from './ToastContext';
+import { Images } from '../images';
 
 interface EditableImageProps {
   contentKey: string;
@@ -47,17 +48,33 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
   }, [contentKey, page]);
 
   const loadGallery = async () => {
-    if (!isSupabaseEnabled()) return;
     setGalleryLoading(true);
     try {
-      const { data } = await supabase!
-        .from('content')
-        .select('id, key, page, value')
-        .eq('type', 'image')
-        .order('updated_at', { ascending: false });
-      setExistingImages(data || []);
+      const staticImages: ExistingImage[] = [
+        { id: 'static-studio-hero', key: 'studio_hero', page: 'static', value: Images.studioHero },
+        { id: 'static-birthday', key: 'birthday_parties', page: 'static', value: Images.birthdayParties },
+        { id: 'static-clay', key: 'clay_imprint', page: 'static', value: Images.clayImprint },
+        { id: 'static-gallery', key: 'pottery_gallery', page: 'static', value: Images.potteryGallery },
+        { id: 'static-putney', key: 'putney_studio', page: 'static', value: Images.putneyStudio },
+        { id: 'static-wimbledon', key: 'wimbledon_studio', page: 'static', value: Images.wimbledonStudio },
+        ...Images.putneyGallery.map((src, i) => ({ id: `static-putney-${i}`, key: `putney_gallery_${i}`, page: 'static', value: src })),
+        ...Images.wimbledonGallery.map((src, i) => ({ id: `static-wimbledon-${i}`, key: `wimbledon_gallery_${i}`, page: 'static', value: src })),
+        ...Images.productGallery.map((src, i) => ({ id: `static-product-${i}`, key: `product_gallery_${i}`, page: 'static', value: src })),
+      ];
+
+      if (isSupabaseEnabled()) {
+        const { data } = await supabase!
+          .from('content')
+          .select('id, key, page, value')
+          .eq('type', 'image')
+          .order('updated_at', { ascending: false });
+        setExistingImages([...staticImages, ...(data || [])]);
+      } else {
+        setExistingImages(staticImages);
+      }
     } catch (err) {
       console.error('Failed to load gallery:', err);
+      setExistingImages([]);
     } finally {
       setGalleryLoading(false);
     }
