@@ -47,6 +47,15 @@ export default function EditableText({ contentKey, page, defaultValue, className
     }
   }, [isEditing, value]);
 
+  useEffect(() => {
+    if (isEditing) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isEditing]);
+
   const execCommand = (command: string, value?: string) => {
     document.execCommand(command, false, value);
     if (editorRef.current) {

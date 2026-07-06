@@ -75,6 +75,15 @@ export default function EditableButton({
       });
   }, [contentKey, page]);
 
+  useEffect(() => {
+    if (isEditing) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isEditing]);
+
   const handleSave = async () => {
     setLoading(true);
     try {

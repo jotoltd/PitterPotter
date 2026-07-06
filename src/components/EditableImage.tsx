@@ -47,6 +47,15 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
     }
   }, [contentKey, page]);
 
+  useEffect(() => {
+    if (showGallery) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [showGallery]);
+
   const loadGallery = async () => {
     setGalleryLoading(true);
     try {
