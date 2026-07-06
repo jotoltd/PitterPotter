@@ -78,7 +78,7 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
  <div className="flex gap-3">
  <button
  onClick={() => setCurrentPage('contact-info')}
- className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#486581] transition-all rounded-lg whitespace-nowrap cursor-pointer"
+ className="px-6 py-3.5 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-widest hover:bg-[#486581] transition-all whitespace-nowrap cursor-pointer"
  >
  <EditableText contentKey="help_callout_button" page="faqs" defaultValue="Contact Us" adminMode={adminMode} className="text-xs uppercase tracking-wider text-white" />
  </button>
