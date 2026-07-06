@@ -440,17 +440,11 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
                     }`}
                   >
                     <div className="font-bold text-sm">{slot}</div>
-                    <div className={`text-[11px] font-semibold mt-1 ${
-                      time === slot 
-                        ? 'text-white/90' 
-                        : isFull 
-                          ? 'text-stone-400'
-                          : isLimited 
-                            ? 'text-orange-600' 
-                            : 'text-[#1B2D3C]/60'
-                    }`}>
-                      {isFull ? <EditableText contentKey="party_slot_full" page="party-booking" defaultValue="FULLY BOOKED" adminMode={adminMode} className="text-[11px] font-semibold" /> : <EditableText contentKey={`party_slot_remaining_${remaining === 1 ? 'single' : 'plural'}`} page="party-booking" defaultValue={`${remaining} ${remaining === 1 ? 'space' : 'spaces'} left`} adminMode={adminMode} className="text-[11px] font-semibold" />}
-                    </div>
+                    {isFull && (
+                      <div className="text-[11px] font-semibold mt-1 text-stone-400">
+                        FULLY BOOKED
+                      </div>
+                    )}
                   </button>
                 );
               })}
@@ -546,13 +540,6 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
             <p>{guests === '' ? 1 : guests} guest{(guests === '' ? 1 : guests) !== 1 ? 's' : ''}</p>
             <p>£{partyPrice.toFixed(2)} per person (includes the £5.95 studio fee) · estimated total £{((guests === '' ? 1 : guests) * partyPrice).toFixed(2)}</p>
             <p>£{depositAmount.toFixed(2)} deposit today, balance payable 48 hours before the party</p>
-            <div className={`inline-block px-2 py-1 rounded text-xs font-bold ${
-              (slotCapacity[time] ?? PARTY_GUEST_LIMIT[studio]) <= 5 
-                ? 'bg-orange-100 text-orange-700' 
-                : 'bg-green-100 text-green-700'
-            }`}>
-              <EditableText contentKey={`party_summary_available_${(slotCapacity[time] ?? PARTY_GUEST_LIMIT[studio]) === 1 ? 'single' : 'plural'}`} page="party-booking" defaultValue={`✓ ${(slotCapacity[time] ?? PARTY_GUEST_LIMIT[studio])} space${(slotCapacity[time] ?? PARTY_GUEST_LIMIT[studio]) !== 1 ? 's' : ''} available`} adminMode={adminMode} className="text-xs font-bold" />
-            </div>
           </div>
         )}
 
