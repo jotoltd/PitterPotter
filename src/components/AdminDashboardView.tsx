@@ -1688,7 +1688,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           className="w-4 h-4 accent-[#1B2D3C] shrink-0 cursor-pointer" />
                         <div className="min-w-0">
                           <p className="text-sm font-black text-[#1B2D3C] truncate">{inq.name}</p>
-                          <p className="text-[11px] text-[#1B2D3C]/50 font-semibold">{inq.phone}</p>
+                          <a href={`tel:${inq.phone}`} onClick={e => e.stopPropagation()} className="text-[11px] text-[#1B2D3C]/50 font-semibold hover:text-[#1B2D3C] hover:underline">{inq.phone}</a>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
@@ -1753,7 +1753,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-xs font-black text-[#1B2D3C]">{inq.name}</p>
-                          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold hidden lg:block">{inq.email}</p>
+                          <a href={`mailto:${inq.email}`} onClick={e => e.stopPropagation()} className="text-[10px] text-[#1B2D3C]/50 font-semibold hidden lg:block hover:text-[#1B2D3C] hover:underline">{inq.email}</a>
+                          <a href={`tel:${inq.phone}`} onClick={e => e.stopPropagation()} className="text-[10px] text-[#1B2D3C]/50 font-semibold hover:text-[#1B2D3C] hover:underline">{inq.phone}</a>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#D6E2E9] text-[#1B2D3C] rounded-full text-[10px] font-black"><Users className="w-2.5 h-2.5" />{inq.paintersCount}</span>
                             {inq.source === 'walk-in' && <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold">Walk-in</span>}
