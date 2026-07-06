@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
-import { Edit2, Check, X, Image as ImageIcon, Upload } from 'lucide-react';
+import { Camera, Loader2 } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { Staff } from '../types';
 import { useToast } from './ToastContext';
@@ -17,8 +17,6 @@ interface EditableImageProps {
 export default function EditableImage({ contentKey, page, defaultSrc, alt, className, adminMode, onSave }: EditableImageProps) {
   const { showToast } = useToast();
   const [src, setSrc] = useState(defaultSrc);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(defaultSrc);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -33,7 +31,6 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
         .then(({ data }) => {
           if (data?.value) {
             setSrc(data.value);
-            setEditValue(data.value);
           }
         });
     }
@@ -42,197 +39,82 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (!isSupabaseEnabled()) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl) setEditValue(dataUrl);
-      };
-      reader.readAsDataURL(file);
-      return;
-    }
+    e.target.value = '';
 
     setLoading(true);
     try {
-      if (adminMode) {
-        const savedStaff = localStorage.getItem('pp_current_staff');
-        const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
-        if (staff?.sessionToken) {
-          const reader = new FileReader();
-          const dataUrl = await new Promise<string>((resolve, reject) => {
-            reader.onload = (event) => resolve(event.target?.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
+      const reader = new FileReader();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onload = (ev) => resolve(ev.target?.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
-          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            },
-            body: JSON.stringify({
-              action: 'upload',
-              username: staff.username,
-              sessionToken: staff.sessionToken,
-              key: contentKey,
-              page,
-              fileData: dataUrl,
-              fileName: file.name,
-            }),
-          });
-          const data = await response.json();
-          if (!response.ok || data.error) throw new Error(data.error || 'Failed to upload image');
-          setEditValue(data.url);
-          return;
-        }
+      if (!isSupabaseEnabled()) {
+        setSrc(dataUrl);
+        onSave?.(dataUrl);
+        showToast('Image updated!', 'success');
+        return;
       }
 
-      // Fallback for local/offline mode
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl) setEditValue(dataUrl);
-      };
-      reader.readAsDataURL(file);
+      const savedStaff = localStorage.getItem('pp_current_staff');
+      const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
+
+      if (adminMode && staff?.sessionToken) {
+        const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ action: 'upload', username: staff.username, sessionToken: staff.sessionToken, key: contentKey, page, fileData: dataUrl, fileName: file.name }),
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok || uploadData.error) throw new Error(uploadData.error || 'Upload failed');
+
+        const saveRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ action: 'save', username: staff.username, sessionToken: staff.sessionToken, key: contentKey, page, value: uploadData.url, type: 'image' }),
+        });
+        const saveData = await saveRes.json();
+        if (!saveRes.ok || saveData.error) throw new Error(saveData.error || 'Save failed');
+
+        setSrc(uploadData.url);
+        onSave?.(uploadData.url);
+      } else {
+        await supabase!.from('content').upsert({ key: contentKey, value: dataUrl, type: 'image', page, updated_at: new Date().toISOString() });
+        setSrc(dataUrl);
+        onSave?.(dataUrl);
+      }
+      showToast('Image updated!', 'success');
     } catch (err) {
       console.error('Failed to upload image:', err);
-      showToast('Failed to upload image. Please try a URL or create the content bucket in Supabase.', 'error');
+      showToast('Failed to upload image', 'error');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSave = async () => {
-    if (!isSupabaseEnabled()) {
-      setSrc(editValue);
-      setIsEditing(false);
-      onSave?.(editValue);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      let saved = false;
-      if (adminMode) {
-        const savedStaff = localStorage.getItem('pp_current_staff');
-        const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
-        if (staff?.sessionToken) {
-          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            },
-            body: JSON.stringify({
-              action: 'save',
-              username: staff.username,
-              sessionToken: staff.sessionToken,
-              key: contentKey,
-              page,
-              value: editValue,
-              type: 'image',
-            }),
-          });
-          const data = await response.json();
-          if (!response.ok || data.error) throw new Error(data.error || 'Failed to save content');
-          saved = true;
-        }
-      }
-
-      if (!saved) {
-        const { error } = await supabase!
-          .from('content')
-          .upsert({
-            key: contentKey,
-            value: editValue,
-            type: 'image',
-            page,
-            updated_at: new Date().toISOString(),
-          });
-        if (error) throw error;
-      }
-
-      setSrc(editValue);
-      setIsEditing(false);
-      onSave?.(editValue);
-    } catch (err) {
-      console.error('Failed to save content:', err);
-      showToast('Failed to save changes', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setEditValue(src);
-    setIsEditing(false);
   };
 
   if (!adminMode) {
     return <img src={src} alt={alt} className={className} />;
   }
 
-  if (isEditing) {
-    return (
-      <div className="inline-block">
-        <div className="flex items-center gap-2 mb-2">
-          <input
-            type="text"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSave();
-              if (e.key === 'Escape') handleCancel();
-            }}
-            className="flex-1 px-2 py-1 border-2 border-[#1B2D3C] bg-white text-[#1B2D3C] text-sm font-bold focus:outline-none"
-            placeholder="Image URL"
-            autoFocus
-          />
-          <input
-            type="file"
-            accept="image/*"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={loading}
-            className="p-1 bg-[#DBE7E4] text-[#1B2D3C] rounded hover:bg-[#D6E2E9] cursor-pointer disabled:opacity-50"
-            title="Upload image"
-          >
-            <Upload className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="p-1 bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200 cursor-pointer disabled:opacity-50"
-          >
-            <Check className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleCancel}
-            className="p-1 bg-red-100 text-red-700 rounded hover:bg-red-200 cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <img src={editValue || defaultSrc} alt={alt} className={className} />
-      </div>
-    );
-  }
-
   return (
-    <div className="relative group inline-block">
+    <div className="relative group inline-block cursor-pointer" onClick={() => !loading && fileInputRef.current?.click()} title="Click to change image">
+      <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
       <img src={src} alt={alt} className={className} />
-      <button
-        onClick={() => setIsEditing(true)}
-        className="absolute top-2 right-2 p-2 bg-[#1B2D3C]/80 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-[#1B2D3C]"
-      >
-        <Edit2 className="w-4 h-4" />
-      </button>
+      <div className={`absolute inset-0 flex flex-col items-center justify-center gap-2 rounded transition-opacity ${
+        loading ? 'bg-black/40 opacity-100' : 'bg-black/0 group-hover:bg-black/40 opacity-0 group-hover:opacity-100'
+      }`}>
+        {loading
+          ? <Loader2 className="w-8 h-8 text-white animate-spin" />
+          : <>
+              <Camera className="w-8 h-8 text-white" />
+              <span className="text-white text-xs font-bold uppercase tracking-wider">Change Image</span>
+            </>
+        }
+      </div>
+      <div className="absolute top-2 right-2 px-2 py-1 bg-amber-400 text-white text-[9px] font-bold uppercase tracking-wider rounded opacity-0 group-hover:opacity-100 transition-opacity">
+        Edit
+      </div>
     </div>
   );
 }

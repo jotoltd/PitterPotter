@@ -192,6 +192,19 @@ export default function App() {
  {/* Navigation Headers */}
  {currentPage !== 'admin' && <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} currentStaff={currentStaff} adminMode={adminMode} setAdminMode={setAdminMode} />}
 
+ {/* Edit Mode Banner */}
+ {adminMode && currentPage !== 'admin' && (
+   <div className="sticky top-0 z-[150] w-full bg-amber-400 text-amber-900 text-[11px] font-bold uppercase tracking-widest flex items-center justify-between px-4 py-2 shadow-sm">
+     <span className="flex items-center gap-2">
+       <span className="w-2 h-2 rounded-full bg-amber-700 animate-pulse inline-block" />
+       Edit Mode — click any <span className="underline underline-offset-2">text</span> or <span className="underline underline-offset-2">image</span> to edit it
+     </span>
+     <button onClick={() => setAdminMode(false)} className="px-3 py-1 bg-amber-900/10 hover:bg-amber-900/20 rounded text-amber-900 cursor-pointer transition-colors">
+       Done Editing
+     </button>
+   </div>
+ )}
+
  {/* Main Pages Content Window with graceful layout transitions */}
  <main className="flex-grow">
  {currentPage !== 'home' && currentPage !== 'admin' && (
