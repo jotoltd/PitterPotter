@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { Users, CheckCircle, CalendarDays, MapPin, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Phone, Mail, FileText, Gift, AlertCircle, Plus } from 'lucide-react';
 import { BookingInquiry } from '../types';
+import AdminCalendar from './AdminCalendar';
 
 interface DashboardOverviewProps {
   bookings: BookingInquiry[];
@@ -271,6 +272,7 @@ function DailySheet({
 
 export default function DashboardOverview({ bookings, onAssignTable, onConfirm, onBulkConfirm, onNavigateToBookings, onNavigateToAddBooking }: DashboardOverviewProps) {
   const [viewDate, setViewDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [bulkConfirming, setBulkConfirming] = useState(false);
   const [nameSearch, setNameSearch] = useState('');
 
@@ -379,6 +381,15 @@ export default function DashboardOverview({ bookings, onAssignTable, onConfirm, 
           <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{todayBookings.length - unassignedCount} assigned</p>
         </div>
       </div>
+
+      {/* Big calendar */}
+      <AdminCalendar
+        bookings={bookings}
+        selectedDate={new Date(viewDate)}
+        onSelectDate={(date) => setViewDate(format(date, 'yyyy-MM-dd'))}
+        month={calendarMonth}
+        onMonthChange={setCalendarMonth}
+      />
 
       {/* Name search */}
       <div className="relative max-w-xs">
