@@ -4,6 +4,7 @@ import { Page } from '../types';
 import { Images } from '../images';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
+import EditableButton from './EditableButton';
 
 interface HomeViewProps {
   adminMode?: boolean;
@@ -49,20 +50,24 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  />
  </div>
  <div className="flex flex-wrap gap-4">
- <button
- id="hero-book-button"
- onClick={() => setCurrentPage('book')}
- className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#DBE7E4] transition-all cursor-pointer rounded-lg"
- >
- <EditableText contentKey="hero_book_button" page="home" defaultValue="Book a Session" adminMode={adminMode} className="text-sm uppercase tracking-widest" />
- </button>
- <button
- id="hero-contact-button"
- onClick={() => setCurrentPage('contact-info')}
- className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#DBE7E4] transition-all cursor-pointer rounded-lg"
- >
- <EditableText contentKey="hero_contact_button" page="home" defaultValue="Contact Us" adminMode={adminMode} className="text-sm uppercase tracking-widest" />
- </button>
+ <EditableButton
+ contentKey="hero_book_button"
+ page="home"
+ defaultLabel="Book a Session"
+ defaultHref="book"
+ adminMode={adminMode}
+ onNavigate={setCurrentPage}
+ className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#DBE7E4] transition-all rounded-lg"
+ />
+ <EditableButton
+ contentKey="hero_contact_button"
+ page="home"
+ defaultLabel="Contact Us"
+ defaultHref="contact-info"
+ adminMode={adminMode}
+ onNavigate={setCurrentPage}
+ className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#DBE7E4] transition-all rounded-lg"
+ />
  </div>
  </motion.div>
  </div>
@@ -113,12 +118,17 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  </table>
  </div>
  </div>
- <button
- onClick={() => setCurrentPage('putney')}
- className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#1B2D3C] pt-2 hover:text-[#1B2D3C]/80 cursor-pointer"
+ <EditableButton
+ contentKey="putney_card_link"
+ page="home"
+ defaultLabel="View Studio"
+ defaultHref="putney"
+ adminMode={adminMode}
+ onNavigate={setCurrentPage}
+ className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#1B2D3C] pt-2 hover:text-[#1B2D3C]/80"
  >
- <EditableText contentKey="putney_card_link" page="home" defaultValue="View Studio" adminMode={adminMode} className="text-xs uppercase tracking-widest text-[#1B2D3C]" /> <ArrowRight className="w-4 h-4" />
- </button>
+ <ArrowRight className="w-4 h-4" />
+ </EditableButton>
  </div>
  </div>
 
@@ -164,12 +174,17 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  </table>
  </div>
  </div>
- <button
- onClick={() => setCurrentPage('wimbledon')}
- className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#1B2D3C] pt-2 hover:text-[#1B2D3C]/80 cursor-pointer"
+ <EditableButton
+ contentKey="wimbledon_card_link"
+ page="home"
+ defaultLabel="View Studio"
+ defaultHref="wimbledon"
+ adminMode={adminMode}
+ onNavigate={setCurrentPage}
+ className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-[#1B2D3C] pt-2 hover:text-[#1B2D3C]/80"
  >
- <EditableText contentKey="wimbledon_card_link" page="home" defaultValue="View Studio" adminMode={adminMode} className="text-xs uppercase tracking-widest text-[#1B2D3C]" /> <ArrowRight className="w-4 h-4" />
- </button>
+ <ArrowRight className="w-4 h-4" />
+ </EditableButton>
  </div>
  </div>
  </div>

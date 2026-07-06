@@ -4,6 +4,7 @@ import { Page } from '../types';
 import { Images } from '../images';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
+import EditableButton from './EditableButton';
 
 interface BabyPrintsViewProps {
   setCurrentPage: (page: Page) => void;
@@ -129,20 +130,28 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
           <EditableText contentKey="cta_text" page="baby-prints" defaultValue="Book a baby print session at your preferred studio. Sessions are relaxed and can fit around feeds and naps." adminMode={adminMode} className="text-[#1B2D3C]/85 leading-relaxed" />
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={() => setCurrentPage('baby-prints-book')}
-            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#F8FAFC] transition-all cursor-pointer rounded-lg"
+          <EditableButton
+            contentKey="cta_book_button"
+            page="baby-prints"
+            defaultLabel="Book a Session"
+            defaultHref="baby-prints-book"
+            adminMode={adminMode}
+            onNavigate={setCurrentPage}
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#F8FAFC] transition-all rounded-lg"
           >
             <Calendar className="w-4 h-4" />
-            <EditableText contentKey="cta_book_button" page="baby-prints" defaultValue="Book a Session" adminMode={adminMode} className="text-sm uppercase tracking-widest" />
-          </button>
-          <button
-            onClick={() => setCurrentPage('contact-info')}
-            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#F8FAFC] transition-all cursor-pointer rounded-lg"
+          </EditableButton>
+          <EditableButton
+            contentKey="cta_contact_button"
+            page="baby-prints"
+            defaultLabel="Contact Us"
+            defaultHref="contact-info"
+            adminMode={adminMode}
+            onNavigate={setCurrentPage}
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-white text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#F8FAFC] transition-all rounded-lg"
           >
             <Phone className="w-4 h-4" />
-            <EditableText contentKey="cta_contact_button" page="baby-prints" defaultValue="Contact Us" adminMode={adminMode} className="text-sm uppercase tracking-widest text-[#1B2D3C]" />
-          </button>
+          </EditableButton>
         </div>
       </div>
 

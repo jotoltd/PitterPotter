@@ -4,6 +4,7 @@ import { Page, Staff } from '../types';
 import { Images } from '../images';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
+import EditableButton from './EditableButton';
 
 interface NavbarProps {
   currentPage: Page;
@@ -74,13 +75,15 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                   <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-[#1B2D3C] transition-all duration-300 ${isActive(item.value) ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
                 </button>
               ))}
-              <button
-                id="cta-book-session"
-                onClick={() => handleNavClick('book')}
-                className="ml-4 inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#DBE7E4] text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer rounded-lg"
-              >
-                <EditableText contentKey="nav_book_button" page="navbar" defaultValue="Booking" adminMode={adminMode} className="text-sm uppercase tracking-widest" />
-              </button>
+              <EditableButton
+                contentKey="nav_book_button"
+                page="navbar"
+                defaultLabel="Booking"
+                defaultHref="book"
+                adminMode={adminMode}
+                onNavigate={handleNavClick}
+                className="ml-4 inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#DBE7E4] text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#D6E2E9] transition-all rounded-lg"
+              />
               {currentStaff && (
                 <button
                   onClick={() => setAdminMode(!adminMode)}
