@@ -1331,7 +1331,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               if (confirmed > 0) showToast(`${confirmed} booking${confirmed !== 1 ? 's' : ''} confirmed`, 'success');
               if (failed > 0) showToast(`${failed} could not be confirmed — studio may be full`, 'error');
             }}
-            onNavigateToBookings={() => setActiveTab('bookings')}
+            onNavigateToBookings={(date) => {
+              if (date) setDateRange({ start: date, end: date });
+              setActiveTab('bookings');
+            }}
             onNavigateToAddBooking={() => { setActiveTab('bookings'); setShowAddModal(true); }}
           />
         )}

@@ -9,7 +9,7 @@ interface DashboardOverviewProps {
   onAssignTable: (bookingId: string, tableId: string | null) => void;
   onConfirm?: (bookingId: string) => void;
   onBulkConfirm?: (bookingIds: string[]) => void;
-  onNavigateToBookings?: () => void;
+  onNavigateToBookings?: (date?: string) => void;
   onNavigateToAddBooking?: () => void;
 }
 
@@ -273,152 +273,21 @@ function DailySheet({
 export default function DashboardOverview({ bookings, onAssignTable, onConfirm, onBulkConfirm, onNavigateToBookings, onNavigateToAddBooking }: DashboardOverviewProps) {
   const [viewDate, setViewDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
-  const [bulkConfirming, setBulkConfirming] = useState(false);
-  const [nameSearch, setNameSearch] = useState('');
-
-  const today = format(new Date(), 'yyyy-MM-dd');
-
-  const todayBookings = useMemo(() => {
-    const byDate = bookings.filter(b => b.date === viewDate);
-    if (!nameSearch.trim()) return byDate;
-    return byDate.filter(b => b.name.toLowerCase().includes(nameSearch.toLowerCase()));
-  }, [bookings, viewDate, nameSearch]);
-  const putneyToday = useMemo(() => todayBookings.filter(b => b.studio === 'Putney'), [todayBookings]);
-  const wimbledonToday = useMemo(() => todayBookings.filter(b => b.studio === 'Wimbledon'), [todayBookings]);
-
-  const totalSeats = todayBookings.reduce((s, b) => s + b.paintersCount, 0);
-  const pendingToday = todayBookings.filter(b => b.status === 'pending');
-  const confirmedCount = todayBookings.filter(b => b.status === 'confirmed').length;
-  const unassignedCount = todayBookings.filter(b => !b.tableId).length;
-
-  const shiftDate = (days: number) => {
-    const d = new Date(viewDate);
-    d.setDate(d.getDate() + days);
-    setViewDate(format(d, 'yyyy-MM-dd'));
-  };
-
-  const handleBulkConfirm = async () => {
-    if (!onBulkConfirm || pendingToday.length === 0) return;
-    setBulkConfirming(true);
-    await onBulkConfirm(pendingToday.map(b => b.id));
-    setBulkConfirming(false);
-  };
 
   return (
-    <div className="space-y-8">
-
-      {/* Date nav */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <button onClick={() => shiftDate(-1)} className="p-2 border border-[#1B2D3C]/20 rounded-lg hover:bg-[#DBE7E4] transition-all cursor-pointer">
-            <ChevronLeft className="w-4 h-4 text-[#1B2D3C]" />
-          </button>
-          <div className="text-center">
-            <p className="font-heading font-black text-[#1B2D3C] text-lg">
-              {viewDate === today ? 'Today' : format(new Date(viewDate), 'EEEE')}
-            </p>
-            <p className="text-xs text-[#1B2D3C]/60 font-semibold">{format(new Date(viewDate), 'do MMMM yyyy')}</p>
-          </div>
-          <button onClick={() => shiftDate(1)} className="p-2 border border-[#1B2D3C]/20 rounded-lg hover:bg-[#DBE7E4] transition-all cursor-pointer">
-            <ChevronRight className="w-4 h-4 text-[#1B2D3C]" />
-          </button>
-          {viewDate !== today && (
-            <button onClick={() => setViewDate(today)} className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border border-[#1B2D3C]/20 rounded-lg hover:bg-[#DBE7E4] transition-all cursor-pointer text-[#1B2D3C]">
-              Today
-            </button>
-          )}
-        </div>
-        <input
-          type="date"
-          value={viewDate}
-          onChange={e => setViewDate(e.target.value)}
-          className="px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none bg-white"
-        />
-      </div>
-
-      {/* Pending action banner */}
-      {pendingToday.length > 0 && (
-        <div className="flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
-            <p className="text-sm font-bold text-amber-800">
-              {pendingToday.length} booking{pendingToday.length !== 1 ? 's' : ''} awaiting confirmation for {viewDate === today ? 'today' : format(new Date(viewDate), 'do MMM')}
-            </p>
-          </div>
-          {onBulkConfirm && (
-            <button
-              onClick={handleBulkConfirm}
-              disabled={bulkConfirming}
-              className="shrink-0 flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
-            >
-              <CheckCircle className="w-4 h-4" />
-              {bulkConfirming ? 'Confirming…' : `Confirm All ${pendingToday.length}`}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white border border-[#1B2D3C]/20 rounded-xl p-4 space-y-1">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">Bookings</p>
-          <p className="text-3xl font-black text-[#1B2D3C]">{todayBookings.length}</p>
-          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{putneyToday.length} Putney · {wimbledonToday.length} Wimbledon</p>
-        </div>
-        <div className="bg-white border border-[#1B2D3C]/20 rounded-xl p-4 space-y-1">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">Seats</p>
-          <p className="text-3xl font-black text-[#1B2D3C]">{totalSeats}</p>
-          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">across all sessions</p>
-        </div>
-        <div className={`border rounded-xl p-4 space-y-1 ${pendingToday.length > 0 ? 'bg-amber-50 border-amber-200' : 'bg-white border-[#1B2D3C]/20'}`}>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600/80">Awaiting</p>
-          <p className="text-3xl font-black text-amber-600">{pendingToday.length}</p>
-          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{confirmedCount} confirmed</p>
-        </div>
-        <div className={`border rounded-xl p-4 space-y-1 ${unassignedCount > 0 ? 'bg-red-50 border-red-200' : 'bg-white border-[#1B2D3C]/20'}`}>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">No Table</p>
-          <p className={`text-3xl font-black ${unassignedCount > 0 ? 'text-red-500' : 'text-emerald-600'}`}>{unassignedCount}</p>
-          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{todayBookings.length - unassignedCount} assigned</p>
-        </div>
-      </div>
-
+    <div className="space-y-6">
       {/* Big calendar */}
       <AdminCalendar
         bookings={bookings}
         selectedDate={new Date(viewDate)}
-        onSelectDate={(date) => setViewDate(format(date, 'yyyy-MM-dd'))}
+        onSelectDate={(date) => {
+          const dateStr = format(date, 'yyyy-MM-dd');
+          setViewDate(dateStr);
+          onNavigateToBookings?.(dateStr);
+        }}
         month={calendarMonth}
         onMonthChange={setCalendarMonth}
       />
-
-      {/* Name search */}
-      <div className="relative max-w-xs">
-        <input
-          type="text"
-          placeholder="Find by name…"
-          value={nameSearch}
-          onChange={e => setNameSearch(e.target.value)}
-          className="w-full pl-3 pr-7 py-2 border border-[#1B2D3C]/20 text-xs font-semibold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/40 bg-white"
-        />
-        {nameSearch && (
-          <button onClick={() => setNameSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#1B2D3C]/30 hover:text-[#1B2D3C] cursor-pointer text-base leading-none">×</button>
-        )}
-      </div>
-
-      {/* Both studios — always shown */}
-      <DailySheet
-        studio="Putney"
-        studioBookings={putneyToday}
-        onConfirm={onConfirm}
-        onNavigateToAddBooking={onNavigateToAddBooking}
-      />
-      <DailySheet
-        studio="Wimbledon"
-        studioBookings={wimbledonToday}
-        onConfirm={onConfirm}
-        onNavigateToAddBooking={onNavigateToAddBooking}
-      />
-
     </div>
   );
 }
