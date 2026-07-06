@@ -102,38 +102,45 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
     }
   };
 
-  const handleAddImage = async (file: File) => {
+  const handleAddImages = async (files: File[]) => {
     setLoading(true);
     try {
-      const newId = `gallery${Date.now()}`;
+      const newItems: GalleryItem[] = [];
       
       if (isSupabaseEnabled() && adminMode) {
         const savedStaff = localStorage.getItem('pp_current_staff');
         const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
         
         if (staff?.sessionToken) {
-          const reader = new FileReader();
-          const base64 = await new Promise<string>((resolve) => {
-            reader.onload = (e) => resolve(e.target?.result as string);
-            reader.readAsDataURL(file);
-          });
-          
-          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-            body: JSON.stringify({ action: 'upload', username: staff.username, sessionToken: staff.sessionToken, key: `gallery_${newId}_image`, page: 'gallery', fileData: base64, fileName: file.name }),
-          });
-          const data = await res.json();
-          if (data.url) {
-            setItems([...items, { id: newId, title: '', imageUrl: data.url }]);
-            await saveOrder([...items, { id: newId, title: '', imageUrl: data.url }]);
-            showToast('Image added!', 'success');
+          for (const file of files) {
+            const newId = `gallery${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const reader = new FileReader();
+            const base64 = await new Promise<string>((resolve) => {
+              reader.onload = (e) => resolve(e.target?.result as string);
+              reader.readAsDataURL(file);
+            });
+            
+            const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+              body: JSON.stringify({ action: 'upload', username: staff.username, sessionToken: staff.sessionToken, key: `gallery_${newId}_image`, page: 'gallery', fileData: base64, fileName: file.name }),
+            });
+            const data = await res.json();
+            if (data.url) {
+              newItems.push({ id: newId, title: '', imageUrl: data.url });
+            }
           }
         }
       }
+      
+      if (newItems.length > 0) {
+        setItems([...items, ...newItems]);
+        await saveOrder([...items, ...newItems]);
+        showToast(`${newItems.length} image${newItems.length > 1 ? 's' : ''} added!`, 'success');
+      }
     } catch (err) {
-      console.error('Failed to add image:', err);
-      showToast('Failed to add image', 'error');
+      console.error('Failed to add images:', err);
+      showToast('Failed to add images', 'error');
     } finally {
       setLoading(false);
     }
@@ -249,10 +256,11 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
                     const input = document.createElement('input');
                     input.type = 'file';
                     input.accept = 'image/*';
+                    input.multiple = true;
                     input.onchange = (e) => {
-                      const file = (e.target as HTMLInputElement).files?.[0];
-                      if (file) {
-                        handleAddImage(file);
+                      const files = Array.from((e.target as HTMLInputElement).files || []);
+                      if (files.length > 0) {
+                        handleAddImages(files);
                         setIsAdding(false);
                       }
                     };
@@ -262,7 +270,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
                 >
                   <Upload className="w-5 h-5 text-[#1B2D3C]/40" />
                 </button>
-                <p className="text-xs text-[#1B2D3C]/60">Click to upload an image</p>
+                <p className="text-xs text-[#1B2D3C]/60">Click to upload images (multiple allowed)</p>
               </div>
             </div>
           </div>
