@@ -47,7 +47,7 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
     category: 'tableware',
     description: '',
     isPartyEligible: false,
-    imageFile: null as File | null
+    imageFiles: [] as File[]
   });
 
   useEffect(() => {
@@ -172,28 +172,31 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
     setLoading(true);
     try {
       const newId = `item${Date.now()}`;
-      let imageUrl = '';
+      let imageUrls: string[] = [];
       
-      // Upload image first if provided
-      if (newItem.imageFile && isSupabaseEnabled() && adminMode) {
+      // Upload images first if provided
+      if (newItem.imageFiles.length > 0 && isSupabaseEnabled() && adminMode) {
         const savedStaff = localStorage.getItem('pp_current_staff');
         const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
         
         if (staff?.sessionToken) {
-          const reader = new FileReader();
-          const base64 = await new Promise<string>((resolve) => {
-            reader.onload = (e) => resolve(e.target?.result as string);
-            reader.readAsDataURL(newItem.imageFile!);
-          });
-          
-          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-            body: JSON.stringify({ action: 'upload', username: staff.username, sessionToken: staff.sessionToken, key: `item_${newId}_image_0`, page: 'pricing', fileData: base64, fileName: newItem.imageFile.name }),
-          });
-          const data = await res.json();
-          if (data.url) {
-            imageUrl = data.url;
+          for (let i = 0; i < newItem.imageFiles.length; i++) {
+            const file = newItem.imageFiles[i];
+            const reader = new FileReader();
+            const base64 = await new Promise<string>((resolve) => {
+              reader.onload = (e) => resolve(e.target?.result as string);
+              reader.readAsDataURL(file);
+            });
+            
+            const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+              body: JSON.stringify({ action: 'upload', username: staff.username, sessionToken: staff.sessionToken, key: `item_${newId}_image_${i}`, page: 'pricing', fileData: base64, fileName: file.name }),
+            });
+            const data = await res.json();
+            if (data.url) {
+              imageUrls.push(data.url);
+            }
           }
         }
       }
@@ -228,10 +231,10 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
         price: newItem.price,
         category: newItem.category,
         description: newItem.description,
-        imageUrls: imageUrl ? [imageUrl] : [],
+        imageUrls,
         isPartyEligible: newItem.isPartyEligible
       }]);
-      setNewItem({ name: '', price: '', category: 'tableware', description: '', isPartyEligible: false, imageFile: null });
+      setNewItem({ name: '', price: '', category: 'tableware', description: '', isPartyEligible: false, imageFiles: [] });
       setIsAdding(false);
       showToast('Item added!', 'success');
     } catch (err) {
@@ -468,38 +471,38 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Image (optional)</label>
-              <div className="flex items-center gap-4">
-                {newItem.imageFile ? (
-                  <div className="relative w-20 h-20">
-                    <img src={URL.createObjectURL(newItem.imageFile)} alt="Preview" className="w-full h-full object-cover rounded-lg border-2 border-[#1B2D3C]/20" />
+              <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Images (optional)</label>
+              <div className="flex items-center gap-4 flex-wrap">
+                {newItem.imageFiles.map((file, idx) => (
+                  <div key={idx} className="relative w-20 h-20">
+                    <img src={URL.createObjectURL(file)} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover rounded-lg border-2 border-[#1B2D3C]/20" />
                     <button
-                      onClick={() => setNewItem({ ...newItem, imageFile: null })}
+                      onClick={() => setNewItem({ ...newItem, imageFiles: newItem.imageFiles.filter((_, i) => i !== idx) })}
                       className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 cursor-pointer"
                     >
                       <X className="w-3 h-3" />
                     </button>
                   </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      const input = document.createElement('input');
-                      input.type = 'file';
-                      input.accept = 'image/*';
-                      input.onchange = (e) => {
-                        const file = (e.target as HTMLInputElement).files?.[0];
-                        if (file) {
-                          setNewItem({ ...newItem, imageFile: file });
-                        }
-                      };
-                      input.click();
-                    }}
-                    className="w-20 h-20 border-2 border-dashed border-[#1B2D3C]/20 rounded-lg flex items-center justify-center hover:border-[#1B2D3C] cursor-pointer transition-colors"
-                  >
-                    <Upload className="w-5 h-5 text-[#1B2D3C]/40" />
-                  </button>
-                )}
-                <p className="text-xs text-[#1B2D3C]/60">Upload an image for this item (optional)</p>
+                ))}
+                <button
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.multiple = true;
+                    input.onchange = (e) => {
+                      const files = Array.from((e.target as HTMLInputElement).files || []);
+                      if (files.length > 0) {
+                        setNewItem({ ...newItem, imageFiles: [...newItem.imageFiles, ...files] });
+                      }
+                    };
+                    input.click();
+                  }}
+                  className="w-20 h-20 border-2 border-dashed border-[#1B2D3C]/20 rounded-lg flex items-center justify-center hover:border-[#1B2D3C] cursor-pointer transition-colors"
+                >
+                  <Upload className="w-5 h-5 text-[#1B2D3C]/40" />
+                </button>
+                <p className="text-xs text-[#1B2D3C]/60 w-full">Upload images for this item (optional, multiple allowed)</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
