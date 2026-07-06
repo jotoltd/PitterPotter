@@ -29,11 +29,11 @@ const SESSION_LABELS: Record<string, string> = {
 };
 
 const SESSION_BADGE: Record<string, string> = {
-  'painting': 'bg-blue-50 text-blue-700',
-  'birthday-party': 'bg-pink-50 text-pink-700',
+  'painting': 'bg-emerald-50 text-emerald-700',
+  'birthday-party': 'bg-purple-50 text-purple-700',
   'baby-shower-hen': 'bg-purple-50 text-purple-700',
   'clay-imprints': 'bg-orange-50 text-orange-700',
-  'corporate': 'bg-slate-100 text-slate-700',
+  'corporate': 'bg-purple-50 text-purple-700',
 };
 
 interface SortHeaderProps {
