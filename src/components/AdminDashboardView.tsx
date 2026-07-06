@@ -1265,6 +1265,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 >
                   <Gift className="w-4 h-4" /> <span className="hidden sm:inline">New Party</span><span className="sm:hidden">Party</span>
                 </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('dashboard');
+                    setNewBooking(prev => ({ ...prev, sessionType: 'clay-imprints' as any }));
+                    setShowAddModal(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
+                >
+                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">New Baby Print</span><span className="sm:hidden">Baby</span>
+                </button>
               </>
             )}
             {realtimeConnected && (
