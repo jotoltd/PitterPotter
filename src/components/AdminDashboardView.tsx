@@ -1273,7 +1273,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   onClick={() => {
                     setActiveTab('dashboard');
                     setNewBooking(prev => ({ ...prev, sessionType: 'birthday-party' as any }));
-                    setLockedSessionType('birthday-party');
+                    setLockedSessionType('party-group');
                     setShowAddModal(true);
                   }}
                   className="flex items-center gap-1.5 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
@@ -1958,7 +1958,23 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
               </div>
-              {lockedSessionType ? (
+              {lockedSessionType === 'party-group' ? (
+                <div>
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Party Type *</label>
+                  <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
+                    {(['birthday-party','baby-shower-hen','corporate'] as const).map((t) => {
+                      const labels: Record<string,string> = { 'birthday-party': 'Birthday', 'baby-shower-hen': 'Baby Shower / Hen', 'corporate': 'Corporate' };
+                      return (
+                        <button key={t} type="button"
+                          onClick={() => setNewBooking(prev => ({ ...prev, sessionType: t, time: undefined }))}
+                          className={`flex-1 px-2 py-2 text-[10px] font-bold transition-all cursor-pointer ${
+                            newBooking.sessionType === t ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                          }`}>{labels[t]}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : lockedSessionType ? (
                 <div className="px-3 py-2 rounded-lg bg-[#DBE7E4]/50 border border-[#1B2D3C]/10 text-xs font-bold text-[#1B2D3C]">
                   Session: {{
                     'painting': 'Painting',
