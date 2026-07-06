@@ -116,16 +116,13 @@ export default function Calendar({
                 ${today && !selectedDay && inMonth ? 'bg-[#1B2D3C] text-white' : ''}
                 ${selectedDay && inMonth ? 'font-bold' : ''}
               `}>
-                {format(day, 'd')}
+                {format(day, 'do')}
               </span>
               {disabledDay && inMonth && (
                 <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-stone-400">Blocked</span>
               )}
               {!disabledDay && mark && inMonth && (
                 <span className={`mt-1 w-1.5 h-1.5 rounded-full ${selectedDay ? 'bg-white' : 'bg-[#1B2D3C]/60'}`} />
-              )}
-              {!disabledDay && !mark && inMonth && (
-                <span className="mt-1 text-[9px] font-medium text-[#1B2D3C]/40">Available</span>
               )}
             </button>
           );
