@@ -102,8 +102,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [sort, setSort] = useState<{ field: 'date' | 'name' | 'studio' | 'status'; direction: 'asc' | 'desc' }>({ field: 'date', direction: 'desc' });
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const defaultStudio = (staff.allowedStudios && staff.allowedStudios.length > 0 && staff.role !== 'super_admin')
+    ? staff.allowedStudios[0]
+    : 'Putney';
   const [newBooking, setNewBooking] = useState<Partial<BookingInquiry>>({
-    studio: 'Putney',
+    studio: defaultStudio,
     name: '',
     email: '',
     phone: '',
@@ -1081,7 +1084,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       setInquiries([booking, ...inquiries]);
       setShowAddModal(false);
       setNewBooking({
-        studio: 'Putney',
+        studio: defaultStudio,
         name: '',
         email: '',
         phone: '',
@@ -1568,15 +1571,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 }`}>{label}</button>
             ))}
           </div>
-          {/* Studio filter */}
-          <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
-            {([['all','All Studios'],['Putney','Putney'],['Wimbledon','Wimbledon']] as const).map(([val, label]) => (
-              <button key={val} onClick={() => setStudioFilter(val as any)}
-                className={`px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
-                  studioFilter === val ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
-                }`}>{label}</button>
-            ))}
-          </div>
+          {/* Studio filter — only show for super admin */}
+          {!staffAllowedStudios && (
+            <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
+              {([['all','All Studios'],['Putney','Putney'],['Wimbledon','Wimbledon']] as const).map(([val, label]) => (
+                <button key={val} onClick={() => setStudioFilter(val as any)}
+                  className={`px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
+                    studioFilter === val ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                  }`}>{label}</button>
+              ))}
+            </div>
+          )}
           {/* Date range */}
           <input type="date" value={dateRange.start}
             onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
@@ -1914,10 +1919,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <select
                   value={newBooking.studio}
                   onChange={(e) => setNewBooking({ ...newBooking, studio: e.target.value as 'Putney' | 'Wimbledon' })}
-                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  disabled={!!staffAllowedStudios && staffAllowedStudios.length === 1}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <option value="Putney">Putney</option>
-                  <option value="Wimbledon">Wimbledon</option>
+                  {(staffAllowedStudios ?? ['Putney', 'Wimbledon']).map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
                 </select>
               </div>
               <div>
