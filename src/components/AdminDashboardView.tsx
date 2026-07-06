@@ -1398,7 +1398,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             onNavigateToBookings={(date) => {
               if (date) setDateRange({ start: date, end: date });
             }}
-            onNavigateToAddBooking={() => setShowAddModal(true)}
+            onNavigateToAddBooking={(opts) => {
+              setNewBooking(prev => ({
+                ...prev,
+                date: opts?.date ?? prev.date,
+                sessionType: (opts?.sessionType as BookingInquiry['sessionType']) ?? prev.sessionType,
+              }));
+              setShowAddModal(true);
+            }}
           />
           </>)}
 

@@ -10,7 +10,7 @@ interface DashboardOverviewProps {
   onConfirm?: (bookingId: string) => void;
   onBulkConfirm?: (bookingIds: string[]) => void;
   onNavigateToBookings?: (date?: string) => void;
-  onNavigateToAddBooking?: () => void;
+  onNavigateToAddBooking?: (opts?: { date?: string; sessionType?: string }) => void;
 }
 
 const SESSION_LABELS: Record<string, string> = {
@@ -29,6 +29,13 @@ const SESSION_BADGE: Record<string, string> = {
   'corporate': 'bg-slate-100 text-slate-800',
 };
 
+const SESSION_TYPE_BUTTONS = [
+  { label: 'Painting', type: 'painting', color: 'bg-emerald-500 hover:bg-emerald-600' },
+  { label: 'Party', type: 'birthday-party', color: 'bg-purple-500 hover:bg-purple-600' },
+  { label: 'Baby Prints', type: 'clay-imprints', color: 'bg-orange-500 hover:bg-orange-600' },
+  { label: 'Corporate', type: 'corporate', color: 'bg-slate-500 hover:bg-slate-600' },
+];
+
 function BookingModal({
   date,
   dayBookings,
@@ -40,7 +47,7 @@ function BookingModal({
   dayBookings: BookingInquiry[];
   onClose: () => void;
   onConfirm?: (id: string) => void;
-  onNavigateToAddBooking?: () => void;
+  onNavigateToAddBooking?: (opts?: { date?: string; sessionType?: string }) => void;
 }) {
   const totalSeats = dayBookings.reduce((s, b) => s + b.paintersCount, 0);
   const pending = dayBookings.filter(b => b.status === 'pending').length;
@@ -111,19 +118,39 @@ function BookingModal({
           </div>
         )}
 
+        {/* Add booking buttons — always shown when handler present */}
+        {onNavigateToAddBooking && sorted.length > 0 && (
+          <div className="px-5 py-3 border-b border-[#1B2D3C]/10">
+            <p className="text-[10px] font-bold text-[#1B2D3C]/40 uppercase tracking-wider mb-2">Add booking for this date</p>
+            <div className="grid grid-cols-4 gap-1.5">
+              {SESSION_TYPE_BUTTONS.map(btn => (
+                <button key={btn.type}
+                  onClick={() => { onClose(); onNavigateToAddBooking({ date, sessionType: btn.type }); }}
+                  className={`py-2 ${btn.color} text-white text-[9px] font-bold uppercase tracking-wider rounded-lg transition-colors`}
+                >{btn.label}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Booking list */}
         <div className="flex-1 overflow-y-auto p-5 space-y-3">
           {sorted.length === 0 ? (
-            <div className="text-center py-10 space-y-3">
+            <div className="text-center py-8 space-y-4">
               <CalendarDays className="w-10 h-10 text-[#1B2D3C]/15 mx-auto" />
               <p className="text-sm font-bold text-[#1B2D3C]/40">No bookings for this date</p>
               {onNavigateToAddBooking && (
-                <button
-                  onClick={() => { onClose(); onNavigateToAddBooking(); }}
-                  className="px-4 py-2 bg-[#1B2D3C] text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-colors"
-                >
-                  Add booking
-                </button>
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-[#1B2D3C]/40 uppercase tracking-wider">Add a booking for this date</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {SESSION_TYPE_BUTTONS.map(btn => (
+                      <button key={btn.type}
+                        onClick={() => { onClose(); onNavigateToAddBooking({ date, sessionType: btn.type }); }}
+                        className={`py-2.5 ${btn.color} text-white text-[10px] font-bold uppercase tracking-wider rounded-lg transition-colors`}
+                      >{btn.label}</button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           ) : (
@@ -179,7 +206,7 @@ function BookingModal({
   );
 }
 
-export default function DashboardOverview({ bookings, onConfirm, onNavigateToAddBooking }: DashboardOverviewProps) {
+export default function DashboardOverview({ bookings, onConfirm, onBulkConfirm, onNavigateToBookings, onNavigateToAddBooking }: DashboardOverviewProps) {
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [modalDate, setModalDate] = useState<string | null>(null);
 
