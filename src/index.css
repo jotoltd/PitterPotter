@@ -105,7 +105,8 @@ body.admin-mode-active [role="button"]:not([data-editable]) {
 /* Allow editable elements to remain clickable */
 body.admin-mode-active [data-editable],
 body.admin-mode-active .cursor-pointer,
-body.admin-mode-active button[role="button"] {
+body.admin-mode-active button[role="button"],
+body.admin-mode-active [contenteditable] {
   pointer-events: auto;
   opacity: 1;
 }
