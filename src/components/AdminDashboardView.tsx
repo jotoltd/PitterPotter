@@ -446,7 +446,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       }
       setInquiries(bookings);
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'message' in err && err.message === 'Unauthorized') { handleUnauthorized(); return; }
+      const msg = err && typeof err === 'object' && 'message' in err ? (err as Error).message : '';
+      if (msg === 'Unauthorized') { handleUnauthorized(); return; }
       console.error('Failed to load inquiries:', err);
     }
   };
