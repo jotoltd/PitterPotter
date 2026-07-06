@@ -129,9 +129,24 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
           });
         }
         
-        if (loadedItems.length > 0) {
-          setItems(loadedItems);
-        }
+        // Merge with default items - keep defaults that aren't in Supabase, add Supabase items
+        const defaultIds = new Set(POTTERY_ITEMS.map(item => item.id));
+        const supabaseIds = new Set(loadedItems.map(item => item.id));
+        
+        const mergedItems = [
+          ...POTTERY_ITEMS.filter(item => !supabaseIds.has(item.id)).map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            category: item.category,
+            description: item.description,
+            imageUrls: item.imageUrls || [],
+            isPartyEligible: item.isPartyEligible || false
+          })),
+          ...loadedItems
+        ];
+        
+        setItems(mergedItems);
       }
     } catch (err) {
       console.error('Failed to load pricing items:', err);
