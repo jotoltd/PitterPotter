@@ -3,12 +3,13 @@ import { Images } from '../images';
 import { Page } from '../types';
 import Calendar from './Calendar';
 import { format, getDay } from 'date-fns';
-import {Clock, Calendar as CalendarIcon, ArrowRight, ChevronLeft, ChevronRight, X} from 'lucide-react';
+import {Clock, Calendar as CalendarIcon, ArrowRight} from 'lucide-react';
 import { getRemainingCapacity, getBusyDates } from '../lib/bookings';
 import { getSlots } from '../lib/timeSlots';
 import { useToast } from './ToastContext';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
+import LocationGallery from './LocationGallery';
 
 interface PutneyViewProps {
   setCurrentPage: (page: Page) => void;
@@ -32,8 +33,6 @@ function getTimeSlots(date: Date): string[] {
 
 export default function PutneyView({ setCurrentPage, adminMode = false }: PutneyViewProps) {
   const { showToast } = useToast();
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [mobileGalleryIndex, setMobileGalleryIndex] = useState(0);
 
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState<string | undefined>(undefined);
@@ -132,100 +131,11 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
       {/* Content Section */}
       <section className="max-w-4xl mx-auto px-4 py-16 -mt-20 relative z-10 pb-20">
         <div className="bg-white shadow-sm p-8 md:p-12 space-y-8">
-          {/* Desktop grid */}
-          <div className="hidden md:grid grid-cols-3 gap-4">
-            {Images.putneyGallery.map((src, idx) => (
-              <div key={idx} className="aspect-[4/3] overflow-hidden rounded-lg">
-                <button
-                  onClick={() => setLightboxIndex(idx)}
-                  className="w-full h-full cursor-pointer"
-                >
-                  <EditableImage
-                    contentKey={`putney_gallery_${idx}`}
-                    page="putney"
-                    defaultSrc={src}
-                    alt={`Our Putney Studio gallery ${idx + 1}`}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                    adminMode={adminMode}
-                  />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Mobile carousel */}
-          <div className="md:hidden relative">
-            <div className="aspect-[4/3] overflow-hidden rounded-lg">
-              <button
-                onClick={() => setLightboxIndex(mobileGalleryIndex)}
-                className="w-full h-full cursor-pointer"
-              >
-                <EditableImage
-                  contentKey={`putney_gallery_mobile_${mobileGalleryIndex}`}
-                  page="putney"
-                  defaultSrc={Images.putneyGallery[mobileGalleryIndex]}
-                  alt={`Our Putney Studio gallery ${mobileGalleryIndex + 1}`}
-                  className="w-full h-full object-cover"
-                  adminMode={adminMode}
-                />
-              </button>
-            </div>
-            <div className="flex items-center justify-between mt-3">
-              <button
-                onClick={() => setMobileGalleryIndex((mobileGalleryIndex - 1 + Images.putneyGallery.length) % Images.putneyGallery.length)}
-                className="p-2 bg-[#DBE7E4] text-[#1B2D3C] rounded-lg hover:bg-[#D6E2E9] transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <span className="text-xs font-bold text-[#1B2D3C]">
-                {mobileGalleryIndex + 1} / {Images.putneyGallery.length}
-              </span>
-              <button
-                onClick={() => setMobileGalleryIndex((mobileGalleryIndex + 1) % Images.putneyGallery.length)}
-                className="p-2 bg-[#DBE7E4] text-[#1B2D3C] rounded-lg hover:bg-[#D6E2E9] transition-colors"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
+          <LocationGallery location="putney" defaultImages={Images.putneyGallery} adminMode={adminMode} />
           <div className="space-y-4">
             <EditableText contentKey="putney_title" page="putney" defaultValue="Our Putney Studio" adminMode={adminMode} className="font-heading text-3xl font-black text-[#1B2D3C] block" />
             <EditableText contentKey="putney_description" page="putney" defaultValue="Our bright, airy flagship studio on Upper Richmond Road, perfect for individuals, families, and creative birthday parties. Step inside and bring unglazed pottery to vibrant life with our premium glazes and expert guidance." adminMode={adminMode} className="text-[#1B2D3C] text-sm md:text-base leading-relaxed font-medium" />
           </div>
-
-          {lightboxIndex !== null && (
-            <div
-              className="fixed inset-0 z-50 bg-[#1B2D3C]/90 flex items-center justify-center p-4"
-              onClick={() => setLightboxIndex(null)}
-            >
-              <button
-                onClick={() => setLightboxIndex(null)}
-                className="absolute top-4 right-4 text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setLightboxIndex((lightboxIndex - 1 + Images.putneyGallery.length) % Images.putneyGallery.length); }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <ChevronLeft className="w-8 h-8" />
-              </button>
-              <EditableImage
-                contentKey={`putney_lightbox_${lightboxIndex}`}
-                page="putney"
-                defaultSrc={Images.putneyGallery[lightboxIndex]}
-                alt={`Gallery image ${lightboxIndex + 1}`}
-                className="max-w-full max-h-[85vh] object-contain rounded-lg"
-                adminMode={adminMode}
-              />
-              <button
-                onClick={(e) => { e.stopPropagation(); setLightboxIndex((lightboxIndex + 1) % Images.putneyGallery.length); }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <ChevronRight className="w-8 h-8" />
-              </button>
-            </div>
-          )}
 
                     {/* Booking Calendar Section */}
           <div className="border-t border-[#1B2D3C]/10 pt-6 space-y-4">
