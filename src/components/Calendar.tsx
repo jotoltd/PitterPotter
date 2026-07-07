@@ -95,9 +95,6 @@ export default function Calendar({
           const today = isToday(day);
           const inMonth = isSameMonth(day, month);
           const mark = hasMark(day);
-          const dayOfWeek = day.getDay();
-          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
           return (
             <button
               key={day.toISOString()}
@@ -110,7 +107,6 @@ export default function Calendar({
                 ${!disabledDay && inMonth ? 'text-[#1B2D3C] cursor-pointer hover:bg-[#D6E2E9]/30' : ''}
                 ${selectedDay && inMonth ? 'bg-[#1B2D3C] text-white hover:bg-[#1B2D3C]' : ''}
                 ${today && !selectedDay && inMonth ? 'bg-[#D6E2E9]/50 font-black' : ''}
-                ${isWeekend && !disabledDay && !selectedDay && inMonth ? 'bg-[#FAFAFA]' : ''}
               `}
             >
               <span className={`
