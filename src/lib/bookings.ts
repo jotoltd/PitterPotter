@@ -83,6 +83,9 @@ export async function loadBookings(staff?: Staff | null): Promise<BookingInquiry
   });
 
   const data = await response.json();
+  if (response.status === 401) {
+    throw new Error('Unauthorized');
+  }
   if (!response.ok || data.error) {
     console.error('Failed to load bookings:', data.error);
     throw new Error(data.error || 'Failed to load bookings');
