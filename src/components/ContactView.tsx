@@ -398,8 +398,8 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
             {step === 1 && (
               <div className="space-y-6">
                 <div className="border-b-2 border-[#1B2D3C]/10 pb-3">
-                  <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Session details</h2>
-                  <p className="text-xs text-stone-500 mt-1 font-semibold">Pick your studio and session type. For date &amp; time, visit your studio page first.</p>
+                  <h2 className="font-heading text-xl font-black text-[#1B2D3C]"><EditableText contentKey="contact_step1_title" page="contact" defaultValue="Session details" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" /></h2>
+                  <p className="text-xs text-stone-500 mt-1 font-semibold"><EditableText contentKey="contact_step1_subtitle" page="contact" defaultValue="Pick your studio and session type. For date &amp; time, visit your studio page first." adminMode={adminMode} className="text-xs text-stone-500" /></p>
                 </div>
 
                 {/* Studio */}
@@ -470,8 +470,8 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
             {step === 2 && (
               <div className="space-y-6">
                 <div className="border-b-2 border-[#1B2D3C]/10 pb-3">
-                  <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Your details</h2>
-                  <p className="text-xs text-stone-500 mt-1 font-semibold">We'll use these to confirm your booking.</p>
+                  <h2 className="font-heading text-xl font-black text-[#1B2D3C]"><EditableText contentKey="contact_step2_title" page="contact" defaultValue="Your details" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" /></h2>
+                  <p className="text-xs text-stone-500 mt-1 font-semibold"><EditableText contentKey="contact_step2_subtitle" page="contact" defaultValue="We'll use these to confirm your booking." adminMode={adminMode} className="text-xs text-stone-500" /></p>
                 </div>
 
                 <div className="space-y-4">
@@ -512,8 +512,8 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
             {step === 3 && (
               <div className="space-y-6">
                 <div className="border-b-2 border-[#1B2D3C]/10 pb-3">
-                  <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Review &amp; confirm</h2>
-                  <p className="text-xs text-stone-500 mt-1 font-semibold">Check everything looks right before submitting.</p>
+                  <h2 className="font-heading text-xl font-black text-[#1B2D3C]"><EditableText contentKey="contact_step3_title" page="contact" defaultValue="Review &amp; confirm" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" /></h2>
+                  <p className="text-xs text-stone-500 mt-1 font-semibold"><EditableText contentKey="contact_step3_subtitle" page="contact" defaultValue="Check everything looks right before submitting." adminMode={adminMode} className="text-xs text-stone-500" /></p>
                 </div>
 
                 {/* Summary card */}

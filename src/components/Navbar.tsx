@@ -3,6 +3,7 @@ import { Menu, X, Phone, Calendar, Edit3 } from 'lucide-react';
 import { Page, Staff } from '../types';
 import { Images } from '../images';
 import EditableText from './EditableText';
+import EditableImage from './EditableImage';
 import EditableButton from './EditableButton';
 
 interface NavbarProps {
@@ -47,10 +48,13 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
               onClick={() => handleNavClick('home')}
               className="flex items-center gap-2.5 text-left group transition-transform focus:outline-none"
             >
-              <img
-                src={Images.logo}
+              <EditableImage
+                contentKey="nav_logo"
+                page="nav"
+                defaultSrc={Images.logo}
                 alt="Pitter Potter Logo"
                 className="h-10 w-auto object-contain rounded-lg"
+                adminMode={adminMode}
               />
             </button>
 

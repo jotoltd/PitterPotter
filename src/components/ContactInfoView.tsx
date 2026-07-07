@@ -79,7 +79,9 @@ export default function ContactInfoView({ setCurrentPage, adminMode = false }: C
             </div>
 
             {/* Directions */}
-            <p className="text-sm text-[#1B2D3C]/80 leading-relaxed">{studio.directions}</p>
+            <p className="text-sm text-[#1B2D3C]/80 leading-relaxed">
+              <EditableText contentKey={`${prefix}_directions_text`} page="contact-info" defaultValue={studio.directions} adminMode={adminMode} className="text-sm text-[#1B2D3C]/80 leading-relaxed" />
+            </p>
 
             <a
               href={studio.directionsUrl}
