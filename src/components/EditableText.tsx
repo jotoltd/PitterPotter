@@ -125,7 +125,10 @@ export default function EditableText({ contentKey, page, defaultValue, className
             }),
           });
           const data = await response.json();
-          if (!response.ok || data.error) throw new Error(data.error || 'Failed to save content');
+          if (!response.ok || data.error) {
+            console.error('admin-content save error:', data);
+            throw new Error(data.details || data.error || 'Failed to save content');
+          }
           saved = true;
         }
       }

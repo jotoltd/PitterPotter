@@ -94,15 +94,29 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const { error } = await supabase.from('content').upsert({
+      const { data: existing } = await supabase
+        .from('content')
+        .select('id')
+        .eq('key', key)
+        .eq('page', page)
+        .maybeSingle();
+
+      const payload = {
         key,
         page,
         value,
         type: type || 'text',
         metadata: metadata || null,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'key,page' });
-      if (error) throw error;
+      };
+
+      if (existing) {
+        const { error } = await supabase.from('content').update(payload).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('content').insert(payload);
+        if (error) throw error;
+      }
       await logAudit(supabase, staff, 'save', 'content', `${page}:${key}`, { type: type || 'text' });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

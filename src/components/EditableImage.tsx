@@ -104,7 +104,10 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
           body: JSON.stringify({ action: 'save', username: staff.username, sessionToken: staff.sessionToken, key: contentKey, page, value: imageUrl, type: 'image' }),
         });
         const data = await res.json();
-        if (!res.ok || data.error) throw new Error(data.error || 'Save failed');
+        if (!res.ok || data.error) {
+          console.error('admin-content image save error:', data);
+          throw new Error(data.details || data.error || 'Save failed');
+        }
       } else if (isSupabaseEnabled()) {
         await supabase!.from('content').upsert({ key: contentKey, value: imageUrl, type: 'image', page, updated_at: new Date().toISOString() });
       }
@@ -154,7 +157,10 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
           body: JSON.stringify({ action: 'upload', username: staff.username, sessionToken: staff.sessionToken, key: contentKey, page, fileData: dataUrl, fileName: file.name }),
         });
         const uploadData = await uploadRes.json();
-        if (!uploadRes.ok || uploadData.error) throw new Error(uploadData.error || 'Upload failed');
+        if (!uploadRes.ok || uploadData.error) {
+          console.error('admin-content image upload error:', uploadData);
+          throw new Error(uploadData.details || uploadData.error || 'Upload failed');
+        }
 
         const saveRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
           method: 'POST',
@@ -162,7 +168,10 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
           body: JSON.stringify({ action: 'save', username: staff.username, sessionToken: staff.sessionToken, key: contentKey, page, value: uploadData.url, type: 'image' }),
         });
         const saveData = await saveRes.json();
-        if (!saveRes.ok || saveData.error) throw new Error(saveData.error || 'Save failed');
+        if (!saveRes.ok || saveData.error) {
+          console.error('admin-content image save error:', saveData);
+          throw new Error(saveData.details || saveData.error || 'Save failed');
+        }
 
         setSrc(uploadData.url);
         setCachedContent(page, contentKey, uploadData.url);
