@@ -29,6 +29,7 @@ import PartyBookingView from './components/PartyBookingView';
 import FoodDrinkView from './components/FoodDrinkView';
 import { ToastProvider } from './components/ToastContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import SessionWatcher from './components/SessionWatcher';
 import { Page, Staff } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -195,6 +196,7 @@ export default function App() {
  return (
  <ErrorBoundary>
  <ToastProvider>
+ <SessionWatcher key={currentStaff?.sessionToken || 'anonymous'} onExpire={handleAdminLogout} />
  <div className="flex flex-col min-h-screen bg-[#FFFFFF] text-[#1B2D3C] selection:bg-[#DBE7E4]/15 selection:text-[#1B2D3C] transition-all duration-300">
 
  {/* Navigation Headers */}
