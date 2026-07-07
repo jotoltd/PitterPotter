@@ -4,7 +4,6 @@ import { Page } from '../types';
 import { Images } from '../images';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
-import EditableButton from './EditableButton';
 
 interface PartiesViewProps {
   setCurrentPage: (page: Page) => void;
@@ -69,14 +68,12 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
               <EditableText contentKey="birthday_desc3" page="parties" defaultValue="To confirm your party booking, we will require an non-refundable £50 deposit that will be deducted from your final bill on the day. Please contact us via phone or email should you have any further questions." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
             </p>
           </div>
-          <EditableButton
-            contentKey="birthday_button"
-            page="parties"
-            defaultLabel="Book Party"
-            adminMode={adminMode}
+          <button
             onClick={() => handleBookParty('birthday')}
-            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg"
-          />
+            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
+          >
+            Book Party
+          </button>
         </div>
 
         {/* Baby Showers & Hen Parties */}
@@ -95,14 +92,12 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
               <EditableText contentKey="baby_shower_desc2" page="parties" defaultValue="The same terms apply as per our weekend birthday party package above. If you would like your event to run after hours, there is a surcharge and a minimum 10 painters is required. You are welcome to provide your own nibbles/drinks or we are happy to organise catering for you upon request." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
             </p>
           </div>
-          <EditableButton
-            contentKey="baby_shower_button"
-            page="parties"
-            defaultLabel="Book Party"
-            adminMode={adminMode}
+          <button
             onClick={() => handleBookParty('baby-shower-hen')}
-            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg"
-          />
+            className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
+          >
+            Book Party
+          </button>
         </div>
 
         {/* Corporate Team Events */}
@@ -121,14 +116,12 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
               <EditableText contentKey="corporate_desc2" page="parties" defaultValue="Please contact us to tailor a package for you." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
             </p>
           </div>
-          <EditableButton
-            contentKey="corporate_button"
-            page="parties"
-            defaultLabel="Enquire"
-            defaultHref="mailto:info@pitterpotter.co.uk?subject=Corporate%20Event%20Enquiry"
-            adminMode={adminMode}
+          <a
+            href="mailto:info@pitterpotter.co.uk?subject=Corporate%20Event%20Enquiry"
             className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg text-center inline-block"
-          />
+          >
+            Enquire
+          </a>
         </div>
 
         {/* After Hour & Exclusive Hire */}
@@ -144,14 +137,12 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
               <EditableText contentKey="after_hours_desc" page="parties" defaultValue="Interested in after-hours parties, custom pottery requests, or bespoke writing and decorative lettering? Our professionals are on hand to provide writing services starting from £10.00 per item! Write to us details on info@pitterpotter.co.uk." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
             </p>
           </div>
-          <EditableButton
-            contentKey="after_hours_button"
-            page="parties"
-            defaultLabel="Enquire"
-            defaultHref="mailto:info@pitterpotter.co.uk?subject=After%20Hour%20%26%20Exclusive%20Hire%20Enquiry"
-            adminMode={adminMode}
+          <a
+            href="mailto:info@pitterpotter.co.uk?subject=After%20Hour%20%26%20Exclusive%20Hire%20Enquiry"
             className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg text-center inline-block"
-          />
+          >
+            Enquire
+          </a>
         </div>
       </div>
 
