@@ -196,8 +196,13 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error('Admin content error:', err);
-    const message = err instanceof Error ? err.message : String(err);
-    return new Response(JSON.stringify({ error: 'Failed to process request', details: message }), {
+    let details: string;
+    try {
+      details = err instanceof Error ? err.message : JSON.stringify(err);
+    } catch {
+      details = String(err);
+    }
+    return new Response(JSON.stringify({ error: 'Failed to process request', details }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
