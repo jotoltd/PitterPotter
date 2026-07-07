@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
         type: type || 'text',
         metadata: metadata || null,
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'key' });
+      }, { onConflict: 'key,page' });
       if (error) throw error;
       await logAudit(supabase, staff, 'save', 'content', `${page}:${key}`, { type: type || 'text' });
       return new Response(JSON.stringify({ success: true }), {
@@ -182,7 +182,8 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error('Admin content error:', err);
-    return new Response(JSON.stringify({ error: 'Failed to process request' }), {
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: 'Failed to process request', details: message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
