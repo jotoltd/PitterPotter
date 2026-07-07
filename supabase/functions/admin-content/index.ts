@@ -94,12 +94,18 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const { data: existing } = await supabase
+      const { data: existing, error: selectError } = await supabase
         .from('content')
         .select('id')
         .eq('key', key)
         .eq('page', page)
         .maybeSingle();
+      if (selectError) {
+        return new Response(JSON.stringify({ error: 'Failed to read existing content', details: JSON.stringify(selectError) }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       const payload = {
         key,
@@ -111,11 +117,21 @@ Deno.serve(async (req) => {
       };
 
       if (existing) {
-        const { error } = await supabase.from('content').update(payload).eq('id', existing.id);
-        if (error) throw error;
+        const { error: updateError } = await supabase.from('content').update(payload).eq('id', existing.id);
+        if (updateError) {
+          return new Response(JSON.stringify({ error: 'Failed to update content', details: JSON.stringify(updateError) }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       } else {
-        const { error } = await supabase.from('content').insert(payload);
-        if (error) throw error;
+        const { error: insertError } = await supabase.from('content').insert(payload);
+        if (insertError) {
+          return new Response(JSON.stringify({ error: 'Failed to insert content', details: JSON.stringify(insertError) }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
       await logAudit(supabase, staff, 'save', 'content', `${page}:${key}`, { type: type || 'text' });
       return new Response(JSON.stringify({ success: true }), {
@@ -160,7 +176,12 @@ Deno.serve(async (req) => {
       const { error: uploadError } = await supabase.storage
         .from('content')
         .upload(filePath, binary, { contentType: mimeType, upsert: true });
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        return new Response(JSON.stringify({ error: 'Failed to upload image', details: JSON.stringify(uploadError) }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       await logAudit(supabase, staff, 'upload', 'storage', filePath, { page, key });
       const { data: publicUrlData } = supabase.storage.from('content').getPublicUrl(filePath);
@@ -182,8 +203,13 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const { error } = await supabase.from('content').delete().eq('key', key).eq('page', page);
-      if (error) throw error;
+      const { error: deleteError } = await supabase.from('content').delete().eq('key', key).eq('page', page);
+      if (deleteError) {
+        return new Response(JSON.stringify({ error: 'Failed to delete content', details: JSON.stringify(deleteError) }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       await logAudit(supabase, staff, 'delete', 'content', `${page}:${key}`);
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
