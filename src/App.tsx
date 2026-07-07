@@ -61,6 +61,10 @@ export default function App() {
             localStorage.removeItem('pp_current_staff');
           } else {
             setCurrentStaff(parsed as Staff);
+            if (localStorage.getItem('pp_activate_edit_mode') === '1') {
+              setAdminMode(true);
+              localStorage.removeItem('pp_activate_edit_mode');
+            }
           }
         }
       } catch (err) {
