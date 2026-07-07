@@ -52,7 +52,9 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         const ids = new Set<string>();
         
         data.forEach(item => {
-          const id = item.key.replace('_image', '');
+          const match = item.key.match(/^gallery_(.+)_image$/);
+          if (!match) return;
+          const id = match[1];
           if (!ids.has(id)) {
             ids.add(id);
             loadedItems.push({
@@ -72,7 +74,9 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         
         if (titleData) {
           titleData.forEach(item => {
-            const id = item.key.replace('_title', '');
+            const match = item.key.match(/^gallery_(.+)_title$/);
+            if (!match) return;
+            const id = match[1];
             const galleryItem = loadedItems.find(i => i.id === id);
             if (galleryItem) {
               galleryItem.title = item.value;

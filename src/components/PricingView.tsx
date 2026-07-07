@@ -69,7 +69,9 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
         const ids = new Set<string>();
         
         data.forEach(item => {
-          const id = item.key.replace('_name', '');
+          const match = item.key.match(/^item_(.+)_name$/);
+          if (!match) return;
+          const id = match[1];
           if (!ids.has(id)) {
             ids.add(id);
             loadedItems.push({
@@ -95,7 +97,9 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
           
           if (fieldData) {
             fieldData.forEach(item => {
-              const id = item.key.replace(`_${field}`, '');
+              const match = item.key.match(new RegExp(`^item_(.+)_${field}$`));
+              if (!match) return;
+              const id = match[1];
               const pricingItem = loadedItems.find(i => i.id === id);
               if (pricingItem) {
                 if (field === 'party_eligible') {

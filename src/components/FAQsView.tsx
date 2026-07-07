@@ -35,50 +35,64 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
 
   const loadFAQs = async () => {
     if (!isSupabaseEnabled()) return;
-    
+
     try {
       const { data } = await supabase!
         .from('content')
         .select('key, value')
         .eq('page', 'faqs')
         .like('key', 'faq_%_question');
-      
+
       if (data && data.length > 0) {
-        const loadedFaqs: FAQItem[] = [];
-        const ids = new Set<string>();
-        
+        const questionMap = new Map<string, string>();
+        const extraIds: string[] = [];
+
         data.forEach(item => {
-          const id = item.key.replace('_question', '');
-          if (!ids.has(id)) {
-            ids.add(id);
-            loadedFaqs.push({
-              id,
-              question: item.value,
-              answer: ''
-            });
+          const match = item.key.match(/^faq_(.+)_question$/);
+          if (!match) return;
+          const id = match[1];
+          if (!questionMap.has(id)) {
+            questionMap.set(id, item.value);
+            if (!FAQ_ITEMS.some(f => f.id === id)) {
+              extraIds.push(id);
+            }
           }
         });
-        
-        // Load answers
+
+        const answerMap = new Map<string, string>();
         const { data: answerData } = await supabase!
           .from('content')
           .select('key, value')
           .eq('page', 'faqs')
           .like('key', 'faq_%_answer_0');
-        
+
         if (answerData) {
           answerData.forEach(item => {
-            const id = item.key.replace('_answer_0', '');
-            const faq = loadedFaqs.find(f => f.id === id);
-            if (faq) {
-              faq.answer = item.value;
+            const match = item.key.match(/^faq_(.+)_answer_0$/);
+            if (!match) return;
+            const id = match[1];
+            if (!answerMap.has(id)) {
+              answerMap.set(id, item.value);
             }
           });
         }
-        
-        if (loadedFaqs.length > 0) {
-          setFaqs(loadedFaqs);
-        }
+
+        // Merge defaults with DB entries so partial saves don't hide all other questions.
+        const mergedFaqs: FAQItem[] = FAQ_ITEMS.map(faq => ({
+          id: faq.id,
+          question: questionMap.get(faq.id) ?? faq.question,
+          answer: answerMap.get(faq.id) ?? faq.answer,
+        }));
+
+        extraIds.forEach(id => {
+          mergedFaqs.push({
+            id,
+            question: questionMap.get(id) || '',
+            answer: answerMap.get(id) || '',
+          });
+        });
+
+        setFaqs(mergedFaqs);
       }
     } catch (err) {
       console.error('Failed to load FAQs:', err);
