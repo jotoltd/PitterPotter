@@ -14,7 +14,7 @@ const studios = [
     phone: '020 87881635',
     tel: '02087881635',
     directionsUrl: 'https://www.google.com/maps/dir/?api=1&destination=234+Upper+Richmond+Road+Putney+SW15+6TG',
-    embedUrl: 'https://maps.google.com/maps?q=234+Upper+Richmond+Road%2C+Putney+SW15+6TG&t=&z=15&ie=UTF8&iwloc=&output=embed',
+    embedUrl: 'https://maps.google.com/maps?q=51.4609%2C-0.2172&t=&z=15&ie=UTF8&iwloc=&output=embed',
     directions: '3 minutes walk from Putney Railway Station. 7 minutes walk from East Putney Underground Station (District line). Bus 337 and 430 stop directly outside; buses 14, 37, 74, 85, 93, 39 and 424 stop nearby.',
   },
   {
@@ -23,7 +23,7 @@ const studios = [
     phone: '020 37704499',
     tel: '02037704499',
     directionsUrl: 'https://www.google.com/maps/dir/?api=1&destination=52+Wimbledon+Hill+Road+Wimbledon+SW19+7PA',
-    embedUrl: 'https://maps.google.com/maps?q=52+Wimbledon+Hill+Road%2C+Wimbledon+SW19+7PA&t=&z=15&ie=UTF8&iwloc=&output=embed',
+    embedUrl: 'https://maps.google.com/maps?q=51.4213%2C-0.2066&t=&z=15&ie=UTF8&iwloc=&output=embed',
     directions: 'Wimbledon Station (National Rail, District line, Tramlink) is a short walk away. Bus routes 93, 200, 131, 163 and the 219 stop nearby on Wimbledon Hill Road.',
   },
 ];
