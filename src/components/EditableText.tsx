@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Check, X, Pencil, Bold, Italic, Underline, Link, AlignLeft, AlignCenter, AlignRight, Undo, Redo } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import { getCachedContent, setCachedContent } from '../lib/contentCache';
 import { Staff } from '../types';
 import { useToast } from './ToastContext';
 
@@ -15,7 +16,7 @@ interface EditableTextProps {
 
 export default function EditableText({ contentKey, page, defaultValue, className, adminMode, onSave }: EditableTextProps) {
   const { showToast } = useToast();
-  const [value, setValue] = useState(defaultValue);
+  const [value, setValue] = useState(() => getCachedContent(page, contentKey, defaultValue));
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
@@ -33,6 +34,7 @@ export default function EditableText({ contentKey, page, defaultValue, className
         .then(({ data }) => {
           if (data?.value) {
             setValue(data.value);
+            setCachedContent(page, contentKey, data.value);
           }
         });
     }
@@ -142,6 +144,7 @@ export default function EditableText({ contentKey, page, defaultValue, className
       }
 
       setValue(content);
+      setCachedContent(page, contentKey, content);
       setIsEditing(false);
       onSave?.(content);
       showToast('Saved!', 'success');

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { Camera, Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import { getCachedContent, setCachedContent } from '../lib/contentCache';
 import { Staff } from '../types';
 import { useToast } from './ToastContext';
 import { Images } from '../images';
@@ -24,7 +25,7 @@ interface ExistingImage {
 
 export default function EditableImage({ contentKey, page, defaultSrc, alt, className, adminMode, onSave }: EditableImageProps) {
   const { showToast } = useToast();
-  const [src, setSrc] = useState(defaultSrc);
+  const [src, setSrc] = useState(() => getCachedContent(page, contentKey, defaultSrc));
   const [loading, setLoading] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
@@ -42,6 +43,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
         .then(({ data }) => {
           if (data?.value) {
             setSrc(data.value);
+            setCachedContent(page, contentKey, data.value);
           }
         });
     }
@@ -108,6 +110,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
       }
 
       setSrc(imageUrl);
+      setCachedContent(page, contentKey, imageUrl);
       onSave?.(imageUrl);
       setShowGallery(false);
       showToast('Image updated!', 'success');
@@ -135,6 +138,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
 
       if (!isSupabaseEnabled()) {
         setSrc(dataUrl);
+        setCachedContent(page, contentKey, dataUrl);
         onSave?.(dataUrl);
         showToast('Image updated!', 'success');
         return;
@@ -161,10 +165,12 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
         if (!saveRes.ok || saveData.error) throw new Error(saveData.error || 'Save failed');
 
         setSrc(uploadData.url);
+        setCachedContent(page, contentKey, uploadData.url);
         onSave?.(uploadData.url);
       } else {
         await supabase!.from('content').upsert({ key: contentKey, value: dataUrl, type: 'image', page, updated_at: new Date().toISOString() });
         setSrc(dataUrl);
+        setCachedContent(page, contentKey, dataUrl);
         onSave?.(dataUrl);
       }
       setShowGallery(false);
