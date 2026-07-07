@@ -228,7 +228,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
             <div className="aspect-video w-full bg-[#D6E2E9]/50 overflow-hidden rounded-lg">
               <iframe
                 title="Wimbledon Studio Location"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2489.217522906646!2d-0.20657568632808!3d51.421349299319!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x48760787c2a2c569%3A0x6b4b3e3b0b3b3b3b!2sPitter%20Potter%20Wimbledon!5e0!3m2!1sen!2suk!4v1700000000002"
+                src="https://maps.google.com/maps?q=52+Wimbledon+Hill+Road%2C+Wimbledon+SW19+7PA&t=&z=15&ie=UTF8&iwloc=&output=embed"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
