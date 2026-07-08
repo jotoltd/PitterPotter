@@ -37,6 +37,7 @@ ON CONFLICT (page_key) DO NOTHING;
 ALTER TABLE page_settings ENABLE ROW LEVEL SECURITY;
 
 -- Public can read page settings (to check if a page is disabled)
+DROP POLICY IF EXISTS "Allow public read page settings" ON page_settings;
 CREATE POLICY "Allow public read page settings" ON page_settings
   FOR SELECT
   USING (true);

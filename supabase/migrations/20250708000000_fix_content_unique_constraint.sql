@@ -15,6 +15,16 @@ WHERE a.id > b.id
   AND a.key = b.key
   AND a.page = b.page;
 
--- Add the composite unique constraint.
-ALTER TABLE content
-  ADD CONSTRAINT content_key_page_unique UNIQUE (key, page);
+-- Add the composite unique constraint if it doesn't already exist.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'content_key_page_unique'
+      AND conrelid = 'content'::regclass
+  ) THEN
+    ALTER TABLE content
+      ADD CONSTRAINT content_key_page_unique UNIQUE (key, page);
+  END IF;
+END
+$$;
