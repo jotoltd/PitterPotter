@@ -151,6 +151,13 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error('DB backup error:', err);
     const details = err instanceof Error ? err.message : JSON.stringify(err);
+    const isMissingTable = typeof details === 'string' && /relation "db_backups" does not exist|\.db_backups/.test(details);
+    if (isMissingTable) {
+      return new Response(JSON.stringify({ error: 'Backups table not found. Run the db_backups migration first.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     return new Response(JSON.stringify({ error: 'Failed to process request', details }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
