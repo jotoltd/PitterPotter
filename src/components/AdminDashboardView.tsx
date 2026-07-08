@@ -98,7 +98,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = 10;
   const [editingBooking, setEditingBooking] = useState<BookingInquiry | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [sort, setSort] = useState<{ field: 'date' | 'name' | 'studio' | 'status'; direction: 'asc' | 'desc' }>({ field: 'date', direction: 'desc' });
@@ -163,7 +163,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter, studioFilter, debouncedSearchTerm, dateRange, sort]);
+  }, [filter, studioFilter, bookingTypeTab, debouncedSearchTerm, dateRange, sort]);
 
   const fetchCapacity = useCallback(async (studio: string, date: string, time: string, setter: (v: number | null) => void) => {
     if (!studio || !date || !time) { setter(null); return; }
