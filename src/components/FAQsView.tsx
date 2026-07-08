@@ -103,6 +103,31 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
     setExpandedId(expandedId === id ? null : id);
   };
 
+  const getStaffSession = (): Staff | null => {
+    try {
+      const saved = localStorage.getItem('pp_current_staff');
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      if (!parsed?.sessionToken) return null;
+      return parsed as Staff;
+    } catch {
+      return null;
+    }
+  };
+
+  const callAdminContent = async (body: Record<string, unknown>) => {
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.error) {
+      throw new Error(data.details || data.error || `Request failed (${res.status})`);
+    }
+    return data;
+  };
+
   const handleAddFAQ = async () => {
     if (!newQuestion.trim() || !newAnswer.trim()) {
       showToast('Please fill in both question and answer', 'error');
@@ -112,38 +137,44 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
     setLoading(true);
     try {
       const newId = `f${Date.now()}`;
-      
+
       if (isSupabaseEnabled() && adminMode) {
-        const savedStaff = localStorage.getItem('pp_current_staff');
-        const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
-        
-        if (staff?.sessionToken) {
-          // Save question
-          const qRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-            body: JSON.stringify({ action: 'save', username: staff.username, sessionToken: staff.sessionToken, key: `faq_${newId}_question`, page: 'faqs', value: newQuestion, type: 'text' }),
-          });
-          if (!qRes.ok) throw new Error('Failed to save question');
-          
-          // Save answer
-          const aRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-            body: JSON.stringify({ action: 'save', username: staff.username, sessionToken: staff.sessionToken, key: `faq_${newId}_answer_0`, page: 'faqs', value: newAnswer, type: 'text' }),
-          });
-          if (!aRes.ok) throw new Error('Failed to save answer');
+        const staff = getStaffSession();
+        if (!staff) {
+          showToast('Your session has expired. Please log in again.', 'error');
+          return;
         }
+
+        await callAdminContent({
+          action: 'save',
+          username: staff.username,
+          sessionToken: staff.sessionToken,
+          key: `faq_${newId}_question`,
+          page: 'faqs',
+          value: newQuestion,
+          type: 'text',
+        });
+
+        await callAdminContent({
+          action: 'save',
+          username: staff.username,
+          sessionToken: staff.sessionToken,
+          key: `faq_${newId}_answer_0`,
+          page: 'faqs',
+          value: newAnswer,
+          type: 'text',
+        });
       }
-      
+
       setFaqs([...faqs, { id: newId, question: newQuestion, answer: newAnswer }]);
       setNewQuestion('');
       setNewAnswer('');
       setIsAdding(false);
       showToast('FAQ added!', 'success');
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to add FAQ';
       console.error('Failed to add FAQ:', err);
-      showToast('Failed to add FAQ', 'error');
+      showToast(message, 'error');
     } finally {
       setLoading(false);
     }
@@ -151,34 +182,40 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
 
   const handleDeleteFAQ = async (id: string) => {
     if (!confirm('Are you sure you want to delete this FAQ?')) return;
-    
+
     setLoading(true);
     try {
       if (isSupabaseEnabled() && adminMode) {
-        const savedStaff = localStorage.getItem('pp_current_staff');
-        const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
-        
-        if (staff?.sessionToken) {
-          // Delete question and answer
-          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-            body: JSON.stringify({ action: 'delete', username: staff.username, sessionToken: staff.sessionToken, key: `faq_${id}_question`, page: 'faqs' }),
-          });
-          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-            body: JSON.stringify({ action: 'delete', username: staff.username, sessionToken: staff.sessionToken, key: `faq_${id}_answer_0`, page: 'faqs' }),
-          });
+        const staff = getStaffSession();
+        if (!staff) {
+          showToast('Your session has expired. Please log in again.', 'error');
+          return;
         }
+
+        await callAdminContent({
+          action: 'delete',
+          username: staff.username,
+          sessionToken: staff.sessionToken,
+          key: `faq_${id}_question`,
+          page: 'faqs',
+        });
+
+        await callAdminContent({
+          action: 'delete',
+          username: staff.username,
+          sessionToken: staff.sessionToken,
+          key: `faq_${id}_answer_0`,
+          page: 'faqs',
+        });
       }
-      
+
       setFaqs(faqs.filter(f => f.id !== id));
       if (expandedId === id) setExpandedId(null);
       showToast('FAQ deleted', 'success');
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete FAQ';
       console.error('Failed to delete FAQ:', err);
-      showToast('Failed to delete FAQ', 'error');
+      showToast(message, 'error');
     } finally {
       setLoading(false);
     }

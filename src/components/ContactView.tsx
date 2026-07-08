@@ -340,8 +340,8 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
               <iframe
                 title={`${studio} Studio Location`}
                 src={studio === 'Putney'
-                  ? 'https://maps.google.com/maps?q=51.4609%2C-0.2172&t=&z=15&ie=UTF8&iwloc=&output=embed'
-                  : 'https://maps.google.com/maps?q=51.4213%2C-0.2066&t=&z=15&ie=UTF8&iwloc=&output=embed'
+                  ? 'https://maps.google.com/maps?q=Pitter+Potter+Putney&z=15&ie=UTF8&iwloc=&output=embed'
+                  : 'https://maps.google.com/maps?q=Pitter+Potter+Wimbledon&z=15&ie=UTF8&iwloc=&output=embed'
                 }
                 className="w-full h-full border-0"
                 loading="lazy"

@@ -224,7 +224,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
             <div className="aspect-video w-full bg-[#D6E2E9]/50 overflow-hidden rounded-lg">
               <iframe
                 title="Putney Studio Location"
-                src="https://maps.google.com/maps?q=51.4609%2C-0.2172&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                src="https://maps.google.com/maps?q=Pitter+Potter+Putney&z=15&ie=UTF8&iwloc=&output=embed"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
