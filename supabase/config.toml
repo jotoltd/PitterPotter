@@ -189,3 +189,9 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/db-backup/deno.json"
 entrypoint = "./functions/db-backup/index.ts"
+
+[functions.sample-data]
+enabled = true
+verify_jwt = true
+import_map = "./functions/sample-data/deno.json"
+entrypoint = "./functions/sample-data/index.ts"

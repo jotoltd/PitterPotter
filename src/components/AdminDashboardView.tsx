@@ -208,6 +208,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       loadPageSettings();
       loadDbHealth();
       loadDbBackups();
+      loadSampleDataStatus();
     }
     if (activeTab === 'audit-logs' && staff.role === 'super_admin') {
       loadAuditLogs();
@@ -1185,6 +1186,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [dbHealthLoading, setDbHealthLoading] = useState(false);
   const [dbBackups, setDbBackups] = useState<{ id: string; name: string; created_at: string; created_by?: { username: string; name: string } }[]>([]);
   const [dbBackupLoading, setDbBackupLoading] = useState(false);
+  const [sampleDataStatus, setSampleDataStatus] = useState<{ sampleBookings: number; sampleGiftCards: number } | null>(null);
+  const [sampleDataLoading, setSampleDataLoading] = useState(false);
 
   const handleEditStaff = (staffMember: Staff) => {
     setEditingStaff(staffMember);
@@ -1495,6 +1498,92 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     } catch (err) {
       console.error('Failed to delete backup:', err);
       showToast('Failed to delete backup', 'error');
+    }
+  };
+
+  const loadSampleDataStatus = async () => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    setSampleDataLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sample-data`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'status', username: staff.username, sessionToken: staff.sessionToken }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        console.error('Sample data status error:', data.error);
+        return;
+      }
+      setSampleDataStatus(data);
+    } catch (err) {
+      console.error('Failed to load sample data status:', err);
+    } finally {
+      setSampleDataLoading(false);
+    }
+  };
+
+  const addSampleData = async () => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    setSampleDataLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sample-data`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'add', username: staff.username, sessionToken: staff.sessionToken }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        showToast(data.error || 'Failed to add sample data', 'error');
+        return;
+      }
+      showToast(data.message || 'Sample data added', 'success');
+      await loadSampleDataStatus();
+      await loadInquiries();
+      await loadGiftCards();
+    } catch (err) {
+      console.error('Failed to add sample data:', err);
+      showToast('Failed to add sample data', 'error');
+    } finally {
+      setSampleDataLoading(false);
+    }
+  };
+
+  const removeSampleData = async () => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    setSampleDataLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sample-data`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'remove', username: staff.username, sessionToken: staff.sessionToken }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        showToast(data.error || 'Failed to remove sample data', 'error');
+        return;
+      }
+      showToast(data.message || 'Sample data removed', 'success');
+      await loadSampleDataStatus();
+      await loadInquiries();
+      await loadGiftCards();
+    } catch (err) {
+      console.error('Failed to remove sample data:', err);
+      showToast('Failed to remove sample data', 'error');
+    } finally {
+      setSampleDataLoading(false);
     }
   };
 
@@ -3215,6 +3304,61 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </div>
               ) : (
                 <p className="text-xs text-[#1B2D3C]/50">No backups yet. Create one to get started.</p>
+              )}
+            </div>
+          )}
+
+          {/* Sample Data */}
+          {staff.role === 'super_admin' && (
+            <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Sample Data</h2>
+                  <p className="text-xs text-[#1B2D3C]/70 mt-1">Add or remove sample bookings and gift cards for testing.</p>
+                </div>
+                <button
+                  onClick={loadSampleDataStatus}
+                  disabled={sampleDataLoading}
+                  className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  Refresh
+                </button>
+              </div>
+              {sampleDataLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-12" />
+                </div>
+              ) : sampleDataStatus ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-[#DBE7E4]/30 rounded-lg">
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-[#1B2D3C]/70">Sample Bookings</p>
+                      <p className="text-2xl font-black text-[#1B2D3C]">{sampleDataStatus.sampleBookings}</p>
+                    </div>
+                    <div className="p-3 bg-[#DBE7E4]/30 rounded-lg">
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-[#1B2D3C]/70">Sample Gift Cards</p>
+                      <p className="text-2xl font-black text-[#1B2D3C]">{sampleDataStatus.sampleGiftCards}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={addSampleData}
+                      disabled={sampleDataLoading}
+                      className="flex-1 px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" /> Add Sample Data
+                    </button>
+                    <button
+                      onClick={removeSampleData}
+                      disabled={sampleDataLoading || (sampleDataStatus.sampleBookings === 0 && sampleDataStatus.sampleGiftCards === 0)}
+                      className="flex-1 px-4 py-2 bg-red-50 text-red-700 text-xs font-bold uppercase tracking-wider rounded-lg border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" /> Remove Sample Data
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-[#1B2D3C]/50">Click Refresh to load sample data status.</p>
               )}
             </div>
           )}
