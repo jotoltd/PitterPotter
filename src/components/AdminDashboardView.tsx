@@ -4,7 +4,7 @@ import ConfirmDialog from './ConfirmDialog';
 import FloorPlanView from './FloorPlanView';
 import WimbledonFloorPlan, { findAvailableTable, findMultipleTables } from './WimbledonFloorPlan';
 import PutneyFloorPlan, { findAvailablePutneyTable, findMultiplePutneyTables } from './PutneyFloorPlan';
-import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow } from '../types';
@@ -206,6 +206,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     if (activeTab === 'settings') {
       loadCapacity();
       loadPageSettings();
+      loadDbHealth();
+      loadDbBackups();
     }
     if (activeTab === 'audit-logs' && staff.role === 'super_admin') {
       loadAuditLogs();
@@ -1175,6 +1177,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     canDeleteBookings: false,
     allowedStudios: [] as ('Putney' | 'Wimbledon')[],
   });
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [passwordChangeTarget, setPasswordChangeTarget] = useState<Staff | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [dbHealth, setDbHealth] = useState<{ healthy: boolean; tables: Record<string, { exists: boolean; rows: number }>; issues: string[] } | null>(null);
+  const [dbHealthLoading, setDbHealthLoading] = useState(false);
+  const [dbBackups, setDbBackups] = useState<{ id: string; name: string; created_at: string; created_by?: { username: string; name: string } }[]>([]);
+  const [dbBackupLoading, setDbBackupLoading] = useState(false);
 
   const handleEditStaff = (staffMember: Staff) => {
     setEditingStaff(staffMember);
@@ -1296,6 +1306,196 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     });
     return;
 
+  };
+
+  const handleChangePassword = (target: Staff) => {
+    setPasswordChangeTarget(target);
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowChangePasswordModal(true);
+  };
+
+  const submitPasswordChange = async () => {
+    if (!passwordChangeTarget) return;
+    if (newPassword.length < 6) {
+      showToast('Password must be at least 6 characters', 'error');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showToast('Passwords do not match', 'error');
+      return;
+    }
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/staff-management`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'update',
+          username: staff.username,
+          sessionToken: staff.sessionToken,
+          staff: {
+            id: passwordChangeTarget.id,
+            name: passwordChangeTarget.name,
+            role: passwordChangeTarget.role,
+            password: newPassword,
+          },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        showToast(data.error || 'Failed to change password', 'error');
+        return;
+      }
+      setShowChangePasswordModal(false);
+      setPasswordChangeTarget(null);
+      setNewPassword('');
+      setConfirmPassword('');
+      showToast('Password changed successfully', 'success');
+      await loadStaffList();
+    } catch (err) {
+      console.error('Failed to change password:', err);
+      showToast('Failed to change password', 'error');
+    }
+  };
+
+  const loadDbHealth = async () => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    setDbHealthLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-health`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ username: staff.username, sessionToken: staff.sessionToken }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        console.error('DB health error:', data.error);
+        return;
+      }
+      setDbHealth(data);
+    } catch (err) {
+      console.error('Failed to load DB health:', err);
+    } finally {
+      setDbHealthLoading(false);
+    }
+  };
+
+  const loadDbBackups = async () => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    setDbBackupLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-backup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'list', username: staff.username, sessionToken: staff.sessionToken }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        console.error('DB backups error:', data.error);
+        return;
+      }
+      setDbBackups(data.backups || []);
+    } catch (err) {
+      console.error('Failed to load DB backups:', err);
+    } finally {
+      setDbBackupLoading(false);
+    }
+  };
+
+  const createDbBackup = async () => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    setDbBackupLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-backup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'create', username: staff.username, sessionToken: staff.sessionToken }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        showToast(data.error || 'Failed to create backup', 'error');
+        return;
+      }
+      showToast('Backup created', 'success');
+      await loadDbBackups();
+    } catch (err) {
+      console.error('Failed to create backup:', err);
+      showToast('Failed to create backup', 'error');
+    } finally {
+      setDbBackupLoading(false);
+    }
+  };
+
+  const downloadDbBackup = async (backupId: string, name: string) => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-backup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'download', username: staff.username, sessionToken: staff.sessionToken, backupId }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        showToast(data.error || 'Failed to download backup', 'error');
+        return;
+      }
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${name.replace(/\s+/g, '_')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download backup:', err);
+      showToast('Failed to download backup', 'error');
+    }
+  };
+
+  const deleteDbBackup = async (backupId: string) => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-backup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'delete', username: staff.username, sessionToken: staff.sessionToken, backupId }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        showToast(data.error || 'Failed to delete backup', 'error');
+        return;
+      }
+      showToast('Backup deleted', 'success');
+      await loadDbBackups();
+    } catch (err) {
+      console.error('Failed to delete backup:', err);
+      showToast('Failed to delete backup', 'error');
+    }
   };
 
   return (
@@ -1912,12 +2112,20 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="bg-white p-6 border border-[#1B2D3C]/20 shadow-sm mt-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading text-lg font-black text-[#1B2D3C] uppercase tracking-wider">Staff Management</h2>
-              <button
-                onClick={() => { setShowStaffModal(true); loadStaffList(); }}
-                className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" /> Add Staff
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleChangePassword(staff)}
+                  className="px-4 py-2 bg-white text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <Lock className="w-4 h-4" /> My Password
+                </button>
+                <button
+                  onClick={() => { setShowStaffModal(true); loadStaffList(); }}
+                  className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Staff
+                </button>
+              </div>
             </div>
             {staffList.length > 0 ? (
               <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -1963,6 +2171,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                               className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hover:text-[#486581] underline"
                             >
                               Edit
+                            </button>
+                            <button
+                              onClick={() => handleChangePassword(member)}
+                              className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hover:text-[#486581] underline"
+                            >
+                              Password
                             </button>
                             <button
                               onClick={() => deleteStaffMember(member.id)}
@@ -2560,6 +2774,53 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
       )}
 
+      {/* Change Password Modal */}
+      {showChangePasswordModal && passwordChangeTarget && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 sm:p-6">
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg sm:rounded-xl">
+            <h3 className="font-heading text-xl font-black text-[#1B2D3C]">
+              Change Password · {passwordChangeTarget.name}
+            </h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">New Password *</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Min 6 characters"
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Confirm Password *</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter password"
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowChangePasswordModal(false); setPasswordChangeTarget(null); setNewPassword(''); setConfirmPassword(''); }}
+                className="flex-1 px-4 py-2 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitPasswordChange}
+                className="flex-1 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
+              >
+                Change Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Gift Card Creation Modal */}
       {showGiftCardModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 sm:p-6">
@@ -2850,6 +3111,110 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Database Health */}
+          {staff.role === 'super_admin' && (
+            <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Database Health</h2>
+                  <p className="text-xs text-[#1B2D3C]/70 mt-1">Check all required tables exist and have data.</p>
+                </div>
+                <button
+                  onClick={loadDbHealth}
+                  disabled={dbHealthLoading}
+                  className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  Refresh
+                </button>
+              </div>
+              {dbHealthLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-12" />
+                  <Skeleton className="h-12" />
+                </div>
+              ) : dbHealth ? (
+                <div className="space-y-3">
+                  <div className={`flex items-center gap-2 p-3 rounded-lg ${dbHealth.healthy ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                    <span className={`w-2 h-2 rounded-full ${dbHealth.healthy ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                    <span className="text-xs font-bold">{dbHealth.healthy ? 'All required tables healthy' : 'Database issues detected'}</span>
+                  </div>
+                  {dbHealth.issues.length > 0 && (
+                    <ul className="space-y-1">
+                      {dbHealth.issues.map((issue, idx) => (
+                        <li key={idx} className="text-xs text-red-600 font-medium">• {issue}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {Object.entries(dbHealth.tables).map(([name, info]) => (
+                      <div key={name} className={`p-2 rounded-lg border ${info.exists ? 'border-emerald-200 bg-emerald-50/50' : 'border-red-200 bg-red-50/50'}`}>
+                        <p className="text-[10px] uppercase tracking-wider font-bold text-[#1B2D3C]/70">{name}</p>
+                        <p className={`text-sm font-black ${info.exists ? 'text-emerald-700' : 'text-red-700'}`}>{info.exists ? info.rows : 'Missing'}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-[#1B2D3C]/50">Click Refresh to check database health.</p>
+              )}
+            </div>
+          )}
+
+          {/* Database Backup */}
+          {staff.role === 'super_admin' && (
+            <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Database Backup</h2>
+                  <p className="text-xs text-[#1B2D3C]/70 mt-1">Create and download JSON backups of key tables.</p>
+                </div>
+                <button
+                  onClick={createDbBackup}
+                  disabled={dbBackupLoading}
+                  className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Create Backup
+                </button>
+              </div>
+              {dbBackupLoading && dbBackups.length === 0 ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-12" />
+                  <Skeleton className="h-12" />
+                </div>
+              ) : dbBackups.length > 0 ? (
+                <div className="space-y-2">
+                  {dbBackups.map((backup) => (
+                    <div key={backup.id} className="flex items-center justify-between p-3 bg-[#DBE7E4]/30 rounded-lg">
+                      <div>
+                        <p className="text-sm font-bold text-[#1B2D3C]">{backup.name}</p>
+                        <p className="text-[10px] text-[#1B2D3C]/50">
+                          {new Date(backup.created_at).toLocaleString('en-GB')}
+                          {backup.created_by ? ` · ${backup.created_by.name || backup.created_by.username}` : ''}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => downloadDbBackup(backup.id, backup.name)}
+                          className="px-3 py-1.5 bg-white text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-colors cursor-pointer"
+                        >
+                          Download
+                        </button>
+                        <button
+                          onClick={() => deleteDbBackup(backup.id)}
+                          className="px-3 py-1.5 bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded border border-red-200 hover:bg-red-100 transition-colors cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-[#1B2D3C]/50">No backups yet. Create one to get started.</p>
               )}
             </div>
           )}

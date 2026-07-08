@@ -177,3 +177,15 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/page-settings/deno.json"
 entrypoint = "./functions/page-settings/index.ts"
+
+[functions.db-health]
+enabled = true
+verify_jwt = true
+import_map = "./functions/db-health/deno.json"
+entrypoint = "./functions/db-health/index.ts"
+
+[functions.db-backup]
+enabled = true
+verify_jwt = true
+import_map = "./functions/db-backup/deno.json"
+entrypoint = "./functions/db-backup/index.ts"
