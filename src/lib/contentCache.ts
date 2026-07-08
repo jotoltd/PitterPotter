@@ -1,4 +1,4 @@
-const CACHE_KEY = 'pp_content_cache';
+const CACHE_KEY = 'pp_content_cache_v2';
 
 const memoryCache: Record<string, string> = {};
 
