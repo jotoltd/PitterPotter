@@ -171,3 +171,9 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/process-party-reminders/deno.json"
 entrypoint = "./functions/process-party-reminders/index.ts"
+
+[functions.page-settings]
+enabled = true
+verify_jwt = true
+import_map = "./functions/page-settings/deno.json"
+entrypoint = "./functions/page-settings/index.ts"

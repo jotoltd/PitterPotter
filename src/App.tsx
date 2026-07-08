@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Construction } from 'lucide-react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomeView from './components/HomeView';
@@ -32,6 +32,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import SessionWatcher from './components/SessionWatcher';
 import { Page, Staff } from './types';
 import { motion, AnimatePresence } from 'motion/react';
+import { supabase, isSupabaseEnabled } from './lib/supabase';
 
 export default function App() {
  const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -39,6 +40,7 @@ export default function App() {
  const [currentStaff, setCurrentStaff] = useState<Staff | null>(null);
  const [showSplash, setShowSplash] = useState(true);
  const [adminMode, setAdminMode] = useState(false);
+ const [disabledPages, setDisabledPages] = useState<Set<string>>(new Set());
 
  const isAdminLoggedIn = !!currentStaff;
 
@@ -49,6 +51,22 @@ export default function App() {
       document.body.classList.remove('admin-mode-active');
     }
   }, [adminMode]);
+
+  useEffect(() => {
+    if (!isSupabaseEnabled()) return;
+    const loadPageSettings = async () => {
+      try {
+        const { data } = await supabase!.from('page_settings').select('page_key, enabled');
+        if (data) {
+          const disabled = new Set(data.filter(s => !s.enabled).map(s => s.page_key));
+          setDisabledPages(disabled);
+        }
+      } catch (err) {
+        console.error('Failed to load page settings:', err);
+      }
+    };
+    loadPageSettings();
+  }, []);
 
  useEffect(() => {
     const saved = localStorage.getItem('pp_current_staff');
@@ -138,6 +156,27 @@ export default function App() {
 
  // Switch views
  const renderCurrentView = () => {
+ // Check if page is disabled (unless admin or admin mode)
+ const isPageDisabled = disabledPages.has(currentPage) && !isAdminLoggedIn && !adminMode;
+
+ if (isPageDisabled) {
+   return (
+     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center space-y-6">
+       <Construction className="w-16 h-16 text-[#1B2D3C]/40" />
+       <div className="space-y-2">
+         <h1 className="font-heading text-2xl font-black text-[#1B2D3C]">Page Under Maintenance</h1>
+         <p className="text-sm text-[#1B2D3C]/70 max-w-md">This page is temporarily unavailable. Please check back later or contact us for assistance.</p>
+       </div>
+       <button
+         onClick={() => setCurrentPage('home')}
+         className="px-6 py-3 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-colors cursor-pointer"
+       >
+         Return Home
+       </button>
+     </div>
+   );
+ }
+
  switch (currentPage) {
  case 'home':
  return <HomeView setCurrentPage={setCurrentPage} setVisitPreset={handleVisitPreset} adminMode={adminMode} />;
@@ -204,7 +243,7 @@ export default function App() {
  <div className="flex flex-col min-h-screen bg-[#FFFFFF] text-[#1B2D3C] selection:bg-[#DBE7E4]/15 selection:text-[#1B2D3C] transition-all duration-300">
 
  {/* Navigation Headers */}
- {currentPage !== 'admin' && <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} currentStaff={currentStaff} adminMode={adminMode} setAdminMode={setAdminMode} />}
+ {currentPage !== 'admin' && <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} currentStaff={currentStaff} adminMode={adminMode} setAdminMode={setAdminMode} disabledPages={disabledPages} />}
 
  {/* Edit Mode Banner */}
  {adminMode && currentPage !== 'admin' && (

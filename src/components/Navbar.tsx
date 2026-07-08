@@ -11,9 +11,10 @@ interface NavbarProps {
   currentStaff: Staff | null;
   adminMode: boolean;
   setAdminMode: (mode: boolean) => void;
+  disabledPages?: Set<string>;
 }
 
-export default function Navbar({ currentPage, setCurrentPage, currentStaff, adminMode, setAdminMode }: NavbarProps) {
+export default function Navbar({ currentPage, setCurrentPage, currentStaff, adminMode, setAdminMode, disabledPages = new Set() }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showCallOptions, setShowCallOptions] = useState(false);
 
@@ -28,6 +29,8 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
     { label: 'Gallery', value: 'gallery', keyPrefix: 'gallery' },
     { label: 'Contact', value: 'contact-info', keyPrefix: 'contact' },
   ];
+
+  const visibleNavItems = navItems.filter(item => !disabledPages.has(item.value) || adminMode || currentStaff);
 
   const handleNavClick = (page: Page) => {
     setCurrentPage(page);
@@ -59,7 +62,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center">
-              {navItems.map((item) => (
+              {visibleNavItems.map((item) => (
                 <button
                   key={item.value}
                   id={`nav-link-${item.value}`}
@@ -113,7 +116,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
         {isOpen && (
           <div className="md:hidden bg-[#FFFFFF] border-b border-[#1B2D3C]/10">
             <div className="px-4 py-3 space-y-1">
-              {navItems.map((item) => (
+              {visibleNavItems.map((item) => (
                 <button
                   key={item.value}
                   id={`mobile-nav-link-${item.value}`}

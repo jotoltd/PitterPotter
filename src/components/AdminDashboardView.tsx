@@ -88,6 +88,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [auditLogsLoading, setAuditLogsLoading] = useState(false);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const [pageSettings, setPageSettings] = useState<{ page_key: string; enabled: boolean }[]>([]);
+  const [pageSettingsLoading, setPageSettingsLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
   const [bookingTypeTab, setBookingTypeTab] = useState<'all' | 'painting' | 'baby-prints' | 'party'>('all');
@@ -203,6 +205,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     let isMounted = true;
     if (activeTab === 'settings') {
       loadCapacity();
+      loadPageSettings();
     }
     if (activeTab === 'audit-logs' && staff.role === 'super_admin') {
       loadAuditLogs();
@@ -406,6 +409,56 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       setCapacityRows(data.capacity || []);
     } catch (err) {
       console.error('Failed to load capacity:', err);
+    }
+  };
+
+  const loadPageSettings = async () => {
+    if (!isSupabaseEnabled()) return;
+    setPageSettingsLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/page-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'load' }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        console.error('Failed to load page settings:', data.error);
+        return;
+      }
+      setPageSettings(data.settings || []);
+    } catch (err) {
+      console.error('Failed to load page settings:', err);
+    } finally {
+      setPageSettingsLoading(false);
+    }
+  };
+
+  const updatePageSetting = async (pageKey: string, enabled: boolean) => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/page-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'update', username: staff.username, sessionToken: staff.sessionToken, pageKey, enabled }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        showToast(data.error || 'Failed to update page setting', 'error');
+        return;
+      }
+      setPageSettings(prev => prev.map(s => s.page_key === pageKey ? { ...s, enabled } : s));
+      showToast('Page setting updated', 'success');
+    } catch (err) {
+      console.error('Failed to update page setting:', err);
+      showToast('Failed to update page setting', 'error');
     }
   };
 
@@ -2762,6 +2815,44 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               </button>
             </div>
           </div>
+
+          {/* Page Visibility */}
+          {staff.role === 'super_admin' && (
+            <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
+              <div>
+                <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Page Visibility</h2>
+                <p className="text-xs text-[#1B2D3C]/70 mt-1">Enable or disable pages from the public site. Disabled pages will show a maintenance message.</p>
+              </div>
+              {pageSettingsLoading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-12" />
+                  <Skeleton className="h-12" />
+                  <Skeleton className="h-12" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {pageSettings.map((setting) => (
+                    <div key={setting.page_key} className="flex items-center justify-between p-3 bg-[#DBE7E4]/30 rounded-lg">
+                      <div>
+                        <p className="text-sm font-bold text-[#1B2D3C] capitalize">{setting.page_key.replace('-', ' ')}</p>
+                        <p className="text-[10px] text-[#1B2D3C]/50">{setting.enabled ? 'Visible to public' : 'Hidden from public'}</p>
+                      </div>
+                      <button
+                        onClick={() => updatePageSetting(setting.page_key, !setting.enabled)}
+                        className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${
+                          setting.enabled ? 'bg-[#1B2D3C]' : 'bg-[#1B2D3C]/30'
+                        }`}
+                      >
+                        <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                          setting.enabled ? 'translate-x-6' : 'translate-x-0'
+                        }`} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Table Plan */}
           <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 max-w-xl">
