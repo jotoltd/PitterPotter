@@ -4,8 +4,17 @@ CREATE TABLE IF NOT EXISTS page_settings (
   page_key TEXT NOT NULL UNIQUE,
   enabled BOOLEAN NOT NULL DEFAULT true,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_by UUID REFERENCES staff(id)
+  updated_by UUID
 );
+
+-- Add foreign key constraint if staff table exists
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'staff' AND table_schema = 'public') THEN
+    ALTER TABLE page_settings ADD CONSTRAINT page_settings_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES staff(id);
+  END IF;
+END
+$$;
 
 -- Seed default pages as enabled
 INSERT INTO page_settings (page_key, enabled)
