@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
-import { Camera, Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Camera, Loader2, Upload, X, Image as ImageIcon, Pencil } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { getCachedContent, setCachedContent } from '../lib/contentCache';
 import { Staff } from '../types';
@@ -216,8 +216,8 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
               </>
           }
         </div>
-        <div className="absolute top-2 right-2 px-2 py-1 bg-amber-400 text-white text-[9px] font-bold uppercase tracking-wider rounded opacity-0 group-hover:opacity-100 transition-opacity">
-          Edit
+        <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 bg-amber-400 text-white text-[9px] font-bold uppercase tracking-wider rounded opacity-0 group-hover:opacity-100 transition-opacity z-20">
+          <Pencil className="w-3 h-3" /> Edit
         </div>
       </div>
 

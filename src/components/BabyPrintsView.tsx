@@ -30,7 +30,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
           className="w-full h-full object-cover"
           adminMode={adminMode}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1B2D3C]/40 to-transparent" />
+        {!adminMode && <div className="absolute inset-0 bg-gradient-to-t from-[#1B2D3C]/40 to-transparent pointer-events-none" />}
       </div>
 
       {/* What to Expect */}
