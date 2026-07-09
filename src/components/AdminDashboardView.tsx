@@ -1609,6 +1609,41 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
+  const restoreDbBackup = async (backupId: string) => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    setDbBackupLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-backup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'restore', username: staff.username, sessionToken: staff.sessionToken, backupId }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        showToast(data.error || 'Failed to restore backup', 'error');
+        return;
+      }
+      showToast('Backup restored. Reloading data...', 'success');
+      await Promise.all([
+        loadInquiries(),
+        loadStaffList(),
+        loadCapacity(),
+        loadPageSettings(),
+        loadDbHealth(),
+        loadDbBackups(),
+      ]);
+    } catch (err) {
+      console.error('Failed to restore backup:', err);
+      showToast('Failed to restore backup', 'error');
+    } finally {
+      setDbBackupLoading(false);
+    }
+  };
+
   const loadSampleDataStatus = async () => {
     if (!isSupabaseEnabled() || !staff?.sessionToken) return;
     setSampleDataLoading(true);
@@ -3445,7 +3480,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Database Backup</h2>
-                  <p className="text-xs text-[#1B2D3C]/70 mt-1">Create and download JSON backups of key tables.</p>
+                  <p className="text-xs text-[#1B2D3C]/70 mt-1">Create, download, and restore JSON backups of key tables.</p>
                 </div>
                 <button
                   onClick={createDbBackup}
@@ -3477,6 +3512,18 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           className="px-3 py-1.5 bg-white text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-colors cursor-pointer"
                         >
                           Download
+                        </button>
+                        <button
+                          onClick={() => showConfirmDialog({
+                            title: 'Restore Backup',
+                            message: `This will overwrite the current database with the backup from ${new Date(backup.created_at).toLocaleString('en-GB')}. Your staff login will be preserved, but all other data will be replaced. This cannot be undone.`,
+                            confirmLabel: 'Restore',
+                            variant: 'danger',
+                            onConfirm: () => { closeConfirmDialog(); restoreDbBackup(backup.id); },
+                          })}
+                          className="px-3 py-1.5 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider rounded border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
+                        >
+                          Restore
                         </button>
                         <button
                           onClick={() => deleteDbBackup(backup.id)}
