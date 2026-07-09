@@ -52,6 +52,25 @@ export default function App() {
     }
   }, [adminMode]);
 
+  // Disable all hyperlinks in admin edit mode, except editable content and modals
+  useEffect(() => {
+    if (!adminMode) return;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target) return;
+      // Allow editable elements and modals to receive clicks
+      const editable = target.closest('[data-editable], [contenteditable], .z-\[200\], .z-\[250\]');
+      if (editable) return;
+      const link = target.closest('a');
+      if (link) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener('click', handleClick, true);
+    return () => document.removeEventListener('click', handleClick, true);
+  }, [adminMode]);
+
   useEffect(() => {
     if (!isSupabaseEnabled()) return;
     const loadPageSettings = async () => {

@@ -172,7 +172,7 @@ export default function EditableText({ contentKey, page, defaultValue, className
       <span
         data-editable="true"
         className={`${className} relative cursor-pointer outline outline-2 outline-dashed outline-amber-400/60 outline-offset-2 rounded hover:outline-amber-500 hover:bg-amber-50/30 transition-all`}
-        onClick={() => setIsEditing(true)}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditing(true); }}
         title="Click to edit"
       >
         <span dangerouslySetInnerHTML={{ __html: value }} />

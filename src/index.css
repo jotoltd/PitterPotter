@@ -102,8 +102,9 @@ body.admin-mode-active [role="button"]:not([data-editable]):not(.z-\[200\] *):no
   opacity: 0.7;
 }
 
-/* Allow editable elements to remain clickable */
+/* Allow editable elements and their children to remain clickable */
 body.admin-mode-active [data-editable],
+body.admin-mode-active [data-editable] *,
 body.admin-mode-active .cursor-pointer,
 body.admin-mode-active button[role="button"],
 body.admin-mode-active [contenteditable],
