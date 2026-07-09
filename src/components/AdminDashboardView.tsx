@@ -87,6 +87,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [giftCardDiscount, setGiftCardDiscount] = useState(0);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [auditLogsLoading, setAuditLogsLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [pageSettings, setPageSettings] = useState<{ page_key: string; enabled: boolean }[]>([]);
   const [pageSettingsLoading, setPageSettingsLoading] = useState(false);
@@ -215,6 +216,50 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
     return () => { isMounted = false; };
   }, [activeTab, staff.role]);
+
+  // Persist dashboard filters
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('pp_admin_filters');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.filter) setFilter(parsed.filter);
+        if (parsed.studioFilter) setStudioFilter(parsed.studioFilter);
+        if (parsed.bookingTypeTab) setBookingTypeTab(parsed.bookingTypeTab);
+        if (parsed.dateRange) setDateRange(parsed.dateRange);
+        if (parsed.sort) setSort(parsed.sort);
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pp_admin_filters', JSON.stringify({
+        filter,
+        studioFilter,
+        bookingTypeTab,
+        dateRange,
+        sort,
+      }));
+    } catch {
+      // ignore storage errors
+    }
+  }, [filter, studioFilter, bookingTypeTab, dateRange, sort]);
+
+  // Auto-refresh bookings and gift cards every 60s while dashboard is active
+  useEffect(() => {
+    if (activeTab !== 'dashboard' && activeTab !== 'gift-cards') return;
+    const refresh = async () => {
+      if (activeTab === 'dashboard') await loadInquiries();
+      if (activeTab === 'gift-cards') await loadGiftCards();
+      setLastUpdated(new Date());
+    };
+    refresh();
+    const interval = setInterval(refresh, 60000);
+    return () => clearInterval(interval);
+  }, [activeTab]);
 
   // Set up Supabase Realtime subscription for bookings
   useEffect(() => {
@@ -507,6 +552,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         bookings = bookings.filter(b => staffAllowedStudios.includes(b.studio));
       }
       setInquiries(bookings);
+      setLastUpdated(new Date());
     } catch (err: unknown) {
       const msg = err && typeof err === 'object' && 'message' in err ? (err as Error).message : '';
       if (msg === 'Unauthorized') { handleUnauthorized(); return; }
@@ -575,6 +621,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           }));
           setGiftCards(mapped);
           localStorage.setItem('pp_gift_cards', JSON.stringify(mapped));
+          setLastUpdated(new Date());
           return;
         }
       } catch (err) {
@@ -1674,7 +1721,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               >
                 {tab.label}
                 {tab.badge !== null && tab.badge !== undefined && (
-                  <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[9px] font-black bg-amber-500 text-white rounded-full">
+                  <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[9px] font-black bg-red-500 text-white rounded-full">
                     {tab.badge > 99 ? '99+' : tab.badge}
                   </span>
                 )}
@@ -1972,16 +2019,28 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             <span className="text-xs font-black">{selectedIds.size} selected</span>
             <div className="flex-1" />
             {canUpdateStatus && (
-              <button
-                onClick={async () => {
-                  const ids = [...selectedIds].filter(id => inquiries.find(i => i.id === id)?.status !== 'confirmed');
-                  for (const id of ids) await updateStatus(id, 'confirmed');
-                  setSelectedIds(new Set());
-                }}
-                className="px-4 py-2 sm:px-3 sm:py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5 min-h-[44px]"
-              >
-                <CheckCircle className="w-3.5 h-3.5" /> Confirm All
-              </button>
+              <>
+                <button
+                  onClick={async () => {
+                    const ids = [...selectedIds].filter(id => inquiries.find(i => i.id === id)?.status !== 'confirmed');
+                    for (const id of ids) await updateStatus(id, 'confirmed');
+                    setSelectedIds(new Set());
+                  }}
+                  className="px-4 py-2 sm:px-3 sm:py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5 min-h-[44px]"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" /> Confirm All
+                </button>
+                <button
+                  onClick={async () => {
+                    const ids = [...selectedIds].filter(id => inquiries.find(i => i.id === id)?.status !== 'cancelled');
+                    for (const id of ids) await updateStatus(id, 'cancelled');
+                    setSelectedIds(new Set());
+                  }}
+                  className="px-4 py-2 sm:px-3 sm:py-1.5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center gap-1.5 min-h-[44px]"
+                >
+                  <XCircle className="w-3.5 h-3.5" /> Cancel All
+                </button>
+              </>
             )}
             <button
               onClick={() => {
@@ -2036,6 +2095,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             {filteredInquiries.length} booking{filteredInquiries.length !== 1 ? 's' : ''}
             {filter !== 'all' || studioFilter !== 'all' || searchTerm || dateRange.start ? ' (filtered)' : ''}
           </p>
+          {lastUpdated && (
+            <p className="text-[10px] font-medium text-[#1B2D3C]/40">
+              Updated {lastUpdated.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          )}
         </div>
         <div className="bg-white border border-[#1B2D3C]/20 shadow-sm overflow-hidden rounded-xl">
           {filteredInquiries.length === 0 ? (
@@ -2080,6 +2144,35 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       {inq.source === 'walk-in' && <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold">Walk-in</span>}
                       {tablePlanEnabled && inq.tableId && <span className="px-1.5 py-0.5 bg-[#1B2D3C] text-white rounded-full text-[10px] font-bold">{inq.tableId}</span>}
                     </div>
+                    {canUpdateStatus && inq.status !== 'cancelled' && (
+                      <div className="flex gap-2 pt-1" onClick={e => e.stopPropagation()}>
+                        {inq.status !== 'confirmed' && (
+                          <button
+                            onClick={() => updateStatus(inq.id, 'confirmed')}
+                            disabled={confirmingIds.has(inq.id)}
+                            className="flex-1 px-2 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black rounded-lg transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
+                          >
+                            <CheckCircle className="w-3 h-3" /> Confirm
+                          </button>
+                        )}
+                        {inq.status !== 'pending' && inq.status !== 'confirmed' && (
+                          <button
+                            onClick={() => updateStatus(inq.id, 'pending')}
+                            disabled={confirmingIds.has(inq.id)}
+                            className="flex-1 px-2 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-black rounded-lg transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
+                          >
+                            <Clock className="w-3 h-3" /> Awaiting
+                          </button>
+                        )}
+                        <button
+                          onClick={() => updateStatus(inq.id, 'cancelled')}
+                          disabled={confirmingIds.has(inq.id)}
+                          className="flex-1 px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-[10px] font-black rounded-lg transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1"
+                        >
+                          <XCircle className="w-3 h-3" /> Cancel
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -2156,8 +2249,40 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                             </button>
                           </td>
                         )}
-                        <td className="px-4 py-3 text-center">
-                          <span className="text-[#1B2D3C]/30 text-base font-black">⋯</span>
+                        <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-1.5">
+                            {canUpdateStatus && inq.status !== 'confirmed' && inq.status !== 'cancelled' && (
+                              <button
+                                onClick={() => updateStatus(inq.id, 'confirmed')}
+                                disabled={confirmingIds.has(inq.id)}
+                                title="Confirm"
+                                className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all cursor-pointer disabled:opacity-60"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {canUpdateStatus && inq.status === 'confirmed' && (
+                              <button
+                                onClick={() => updateStatus(inq.id, 'pending')}
+                                disabled={confirmingIds.has(inq.id)}
+                                title="Mark as awaiting"
+                                className="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg transition-all cursor-pointer disabled:opacity-60"
+                              >
+                                <Clock className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {canUpdateStatus && inq.status !== 'cancelled' && (
+                              <button
+                                onClick={() => updateStatus(inq.id, 'cancelled')}
+                                disabled={confirmingIds.has(inq.id)}
+                                title="Cancel"
+                                className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg transition-all cursor-pointer disabled:opacity-60"
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <span className="text-[#1B2D3C]/30 text-base font-black ml-1">⋯</span>
+                          </div>
                         </td>
                       </tr>
                     ))}
