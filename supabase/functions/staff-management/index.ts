@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const role = isOneOf(staffData.role, ['super_admin', 'admin', 'staff'] as const) ? staffData.role : 'staff';
+      const role = isOneOf(staffData.role, ['super_admin', 'staff'] as const) ? staffData.role : 'staff';
       const isSuperAdmin = role === 'super_admin';
       const permissions = {
         can_update_status: isSuperAdmin || (isBoolean(staffData.canUpdateStatus) ? staffData.canUpdateStatus : false),
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const updatedRole = isOneOf(staffData.role, ['super_admin', 'admin', 'staff'] as const) ? staffData.role : 'staff';
+      const updatedRole = isOneOf(staffData.role, ['super_admin', 'staff'] as const) ? staffData.role : 'staff';
       const isUpdatedSuperAdmin = updatedRole === 'super_admin';
       const updateData: Record<string, unknown> = {
         name: staffData.name,
