@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
         deleteAll('capacity', 'studio'),
         deleteAll('bookings', 'id'),
         deleteAll('gift_cards', 'id'),
-        deleteAll('settings', 'id'),
+        deleteAll('settings', 'key'),
       ]);
       const { error: deleteStaffError } = await supabase.from('staff').delete().not('id', 'is', null).neq('id', staff.id);
       if (deleteStaffError) throw new Error(`Failed to delete staff: ${deleteStaffError.message}`);
