@@ -1065,6 +1065,67 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     staff: 'Staff',
   };
 
+  const auditActionLabel: Record<string, string> = {
+    create: 'Created',
+    update: 'Updated',
+    delete: 'Deleted',
+    update_status: 'Changed status',
+    login: 'Logged in',
+    logout: 'Logged out',
+    backup: 'Backed up',
+    restore: 'Restored',
+  };
+
+  const auditEntityLabel: Record<string, string> = {
+    booking: 'Booking',
+    staff: 'Staff member',
+    gift_card: 'Gift card',
+    giftcard: 'Gift card',
+    page_setting: 'Page setting',
+    setting: 'Setting',
+    sample_data: 'Sample data',
+    content: 'Content',
+  };
+
+  const auditActionColor: Record<string, string> = {
+    create: 'bg-emerald-100 text-emerald-700',
+    update: 'bg-amber-100 text-amber-700',
+    update_status: 'bg-sky-100 text-sky-700',
+    delete: 'bg-red-100 text-red-700',
+    login: 'bg-[#DBE7E4] text-[#1B2D3C]',
+    logout: 'bg-stone-100 text-stone-600',
+    backup: 'bg-purple-100 text-purple-700',
+    restore: 'bg-purple-100 text-purple-700',
+  };
+
+  const formatAuditDetails = (log: AuditLog): string => {
+    if (!log.details || typeof log.details !== 'object' || log.details === null) {
+      return log.action === 'delete' ? 'Record removed' : '-';
+    }
+    const details = log.details as Record<string, unknown>;
+    const parts: string[] = [];
+
+    if (log.action === 'update_status' && details.status) {
+      return `Status changed to ${details.status}`;
+    }
+
+    if (details.name && typeof details.name === 'string') parts.push(`Name: ${details.name}`);
+    if (details.username && typeof details.username === 'string') parts.push(`Username: ${details.username}`);
+    if (details.studio && typeof details.studio === 'string') parts.push(`Studio: ${details.studio}`);
+    if (details.date && typeof details.date === 'string') parts.push(`Date: ${details.date}`);
+    if (details.time && typeof details.time === 'string') parts.push(`Time: ${details.time}`);
+    if (details.role && typeof details.role === 'string') parts.push(`Role: ${roleLabel[details.role as Staff['role']] || details.role}`);
+    if (details.page_key && typeof details.page_key === 'string') parts.push(`Page: ${details.page_key}`);
+    if (details.enabled !== undefined) parts.push(`Enabled: ${details.enabled ? 'Yes' : 'No'}`);
+    if (details.amount !== undefined) parts.push(`Amount: £${Number(details.amount).toFixed(2)}`);
+    if (details.code && typeof details.code === 'string') parts.push(`Code: ${details.code}`);
+    if (details.note && typeof details.note === 'string') parts.push(details.note);
+    if (details.passwordChanged) parts.push('Password changed');
+
+    if (parts.length === 0) return Object.entries(details).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(', ');
+    return parts.join(' · ');
+  };
+
   const isSuperAdmin = staff.role === 'super_admin';
 
   const staffAllowedStudios: ('Putney' | 'Wimbledon')[] | null =
@@ -3683,44 +3744,35 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <table className="w-full text-left min-w-[600px]">
                   <thead className="bg-[#D6E2E9] border-b border-[#1B2D3C]/20">
                     <tr>
-                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Timestamp</th>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">When</th>
                       <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Staff</th>
-                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Action</th>
-                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Entity</th>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">What happened</th>
                       <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Details</th>
                     </tr>
                   </thead>
-                  <tbody className="text-xs font-semibold text-[#1B2D3C]">
+                  <tbody className="text-xs text-[#1B2D3C]">
                     {auditLogs.map((log) => (
                       <tr key={log.id} className="border-b border-[#1B2D3C]/5 hover:bg-stone-50">
-                        <td className="py-3 px-4 text-[#1B2D3C]/70">
-                          {new Date(log.created_at).toLocaleString('en-GB', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                        <td className="py-3 px-4 align-top whitespace-nowrap">
+                          <p className="font-bold">{new Date(log.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{new Date(log.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</p>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-4 align-top whitespace-nowrap">
                           <span className="font-bold">{log.username || 'Unknown'}</span>
                         </td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
-                            log.action === 'create' ? 'bg-emerald-100 text-emerald-700' :
-                            log.action === 'update' ? 'bg-amber-100 text-amber-700' :
-                            log.action === 'delete' ? 'bg-red-100 text-red-700' :
-                            'bg-stone-100 text-stone-600'
-                          }`}>
-                            {log.action}
-                          </span>
+                        <td className="py-3 px-4 align-top">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${auditActionColor[log.action] || 'bg-stone-100 text-stone-600'}`}>
+                              {auditActionLabel[log.action] || log.action}
+                            </span>
+                            <span className="font-semibold text-[#1B2D3C]/80">
+                              {auditEntityLabel[log.entity] || log.entity}
+                              {log.entity_id && <span className="text-[#1B2D3C]/40 font-normal ml-1">#{log.entity_id.slice(0, 8)}</span>}
+                            </span>
+                          </div>
                         </td>
-                        <td className="py-3 px-4">
-                          <span className="font-mono text-[10px]">{log.entity}</span>
-                          {log.entity_id && <span className="text-[#1B2D3C]/50 ml-1">({log.entity_id})</span>}
-                        </td>
-                        <td className="py-3 px-4 text-[#1B2D3C]/70">
-                          {log.details ? JSON.stringify(log.details) : '-'}
+                        <td className="py-3 px-4 align-top text-[#1B2D3C]/70 font-medium">
+                          {formatAuditDetails(log)}
                         </td>
                       </tr>
                     ))}
