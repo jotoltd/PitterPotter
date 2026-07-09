@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, ChangeEvent } from 'react';
-import { Camera, Loader2, Upload, X, Image as ImageIcon, Pencil } from 'lucide-react';
+import { useState, useEffect, useRef, ChangeEvent, useMemo } from 'react';
+import { Camera, Loader2, Upload, X, Image as ImageIcon, Pencil, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { getCachedContent, setCachedContent } from '../lib/contentCache';
 import { Staff } from '../types';
@@ -21,6 +21,7 @@ interface ExistingImage {
   key: string;
   page: string;
   value: string;
+  set: 'static' | 'putney' | 'wimbledon' | 'product' | 'uploaded';
 }
 
 export default function EditableImage({ contentKey, page, defaultSrc, alt, className, adminMode, onSave }: EditableImageProps) {
@@ -31,6 +32,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
   const [existingImages, setExistingImages] = useState<ExistingImage[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     if (isSupabaseEnabled()) {
@@ -58,19 +60,29 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
     }
   }, [showGallery]);
 
+  const getImageSet = (key: string, page: string): ExistingImage['set'] => {
+    if (page === 'static') {
+      if (key.startsWith('putney_gallery')) return 'putney';
+      if (key.startsWith('wimbledon_gallery')) return 'wimbledon';
+      if (key.startsWith('product_gallery')) return 'product';
+      return 'static';
+    }
+    return 'uploaded';
+  };
+
   const loadGallery = async () => {
     setGalleryLoading(true);
     try {
       const staticImages: ExistingImage[] = [
-        { id: 'static-studio-hero', key: 'studio_hero', page: 'static', value: Images.studioHero },
-        { id: 'static-birthday', key: 'birthday_parties', page: 'static', value: Images.birthdayParties },
-        { id: 'static-clay', key: 'clay_imprint', page: 'static', value: Images.clayImprint },
-        { id: 'static-gallery', key: 'pottery_gallery', page: 'static', value: Images.potteryGallery },
-        { id: 'static-putney', key: 'putney_studio', page: 'static', value: Images.putneyStudio },
-        { id: 'static-wimbledon', key: 'wimbledon_studio', page: 'static', value: Images.wimbledonStudio },
-        ...Images.putneyGallery.map((src, i) => ({ id: `static-putney-${i}`, key: `putney_gallery_${i}`, page: 'static', value: src })),
-        ...Images.wimbledonGallery.map((src, i) => ({ id: `static-wimbledon-${i}`, key: `wimbledon_gallery_${i}`, page: 'static', value: src })),
-        ...Images.productGallery.map((src, i) => ({ id: `static-product-${i}`, key: `product_gallery_${i}`, page: 'static', value: src })),
+        { id: 'static-studio-hero', key: 'studio_hero', page: 'static', value: Images.studioHero, set: 'static' },
+        { id: 'static-birthday', key: 'birthday_parties', page: 'static', value: Images.birthdayParties, set: 'static' },
+        { id: 'static-clay', key: 'clay_imprint', page: 'static', value: Images.clayImprint, set: 'static' },
+        { id: 'static-gallery', key: 'pottery_gallery', page: 'static', value: Images.potteryGallery, set: 'static' },
+        { id: 'static-putney', key: 'putney_studio', page: 'static', value: Images.putneyStudio, set: 'static' },
+        { id: 'static-wimbledon', key: 'wimbledon_studio', page: 'static', value: Images.wimbledonStudio, set: 'static' },
+        ...Images.putneyGallery.map((src, i) => ({ id: `static-putney-${i}`, key: `putney_gallery_${i}`, page: 'static' as const, value: src, set: 'putney' as const })),
+        ...Images.wimbledonGallery.map((src, i) => ({ id: `static-wimbledon-${i}`, key: `wimbledon_gallery_${i}`, page: 'static' as const, value: src, set: 'wimbledon' as const })),
+        ...Images.productGallery.map((src, i) => ({ id: `static-product-${i}`, key: `product_gallery_${i}`, page: 'static' as const, value: src, set: 'product' as const })),
       ];
 
       if (isSupabaseEnabled()) {
@@ -79,7 +91,14 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
           .select('id, key, page, value')
           .eq('type', 'image')
           .order('updated_at', { ascending: false });
-        setExistingImages([...staticImages, ...(data || [])]);
+        const uploadedImages: ExistingImage[] = (data || []).map((img: any) => ({
+          id: img.id,
+          key: img.key,
+          page: img.page,
+          value: img.value,
+          set: getImageSet(img.key, img.page),
+        }));
+        setExistingImages([...staticImages, ...uploadedImages]);
       } else {
         setExistingImages(staticImages);
       }
@@ -182,7 +201,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
         setCachedContent(page, contentKey, dataUrl);
         onSave?.(dataUrl);
       }
-      setShowGallery(false);
+      await loadGallery();
       showToast('Image updated!', 'success');
     } catch (err) {
       console.error('Failed to upload image:', err);
@@ -192,9 +211,72 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
     }
   };
 
+  const handleDeleteImage = async (img: ExistingImage) => {
+    if (img.page === 'static') {
+      showToast('Cannot delete built-in image', 'error');
+      return;
+    }
+    if (!confirm('Delete this image from the gallery?')) return;
+
+    setLoading(true);
+    try {
+      const savedStaff = localStorage.getItem('pp_current_staff');
+      const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
+
+      if (isSupabaseEnabled() && adminMode && staff?.sessionToken) {
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ action: 'delete', username: staff.username, sessionToken: staff.sessionToken, key: img.key, page: img.page }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Delete failed');
+      } else if (isSupabaseEnabled()) {
+        await supabase!.from('content').delete().eq('key', img.key).eq('page', img.page);
+      }
+
+      setExistingImages((prev) => prev.filter((i) => i.id !== img.id));
+      showToast('Image deleted', 'success');
+    } catch (err) {
+      console.error('Failed to delete image:', err);
+      showToast('Failed to delete image', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleOpenGallery = () => {
     setShowGallery(true);
     loadGallery();
+  };
+
+  const groupedImages = useMemo(() => {
+    const groups: Record<ExistingImage['set'], ExistingImage[]> = {
+      static: [],
+      putney: [],
+      wimbledon: [],
+      product: [],
+      uploaded: [],
+    };
+    existingImages.forEach((img) => {
+      groups[img.set].push(img);
+    });
+    return groups;
+  }, [existingImages]);
+
+  const setLabels: Record<ExistingImage['set'], string> = {
+    static: 'General',
+    putney: 'Putney Studio',
+    wimbledon: 'Wimbledon Studio',
+    product: 'Product Gallery',
+    uploaded: 'Uploaded Images',
+  };
+
+  const scrollSet = (set: ExistingImage['set'], direction: 'left' | 'right') => {
+    const el = scrollRefs.current[set];
+    if (!el) return;
+    const scrollAmount = el.clientWidth * 0.8;
+    el.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
   };
 
   if (!adminMode) {
@@ -238,7 +320,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {galleryLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 text-[#1B2D3C]/40 animate-spin" />
@@ -249,19 +331,60 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
                   <p className="text-sm">No images uploaded yet</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-                  {existingImages.map((img, index) => (
-                    <button
-                      key={`${img.id}-${index}`}
-                      onClick={() => handleSelectImage(img.value)}
-                      className="relative aspect-square rounded-lg overflow-hidden border-2 border-[#1B2D3C]/10 hover:border-amber-400 transition-all cursor-pointer group"
-                      title={`${img.page} / ${img.key}`}
-                    >
-                      <img src={img.value} alt="" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                    </button>
-                  ))}
-                </div>
+                (Object.keys(groupedImages) as ExistingImage['set'][]).map((set) => {
+                  const images = groupedImages[set];
+                  if (images.length === 0) return null;
+                  return (
+                    <div key={set} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold uppercase tracking-widest text-[#1B2D3C]/60">{setLabels[set]}</h4>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => scrollSet(set, 'left')}
+                            className="p-1 rounded hover:bg-[#1B2D3C]/10 text-[#1B2D3C]/60 transition-colors cursor-pointer"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => scrollSet(set, 'right')}
+                            className="p-1 rounded hover:bg-[#1B2D3C]/10 text-[#1B2D3C]/60 transition-colors cursor-pointer"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <div
+                        ref={(el) => { scrollRefs.current[set] = el; }}
+                        className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x"
+                      >
+                        {images.map((img, index) => (
+                          <div
+                            key={`${img.id}-${index}`}
+                            className="relative flex-shrink-0 w-28 h-28 snap-start group"
+                          >
+                            <button
+                              onClick={() => handleSelectImage(img.value)}
+                              className="w-full h-full rounded-lg overflow-hidden border-2 border-[#1B2D3C]/10 hover:border-amber-400 transition-all cursor-pointer"
+                              title={`${img.page} / ${img.key}`}
+                            >
+                              <img src={img.value} alt="" className="w-full h-full object-cover" />
+                            </button>
+                            {img.page !== 'static' && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteImage(img); }}
+                                disabled={loading}
+                                className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 cursor-pointer disabled:opacity-50 z-10 shadow-sm"
+                                title="Delete image"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
 
