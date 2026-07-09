@@ -78,7 +78,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
     const remaining = await getRemainingCapacity('Wimbledon', format(date, 'yyyy-MM-dd'), time);
     const paintersCount = painters === '' ? 1 : painters;
     if (paintersCount > remaining) {
-      showToast(`This session only has room for ${remaining} more painter${remaining === 1 ? "" : "s"}. Please choose a different time or reduce the number of painters.`, 'error');
+      showToast(`This session only has room for ${remaining} more seat${remaining === 1 ? "" : "s"}. Please choose a different time or reduce the number of seats.`, 'error');
       return;
     }
 
@@ -191,7 +191,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
             )}
 
             <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="wimbledon_painters_label" page="wimbledon" defaultValue="Number of Painters" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="wimbledon_painters_label" page="wimbledon" defaultValue="Number of Seats" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
               <div className="flex items-center border border-[#1B2D3C]/20 bg-white overflow-hidden">
                 <button type="button" onClick={() => setPainters(p => Math.max(1, (p === '' ? 1 : p) - 1))} className="px-4 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">−</button>
                 <span className="flex-1 text-center text-sm font-black text-[#1B2D3C]">{painters === '' ? 1 : painters}</span>
@@ -201,7 +201,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
 
             {date && time && (
               <div className="bg-[#D6E2E9]/50 p-3 text-sm font-bold text-[#1B2D3C]">
-                <p>{format(date, 'EEEE, do MMMM yyyy')} · {time} – {parseInt(time.split(':')[0], 10) + 2}:00 · {painters === '' ? 1 : painters} painter{(painters === '' ? 1 : painters) !== 1 ? 's' : ''}</p>
+                <p>{format(date, 'EEEE, do MMMM yyyy')} · {time} – {parseInt(time.split(':')[0], 10) + 2}:00 · {painters === '' ? 1 : painters} seat{(painters === '' ? 1 : painters) !== 1 ? 's' : ''}</p>
               </div>
             )}
 

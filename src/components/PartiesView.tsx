@@ -89,7 +89,7 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
               <EditableText contentKey="baby_shower_desc1" page="parties" defaultValue="For the bride, groom or parents to be who are seeking a creative alternative to a traditional celebration. Get everyone to paint a piece for the happy couple or the new addition to the family." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
             </p>
             <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
-              <EditableText contentKey="baby_shower_desc2" page="parties" defaultValue="The same terms apply as per our weekend birthday party package above. If you would like your event to run after hours, there is a surcharge and a minimum 10 painters is required. You are welcome to provide your own nibbles/drinks or we are happy to organise catering for you upon request." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
+              <EditableText contentKey="baby_shower_desc2" page="parties" defaultValue="The same terms apply as per our weekend birthday party package above. If you would like your event to run after hours, there is a surcharge and a minimum 10 seats is required. You are welcome to provide your own nibbles/drinks or we are happy to organise catering for you upon request." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
             </p>
           </div>
           <button
