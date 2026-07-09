@@ -1294,8 +1294,26 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [confirmPassword, setConfirmPassword] = useState('');
   const [dbHealth, setDbHealth] = useState<{ healthy: boolean; tables: Record<string, { exists: boolean; rows: number }>; issues: string[] } | null>(null);
   const [dbHealthLoading, setDbHealthLoading] = useState(false);
-  const [dbBackups, setDbBackups] = useState<{ id: string; name: string; created_at: string; created_by?: { username: string; name: string } }[]>([]);
+  const [dbBackups, setDbBackups] = useState<{ id: string; name: string; created_at: string; created_by?: { username: string; name: string }; tables?: string[] }[]>([]);
   const [dbBackupLoading, setDbBackupLoading] = useState(false);
+  const BACKUP_TABLE_OPTIONS = [
+    { value: 'staff', label: 'Staff' },
+    { value: 'bookings', label: 'Bookings' },
+    { value: 'gift_cards', label: 'Gift Cards' },
+    { value: 'settings', label: 'Settings' },
+    { value: 'content', label: 'CMS Content' },
+    { value: 'capacity', label: 'Capacity' },
+    { value: 'audit_logs', label: 'Audit Logs' },
+    { value: 'page_settings', label: 'Page Visibility' },
+  ];
+  const [selectedBackupTables, setSelectedBackupTables] = useState<string[]>(BACKUP_TABLE_OPTIONS.map((t) => t.value));
+  const [restoreModal, setRestoreModal] = useState<{ isOpen: boolean; backupId: string | null; name: string; tables: string[]; selected: string[] }>({
+    isOpen: false,
+    backupId: null,
+    name: '',
+    tables: [],
+    selected: [],
+  });
   const [sampleDataStatus, setSampleDataStatus] = useState<{ sampleBookings: number; sampleGiftCards: number } | null>(null);
   const [sampleDataLoading, setSampleDataLoading] = useState(false);
 
@@ -1536,7 +1554,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ action: 'create', username: staff.username, sessionToken: staff.sessionToken }),
+        body: JSON.stringify({ action: 'create', username: staff.username, sessionToken: staff.sessionToken, tables: selectedBackupTables }),
       });
       const data = await response.json();
       if (response.status === 401) { handleUnauthorized(); return; }
@@ -1544,7 +1562,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         showToast(data.error || 'Failed to create backup', 'error');
         return;
       }
-      showToast('Backup created', 'success');
+      showToast(`Backup created (${selectedBackupTables.length} tables)`, 'success');
       await loadDbBackups();
     } catch (err) {
       console.error('Failed to create backup:', err);
@@ -1611,7 +1629,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
-  const restoreDbBackup = async (backupId: string) => {
+  const restoreDbBackup = async (backupId: string, tables: string[]) => {
     if (!isSupabaseEnabled() || !staff?.sessionToken) return;
     setDbBackupLoading(true);
     try {
@@ -1621,7 +1639,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ action: 'restore', username: staff.username, sessionToken: staff.sessionToken, backupId }),
+        body: JSON.stringify({ action: 'restore', username: staff.username, sessionToken: staff.sessionToken, backupId, tables }),
       });
       const data = await response.json();
       if (response.status === 401) { handleUnauthorized(); return; }
@@ -1630,7 +1648,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         showToast(data.details || data.error || 'Failed to restore backup', 'error');
         return;
       }
-      showToast('Backup restored. Reloading data...', 'success');
+      showToast(`Backup restored (${tables.length} tables). Reloading data...`, 'success');
       await Promise.all([
         loadInquiries(),
         loadStaffList(),
@@ -3135,6 +3153,78 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
       )}
 
+      {/* Restore Backup Modal */}
+      {restoreModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 sm:p-6">
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg max-h-[90vh] overflow-y-auto sm:rounded-xl">
+            <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Restore Backup</h3>
+            <p className="text-xs text-[#1B2D3C]/70">
+              Choose which tables to restore from <span className="font-bold">{restoreModal.name}</span>. Your current staff login will be preserved. This cannot be undone.
+            </p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/70">Tables to restore</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setRestoreModal((m) => ({ ...m, selected: m.tables }))}
+                    className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] bg-[#DBE7E4]/50 rounded hover:bg-[#D6E2E9] transition-colors cursor-pointer"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    onClick={() => setRestoreModal((m) => ({ ...m, selected: [] }))}
+                    className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] bg-[#DBE7E4]/50 rounded hover:bg-[#D6E2E9] transition-colors cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {restoreModal.tables.map((tableValue) => {
+                  const label = BACKUP_TABLE_OPTIONS.find((t) => t.value === tableValue)?.label || tableValue;
+                  return (
+                    <label key={tableValue} className="flex items-center gap-2 p-2 rounded-lg border border-[#1B2D3C]/10 cursor-pointer hover:bg-[#DBE7E4]/30 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={restoreModal.selected.includes(tableValue)}
+                        onChange={(e) => {
+                          setRestoreModal((m) => ({
+                            ...m,
+                            selected: e.target.checked ? [...m.selected, tableValue] : m.selected.filter((t) => t !== tableValue),
+                          }));
+                        }}
+                        className="w-4 h-4 accent-[#1B2D3C] cursor-pointer"
+                      />
+                      <span className="text-xs font-semibold text-[#1B2D3C]">{label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setRestoreModal({ isOpen: false, backupId: null, name: '', tables: [], selected: [] })}
+                className="flex-1 px-4 py-2 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (restoreModal.backupId && restoreModal.selected.length > 0) {
+                    restoreDbBackup(restoreModal.backupId, restoreModal.selected);
+                    setRestoreModal({ isOpen: false, backupId: null, name: '', tables: [], selected: [] });
+                  }
+                }}
+                disabled={restoreModal.selected.length === 0 || dbBackupLoading}
+                className="flex-1 px-4 py-2 bg-amber-500 text-white font-bold text-xs uppercase tracking-wider rounded-lg hover:bg-amber-600 transition-all cursor-pointer disabled:opacity-50"
+              >
+                Restore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Gift Card Creation Modal */}
       {showGiftCardModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 sm:p-6">
@@ -3489,15 +3579,53 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Database Backup</h2>
-                  <p className="text-xs text-[#1B2D3C]/70 mt-1">Create, download, and restore JSON backups of key tables.</p>
+                  <p className="text-xs text-[#1B2D3C]/70 mt-1">Choose which tables to include, then create a backup.</p>
                 </div>
                 <button
                   onClick={createDbBackup}
-                  disabled={dbBackupLoading}
+                  disabled={dbBackupLoading || selectedBackupTables.length === 0}
                   className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" /> Create Backup
                 </button>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/70">Tables to backup</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedBackupTables(BACKUP_TABLE_OPTIONS.map((t) => t.value))}
+                      className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] bg-[#DBE7E4]/50 rounded hover:bg-[#D6E2E9] transition-colors cursor-pointer"
+                    >
+                      Select All
+                    </button>
+                    <button
+                      onClick={() => setSelectedBackupTables([])}
+                      className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] bg-[#DBE7E4]/50 rounded hover:bg-[#D6E2E9] transition-colors cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {BACKUP_TABLE_OPTIONS.map((table) => (
+                    <label key={table.value} className="flex items-center gap-2 p-2 rounded-lg border border-[#1B2D3C]/10 cursor-pointer hover:bg-[#DBE7E4]/30 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={selectedBackupTables.includes(table.value)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedBackupTables((prev) => [...prev, table.value]);
+                          } else {
+                            setSelectedBackupTables((prev) => prev.filter((t) => t !== table.value));
+                          }
+                        }}
+                        className="w-4 h-4 accent-[#1B2D3C] cursor-pointer"
+                      />
+                      <span className="text-xs font-semibold text-[#1B2D3C]">{table.label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               {dbBackupLoading && dbBackups.length === 0 ? (
                 <div className="space-y-3">
@@ -3523,13 +3651,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           Download
                         </button>
                         <button
-                          onClick={() => showConfirmDialog({
-                            title: 'Restore Backup',
-                            message: `This will overwrite the current database with the backup from ${new Date(backup.created_at).toLocaleString('en-GB')}. Your staff login will be preserved, but all other data will be replaced. This cannot be undone.`,
-                            confirmLabel: 'Restore',
-                            variant: 'danger',
-                            onConfirm: () => { closeConfirmDialog(); restoreDbBackup(backup.id); },
-                          })}
+                          onClick={() => {
+                            const availableTables = backup.tables?.length ? backup.tables : BACKUP_TABLE_OPTIONS.map((t) => t.value);
+                            setRestoreModal({ isOpen: true, backupId: backup.id, name: backup.name, tables: availableTables, selected: availableTables });
+                          }}
                           className="px-3 py-1.5 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider rounded border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
                         >
                           Restore

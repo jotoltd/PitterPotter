@@ -78,8 +78,18 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'create') {
+      const tables = Array.isArray(body.tables) && body.tables.length > 0
+        ? (body.tables as string[]).filter((t) => BACKUP_TABLES.includes(t))
+        : BACKUP_TABLES;
+      if (tables.length === 0) {
+        return new Response(JSON.stringify({ error: 'No valid tables selected for backup' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       const backupData: Record<string, unknown[]> = {};
-      for (const table of BACKUP_TABLES) {
+      for (const table of tables) {
         const { data, error } = await supabase.from(table).select('*');
         if (error) {
           console.error(`Backup failed for ${table}:`, error);
@@ -93,6 +103,7 @@ Deno.serve(async (req) => {
         version: 1,
         created_at: new Date().toISOString(),
         created_by: staff.username,
+        tables,
         data: backupData,
       };
 
@@ -118,10 +129,17 @@ Deno.serve(async (req) => {
     if (action === 'list') {
       const { data, error } = await supabase
         .from('db_backups')
-        .select('id, name, created_at, created_by(username, name)')
+        .select('id, name, created_at, created_by(username, name), data')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return new Response(JSON.stringify({ backups: data || [] }), {
+      const backups = (data || []).map((record) => {
+        const backupData = (record.data as { tables?: string[]; data?: Record<string, unknown[]> }) || {};
+        const tables = Array.isArray(backupData.tables) && backupData.tables.length > 0
+          ? backupData.tables.filter((t) => BACKUP_TABLES.includes(t))
+          : Object.keys(backupData.data || {}).filter((t) => BACKUP_TABLES.includes(t));
+        return { ...record, tables };
+      });
+      return new Response(JSON.stringify({ backups }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -179,46 +197,79 @@ Deno.serve(async (req) => {
         });
       }
 
-      const backupData = (backupRecord.data as { data?: Record<string, unknown[]> }).data || {};
+      const backup = backupRecord.data as { tables?: string[]; data?: Record<string, unknown[]> };
+      const backupData = backup.data || {};
+      const availableTables = Array.isArray(backup.tables) && backup.tables.length > 0
+        ? backup.tables.filter((t) => BACKUP_TABLES.includes(t))
+        : Object.keys(backupData).filter((t) => BACKUP_TABLES.includes(t));
 
-      const deleteAll = async (table: string, column: string) => {
-        const { error } = await supabase.from(table).delete().not(column, 'is', null);
-        if (error) throw new Error(`Failed to delete ${table}: ${error.message}`);
-      };
-
-      // Delete child tables first (in parallel) to avoid FK violations, then clear non-backed-up tables with staff references.
-      await Promise.all([
-        deleteAll('audit_logs', 'id'),
-        deleteAll('page_settings', 'id'),
-        deleteAll('pos_transactions', 'id'),
-        deleteAll('content', 'id'),
-        deleteAll('capacity', 'studio'),
-        deleteAll('bookings', 'id'),
-        deleteAll('gift_cards', 'id'),
-        deleteAll('settings', 'key'),
-      ]);
-      const { error: deleteStaffError } = await supabase.from('staff').delete().not('id', 'is', null).neq('id', staff.id);
-      if (deleteStaffError) throw new Error(`Failed to delete staff: ${deleteStaffError.message}`);
-
-      // Insert staff first because child tables reference it.
-      const staffRows = (backupData['staff'] || []) as Record<string, unknown>[];
-      const staffRowsToInsert = staffRows.filter((r) => r.id !== staff.id && r.username !== staff.username);
-      if (staffRowsToInsert.length > 0) {
-        const { error } = await supabase.from('staff').insert(staffRowsToInsert);
-        if (error) throw new Error(`Failed to restore staff: ${error.message}`);
+      const requestedTables = Array.isArray(body.tables) && body.tables.length > 0
+        ? (body.tables as string[]).filter((t) => availableTables.includes(t))
+        : availableTables;
+      if (requestedTables.length === 0) {
+        return new Response(JSON.stringify({ error: 'No valid tables selected for restore' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
 
-      // Insert remaining tables in parallel (no FK dependencies between them).
+      const deleteTable = async (table: string) => {
+        if (table === 'capacity') {
+          const { error } = await supabase.from('capacity').delete().not('studio', 'is', null);
+          if (error) throw new Error(`Failed to delete ${table}: ${error.message}`);
+        } else if (table === 'settings') {
+          const { error } = await supabase.from('settings').delete().not('key', 'is', null);
+          if (error) throw new Error(`Failed to delete ${table}: ${error.message}`);
+        } else if (table === 'staff') {
+          const { error } = await supabase.from('staff').delete().not('id', 'is', null).neq('id', staff.id);
+          if (error) throw new Error(`Failed to delete ${table}: ${error.message}`);
+        } else {
+          const { error } = await supabase.from(table).delete().not('id', 'is', null);
+          if (error) throw new Error(`Failed to delete ${table}: ${error.message}`);
+        }
+      };
+
+      // If restoring staff, clear page_settings.updated_by first to avoid FK violations when old staff are deleted.
+      if (requestedTables.includes('staff')) {
+        const { error: clearError } = await supabase.from('page_settings').update({ updated_by: null }).not('updated_by', 'is', null);
+        if (clearError) throw new Error(`Failed to clear page_settings updated_by: ${clearError.message}`);
+      }
+
+      // Delete selected tables in parallel.
+      await Promise.all(requestedTables.map(deleteTable));
+
+      // Prepare rows, clearing FK references to staff when staff is not being restored.
+      const prepareRows = (table: string, rows: Record<string, unknown>[]): Record<string, unknown>[] => {
+        if (table === 'audit_logs' && !requestedTables.includes('staff')) {
+          return rows.map((r) => ({ ...r, staff_id: null }));
+        }
+        if (table === 'page_settings' && !requestedTables.includes('staff')) {
+          return rows.map((r) => ({ ...r, updated_by: null }));
+        }
+        return rows;
+      };
+
+      // Insert staff first because child tables reference it.
+      if (requestedTables.includes('staff')) {
+        const staffRows = (backupData['staff'] || []) as Record<string, unknown>[];
+        const staffRowsToInsert = staffRows.filter((r) => r.id !== staff.id && r.username !== staff.username);
+        if (staffRowsToInsert.length > 0) {
+          const { error } = await supabase.from('staff').insert(staffRowsToInsert);
+          if (error) throw new Error(`Failed to restore staff: ${error.message}`);
+        }
+      }
+
+      // Insert remaining selected tables in parallel.
       await Promise.all(
-        BACKUP_TABLES.filter((t) => t !== 'staff').map(async (table) => {
-          const rows = backupData[table] || [];
+        requestedTables.filter((t) => t !== 'staff').map(async (table) => {
+          const rows = (backupData[table] || []) as Record<string, unknown>[];
           if (rows.length === 0) return;
-          const { error } = await supabase.from(table).insert(rows);
+          const { error } = await supabase.from(table).insert(prepareRows(table, rows));
           if (error) throw new Error(`Failed to restore ${table}: ${error.message}`);
         })
       );
 
-      await logAudit(supabase, staff, 'restore', 'db_backup', backupId, { name: backupRecord.name });
+      await logAudit(supabase, staff, 'restore', 'db_backup', backupId, { name: backupRecord.name, tables: requestedTables });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
