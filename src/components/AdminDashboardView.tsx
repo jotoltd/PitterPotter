@@ -66,7 +66,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster'>('dashboard');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [partyPrice, setPartyPrice] = useState<number>(28.95);
   const [tablePlanEnabled, setTablePlanEnabled] = useState<boolean>(false);
@@ -207,6 +207,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     if (activeTab === 'settings') {
       loadCapacity();
       loadPageSettings();
+    }
+    if (activeTab === 'webmaster' && staff.role === 'super_admin') {
       loadDbHealth();
       loadDbBackups();
       loadSampleDataStatus();
@@ -1830,6 +1832,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 {[
                   { value: 'analytics', label: 'Analytics' },
                   { value: 'settings', label: 'Settings' },
+                  { value: 'webmaster', label: 'Webmaster' },
                 ].map((tab) => (
                   <button
                     key={tab.value}
@@ -2418,7 +2421,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           </>
         )}
 
-        {/* Settings tab — Staff + Capacity + Stripe + Content */}
+        {/* Settings tab — Staff + Capacity + Stripe + Page Visibility + Table Plan */}
         {activeTab === 'settings' && canManageStaff && (
           <div className="bg-white p-6 border border-[#1B2D3C]/20 shadow-sm mt-8">
             <div className="flex items-center justify-between mb-4">
@@ -3425,6 +3428,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === 'webmaster' && staff.role === 'super_admin' && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-8 space-y-6">
 
           {/* Database Health */}
           {staff.role === 'super_admin' && (
@@ -3596,6 +3604,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === 'settings' && canManageStaff && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-8 space-y-6">
 
           {/* Table Plan */}
           <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 max-w-xl">
