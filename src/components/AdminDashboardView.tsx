@@ -1624,7 +1624,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       const data = await response.json();
       if (response.status === 401) { handleUnauthorized(); return; }
       if (!response.ok || data.error) {
-        showToast(data.error || 'Failed to restore backup', 'error');
+        console.error('Restore backup failed:', data);
+        showToast(data.details || data.error || 'Failed to restore backup', 'error');
         return;
       }
       showToast('Backup restored. Reloading data...', 'success');
