@@ -186,33 +186,37 @@ Deno.serve(async (req) => {
         if (error) throw new Error(`Failed to delete ${table}: ${error.message}`);
       };
 
-      // Delete child tables first to avoid FK violations, then clear non-backed-up tables with staff references.
-      await deleteAll('audit_logs', 'id');
-      await deleteAll('page_settings', 'id');
-      await deleteAll('pos_transactions', 'id');
-      await deleteAll('content', 'id');
-      await deleteAll('capacity', 'studio');
-      await deleteAll('bookings', 'id');
-      await deleteAll('gift_cards', 'id');
-      await deleteAll('settings', 'id');
+      // Delete child tables first (in parallel) to avoid FK violations, then clear non-backed-up tables with staff references.
+      await Promise.all([
+        deleteAll('audit_logs', 'id'),
+        deleteAll('page_settings', 'id'),
+        deleteAll('pos_transactions', 'id'),
+        deleteAll('content', 'id'),
+        deleteAll('capacity', 'studio'),
+        deleteAll('bookings', 'id'),
+        deleteAll('gift_cards', 'id'),
+        deleteAll('settings', 'id'),
+      ]);
       const { error: deleteStaffError } = await supabase.from('staff').delete().not('id', 'is', null).neq('id', staff.id);
       if (deleteStaffError) throw new Error(`Failed to delete staff: ${deleteStaffError.message}`);
 
-      // Insert parent tables first, then children.
-      for (const table of BACKUP_TABLES) {
-        const rows = backupData[table] || [];
-        if (rows.length === 0) continue;
-        if (table === 'staff') {
-          const rowsToInsert = (rows as Record<string, unknown>[]).filter((r) => r.id !== staff.id && r.username !== staff.username);
-          if (rowsToInsert.length > 0) {
-            const { error } = await supabase.from('staff').insert(rowsToInsert);
-            if (error) throw new Error(`Failed to restore staff: ${error.message}`);
-          }
-        } else {
+      // Insert staff first because child tables reference it.
+      const staffRows = (backupData['staff'] || []) as Record<string, unknown>[];
+      const staffRowsToInsert = staffRows.filter((r) => r.id !== staff.id && r.username !== staff.username);
+      if (staffRowsToInsert.length > 0) {
+        const { error } = await supabase.from('staff').insert(staffRowsToInsert);
+        if (error) throw new Error(`Failed to restore staff: ${error.message}`);
+      }
+
+      // Insert remaining tables in parallel (no FK dependencies between them).
+      await Promise.all(
+        BACKUP_TABLES.filter((t) => t !== 'staff').map(async (table) => {
+          const rows = backupData[table] || [];
+          if (rows.length === 0) return;
           const { error } = await supabase.from(table).insert(rows);
           if (error) throw new Error(`Failed to restore ${table}: ${error.message}`);
-        }
-      }
+        })
+      );
 
       await logAudit(supabase, staff, 'restore', 'db_backup', backupId, { name: backupRecord.name });
       return new Response(JSON.stringify({ success: true }), {
