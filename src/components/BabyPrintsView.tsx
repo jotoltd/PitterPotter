@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Calendar, MapPin, Phone, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Page } from '../types';
 import { Images } from '../images';
+import { getCachedContent } from '../lib/contentCache';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
 
@@ -13,12 +14,16 @@ interface BabyPrintsViewProps {
 export default function BabyPrintsView({ setCurrentPage, adminMode = false }: BabyPrintsViewProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
-  const galleryImages = [
-    { key: 'gallery_main', src: Images.clayImprint, alt: 'Baby clay imprint keepsakes' },
-    { key: 'gallery_1', src: Images.productGallery[0], alt: 'Baby print example 2' },
-    { key: 'gallery_2', src: Images.productGallery[1], alt: 'Baby print example 3' },
-    { key: 'gallery_3', src: Images.productGallery[2], alt: 'Baby print example 4' },
-  ];
+  const [galleryImages, setGalleryImages] = useState([
+    { key: 'gallery_main', src: getCachedContent('baby-prints', 'gallery_main', Images.clayImprint), alt: 'Baby clay imprint keepsakes' },
+    { key: 'gallery_1', src: getCachedContent('baby-prints', 'gallery_1', Images.productGallery[0]), alt: 'Baby print example 2' },
+    { key: 'gallery_2', src: getCachedContent('baby-prints', 'gallery_2', Images.productGallery[1]), alt: 'Baby print example 3' },
+    { key: 'gallery_3', src: getCachedContent('baby-prints', 'gallery_3', Images.productGallery[2]), alt: 'Baby print example 4' },
+  ]);
+
+  const updateGalleryImage = (key: string, value: string) => {
+    setGalleryImages((prev) => prev.map((img) => img.key === key ? { ...img, src: value } : img));
+  };
 
   return (
     <div id="baby-prints-view" className="space-y-20 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
@@ -95,6 +100,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
               alt={item.alt}
               className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-500"
               adminMode={adminMode}
+              onSave={(value) => updateGalleryImage(item.key, value)}
             />
           </div>
         ))}
