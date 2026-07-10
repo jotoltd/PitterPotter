@@ -325,13 +325,13 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-5 h-5 text-[#1B2D3C] shrink-0 mt-0.5" />
                 <span className="leading-relaxed">
-                  <EditableText contentKey={`contact_${studio.toLowerCase()}_full_address`} page="contact" defaultValue={studio === 'Putney' ? '234 Upper Richmond Road, Putney SW15 6TG' : '52 Wimbledon Hill Road, Wimbledon SW19 7PA'} adminMode={adminMode} className="text-xs text-stone-600 leading-relaxed" />
+                  <EditableText contentKey={`contact_${studio.toLowerCase()}_full_address`} page="contact" defaultValue={studio === 'Putney' ? '234 Upper Richmond Road, London, SW15 6TG' : '52 Wimbledon Hill Road, London, SW19 7PA'} adminMode={adminMode} className="text-xs text-stone-600 leading-relaxed" />
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-5 h-5 text-[#1B2D3C]" />
                 <a href={studio === 'Putney' ? 'tel:02087881635' : 'tel:02037704499'} className="text-[#1B2D3C] hover:text-[#1B2D3C] font-black text-sm">
-                  <EditableText contentKey={`contact_${studio.toLowerCase()}_full_phone`} page="contact" defaultValue={studio === 'Putney' ? '020 87881635' : '020 37704499'} adminMode={adminMode} className="text-sm text-[#1B2D3C] font-black" />
+                  <EditableText contentKey={`contact_${studio.toLowerCase()}_full_phone`} page="contact" defaultValue={studio === 'Putney' ? '020 8788 1635' : '020 3770 4499'} adminMode={adminMode} className="text-sm text-[#1B2D3C] font-black" />
                 </a>
               </div>
             </div>
@@ -413,7 +413,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                         }`}>
                         <p className="font-heading font-black italic text-base">{loc} Studio</p>
                         <p className={`text-[11px] font-semibold mt-0.5 ${studio === loc ? 'text-white/70' : 'text-[#1B2D3C]/50'}`}>
-                          {loc === 'Putney' ? '234 Upper Richmond Rd' : '52 Wimbledon Hill Rd'}
+                          {loc === 'Putney' ? '234 Upper Richmond Road, London, SW15 6TG' : '52 Wimbledon Hill Road, London, SW19 7PA'}
                         </p>
                       </button>
                     ))}

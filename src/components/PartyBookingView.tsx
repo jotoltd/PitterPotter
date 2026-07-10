@@ -291,8 +291,8 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
     const guestCount = guests === '' ? 1 : guests;
     const dateStr = date ? format(date, 'EEEE, do MMMM yyyy') : '';
     const studioAddress = studio === 'Putney'
-      ? '234 Upper Richmond Road, Putney SW15 6TG'
-      : '52 Wimbledon Hill Road, Wimbledon SW19 7PA';
+      ? '234 Upper Richmond Road, London, SW15 6TG'
+      : '52 Wimbledon Hill Road, London, SW19 7PA';
     const html = `<!DOCTYPE html>
 <html>
 <head>

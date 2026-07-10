@@ -248,7 +248,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
                 </div>
                 <div>
                   <p className="font-bold"><EditableText contentKey="wimbledon_address_label" page="wimbledon" defaultValue="Address:" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></p>
-                  <p className="text-stone-600"><EditableText contentKey="wimbledon_address" page="wimbledon" defaultValue="52 Wimbledon Hill Road, Wimbledon SW19 7PA" adminMode={adminMode} className="text-sm text-stone-600" /></p>
+                  <p className="text-stone-600"><EditableText contentKey="wimbledon_address" page="wimbledon" defaultValue="52 Wimbledon Hill Road, London, SW19 7PA" adminMode={adminMode} className="text-sm text-stone-600" /></p>
                 </div>
               </div>
 
@@ -260,7 +260,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
                 </div>
                 <div>
                   <p className="font-bold"><EditableText contentKey="wimbledon_phone_label" page="wimbledon" defaultValue="Phone:" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></p>
-                  <a href="tel:02037704499" className="text-[#1B2D3C] hover:underline font-bold"><EditableText contentKey="wimbledon_phone" page="wimbledon" defaultValue="020 37704499" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></a>
+                  <a href="tel:02037704499" className="text-[#1B2D3C] hover:underline font-bold"><EditableText contentKey="wimbledon_phone" page="wimbledon" defaultValue="020 3770 4499" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></a>
                 </div>
               </div>
             </div>

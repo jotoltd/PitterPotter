@@ -446,7 +446,7 @@ export default function WimbledonFloorPlan({
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="font-heading font-black text-[#1B2D3C] text-base">Wimbledon Studio</h3>
-          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold mt-0.5">17 tables · 52 Wimbledon Hill Road</p>
+          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold mt-0.5">17 tables · 52 Wimbledon Hill Road, London, SW19 7PA</p>
         </div>
         {selectedTable && (
           <div className="bg-[#1B2D3C] text-white px-3 py-1.5 rounded-lg text-xs font-bold">

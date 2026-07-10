@@ -92,12 +92,12 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  <div className="space-y-2 card-body text-[#1B2D3C]/80">
  <div className="flex items-start gap-2.5">
  <MapPin className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
- <span><EditableText contentKey="putney_card_address" page="home" defaultValue="234 Upper Richmond Road, Putney SW15 6TG" adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" /></span>
+ <span><EditableText contentKey="putney_card_address" page="home" defaultValue="234 Upper Richmond Road, London, SW15 6TG" adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" /></span>
  </div>
  <div className="flex items-start gap-2.5">
  <Phone className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
  <a href="tel:02087881635" className="text-sm text-[#1B2D3C]/80 hover:text-[#1B2D3C] hover:underline">
- <EditableText contentKey="putney_card_phone" page="home" defaultValue="020 87881635" adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" />
+ <EditableText contentKey="putney_card_phone" page="home" defaultValue="020 8788 1635" adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" />
  </a>
  </div>
  <div className="flex items-start gap-2.5">
@@ -143,12 +143,12 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  <div className="space-y-2 card-body text-[#1B2D3C]/80">
  <div className="flex items-start gap-2.5">
  <MapPin className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
- <span><EditableText contentKey="wimbledon_card_address" page="home" defaultValue="52 Wimbledon Hill Road, Wimbledon SW19 7PA" adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" /></span>
+ <span><EditableText contentKey="wimbledon_card_address" page="home" defaultValue="52 Wimbledon Hill Road, London, SW19 7PA" adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" /></span>
  </div>
  <div className="flex items-start gap-2.5">
  <Phone className="w-4 h-4 text-[#1B2D3C] shrink-0 mt-0.5" />
  <a href="tel:02037704499" className="text-sm text-[#1B2D3C]/80 hover:text-[#1B2D3C] hover:underline">
- <EditableText contentKey="wimbledon_card_phone" page="home" defaultValue="020 37704499" adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" />
+ <EditableText contentKey="wimbledon_card_phone" page="home" defaultValue="020 3770 4499" adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" />
  </a>
  </div>
  <div className="flex items-start gap-2.5">

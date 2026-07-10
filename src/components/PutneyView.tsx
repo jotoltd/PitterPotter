@@ -244,7 +244,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                 </div>
                 <div>
                   <p className="font-bold"><EditableText contentKey="putney_address_label" page="putney" defaultValue="Address:" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></p>
-                  <p className="text-stone-600"><EditableText contentKey="putney_address" page="putney" defaultValue="234 Upper Richmond Road, Putney SW15 6TG" adminMode={adminMode} className="text-sm text-stone-600" /></p>
+                  <p className="text-stone-600"><EditableText contentKey="putney_address" page="putney" defaultValue="234 Upper Richmond Road, London, SW15 6TG" adminMode={adminMode} className="text-sm text-stone-600" /></p>
                 </div>
               </div>
 
@@ -256,7 +256,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                 </div>
                 <div>
                   <p className="font-bold"><EditableText contentKey="putney_phone_label" page="putney" defaultValue="Phone:" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></p>
-                  <a href="tel:02087881635" className="text-[#1B2D3C] hover:underline font-bold"><EditableText contentKey="putney_phone" page="putney" defaultValue="020 87881635" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></a>
+                  <a href="tel:02087881635" className="text-[#1B2D3C] hover:underline font-bold"><EditableText contentKey="putney_phone" page="putney" defaultValue="020 8788 1635" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></a>
                 </div>
               </div>
             </div>

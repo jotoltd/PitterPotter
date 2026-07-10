@@ -41,10 +41,10 @@ export default function Footer({ setCurrentPage, adminMode = false }: FooterProp
                 <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-[#1B2D3C]" />
                 <div>
                   <p className="font-semibold text-[#1B2D3C]"><EditableText contentKey="footer_putney_name" page="footer" defaultValue="Putney" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></p>
-                  <p className="text-xs"><EditableText contentKey="footer_putney_address" page="footer" defaultValue="234 Upper Richmond Road SW15 6TG" adminMode={adminMode} className="text-xs text-[#1B2D3C]/60" /></p>
+                  <p className="text-xs"><EditableText contentKey="footer_putney_address" page="footer" defaultValue="234 Upper Richmond Road, London, SW15 6TG" adminMode={adminMode} className="text-xs text-[#1B2D3C]/60" /></p>
                   <p className="text-xs font-semibold mt-1 flex items-center gap-1.5">
                     <Phone className="w-3 h-3 shrink-0 text-[#1B2D3C]" />
-                    <a href="tel:02087881635" className="hover:text-[#1B2D3C] transition-colors"><EditableText contentKey="footer_putney_phone" page="footer" defaultValue="020 87881635" adminMode={adminMode} className="text-xs text-[#1B2D3C]/60" /></a>
+                    <a href="tel:02087881635" className="hover:text-[#1B2D3C] transition-colors"><EditableText contentKey="footer_putney_phone" page="footer" defaultValue="020 8788 1635" adminMode={adminMode} className="text-xs text-[#1B2D3C]/60" /></a>
                   </p>
                 </div>
               </div>
@@ -52,10 +52,10 @@ export default function Footer({ setCurrentPage, adminMode = false }: FooterProp
                 <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-[#1B2D3C]" />
                 <div>
                   <p className="font-semibold text-[#1B2D3C]"><EditableText contentKey="footer_wimbledon_name" page="footer" defaultValue="Wimbledon" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></p>
-                  <p className="text-xs"><EditableText contentKey="footer_wimbledon_address" page="footer" defaultValue="52 Wimbledon Hill Road SW19 7PA" adminMode={adminMode} className="text-xs text-[#1B2D3C]/60" /></p>
+                  <p className="text-xs"><EditableText contentKey="footer_wimbledon_address" page="footer" defaultValue="52 Wimbledon Hill Road, London, SW19 7PA" adminMode={adminMode} className="text-xs text-[#1B2D3C]/60" /></p>
                   <p className="text-xs font-semibold mt-1 flex items-center gap-1.5">
                     <Phone className="w-3 h-3 shrink-0 text-[#1B2D3C]" />
-                    <a href="tel:02037704499" className="hover:text-[#1B2D3C] transition-colors"><EditableText contentKey="footer_wimbledon_phone" page="footer" defaultValue="020 37704499" adminMode={adminMode} className="text-xs text-[#1B2D3C]/60" /></a>
+                    <a href="tel:02037704499" className="hover:text-[#1B2D3C] transition-colors"><EditableText contentKey="footer_wimbledon_phone" page="footer" defaultValue="020 3770 4499" adminMode={adminMode} className="text-xs text-[#1B2D3C]/60" /></a>
                   </p>
                 </div>
               </div>
