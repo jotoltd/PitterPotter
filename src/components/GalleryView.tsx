@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GALLERY_ITEMS } from '../data';
 import { Images } from '../images';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
-import { Plus, Trash2, Upload, GripVertical, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Upload, GripVertical, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import { compressImage } from '../lib/imageCompression';
 import { Staff } from '../types';
 import { useToast } from './ToastContext';
 
@@ -32,6 +33,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageUrl, setImageUrl] = useState('');
   const [addMethod, setAddMethod] = useState<'file' | 'url'>('file');
+  const draggedOrderRef = useRef<string[]>([]);
 
   useEffect(() => {
     loadGalleryItems();
@@ -135,11 +137,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
           for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const newId = `gallery${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            const reader = new FileReader();
-            const base64 = await new Promise<string>((resolve) => {
-              reader.onload = (e) => resolve(e.target?.result as string);
-              reader.readAsDataURL(file);
-            });
+            const base64 = await compressImage(file);
             
             const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
               method: 'POST',
@@ -208,15 +206,13 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
     }
   };
 
-  const handleDeleteImage = async (id: string) => {
-    if (!confirm('Remove this image?')) return;
-    
+  const removeImage = async (id: string) => {
     setLoading(true);
     try {
       if (isSupabaseEnabled() && adminMode) {
         const savedStaff = localStorage.getItem('pp_current_staff');
         const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
-        
+
         if (staff?.sessionToken) {
           await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
             method: 'POST',
@@ -230,7 +226,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
           });
         }
       }
-      
+
       const newItems = items.filter(i => i.id !== id);
       setItems(newItems);
       await saveOrder(newItems);
@@ -242,6 +238,11 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteImage = (id: string) => {
+    if (!confirm('Remove this image?')) return;
+    removeImage(id);
   };
 
   const saveOrder = async (currentItems: GalleryItem[]) => {
@@ -276,13 +277,16 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
     const newItems = [...items];
     const [draggedItem] = newItems.splice(draggedIndex, 1);
     newItems.splice(index, 0, draggedItem);
+    draggedOrderRef.current = newItems.map(i => i.id);
     setItems(newItems);
     setDraggedIndex(index);
   };
 
   const handleDragEnd = async () => {
     setDraggedIndex(null);
-    await saveOrder(items);
+    const currentItems = draggedOrderRef.current.length > 0 ? items.filter(i => draggedOrderRef.current.includes(i.id)) : items;
+    await saveOrder(currentItems);
+    draggedOrderRef.current = [];
   };
 
   return (
@@ -309,7 +313,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
             <div className="flex items-center justify-between">
               <h3 className="font-heading text-base font-black text-[#1B2D3C]">Add New Image</h3>
               <button onClick={() => { setIsAdding(false); setUploadProgress(0); setImageUrl(''); }} className="p-1.5 rounded-full hover:bg-[#1B2D3C]/5 cursor-pointer">
-                <Trash2 className="w-4 h-4 text-[#1B2D3C]/50" />
+                <X className="w-4 h-4 text-[#1B2D3C]/50" />
               </button>
             </div>
             
@@ -427,6 +431,8 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
                   alt={item.title}
                   className="w-full rounded-lg object-cover"
                   adminMode={adminMode}
+                  onSave={(value) => setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, imageUrl: value } : i))}
+                  onDelete={() => removeImage(item.id)}
                 />
               </button>
               {adminMode && (
@@ -437,8 +443,9 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteImage(item.id); }}
                     className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 cursor-pointer"
+                    title="Remove image"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <X className="w-4 h-4" />
                   </button>
                 </>
               )}
@@ -449,7 +456,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
 
       {/* Lightbox */}
       {lightboxIndex !== null && (
-        <div className="fixed inset-0 bg-black/90 z-[120] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/90 z-[120] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setLightboxIndex(null); }}>
           <button
             onClick={() => setLightboxIndex(null)}
             className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"

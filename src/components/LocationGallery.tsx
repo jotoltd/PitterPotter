@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, X, Plus, Trash2, Link, GripVertical, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Plus, Link, GripVertical, Upload } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { compressImage } from '../lib/imageCompression';
 import { Staff } from '../types';
@@ -19,6 +19,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
   const [mobileIndex, setMobileIndex] = useState(0);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [addMode, setAddMode] = useState<'upload' | 'url' | null>(null);
+  const draggedOrderRef = useRef<string[]>([]);
   const [urlValue, setUrlValue] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -187,13 +188,16 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
     const nextImages = [...images];
     const [dragged] = nextImages.splice(draggedIndex, 1);
     nextImages.splice(index, 0, dragged);
+    draggedOrderRef.current = nextImages;
     setImages(nextImages);
     setDraggedIndex(index);
   };
 
   const handleDragEnd = async () => {
     setDraggedIndex(null);
-    await saveImages(images);
+    const nextImages = draggedOrderRef.current.length > 0 ? draggedOrderRef.current : images;
+    await saveImages(nextImages);
+    draggedOrderRef.current = [];
   };
 
   return (
@@ -230,7 +234,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
                   className="p-1.5 bg-red-500/80 text-white rounded-md hover:bg-red-600 transition-colors cursor-pointer"
                   title="Delete image"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
