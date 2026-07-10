@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { Calendar, MapPin, Phone, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, MapPin, Phone, X, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Page } from '../types';
 import { Images } from '../images';
 import { getCachedContent } from '../lib/contentCache';
+import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
 
@@ -11,19 +12,82 @@ interface BabyPrintsViewProps {
   adminMode?: boolean;
 }
 
-export default function BabyPrintsView({ setCurrentPage, adminMode = false }: BabyPrintsViewProps) {
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+interface GalleryItem {
+  key: string;
+  src: string;
+  alt: string;
+}
 
-  const [galleryImages, setGalleryImages] = useState([
+function getDefaultGalleryItems(): GalleryItem[] {
+  return [
     { key: 'gallery_main', src: getCachedContent('baby-prints', 'gallery_main', Images.clayImprint), alt: 'Baby clay imprint keepsakes' },
     { key: 'gallery_1', src: getCachedContent('baby-prints', 'gallery_1', Images.productGallery[0]), alt: 'Baby print example 2' },
     { key: 'gallery_2', src: getCachedContent('baby-prints', 'gallery_2', Images.productGallery[1]), alt: 'Baby print example 3' },
     { key: 'gallery_3', src: getCachedContent('baby-prints', 'gallery_3', Images.productGallery[2]), alt: 'Baby print example 4' },
-  ]);
+  ];
+}
+
+function getKeyIndex(key: string): number {
+  if (key === 'gallery_main') return 0;
+  const match = key.match(/^gallery_(\d+)$/);
+  return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
+}
+
+function getDefaultSrc(index: number): string {
+  return index === 0 ? Images.clayImprint : Images.productGallery[index - 1] || Images.clayImprint;
+}
+
+export default function BabyPrintsView({ setCurrentPage, adminMode = false }: BabyPrintsViewProps) {
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [galleryImages, setGalleryImages] = useState<GalleryItem[]>(getDefaultGalleryItems);
+
+  useEffect(() => {
+    if (!isSupabaseEnabled()) return;
+    supabase!
+      .from('content')
+      .select('key, value')
+      .eq('page', 'baby-prints')
+      .eq('type', 'image')
+      .like('key', 'gallery%')
+      .then(({ data }) => {
+        const values: Record<string, string> = {};
+        (data || []).forEach((row: any) => {
+          values[row.key] = row.value;
+        });
+        const defaultKeys = getDefaultGalleryItems().map((i) => i.key);
+        const allKeys = Array.from(new Set([...defaultKeys, ...Object.keys(values)])).filter(
+          (key) => key === 'gallery_main' || /^gallery_\d+$/.test(key)
+        );
+        const sortedKeys = allKeys.sort((a, b) => getKeyIndex(a) - getKeyIndex(b));
+        setGalleryImages(
+          sortedKeys.map((key, index) => ({
+            key,
+            src: getCachedContent('baby-prints', key, values[key] || getDefaultSrc(index)),
+            alt: index === 0 ? 'Baby clay imprint keepsakes' : `Baby print example ${index + 1}`,
+          }))
+        );
+      });
+  }, []);
 
   const updateGalleryImage = (key: string, value: string) => {
     setGalleryImages((prev) => prev.map((img) => img.key === key ? { ...img, src: value } : img));
   };
+
+  const handleAddImage = () => {
+    const maxIndex = galleryImages.length > 0 ? Math.max(...galleryImages.map((i) => getKeyIndex(i.key))) : 0;
+    const nextIndex = maxIndex + 1;
+    const newKey = nextIndex === 0 ? 'gallery_main' : `gallery_${nextIndex}`;
+    setGalleryImages((prev) => [
+      ...prev,
+      { key: newKey, src: getDefaultSrc(nextIndex), alt: nextIndex === 0 ? 'Baby clay imprint keepsakes' : `Baby print example ${nextIndex + 1}` },
+    ]);
+  };
+
+  const handleDeleteImage = (key: string) => {
+    setGalleryImages((prev) => prev.filter((img) => img.key !== key));
+  };
+
+  const displayedImages = adminMode ? galleryImages : galleryImages.slice(0, 4);
 
   return (
     <div id="baby-prints-view" className="space-y-20 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
@@ -87,7 +151,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
 
       {/* Gallery */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {galleryImages.map((item, index) => (
+        {displayedImages.map((item, index) => (
           <div
             key={item.key}
             onClick={() => setSelectedImageIndex(index)}
@@ -101,9 +165,19 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
               className="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-500"
               adminMode={adminMode}
               onSave={(value) => updateGalleryImage(item.key, value)}
+              onDelete={(key) => handleDeleteImage(key)}
             />
           </div>
         ))}
+        {adminMode && (
+          <button
+            onClick={handleAddImage}
+            className="aspect-square flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#1B2D3C]/20 rounded-xl text-[#1B2D3C] hover:bg-[#F8FAFB] transition-colors cursor-pointer"
+          >
+            <Plus className="w-6 h-6" />
+            <span className="text-xs font-bold uppercase tracking-wider">Add Image</span>
+          </button>
+        )}
       </div>
 
       {/* Image Lightbox */}
@@ -119,26 +193,26 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
             <X className="w-6 h-6" />
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); setSelectedImageIndex((selectedImageIndex - 1 + galleryImages.length) % galleryImages.length); }}
+            onClick={(e) => { e.stopPropagation(); setSelectedImageIndex((selectedImageIndex - 1 + displayedImages.length) % displayedImages.length); }}
             className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 hover:bg-white text-[#1B2D3C] rounded-full transition-colors cursor-pointer"
           >
             <ChevronLeft className="w-8 h-8" />
           </button>
           <img
-            src={galleryImages[selectedImageIndex].src}
-            alt={galleryImages[selectedImageIndex].alt}
+            src={displayedImages[selectedImageIndex].src}
+            alt={displayedImages[selectedImageIndex].alt}
             className="max-w-full max-h-[85vh] object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
             referrerPolicy="no-referrer"
           />
           <button
-            onClick={(e) => { e.stopPropagation(); setSelectedImageIndex((selectedImageIndex + 1) % galleryImages.length); }}
+            onClick={(e) => { e.stopPropagation(); setSelectedImageIndex((selectedImageIndex + 1) % displayedImages.length); }}
             className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 hover:bg-white text-[#1B2D3C] rounded-full transition-colors cursor-pointer"
           >
             <ChevronRight className="w-8 h-8" />
           </button>
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {galleryImages.map((_, idx) => (
+            {displayedImages.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedImageIndex(idx)}

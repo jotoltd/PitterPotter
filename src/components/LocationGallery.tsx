@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, X, Plus, Trash2, Link, GripVertical, Upload } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import { compressImage } from '../lib/imageCompression';
 import { Staff } from '../types';
 import { useToast } from './ToastContext';
 
@@ -115,8 +116,8 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     e.target.value = '';
 
     setLoading(true);
@@ -124,34 +125,35 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
       const savedStaff = localStorage.getItem('pp_current_staff');
       const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
 
-      const reader = new FileReader();
-      const dataUrl = await new Promise<string>((resolve) => {
-        reader.onload = (ev) => resolve(ev.target?.result as string);
-        reader.readAsDataURL(file);
-      });
+      const newUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const dataUrl = await compressImage(file);
 
-      let imageUrl = dataUrl;
+        let imageUrl = dataUrl;
 
-      if (isSupabaseEnabled() && adminMode && staff?.sessionToken) {
-        const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-          body: JSON.stringify({
-            action: 'upload',
-            username: staff.username,
-            sessionToken: staff.sessionToken,
-            key: `${location}_gallery_${Date.now()}`,
-            page,
-            fileData: dataUrl,
-            fileName: file.name,
-          }),
-        });
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok || uploadData.error) throw new Error(uploadData.error || 'Upload failed');
-        imageUrl = uploadData.url;
+        if (isSupabaseEnabled() && adminMode && staff?.sessionToken) {
+          const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({
+              action: 'upload',
+              username: staff.username,
+              sessionToken: staff.sessionToken,
+              key: `${location}_gallery_${Date.now()}`,
+              page,
+              fileData: dataUrl,
+              fileName: file.name,
+            }),
+          });
+          const uploadData = await uploadRes.json();
+          if (!uploadRes.ok || uploadData.error) throw new Error(uploadData.error || 'Upload failed');
+          imageUrl = uploadData.url;
+        }
+
+        newUrls.push(imageUrl);
       }
 
-      await saveImages([...images, imageUrl]);
+      await saveImages([...images, ...newUrls]);
       setAddMode(null);
     } catch (err) {
       console.error('Failed to upload image:', err);
@@ -295,6 +297,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleUpload}
                 className="hidden"
               />

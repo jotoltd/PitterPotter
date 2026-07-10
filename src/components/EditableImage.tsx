@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, ChangeEvent, useMemo } from 'react';
 import { Camera, Loader2, Upload, X, Image as ImageIcon, Pencil, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { getCachedContent, setCachedContent } from '../lib/contentCache';
+import { compressImage } from '../lib/imageCompression';
 import { Staff } from '../types';
 import { useToast } from './ToastContext';
 import { Images } from '../images';
@@ -14,6 +15,7 @@ interface EditableImageProps {
   className?: string;
   adminMode: boolean;
   onSave?: (value: string) => void;
+  onDelete?: (contentKey: string) => void;
 }
 
 interface ExistingImage {
@@ -24,7 +26,7 @@ interface ExistingImage {
   set: 'static' | 'putney' | 'wimbledon' | 'product' | 'uploaded';
 }
 
-export default function EditableImage({ contentKey, page, defaultSrc, alt, className, adminMode, onSave }: EditableImageProps) {
+export default function EditableImage({ contentKey, page, defaultSrc, alt, className, adminMode, onSave, onDelete }: EditableImageProps) {
   const { showToast } = useToast();
   const [src, setSrc] = useState(() => getCachedContent(page, contentKey, defaultSrc));
   const [loading, setLoading] = useState(false);
@@ -151,12 +153,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
 
     setLoading(true);
     try {
-      const reader = new FileReader();
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        reader.onload = (ev) => resolve(ev.target?.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      const dataUrl = await compressImage(file);
 
       if (!isSupabaseEnabled()) {
         setSrc(dataUrl);
@@ -236,6 +233,10 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
       }
 
       setExistingImages((prev) => prev.filter((i) => i.id !== img.id));
+      if (img.key === contentKey && img.page === page) {
+        setSrc(defaultSrc);
+        onDelete?.(contentKey);
+      }
       showToast('Image deleted', 'success');
     } catch (err) {
       console.error('Failed to delete image:', err);
