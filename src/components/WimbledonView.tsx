@@ -19,8 +19,7 @@ interface WimbledonViewProps {
 
 const MAX_PAINTERS = 65;
 
-const OPENING_HOURS = [
-  { day: 'Monday', time: 'Closed (except school holidays)' },
+const BASE_OPENING_HOURS = [
   { day: 'Tuesday - Saturday', time: '10:00am - 6:00pm' },
   { day: 'Sunday', time: '11:00am - 5:00pm' },
 ];
@@ -281,10 +280,22 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
               <EditableText contentKey="wimbledon_hours_heading" page="wimbledon" defaultValue="Opening Hours" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" />
             </h3>
             <div className="divide-y divide-[#1B2D3C]/10 text-sm text-[#1B2D3C] font-medium">
-              {OPENING_HOURS.map(({ day, time }, index) => (
+              {/* Monday — dynamic based on school holidays */}
+              {(() => {
+                const todayStr = format(new Date(), 'yyyy-MM-dd');
+                const mondayOpen = isDateInHolidayRange(todayStr, closures.schoolHolidays);
+                const mondayTime = mondayOpen ? '10:00am - 6:00pm' : 'Closed (except school holidays)';
+                return (
+                  <div className="flex justify-between py-2.5">
+                    <span className="font-bold"><EditableText contentKey="wimbledon_hours_monday" page="wimbledon" defaultValue="Monday" adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></span>
+                    <span className={mondayOpen ? 'text-emerald-600 font-bold' : 'text-stone-500'}>{mondayTime}</span>
+                  </div>
+                );
+              })()}
+              {BASE_OPENING_HOURS.map(({ day, time }, index) => (
                 <div key={`${day}-${index}`} className="flex justify-between py-2.5">
                   <span className="font-bold"><EditableText contentKey={`wimbledon_hours_${day.toLowerCase().replace(/[^a-z]/g, '_')}`} page="wimbledon" defaultValue={day} adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></span>
-                  <span className={time.includes('Closed') ? 'text-stone-500' : ''}><EditableText contentKey={`wimbledon_hours_${day.toLowerCase().replace(/[^a-z]/g, '_')}_time`} page="wimbledon" defaultValue={time} adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></span>
+                  <span><EditableText contentKey={`wimbledon_hours_${day.toLowerCase().replace(/[^a-z]/g, '_')}_time`} page="wimbledon" defaultValue={time} adminMode={adminMode} className="text-sm text-[#1B2D3C]" /></span>
                 </div>
               ))}
             </div>

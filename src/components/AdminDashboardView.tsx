@@ -3538,14 +3538,18 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
                 />
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const val = newClosedInput.trim();
                     if (!val || closures.closedDates.includes(val)) return;
+                    const existingOnDate = inquiries.filter(b => b.date === val);
+                    if (existingOnDate.length > 0) {
+                      showToast(`Warning: ${existingOnDate.length} booking(s) already exist on ${val}. Date closed anyway — contact customers manually.`, 'error');
+                    }
                     const next = { ...closures, closedDates: [...closures.closedDates, val].sort() };
                     setClosures(next);
                     setNewClosedInput('');
                     saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
-                    showToast('Closed date added', 'success');
+                    if (existingOnDate.length === 0) showToast('Closed date added', 'success');
                   }}
                   className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#1B2D3C]/90 cursor-pointer flex items-center gap-1"
                 >
