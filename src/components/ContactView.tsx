@@ -331,7 +331,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
               <div className="flex items-center gap-2.5">
                 <Phone className="w-5 h-5 text-[#1B2D3C]" />
                 <a href={studio === 'Putney' ? 'tel:02087881635' : 'tel:02037704499'} className="text-[#1B2D3C] hover:text-[#1B2D3C] font-black text-sm">
-                  <EditableText contentKey={`contact_${studio.toLowerCase()}_full_phone`} page="contact" defaultValue={studio === 'Putney' ? '020 8788 1635' : '020 3770 4499'} adminMode={adminMode} className="text-sm text-[#1B2D3C] font-black" />
+                  {studio === 'Putney' ? '020 8788 1635' : '020 3770 4499'}
                 </a>
               </div>
             </div>
