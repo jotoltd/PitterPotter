@@ -6,7 +6,7 @@ import { Clock, Calendar as CalendarIcon, ArrowRight, Users, MapPin, Gift, Heart
 import { useToast } from './ToastContext';
 import { getRemainingCapacity, createPublicBooking, getBusyDates } from '../lib/bookings';
 import { getSlots } from '../lib/timeSlots';
-import { loadClosuresFromSupabase, getClosureDates, ClosureDates } from '../lib/closures';
+import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange } from '../lib/closures';
 import { Images } from '../images';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
@@ -83,10 +83,10 @@ const PARTY_INFO: Record<PartyType, { title: string; price: string; description:
 
 const PARTY_GUEST_LIMIT: Record<Studio, number> = { Putney: 20, Wimbledon: 40 };
 
-function getTimeSlots(date: Date, schoolHolidays: string[]): string[] {
+function getTimeSlots(date: Date, closures: ClosureDates): string[] {
   const day = getDay(date);
   const dateStr = format(date, 'yyyy-MM-dd');
-  const isHoliday = schoolHolidays.includes(dateStr);
+  const isHoliday = isDateInHolidayRange(dateStr, closures.schoolHolidays);
   if (day >= 2 || day === 0 || (day === 1 && isHoliday)) return getSlots('party');
   return [];
 }
@@ -131,7 +131,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
       setSlotCapacity({});
       return;
     }
-    const slots = getTimeSlots(date, closures.schoolHolidays);
+    const slots = getTimeSlots(date, closures);
     const dateStr = format(date, 'yyyy-MM-dd');
     const sessionTypeMap: Record<PartyType, string> = {
       birthday: 'birthday-party',
@@ -294,7 +294,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
   };
 
   const closedDatesAsDate = closures.closedDates.map(d => new Date(d + 'T00:00:00'));
-  const timeSlots = date ? getTimeSlots(date, closures.schoolHolidays) : [];
+  const timeSlots = date ? getTimeSlots(date, closures) : [];
 
   const handleDownloadInvitation = () => {
     const guestCount = guests === '' ? 1 : guests;

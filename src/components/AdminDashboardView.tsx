@@ -11,7 +11,7 @@ import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow 
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { loadBookings, createBooking, updateBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
 import { getAllSlots, getSlots, setSlots, DEFAULT_SLOTS, SlotSessionType, loadSlotsFromSupabase, saveSlotsToSupabase } from '../lib/timeSlots';
-import { loadClosuresFromSupabase, saveClosuresToSupabase, getClosureDates, ClosureDates } from '../lib/closures';
+import { loadClosuresFromSupabase, saveClosuresToSupabase, getClosureDates, ClosureDates, HolidayRange } from '../lib/closures';
 import { useToast } from './ToastContext';
 import Skeleton from './Skeleton';
 import 'react-day-picker/dist/style.css';
@@ -76,7 +76,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [timeSlotConfig, setTimeSlotConfig] = useState<Record<SlotSessionType, string[]>>(() => getAllSlots());
   const [newSlotInput, setNewSlotInput] = useState<Record<SlotSessionType, string>>({ painting: '', 'baby-prints': '', party: '' });
   const [closures, setClosures] = useState<ClosureDates>(getClosureDates());
-  const [newHolidayInput, setNewHolidayInput] = useState('');
+  const [newHolidayFrom, setNewHolidayFrom] = useState('');
+  const [newHolidayTo, setNewHolidayTo] = useState('');
+  const [newHolidayLabel, setNewHolidayLabel] = useState('');
   const [newClosedInput, setNewClosedInput] = useState('');
   const [showGiftCardModal, setShowGiftCardModal] = useState(false);
   const [newGiftCard, setNewGiftCard] = useState({
@@ -3455,40 +3457,59 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
             {/* School Holidays */}
             <div className="space-y-3">
-              <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">School Holiday Dates <span className="text-[#1B2D3C]/40 font-medium normal-case tracking-normal">(Mondays open)</span></h3>
+              <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">School Holiday Periods <span className="text-[#1B2D3C]/40 font-medium normal-case tracking-normal">(Mondays within range open)</span></h3>
               <div className="flex flex-wrap gap-2">
-                {closures.schoolHolidays.length === 0 && <p className="text-xs text-[#1B2D3C]/40 italic">No school holidays set</p>}
-                {closures.schoolHolidays.map(date => (
-                  <span key={date} className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg">
-                    {date}
+                {closures.schoolHolidays.length === 0 && <p className="text-xs text-[#1B2D3C]/40 italic">No school holiday periods set</p>}
+                {(closures.schoolHolidays as HolidayRange[]).map((range, idx) => (
+                  <span key={idx} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg">
+                    {range.label && <span className="text-emerald-600">{range.label}:</span>}
+                    {range.from} → {range.to}
                     <button onClick={() => {
-                      const next = { ...closures, schoolHolidays: closures.schoolHolidays.filter(d => d !== date) };
+                      const next: ClosureDates = { ...closures, schoolHolidays: (closures.schoolHolidays as HolidayRange[]).filter((_, i) => i !== idx) };
                       setClosures(next);
                       saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
                     }} className="ml-0.5 hover:text-red-600 cursor-pointer"><XIcon className="w-3 h-3" /></button>
                   </span>
                 ))}
               </div>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                <input
+                  type="text"
+                  placeholder="Label (e.g. Summer)"
+                  value={newHolidayLabel}
+                  onChange={e => setNewHolidayLabel(e.target.value)}
+                  className="px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
+                />
                 <input
                   type="date"
-                  value={newHolidayInput}
-                  onChange={e => setNewHolidayInput(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
+                  value={newHolidayFrom}
+                  onChange={e => setNewHolidayFrom(e.target.value)}
+                  className="px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
+                />
+                <input
+                  type="date"
+                  value={newHolidayTo}
+                  onChange={e => setNewHolidayTo(e.target.value)}
+                  className="px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
                 />
                 <button
                   onClick={() => {
-                    const val = newHolidayInput.trim();
-                    if (!val || closures.schoolHolidays.includes(val)) return;
-                    const next = { ...closures, schoolHolidays: [...closures.schoolHolidays, val].sort() };
+                    if (!newHolidayFrom || !newHolidayTo || newHolidayFrom > newHolidayTo) {
+                      showToast('Please set a valid from and to date', 'error');
+                      return;
+                    }
+                    const range: HolidayRange = { from: newHolidayFrom, to: newHolidayTo, ...(newHolidayLabel.trim() ? { label: newHolidayLabel.trim() } : {}) };
+                    const next: ClosureDates = { ...closures, schoolHolidays: [...(closures.schoolHolidays as HolidayRange[]), range].sort((a, b) => a.from.localeCompare(b.from)) };
                     setClosures(next);
-                    setNewHolidayInput('');
+                    setNewHolidayFrom('');
+                    setNewHolidayTo('');
+                    setNewHolidayLabel('');
                     saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
-                    showToast('School holiday date added', 'success');
+                    showToast('School holiday period added', 'success');
                   }}
-                  className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#1B2D3C]/90 cursor-pointer flex items-center gap-1"
+                  className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#1B2D3C]/90 cursor-pointer flex items-center justify-center gap-1"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Add
+                  <Plus className="w-3.5 h-3.5" /> Add Period
                 </button>
               </div>
             </div>

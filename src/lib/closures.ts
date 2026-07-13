@@ -5,8 +5,14 @@ const STORAGE_KEY_CLOSED = 'pp_closed_dates';
 const SUPABASE_KEY_HOLIDAYS = 'school_holidays';
 const SUPABASE_KEY_CLOSED = 'closed_dates';
 
+export interface HolidayRange {
+  from: string;
+  to: string;
+  label?: string;
+}
+
 export interface ClosureDates {
-  schoolHolidays: string[];
+  schoolHolidays: HolidayRange[];
   closedDates: string[];
 }
 
@@ -89,8 +95,8 @@ export async function saveClosuresToSupabase(
   saveToStorage(data);
 }
 
-export function isSchoolHoliday(dateStr: string, schoolHolidays: string[]): boolean {
-  return schoolHolidays.includes(dateStr);
+export function isDateInHolidayRange(dateStr: string, schoolHolidays: HolidayRange[]): boolean {
+  return schoolHolidays.some(({ from, to }) => dateStr >= from && dateStr <= to);
 }
 
 export function isClosedDate(dateStr: string, closedDates: string[]): boolean {

@@ -15,6 +15,7 @@ import {
   addMonths,
   subMonths,
 } from 'date-fns';
+import { HolidayRange, isDateInHolidayRange } from '../lib/closures';
 
 interface CalendarProps {
   selected?: Date;
@@ -26,7 +27,7 @@ interface CalendarProps {
   marks?: Date[];
   minDate?: Date;
   dayOfWeekDisabled?: number[];
-  schoolHolidayDates?: string[];
+  schoolHolidayDates?: HolidayRange[];
 }
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -50,7 +51,7 @@ export default function Calendar({
   }, [month, weekStartsOn]);
 
   const isSchoolHolidayMonday = (day: Date) => {
-    return getDay(day) === 1 && schoolHolidayDates.includes(format(day, 'yyyy-MM-dd'));
+    return getDay(day) === 1 && isDateInHolidayRange(format(day, 'yyyy-MM-dd'), schoolHolidayDates);
   };
 
   const isDisabled = (day: Date) => {

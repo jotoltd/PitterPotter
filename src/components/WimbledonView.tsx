@@ -6,7 +6,7 @@ import { format, getDay } from 'date-fns';
 import {Clock, Calendar as CalendarIcon, ArrowRight} from 'lucide-react';
 import { getRemainingCapacity, getBusyDates } from '../lib/bookings';
 import { getSlots } from '../lib/timeSlots';
-import { loadClosuresFromSupabase, getClosureDates, ClosureDates } from '../lib/closures';
+import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange } from '../lib/closures';
 import { useToast } from './ToastContext';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
@@ -25,10 +25,10 @@ const OPENING_HOURS = [
   { day: 'Sunday', time: '11:00am - 5:00pm' },
 ];
 
-function getTimeSlots(date: Date, schoolHolidays: string[]): string[] {
+function getTimeSlots(date: Date, closures: ClosureDates): string[] {
   const day = getDay(date);
   const dateStr = format(date, 'yyyy-MM-dd');
-  const isHoliday = schoolHolidays.includes(dateStr);
+  const isHoliday = isDateInHolidayRange(dateStr, closures.schoolHolidays);
   if (day >= 2 || day === 0 || (day === 1 && isHoliday)) return getSlots('painting');
   return [];
 }
@@ -59,7 +59,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
       setSlotCapacity({});
       return;
     }
-    const slots = getTimeSlots(date, closures.schoolHolidays);
+    const slots = getTimeSlots(date, closures);
     const dateStr = format(date, 'yyyy-MM-dd');
     Promise.all(slots.map(async (slot) => ({
       slot,
@@ -105,7 +105,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
   };
 
   const closedDatesAsDate = closures.closedDates.map(d => new Date(d + 'T00:00:00'));
-  const timeSlots = date ? getTimeSlots(date, closures.schoolHolidays) : [];
+  const timeSlots = date ? getTimeSlots(date, closures) : [];
 
   return (
     <div className="min-h-screen bg-[#FFFFFF]">
