@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, X, Plus, Link, GripVertical, Upload } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { compressImage } from '../lib/imageCompression';
@@ -333,21 +334,23 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
         </div>
       )}
 
-      {/* Lightbox */}
-      {lightboxIndex !== null && (
+      {/* Lightbox — rendered via portal to escape stacking contexts */}
+      {lightboxIndex !== null && createPortal(
         <div
-          className="fixed inset-0 z-[100] bg-[#1B2D3C]/90 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-[#1B2D3C]/90 flex items-center justify-center p-4"
+          style={{ zIndex: 9999 }}
           onClick={() => setLightboxIndex(null)}
         >
           <button
             onClick={(e) => { e.stopPropagation(); setLightboxIndex(null); }}
-            className="absolute top-4 right-4 z-20 p-2.5 bg-white text-[#1B2D3C] hover:bg-[#f0f0f0] rounded-xl transition-colors shadow-lg cursor-pointer"
+            style={{ zIndex: 10000 }}
+            className="absolute top-4 right-4 p-2.5 bg-white text-[#1B2D3C] hover:bg-[#f0f0f0] rounded-xl transition-colors shadow-lg cursor-pointer"
           >
             <X className="w-6 h-6" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); setLightboxIndex((lightboxIndex - 1 + images.length) % images.length); }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2.5 bg-white/90 hover:bg-white text-[#1B2D3C] rounded-full transition-colors shadow-lg cursor-pointer"
+            className="absolute left-4 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 hover:bg-white text-[#1B2D3C] rounded-full transition-colors shadow-lg cursor-pointer"
           >
             <ChevronLeft className="w-8 h-8" />
           </button>
@@ -359,11 +362,12 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
           />
           <button
             onClick={(e) => { e.stopPropagation(); setLightboxIndex((lightboxIndex + 1) % images.length); }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2.5 bg-white/90 hover:bg-white text-[#1B2D3C] rounded-full transition-colors shadow-lg cursor-pointer"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 hover:bg-white text-[#1B2D3C] rounded-full transition-colors shadow-lg cursor-pointer"
           >
             <ChevronRight className="w-8 h-8" />
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
