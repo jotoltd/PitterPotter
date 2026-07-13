@@ -10,7 +10,8 @@ import { format, isSameDay, parseISO } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { loadBookings, createBooking, updateBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
-import { getAllSlots, getSlots, setSlots, DEFAULT_SLOTS, SlotSessionType } from '../lib/timeSlots';
+import { getAllSlots, getSlots, setSlots, DEFAULT_SLOTS, SlotSessionType, loadSlotsFromSupabase, saveSlotsToSupabase } from '../lib/timeSlots';
+import { loadClosuresFromSupabase, saveClosuresToSupabase, getClosureDates, ClosureDates } from '../lib/closures';
 import { useToast } from './ToastContext';
 import Skeleton from './Skeleton';
 import 'react-day-picker/dist/style.css';
@@ -74,6 +75,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [capacitySaving, setCapacitySaving] = useState(false);
   const [timeSlotConfig, setTimeSlotConfig] = useState<Record<SlotSessionType, string[]>>(() => getAllSlots());
   const [newSlotInput, setNewSlotInput] = useState<Record<SlotSessionType, string>>({ painting: '', 'baby-prints': '', party: '' });
+  const [closures, setClosures] = useState<ClosureDates>(getClosureDates());
+  const [newHolidayInput, setNewHolidayInput] = useState('');
+  const [newClosedInput, setNewClosedInput] = useState('');
   const [showGiftCardModal, setShowGiftCardModal] = useState(false);
   const [newGiftCard, setNewGiftCard] = useState({
     amount: 50,
@@ -207,6 +211,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     if (activeTab === 'settings') {
       loadCapacity();
       loadPageSettings();
+      loadSlotsFromSupabase().then(slots => setTimeSlotConfig(slots));
+      loadClosuresFromSupabase().then(setClosures);
     }
     if (activeTab === 'webmaster' && staff.role === 'super_admin') {
       loadDbHealth();
@@ -3357,10 +3363,19 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-6">
             <div>
               <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Time Slots</h2>
-              <p className="text-xs text-[#1B2D3C]/70 mt-1">Configure available booking times for each session type. Changes take effect immediately for all new bookings.</p>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Configure available booking times for each session type. Changes are saved globally and apply to all users.</p>
             </div>
             {(['painting', 'baby-prints', 'party'] as SlotSessionType[]).map((type) => {
               const labels: Record<SlotSessionType, string> = { painting: 'Painting', 'baby-prints': 'Baby Prints', party: 'Party' };
+
+              const applySlotChange = (nextConfig: Record<SlotSessionType, string[]>) => {
+                setTimeSlotConfig(nextConfig);
+                setSlots(type, nextConfig[type]);
+                saveSlotsToSupabase(nextConfig, staff.username, staff.sessionToken ?? '').catch(() => {
+                  showToast('Failed to save time slots', 'error');
+                });
+              };
+
               return (
                 <div key={type} className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -3368,8 +3383,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     <button
                       onClick={() => {
                         const reset = DEFAULT_SLOTS[type];
-                        setSlots(type, reset);
-                        setTimeSlotConfig(prev => ({ ...prev, [type]: reset }));
+                        const nextConfig = { ...timeSlotConfig, [type]: reset };
+                        applySlotChange(nextConfig);
                         showToast(`${labels[type]} slots reset to default`, 'success');
                       }}
                       className="text-[10px] font-bold text-[#1B2D3C]/50 hover:text-[#1B2D3C] uppercase tracking-wider cursor-pointer"
@@ -3384,8 +3399,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         <button
                           onClick={() => {
                             const updated = timeSlotConfig[type].filter(s => s !== slot);
-                            setSlots(type, updated);
-                            setTimeSlotConfig(prev => ({ ...prev, [type]: updated }));
+                            applySlotChange({ ...timeSlotConfig, [type]: updated });
                           }}
                           className="ml-0.5 hover:text-red-600 cursor-pointer"
                         >
@@ -3407,9 +3421,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           const val = newSlotInput[type].trim();
                           if (!val || timeSlotConfig[type].includes(val)) return;
                           const updated = [...timeSlotConfig[type], val];
-                          setSlots(type, updated);
-                          setTimeSlotConfig(prev => ({ ...prev, [type]: updated }));
+                          applySlotChange({ ...timeSlotConfig, [type]: updated });
                           setNewSlotInput(prev => ({ ...prev, [type]: '' }));
+                          showToast(`Slot added to ${labels[type]}`, 'success');
                         }
                       }}
                     />
@@ -3418,8 +3432,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         const val = newSlotInput[type].trim();
                         if (!val || timeSlotConfig[type].includes(val)) return;
                         const updated = [...timeSlotConfig[type], val];
-                        setSlots(type, updated);
-                        setTimeSlotConfig(prev => ({ ...prev, [type]: updated }));
+                        applySlotChange({ ...timeSlotConfig, [type]: updated });
                         setNewSlotInput(prev => ({ ...prev, [type]: '' }));
                         showToast(`Slot added to ${labels[type]}`, 'success');
                       }}
@@ -3431,6 +3444,94 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </div>
               );
             })}
+          </div>
+
+          {/* School Holidays & Closed Dates */}
+          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-6">
+            <div>
+              <h2 className="font-heading text-lg font-black text-[#1B2D3C]">School Holidays & Closed Dates</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">School holiday Mondays will open for bookings. Closed dates block all bookings on that day regardless of day of week.</p>
+            </div>
+
+            {/* School Holidays */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">School Holiday Dates <span className="text-[#1B2D3C]/40 font-medium normal-case tracking-normal">(Mondays open)</span></h3>
+              <div className="flex flex-wrap gap-2">
+                {closures.schoolHolidays.length === 0 && <p className="text-xs text-[#1B2D3C]/40 italic">No school holidays set</p>}
+                {closures.schoolHolidays.map(date => (
+                  <span key={date} className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg">
+                    {date}
+                    <button onClick={() => {
+                      const next = { ...closures, schoolHolidays: closures.schoolHolidays.filter(d => d !== date) };
+                      setClosures(next);
+                      saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
+                    }} className="ml-0.5 hover:text-red-600 cursor-pointer"><XIcon className="w-3 h-3" /></button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={newHolidayInput}
+                  onChange={e => setNewHolidayInput(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
+                />
+                <button
+                  onClick={() => {
+                    const val = newHolidayInput.trim();
+                    if (!val || closures.schoolHolidays.includes(val)) return;
+                    const next = { ...closures, schoolHolidays: [...closures.schoolHolidays, val].sort() };
+                    setClosures(next);
+                    setNewHolidayInput('');
+                    saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
+                    showToast('School holiday date added', 'success');
+                  }}
+                  className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#1B2D3C]/90 cursor-pointer flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add
+                </button>
+              </div>
+            </div>
+
+            {/* Closed Dates */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">Closed Dates <span className="text-[#1B2D3C]/40 font-medium normal-case tracking-normal">(no bookings any day)</span></h3>
+              <div className="flex flex-wrap gap-2">
+                {closures.closedDates.length === 0 && <p className="text-xs text-[#1B2D3C]/40 italic">No closed dates set</p>}
+                {closures.closedDates.map(date => (
+                  <span key={date} className="flex items-center gap-1 px-2.5 py-1.5 bg-red-100 text-red-800 text-xs font-bold rounded-lg">
+                    {date}
+                    <button onClick={() => {
+                      const next = { ...closures, closedDates: closures.closedDates.filter(d => d !== date) };
+                      setClosures(next);
+                      saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
+                    }} className="ml-0.5 hover:text-red-600 cursor-pointer"><XIcon className="w-3 h-3" /></button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={newClosedInput}
+                  onChange={e => setNewClosedInput(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
+                />
+                <button
+                  onClick={() => {
+                    const val = newClosedInput.trim();
+                    if (!val || closures.closedDates.includes(val)) return;
+                    const next = { ...closures, closedDates: [...closures.closedDates, val].sort() };
+                    setClosures(next);
+                    setNewClosedInput('');
+                    saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
+                    showToast('Closed date added', 'success');
+                  }}
+                  className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#1B2D3C]/90 cursor-pointer flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Stripe Mode */}

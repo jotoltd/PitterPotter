@@ -76,10 +76,10 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
   const handleAddImage = () => {
     const maxIndex = galleryImages.length > 0 ? Math.max(...galleryImages.map((i) => getKeyIndex(i.key))) : 0;
     const nextIndex = maxIndex + 1;
-    const newKey = nextIndex === 0 ? 'gallery_main' : `gallery_${nextIndex}`;
+    const newKey = `gallery_${nextIndex}`;
     setGalleryImages((prev) => [
       ...prev,
-      { key: newKey, src: getDefaultSrc(nextIndex), alt: nextIndex === 0 ? 'Baby clay imprint keepsakes' : `Baby print example ${nextIndex + 1}` },
+      { key: newKey, src: Images.clayImprint, alt: `Baby print example ${nextIndex + 1}` },
     ]);
   };
 
@@ -181,7 +181,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
       </div>
 
       {/* Image Lightbox */}
-      {selectedImageIndex !== null && (
+      {selectedImageIndex !== null && displayedImages[selectedImageIndex] && (
         <div
           className="fixed inset-0 bg-[#1B2D3C]/90 z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedImageIndex(null)}

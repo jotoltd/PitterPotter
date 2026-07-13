@@ -33,6 +33,8 @@ import SessionWatcher from './components/SessionWatcher';
 import { Page, Staff } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase, isSupabaseEnabled } from './lib/supabase';
+import { loadSlotsFromSupabase } from './lib/timeSlots';
+import { loadClosuresFromSupabase } from './lib/closures';
 
 export default function App() {
  const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -43,6 +45,13 @@ export default function App() {
  const [disabledPages, setDisabledPages] = useState<Set<string>>(new Set());
 
  const isAdminLoggedIn = !!currentStaff;
+
+ useEffect(() => {
+    if (isSupabaseEnabled()) {
+      loadSlotsFromSupabase();
+      loadClosuresFromSupabase();
+    }
+  }, []);
 
  useEffect(() => {
     if (adminMode) {

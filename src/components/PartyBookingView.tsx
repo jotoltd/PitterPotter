@@ -6,6 +6,7 @@ import { Clock, Calendar as CalendarIcon, ArrowRight, Users, MapPin, Gift, Heart
 import { useToast } from './ToastContext';
 import { getRemainingCapacity, createPublicBooking, getBusyDates } from '../lib/bookings';
 import { getSlots } from '../lib/timeSlots';
+import { loadClosuresFromSupabase, getClosureDates, ClosureDates } from '../lib/closures';
 import { Images } from '../images';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
@@ -82,9 +83,11 @@ const PARTY_INFO: Record<PartyType, { title: string; price: string; description:
 
 const PARTY_GUEST_LIMIT: Record<Studio, number> = { Putney: 20, Wimbledon: 40 };
 
-function getTimeSlots(date: Date): string[] {
+function getTimeSlots(date: Date, schoolHolidays: string[]): string[] {
   const day = getDay(date);
-  if (day >= 2 || day === 0) return getSlots('party');
+  const dateStr = format(date, 'yyyy-MM-dd');
+  const isHoliday = schoolHolidays.includes(dateStr);
+  if (day >= 2 || day === 0 || (day === 1 && isHoliday)) return getSlots('party');
   return [];
 }
 
@@ -106,6 +109,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
   const [error, setError] = useState('');
   const [busyDates, setBusyDates] = useState<Date[]>([]);
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [closures, setClosures] = useState<ClosureDates>(getClosureDates());
   const [partyPrice, setPartyPrice] = useState<number>(28.95);
   const [depositAmount] = useState<number>(50);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -127,7 +131,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
       setSlotCapacity({});
       return;
     }
-    const slots = getTimeSlots(date);
+    const slots = getTimeSlots(date, closures.schoolHolidays);
     const dateStr = format(date, 'yyyy-MM-dd');
     const sessionTypeMap: Record<PartyType, string> = {
       birthday: 'birthday-party',
@@ -150,6 +154,10 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
       setSlotCapacity(map);
     });
   }, [date, studio]);
+
+  useEffect(() => {
+    loadClosuresFromSupabase().then(setClosures);
+  }, []);
 
   useEffect(() => {
     getBusyDates(studio, calendarMonth.getFullYear(), calendarMonth.getMonth()).then((dates) => {
@@ -285,7 +293,8 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
     }
   };
 
-  const timeSlots = date ? getTimeSlots(date) : [];
+  const closedDatesAsDate = closures.closedDates.map(d => new Date(d + 'T00:00:00'));
+  const timeSlots = date ? getTimeSlots(date, closures.schoolHolidays) : [];
 
   const handleDownloadInvitation = () => {
     const guestCount = guests === '' ? 1 : guests;
@@ -519,9 +528,10 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
               onSelect={handleDateSelect}
               month={calendarMonth}
               onMonthChange={setCalendarMonth}
-              disabled={busyDates}
+              disabled={[...busyDates, ...closedDatesAsDate]}
               minDate={new Date()}
               dayOfWeekDisabled={[1]}
+              schoolHolidayDates={closures.schoolHolidays}
               marks={busyDates}
             />
           </div>

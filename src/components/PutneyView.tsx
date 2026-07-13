@@ -6,6 +6,7 @@ import { format, getDay } from 'date-fns';
 import {Clock, Calendar as CalendarIcon, ArrowRight} from 'lucide-react';
 import { getRemainingCapacity, getBusyDates } from '../lib/bookings';
 import { getSlots } from '../lib/timeSlots';
+import { loadClosuresFromSupabase, getClosureDates, ClosureDates } from '../lib/closures';
 import { useToast } from './ToastContext';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
@@ -24,9 +25,11 @@ const OPENING_HOURS = [
   { day: 'Sunday', time: '11:00am - 5:00pm' },
 ];
 
-function getTimeSlots(date: Date): string[] {
+function getTimeSlots(date: Date, schoolHolidays: string[]): string[] {
   const day = getDay(date);
-  if (day >= 2 || day === 0) return getSlots('painting');
+  const dateStr = format(date, 'yyyy-MM-dd');
+  const isHoliday = schoolHolidays.includes(dateStr);
+  if (day >= 2 || day === 0 || (day === 1 && isHoliday)) return getSlots('painting');
   return [];
 }
 
@@ -40,6 +43,11 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
   const [slotCapacity, setSlotCapacity] = useState<Record<string, number>>({});
   const [busyDates, setBusyDates] = useState<Date[]>([]);
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [closures, setClosures] = useState<ClosureDates>(getClosureDates());
+
+  useEffect(() => {
+    loadClosuresFromSupabase().then(setClosures);
+  }, []);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
@@ -51,7 +59,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
       setSlotCapacity({});
       return;
     }
-    const slots = getTimeSlots(date);
+    const slots = getTimeSlots(date, closures.schoolHolidays);
     const dateStr = format(date, 'yyyy-MM-dd');
     Promise.all(slots.map(async (slot) => ({
       slot,
@@ -96,7 +104,8 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const timeSlots = date ? getTimeSlots(date) : [];
+  const closedDatesAsDate = closures.closedDates.map(d => new Date(d + 'T00:00:00'));
+  const timeSlots = date ? getTimeSlots(date, closures.schoolHolidays) : [];
 
   return (
     <div className="min-h-screen bg-[#FFFFFF]">
@@ -152,9 +161,10 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                 onSelect={handleDateSelect}
                 month={calendarMonth}
                 onMonthChange={setCalendarMonth}
-                disabled={busyDates}
+                disabled={[...busyDates, ...closedDatesAsDate]}
                 minDate={new Date()}
                 dayOfWeekDisabled={[1]}
+                schoolHolidayDates={closures.schoolHolidays}
                 marks={busyDates}
               />
             </div>

@@ -5,6 +5,7 @@ import { format, getDay, isBefore, startOfDay } from 'date-fns';
 import { BookingInquiry } from '../types';
 import { createPublicBooking, getBusyDates, getRemainingCapacity } from '../lib/bookings';
 import { getSlots } from '../lib/timeSlots';
+import { loadClosuresFromSupabase, getClosureDates, ClosureDates } from '../lib/closures';
 import Calendar from './Calendar';
 import EditableText from './EditableText';
 
@@ -12,9 +13,11 @@ interface BabyPrintsBookingViewProps {
   adminMode?: boolean;
 }
 
-function getTimeSlots(date: Date): string[] {
+function getTimeSlots(date: Date, schoolHolidays: string[]): string[] {
   const day = getDay(date);
-  if (day >= 2 || day === 0) return getSlots('baby-prints');
+  const dateStr = format(date, 'yyyy-MM-dd');
+  const isHoliday = schoolHolidays.includes(dateStr);
+  if (day >= 2 || day === 0 || (day === 1 && isHoliday)) return getSlots('baby-prints');
   return [];
 }
 
@@ -31,10 +34,15 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
   const [notes, setNotes] = useState('');
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [busyDates, setBusyDates] = useState<Date[]>([]);
+  const [closures, setClosures] = useState<ClosureDates>(getClosureDates());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [submittedBooking, setSubmittedBooking] = useState<BookingInquiry | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    loadClosuresFromSupabase().then(setClosures);
+  }, []);
 
   useEffect(() => {
     getBusyDates(studio, calendarMonth.getFullYear(), calendarMonth.getMonth()).then((dates) => {
@@ -43,8 +51,9 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
   }, [calendarMonth, studio]);
 
   const minDate = useMemo(() => startOfDay(new Date()), []);
-  const disabledDates = useMemo(() => busyDates, [busyDates]);
-  const timeSlots = date ? getTimeSlots(date) : [];
+  const closedDatesAsDate = useMemo(() => closures.closedDates.map(d => new Date(d + 'T00:00:00')), [closures.closedDates]);
+  const disabledDates = useMemo(() => [...busyDates, ...closedDatesAsDate], [busyDates, closedDatesAsDate]);
+  const timeSlots = date ? getTimeSlots(date, closures.schoolHolidays) : [];
   const today = new Date();
   const dayOfWeekDisabled = [1]; // Monday
 
@@ -169,6 +178,7 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
               disabled={disabledDates}
               minDate={minDate}
               dayOfWeekDisabled={dayOfWeekDisabled}
+              schoolHolidayDates={closures.schoolHolidays}
               marks={busyDates}
             />
             {date && (

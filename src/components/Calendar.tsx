@@ -26,6 +26,7 @@ interface CalendarProps {
   marks?: Date[];
   minDate?: Date;
   dayOfWeekDisabled?: number[];
+  schoolHolidayDates?: string[];
 }
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -40,6 +41,7 @@ export default function Calendar({
   marks = [],
   minDate,
   dayOfWeekDisabled = [],
+  schoolHolidayDates = [],
 }: CalendarProps) {
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(month), { weekStartsOn });
@@ -47,9 +49,13 @@ export default function Calendar({
     return eachDayOfInterval({ start, end });
   }, [month, weekStartsOn]);
 
+  const isSchoolHolidayMonday = (day: Date) => {
+    return getDay(day) === 1 && schoolHolidayDates.includes(format(day, 'yyyy-MM-dd'));
+  };
+
   const isDisabled = (day: Date) => {
     if (minDate && isBefore(day, minDate)) return true;
-    if (dayOfWeekDisabled.includes(getDay(day))) return true;
+    if (dayOfWeekDisabled.includes(getDay(day)) && !isSchoolHolidayMonday(day)) return true;
     if (disabled.some((d) => isSameDay(d, day))) return true;
     return false;
   };
@@ -89,7 +95,8 @@ export default function Calendar({
       <div className="grid grid-cols-7 border border-[#1B2D3C]/10 rounded-lg overflow-hidden bg-white">
         {days.map((day) => {
           const isPast = minDate ? isBefore(day, minDate) : false;
-          const isClosedDay = !isPast && (dayOfWeekDisabled.includes(getDay(day)) || disabled.some((d) => isSameDay(d, day)));
+          const holidayMonday = isSchoolHolidayMonday(day);
+          const isClosedDay = !isPast && ((dayOfWeekDisabled.includes(getDay(day)) && !holidayMonday) || disabled.some((d) => isSameDay(d, day)));
           const disabledDay = isPast || isClosedDay;
           const selectedDay = selected && isSameDay(day, selected);
           const today = isToday(day);
@@ -118,6 +125,9 @@ export default function Calendar({
               </span>
               {isClosedDay && inMonth && (
                 <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-stone-400">Closed</span>
+              )}
+              {holidayMonday && !isPast && inMonth && !selectedDay && (
+                <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-emerald-600">Open</span>
               )}
               {!disabledDay && mark && inMonth && (
                 <span className={`mt-1 w-1.5 h-1.5 rounded-full ${selectedDay ? 'bg-white' : 'bg-[#1B2D3C]/60'}`} />
