@@ -88,6 +88,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
   };
 
   const displayedImages = adminMode ? galleryImages : galleryImages.slice(0, 4);
+  const lightboxImages = galleryImages;
 
   return (
     <div id="baby-prints-view" className="space-y-20 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
@@ -151,10 +152,10 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
 
       {/* Gallery */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {displayedImages.map((item, index) => (
+        {displayedImages.map((item) => (
           <div
             key={item.key}
-            onClick={() => setSelectedImageIndex(index)}
+            onClick={() => setSelectedImageIndex(lightboxImages.findIndex(i => i.key === item.key))}
             className="group relative aspect-square overflow-hidden rounded-xl cursor-pointer"
           >
             <EditableImage
@@ -181,7 +182,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
       </div>
 
       {/* Image Lightbox */}
-      {selectedImageIndex !== null && displayedImages[selectedImageIndex] && (
+      {selectedImageIndex !== null && lightboxImages[selectedImageIndex] && (
         <div
           className="fixed inset-0 bg-[#1B2D3C]/90 z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedImageIndex(null)}
@@ -193,26 +194,26 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
             <X className="w-6 h-6" />
           </button>
           <button
-            onClick={(e) => { e.stopPropagation(); setSelectedImageIndex((selectedImageIndex - 1 + displayedImages.length) % displayedImages.length); }}
+            onClick={(e) => { e.stopPropagation(); setSelectedImageIndex((selectedImageIndex - 1 + lightboxImages.length) % lightboxImages.length); }}
             className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 hover:bg-white text-[#1B2D3C] rounded-full transition-colors cursor-pointer"
           >
             <ChevronLeft className="w-8 h-8" />
           </button>
           <img
-            src={displayedImages[selectedImageIndex].src}
-            alt={displayedImages[selectedImageIndex].alt}
+            src={lightboxImages[selectedImageIndex].src}
+            alt={lightboxImages[selectedImageIndex].alt}
             className="max-w-full max-h-[85vh] object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
             referrerPolicy="no-referrer"
           />
           <button
-            onClick={(e) => { e.stopPropagation(); setSelectedImageIndex((selectedImageIndex + 1) % displayedImages.length); }}
+            onClick={(e) => { e.stopPropagation(); setSelectedImageIndex((selectedImageIndex + 1) % lightboxImages.length); }}
             className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 hover:bg-white text-[#1B2D3C] rounded-full transition-colors cursor-pointer"
           >
             <ChevronRight className="w-8 h-8" />
           </button>
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {displayedImages.map((_, idx) => (
+            {lightboxImages.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedImageIndex(idx)}
