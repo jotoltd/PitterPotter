@@ -458,22 +458,22 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
       {lightboxIndex !== null && (
         <div className="fixed inset-0 bg-black/90 z-[120] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setLightboxIndex(null); }}>
           <button
-            onClick={() => setLightboxIndex(null)}
-            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); setLightboxIndex(null); }}
+            className="absolute top-4 right-4 z-20 p-2.5 bg-white text-[#1B2D3C] hover:bg-[#f0f0f0] rounded-xl transition-colors shadow-lg cursor-pointer"
           >
             <X className="w-6 h-6" />
           </button>
           
           <button
-            onClick={() => setLightboxIndex(lightboxIndex === 0 ? items.filter(item => item.imageUrl).length - 1 : lightboxIndex - 1)}
-            className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex === 0 ? items.filter(item => item.imageUrl).length - 1 : lightboxIndex - 1); }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2.5 bg-white/90 hover:bg-white text-[#1B2D3C] rounded-full transition-colors shadow-lg cursor-pointer"
           >
             <ChevronLeft className="w-8 h-8" />
           </button>
           
           <button
-            onClick={() => setLightboxIndex(lightboxIndex === items.filter(item => item.imageUrl).length - 1 ? 0 : lightboxIndex + 1)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex === items.filter(item => item.imageUrl).length - 1 ? 0 : lightboxIndex + 1); }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2.5 bg-white/90 hover:bg-white text-[#1B2D3C] rounded-full transition-colors shadow-lg cursor-pointer"
           >
             <ChevronRight className="w-8 h-8" />
           </button>

@@ -188,8 +188,8 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
           onClick={() => setSelectedImageIndex(null)}
         >
           <button
-            onClick={() => setSelectedImageIndex(null)}
-            className="absolute top-4 right-4 p-2 bg-white/90 text-[#1B2D3C] hover:bg-white transition-all rounded-lg cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); setSelectedImageIndex(null); }}
+            className="absolute top-4 right-4 z-20 p-2.5 bg-white text-[#1B2D3C] hover:bg-[#f0f0f0] rounded-xl transition-colors shadow-lg cursor-pointer"
           >
             <X className="w-6 h-6" />
           </button>
