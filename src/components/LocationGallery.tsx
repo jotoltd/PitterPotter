@@ -240,6 +240,18 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
             )}
           </div>
         ))}
+        {adminMode && (
+          <div className="aspect-[4/3] rounded-lg border-2 border-dashed border-[#1B2D3C]/20 flex flex-col items-center justify-center gap-2 bg-[#F8FAFB] hover:bg-[#eef3f6] transition-colors">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading}
+              className="flex flex-col items-center gap-2 text-[#1B2D3C]/60 hover:text-[#1B2D3C] cursor-pointer disabled:opacity-50 transition-colors"
+            >
+              <Upload className="w-6 h-6" />
+              <span className="text-xs font-bold uppercase tracking-wider">{loading ? 'Uploading...' : 'Add Image'}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Mobile carousel */}
@@ -275,46 +287,28 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
         </div>
       </div>
 
-      {/* Admin controls */}
+      {/* Hidden file input (shared) */}
+      <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
+
+      {/* Admin controls — URL option + mobile upload */}
       {adminMode && (
-        <div className="bg-white border-2 border-[#1B2D3C]/20 rounded-xl p-4 space-y-3">
-          <div className="flex items-center gap-2">
+        <div className="border border-[#1B2D3C]/10 rounded-xl p-3 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => setAddMode(addMode === 'upload' ? null : 'upload')}
+              onClick={() => fileInputRef.current?.click()}
               disabled={loading}
-              className="flex items-center gap-2 px-3 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-colors cursor-pointer disabled:opacity-50"
+              className="md:hidden flex items-center gap-2 px-3 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-colors cursor-pointer disabled:opacity-50"
             >
-              <Upload className="w-4 h-4" /> Upload Image
+              <Upload className="w-4 h-4" /> {loading ? 'Uploading...' : 'Add Image'}
             </button>
             <button
               onClick={() => setAddMode(addMode === 'url' ? null : 'url')}
               disabled={loading}
               className="flex items-center gap-2 px-3 py-2 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#F8FAFB] transition-colors cursor-pointer disabled:opacity-50"
             >
-              <Link className="w-4 h-4" /> Add URL
+              <Link className="w-4 h-4" /> Add by URL
             </button>
           </div>
-
-          {addMode === 'upload' && (
-            <div className="space-y-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleUpload}
-                className="hidden"
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={loading}
-                className="w-full py-3 border-2 border-dashed border-[#1B2D3C]/20 rounded-xl text-xs font-bold text-[#1B2D3C] hover:bg-[#F8FAFB] cursor-pointer transition-colors"
-              >
-                {loading ? 'Uploading...' : 'Click to select an image'}
-              </button>
-            </div>
-          )}
-
           {addMode === 'url' && (
             <div className="flex gap-2">
               <input
@@ -322,7 +316,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
                 value={urlValue}
                 onChange={(e) => setUrlValue(e.target.value)}
                 placeholder="https://..."
-                className="flex-1 px-4 py-2 border-2 border-[#1B2D3C]/20 rounded-xl text-sm text-[#1B2D3C] focus:outline-none focus:border-amber-400"
+                className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-sm text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/50"
               />
               <button
                 onClick={handleAddUrl}
