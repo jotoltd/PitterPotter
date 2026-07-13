@@ -338,6 +338,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
 
             <div className="aspect-video w-full bg-[#D6E2E9]/50 overflow-hidden rounded-lg">
               <iframe
+                key={studio}
                 title={`${studio} Studio Location`}
                 src={studio === 'Putney'
                   ? 'https://maps.google.com/maps?q=Pitter+Potter+Putney&z=15&ie=UTF8&iwloc=&output=embed'
