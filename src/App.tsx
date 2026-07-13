@@ -68,7 +68,7 @@ export default function App() {
       const target = e.target as HTMLElement;
       if (!target) return;
       // Allow editable elements and modals to receive clicks
-      const editable = target.closest('[data-editable], [contenteditable], .z-\[200\], .z-\[250\]');
+      const editable = target.closest('[data-editable], [contenteditable], [data-modal]');
       if (editable) return;
       const link = target.closest('a');
       if (link) {
