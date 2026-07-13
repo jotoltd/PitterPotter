@@ -97,6 +97,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
 
       setImages(nextImages);
       showToast('Gallery updated!', 'success');
+      loadImages();
       return true;
     } catch (err) {
       console.error('Failed to save gallery:', err);
@@ -154,7 +155,9 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
         newUrls.push(imageUrl);
       }
 
-      await saveImages([...images, ...newUrls]);
+      const merged = [...images, ...newUrls];
+      setImages(merged);
+      await saveImages(merged);
       setAddMode(null);
     } catch (err) {
       console.error('Failed to upload image:', err);
