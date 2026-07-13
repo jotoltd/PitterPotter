@@ -184,7 +184,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
       {/* Image Lightbox */}
       {selectedImageIndex !== null && lightboxImages[selectedImageIndex] && (
         <div
-          className="fixed inset-0 bg-[#1B2D3C]/90 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-[#1B2D3C]/90 z-[100] flex items-center justify-center p-4"
           onClick={() => setSelectedImageIndex(null)}
         >
           <button

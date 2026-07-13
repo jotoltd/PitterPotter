@@ -336,7 +336,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
       {/* Lightbox */}
       {lightboxIndex !== null && (
         <div
-          className="fixed inset-0 z-50 bg-[#1B2D3C]/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-[#1B2D3C]/90 flex items-center justify-center p-4"
           onClick={() => setLightboxIndex(null)}
         >
           <button
