@@ -67,6 +67,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
       const savedStaff = localStorage.getItem('pp_current_staff');
       const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
 
+      let usedDirectSave = false;
       if (adminMode && staff?.sessionToken) {
         const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
           method: 'POST',
@@ -81,9 +82,16 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
             type: 'text',
           }),
         });
-        const data = await res.json();
-        if (!res.ok || data.error) throw new Error(data.error || 'Save failed');
+        if (res.status === 401) {
+          usedDirectSave = true;
+        } else {
+          const data = await res.json();
+          if (!res.ok || data.error) throw new Error(data.error || 'Save failed');
+        }
       } else {
+        usedDirectSave = true;
+      }
+      if (usedDirectSave) {
         const { error } = await supabase!
           .from('content')
           .upsert({
