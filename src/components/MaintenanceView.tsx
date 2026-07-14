@@ -1,4 +1,4 @@
-import { Phone, MapPin } from 'lucide-react';
+import { Phone } from 'lucide-react';
 import { Images } from '../images';
 
 const studios = [
@@ -40,15 +40,7 @@ export default function MaintenanceView() {
               key={studio.name}
               className="bg-white border border-[#1B2D3C]/10 rounded-2xl p-6 space-y-4 text-left shadow-sm"
             >
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-[#D6E2E9] rounded-xl">
-                  <MapPin className="w-4 h-4 text-[#1B2D3C]" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]/40">Studio</p>
-                  <p className="text-sm font-black text-[#1B2D3C]">{studio.name}</p>
-                </div>
-              </div>
+              <p className="text-sm font-black text-[#1B2D3C]">{studio.name}</p>
               <p className="text-xs text-[#1B2D3C]/60 leading-relaxed">{studio.address}</p>
               <a
                 href={`tel:${studio.tel}`}
