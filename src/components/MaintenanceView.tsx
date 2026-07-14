@@ -7,12 +7,14 @@ const studios = [
     address: '234 Upper Richmond Road, London, SW15 6TG',
     phone: '020 8788 1635',
     tel: '02087881635',
+    image: Images.putneyStudio,
   },
   {
     name: 'Wimbledon Studio',
     address: '52 Wimbledon Hill Road, London, SW19 7PA',
     phone: '020 3770 4499',
     tel: '02037704499',
+    image: Images.wimbledonStudio,
   },
 ];
 
@@ -40,6 +42,9 @@ export default function MaintenanceView() {
               key={studio.name}
               className="bg-white border border-[#1B2D3C]/10 rounded-2xl p-6 space-y-4 text-left shadow-sm"
             >
+              <div className="aspect-[4/3] overflow-hidden rounded-xl mb-2">
+                <img src={studio.image} alt={studio.name} className="w-full h-full object-cover" />
+              </div>
               <p className="text-sm font-black text-[#1B2D3C]">{studio.name}</p>
               <p className="text-xs text-[#1B2D3C]/60 leading-relaxed">{studio.address}</p>
               <a
