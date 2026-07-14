@@ -1,4 +1,5 @@
 import { Phone, MapPin, Wrench } from 'lucide-react';
+import { Images } from '../images';
 
 const studios = [
   {
@@ -22,8 +23,11 @@ export default function MaintenanceView() {
         {/* Icon + heading */}
         <div className="space-y-4">
           <div className="flex justify-center">
-            <div className="p-5 bg-white border border-[#1B2D3C]/10 rounded-2xl shadow-sm">
-              <Wrench className="w-10 h-10 text-[#1B2D3C]/50" />
+            <img src={Images.logo} alt="Pitter Potter" className="h-16 w-auto" />
+          </div>
+          <div className="flex justify-center">
+            <div className="p-4 bg-white border border-[#1B2D3C]/10 rounded-2xl shadow-sm">
+              <Wrench className="w-8 h-8 text-[#1B2D3C]/50" />
             </div>
           </div>
           <h1 className="font-heading text-3xl md:text-4xl font-black text-[#1B2D3C] tracking-tight">
