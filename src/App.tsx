@@ -28,6 +28,7 @@ import GiftCardBalanceView from './components/GiftCardBalanceView';
 import PartyBookingView from './components/PartyBookingView';
 import PartyDetailView from './components/PartyDetailView';
 import PriceListView from './components/PriceListView';
+import PotteryPaintingView from './components/PotteryPaintingView';
 import FoodDrinkView from './components/FoodDrinkView';
 import { ToastProvider } from './components/ToastContext';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -222,6 +223,8 @@ export default function App() {
  return <FoodDrinkView adminMode={adminMode} />;
 case 'price-list':
  return <PriceListView adminMode={adminMode} />;
+case 'pottery-painting':
+ return <PotteryPaintingView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'gallery':
  return <GalleryView adminMode={adminMode} />;
  case 'faqs':

@@ -20,6 +20,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
 
   const navItems: { label: string; value: Page; keyPrefix: string }[] = [
     { label: 'Home', value: 'home', keyPrefix: 'home' },
+    { label: 'Pottery Painting', value: 'pottery-painting', keyPrefix: 'pottery_painting' },
     { label: 'Baby Prints', value: 'baby-prints', keyPrefix: 'baby_prints' },
     { label: 'Parties & Events', value: 'parties', keyPrefix: 'parties' },
     { label: 'Prices', value: 'pricing', keyPrefix: 'pricing' },

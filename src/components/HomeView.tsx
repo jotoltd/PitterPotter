@@ -182,7 +182,7 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  </div>
  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
  {[
- { keyPrefix: 'paint', title: 'Pottery Painting', desc: 'Choose from 150+ shapes and paint with premium glazes.', image: Images.potteryGallery, page: 'pricing' as Page },
+ { keyPrefix: 'paint', title: 'Pottery Painting', desc: 'Choose from 150+ shapes and paint with premium glazes.', image: Images.potteryGallery, page: 'pottery-painting' as Page },
  { keyPrefix: 'baby', title: 'Baby Prints', desc: 'Capture tiny hand and foot impressions in clay keepsakes.', image: Images.clayImprint, page: 'baby-prints' as Page },
  { keyPrefix: 'parties', title: 'Parties & Events', desc: 'Birthdays, hen parties, baby showers and corporate groups.', image: Images.birthdayParties, page: 'parties' as Page },
  { keyPrefix: 'workshops', title: 'More Workshops', desc: 'Coming soon...', badge: 'Coming Soon', image: Images.studioHero },
