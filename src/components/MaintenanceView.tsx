@@ -34,7 +34,7 @@ export default function MaintenanceView() {
             Our site is currently undergoing maintenance. If you would like to book, give one of our studios a call — we'd love to hear from you.
           </p>
           <p className="text-sm text-[#1B2D3C]/50">
-            Got any questions?{' '}
+            Alternatively, please email{' '}
             <a href="mailto:info@pitterpotter.co.uk" className="font-bold text-[#1B2D3C]/70 hover:text-[#1B2D3C] transition-colors underline underline-offset-2">
               info@pitterpotter.co.uk
             </a>
