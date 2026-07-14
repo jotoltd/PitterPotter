@@ -92,8 +92,7 @@ Deno.serve(async (req) => {
 
       const { error } = await supabase
         .from('page_settings')
-        .update({ enabled, updated_at: new Date().toISOString(), updated_by: staff.id })
-        .eq('page_key', pageKey);
+        .upsert({ page_key: pageKey, enabled, updated_at: new Date().toISOString(), updated_by: staff.id }, { onConflict: 'page_key' });
 
       if (error) throw error;
 

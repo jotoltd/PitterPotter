@@ -3622,24 +3622,41 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {pageSettings.map((setting) => (
-                    <div key={setting.page_key} className="flex items-center justify-between p-3 bg-[#DBE7E4]/30 rounded-lg">
-                      <div>
-                        <p className="text-sm font-bold text-[#1B2D3C] capitalize">{setting.page_key.replace('-', ' ')}</p>
-                        <p className="text-[10px] text-[#1B2D3C]/50">{setting.enabled ? 'Visible to public' : 'Hidden from public'}</p>
+                  {[
+                    { key: 'pottery-painting', label: 'Pottery Painting' },
+                    { key: 'baby-prints', label: 'Baby Prints' },
+                    { key: 'parties', label: 'Parties & Events' },
+                    { key: 'pricing', label: 'Prices' },
+                    { key: 'price-list', label: 'Price List' },
+                    { key: 'food-drink', label: 'Food & Drink' },
+                    { key: 'buy-gift-card', label: 'Gift Cards' },
+                    { key: 'faqs', label: 'FAQs' },
+                    { key: 'gallery', label: 'Gallery' },
+                    { key: 'contact-info', label: 'Contact' },
+                    { key: 'putney', label: 'Putney Studio' },
+                    { key: 'wimbledon', label: 'Wimbledon Studio' },
+                  ].map(({ key, label }) => {
+                    const dbSetting = pageSettings.find(s => s.page_key === key);
+                    const enabled = dbSetting ? dbSetting.enabled : true;
+                    return (
+                      <div key={key} className="flex items-center justify-between p-3 bg-[#DBE7E4]/30 rounded-lg">
+                        <div>
+                          <p className="text-sm font-bold text-[#1B2D3C]">{label}</p>
+                          <p className="text-[10px] text-[#1B2D3C]/50">{enabled ? 'Visible to public' : 'Hidden from public'}</p>
+                        </div>
+                        <button
+                          onClick={() => updatePageSetting(key, !enabled)}
+                          className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${
+                            enabled ? 'bg-[#1B2D3C]' : 'bg-[#1B2D3C]/30'
+                          }`}
+                        >
+                          <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                            enabled ? 'translate-x-6' : 'translate-x-0'
+                          }`} />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => updatePageSetting(setting.page_key, !setting.enabled)}
-                        className={`relative w-12 h-6 rounded-full transition-colors cursor-pointer ${
-                          setting.enabled ? 'bg-[#1B2D3C]' : 'bg-[#1B2D3C]/30'
-                        }`}
-                      >
-                        <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                          setting.enabled ? 'translate-x-6' : 'translate-x-0'
-                        }`} />
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
