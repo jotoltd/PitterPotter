@@ -47,7 +47,7 @@ export default function MaintenanceView() {
               </div>
               <div className="p-5 space-y-3">
                 <p className="text-sm font-black text-[#1B2D3C]">{studio.name}</p>
-                <p className="text-xs text-[#1B2D3C]/60 leading-relaxed">{studio.address}</p>
+                <p className="text-xs text-[#1B2D3C]/60 leading-relaxed min-h-[2.5rem]">{studio.address}</p>
                 <a
                   href={`tel:${studio.tel}`}
                   className="flex items-center gap-2.5 w-full py-3 px-4 bg-[#DBE7E4] text-[#1B2D3C] rounded-xl hover:bg-[#D6E2E9] transition-colors"
