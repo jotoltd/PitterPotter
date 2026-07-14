@@ -143,22 +143,27 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
         let imageUrl = dataUrl;
 
         if (isSupabaseEnabled() && adminMode && staff?.sessionToken) {
-          const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-            body: JSON.stringify({
-              action: 'upload',
-              username: staff.username,
-              sessionToken: staff.sessionToken,
-              key: `${location}_gallery_${Date.now()}`,
-              page,
-              fileData: dataUrl,
-              fileName: file.name,
-            }),
-          });
-          const uploadData = await uploadRes.json();
-          if (!uploadRes.ok || uploadData.error) throw new Error(uploadData.error || 'Upload failed');
-          imageUrl = uploadData.url;
+          try {
+            const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+              body: JSON.stringify({
+                action: 'upload',
+                username: staff.username,
+                sessionToken: staff.sessionToken,
+                key: `${location}_gallery_${Date.now()}`,
+                page,
+                fileData: dataUrl,
+                fileName: file.name,
+              }),
+            });
+            const uploadData = await uploadRes.json();
+            if (uploadRes.ok && !uploadData.error && uploadData.url) {
+              imageUrl = uploadData.url;
+            }
+          } catch {
+            // fall through — use data URL
+          }
         }
 
         newUrls.push(imageUrl);
