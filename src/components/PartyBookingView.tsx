@@ -7,6 +7,7 @@ import { useToast } from './ToastContext';
 import { getRemainingCapacity, createPublicBooking, getBusyDates } from '../lib/bookings';
 import { getSlots } from '../lib/timeSlots';
 import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange, getClosedDatesForStudio } from '../lib/closures';
+import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { Images } from '../images';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
@@ -117,6 +118,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const [showPayment, setShowPayment] = useState(false);
   const [pendingBooking, setPendingBooking] = useState<BookingInquiry | null>(null);
+  const [depositNoticeType, setDepositNoticeType] = useState<'info' | 'warning' | 'success' | 'error'>('info');
 
   const info = PARTY_INFO[partyType];
   const IconComponent = info.icon;
@@ -125,6 +127,16 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
     setDate(selectedDate);
     setTime(undefined);
   };
+
+  useEffect(() => {
+    if (isSupabaseEnabled() && supabase) {
+      supabase.from('content').select('value').eq('key', 'deposit_notice_type').eq('page', 'party-booking').maybeSingle().then(({ data }) => {
+        if (data?.value && ['info','warning','success','error'].includes(data.value)) {
+          setDepositNoticeType(data.value as 'info' | 'warning' | 'success' | 'error');
+        }
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (!date) {
@@ -477,7 +489,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
             <p className="text-[#1B2D3C]/60 text-xs font-medium">Final balance due 48 hours before your party: £{Math.max(0, guestCount * partyPrice - depositAmount).toFixed(2)}</p>
           </div>
           <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg text-xs font-medium text-blue-800">
-            We only take a £50 deposit today because final guest numbers can change. We will email you 48 hours before the party to confirm final seats and collect the remaining balance.
+            <EditableText contentKey="deposit_payment_notice" page="party-booking" defaultValue="We only take a £50 deposit today because final guest numbers can change. We will email you 48 hours before the party to confirm final seats and collect the remaining balance." adminMode={adminMode} className="text-xs font-medium text-blue-800" />
           </div>
           <Elements stripe={stripePromise} options={{ clientSecret }}>
             <PaymentForm onSuccess={handlePaymentSuccess} amount={depositAmount} loading={submitting} setLoading={setSubmitting} />
@@ -668,17 +680,31 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
         )}
 
         {/* Deposit note */}
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-          <div className="flex gap-3">
-            <div className="text-blue-600 text-xl flex-shrink-0">ℹ️</div>
-            <div className="space-y-1">
-              <p className="text-sm font-bold text-blue-900">£50 deposit only</p>
-              <p className="text-xs font-medium text-blue-800 leading-relaxed">
-                We only take a £50 deposit to secure your party. We know RSVPs can change, so we will email you 48 hours before the party to confirm final numbers and collect the remaining balance.
-              </p>
+        {(() => {
+          const noticeTypeRaw = depositNoticeType;
+          const styles: Record<string, { wrapper: string; border: string; title: string; body: string; icon: string }> = {
+            info:    { wrapper: 'bg-blue-50',   border: 'border-blue-400',  title: 'text-blue-900',  body: 'text-blue-800',  icon: 'ℹ️' },
+            warning: { wrapper: 'bg-amber-50',  border: 'border-amber-400', title: 'text-amber-900', body: 'text-amber-800', icon: '⚠️' },
+            success: { wrapper: 'bg-green-50',  border: 'border-green-400', title: 'text-green-900', body: 'text-green-800', icon: '✅' },
+            error:   { wrapper: 'bg-red-50',    border: 'border-red-400',   title: 'text-red-900',   body: 'text-red-800',   icon: '🚫' },
+          };
+          const s = styles[noticeTypeRaw] ?? styles.info;
+          return (
+            <div className={`${s.wrapper} border-l-4 ${s.border} p-4 rounded-r-lg`}>
+              <div className="flex gap-3">
+                <div className="text-xl flex-shrink-0">{s.icon}</div>
+                <div className="space-y-1">
+                  <p className={`text-sm font-bold ${s.title}`}>
+                    <EditableText contentKey="deposit_notice_title" page="party-booking" defaultValue="£50 deposit only" adminMode={adminMode} className={`text-sm font-bold ${s.title}`} />
+                  </p>
+                  <p className={`text-xs font-medium ${s.body} leading-relaxed`}>
+                    <EditableText contentKey="deposit_notice_body" page="party-booking" defaultValue="We only take a £50 deposit to secure your party. We know RSVPs can change, so we will email you 48 hours before the party to confirm final numbers and collect the remaining balance." adminMode={adminMode} className={`text-xs font-medium ${s.body} leading-relaxed`} />
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Contact Details */}
         <div className="space-y-4 border-t border-[#1B2D3C]/10 pt-8">

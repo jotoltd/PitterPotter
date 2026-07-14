@@ -70,6 +70,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster'>('dashboard');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [partyPrice, setPartyPrice] = useState<number>(28.95);
+  const [depositNoticeType, setDepositNoticeTypeState] = useState<'info' | 'warning' | 'success' | 'error'>('info');
   const [tablePlanEnabled, setTablePlanEnabled] = useState<boolean>(false);
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
   const [capacitySaving, setCapacitySaving] = useState(false);
@@ -374,6 +375,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       if (data.value) setPartyPrice(Number(data.value));
     } catch (err) {
       console.error('Failed to load party price:', err);
+    }
+    if (isSupabaseEnabled() && supabase) {
+      const { data: noticeData } = await supabase.from('content').select('value').eq('key', 'deposit_notice_type').eq('page', 'party-booking').maybeSingle();
+      if (noticeData?.value && ['info','warning','success','error'].includes(noticeData.value)) {
+        setDepositNoticeTypeState(noticeData.value as 'info' | 'warning' | 'success' | 'error');
+      }
     }
   };
 
@@ -3617,6 +3624,39 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               >
                 Save
               </button>
+            </div>
+          </div>
+
+          {/* Deposit Notice Type */}
+          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 max-w-xl">
+            <div>
+              <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Deposit Notice Style</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Controls the colour and icon of the deposit notice shown on the party booking form.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(['info', 'warning', 'success', 'error'] as const).map(type => {
+                const meta = { info: { label: 'Info', bg: 'bg-blue-100 text-blue-900 border-blue-300' }, warning: { label: 'Warning', bg: 'bg-amber-100 text-amber-900 border-amber-300' }, success: { label: 'Success', bg: 'bg-green-100 text-green-900 border-green-300' }, error: { label: 'Error', bg: 'bg-red-100 text-red-900 border-red-300' } }[type];
+                const icons = { info: 'ℹ️', warning: '⚠️', success: '✅', error: '🚫' };
+                return (
+                  <button
+                    key={type}
+                    onClick={async () => {
+                      setDepositNoticeTypeState(type);
+                      try {
+                        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+                          body: JSON.stringify({ action: 'save', username: staff.username, sessionToken: staff.sessionToken, key: 'deposit_notice_type', page: 'party-booking', value: type, type: 'text' }),
+                        });
+                        showToast('Notice style updated', 'success');
+                      } catch { showToast('Failed to save notice style', 'error'); }
+                    }}
+                    className={`px-4 py-2 border rounded-lg text-xs font-bold cursor-pointer transition-all ${meta.bg} ${depositNoticeType === type ? 'ring-2 ring-offset-1 ring-[#1B2D3C]' : 'opacity-60 hover:opacity-100'}`}
+                  >
+                    {icons[type]} {meta.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
