@@ -53,7 +53,7 @@ export default function MaintenanceView() {
               <p className="text-xs text-[#1B2D3C]/60 leading-relaxed">{studio.address}</p>
               <a
                 href={`tel:${studio.tel}`}
-                className="flex items-center gap-2.5 w-full py-3 px-4 bg-[#1B2D3C] text-white rounded-xl hover:bg-[#486581] transition-colors"
+                className="flex items-center gap-2.5 w-full py-3 px-4 bg-[#DBE7E4] text-[#1B2D3C] rounded-xl hover:bg-[#D6E2E9] transition-colors"
               >
                 <Phone className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm font-black tracking-wide">{studio.phone}</span>
