@@ -69,6 +69,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster'>('dashboard');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
+  const [maintenanceMode, setMaintenanceModeState] = useState(false);
+  const [maintenanceSaving, setMaintenanceSaving] = useState(false);
   const [partyPrice, setPartyPrice] = useState<number>(28.95);
   const [depositNoticeType, setDepositNoticeTypeState] = useState<'info' | 'warning' | 'success' | 'error'>('info');
   const [tablePlanEnabled, setTablePlanEnabled] = useState<boolean>(false);
@@ -328,6 +330,36 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       if (data.value === 'live') setStripeMode('live');
     } catch (err) {
       console.error('Failed to load stripe mode:', err);
+    }
+    try {
+      const response2 = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'load', username: staff.username, sessionToken: staff.sessionToken, key: 'maintenance_mode' }),
+      });
+      const data2 = await response2.json();
+      if (data2.value === 'true') setMaintenanceModeState(true);
+    } catch (err) {
+      console.error('Failed to load maintenance mode:', err);
+    }
+  };
+
+  const toggleMaintenanceMode = async (enabled: boolean) => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    setMaintenanceSaving(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'update', username: staff.username, sessionToken: staff.sessionToken, key: 'maintenance_mode', value: String(enabled) }),
+      });
+      if (!res.ok) throw new Error();
+      setMaintenanceModeState(enabled);
+      showToast(enabled ? 'Maintenance mode ON — site hidden from public' : 'Maintenance mode OFF — site is live', enabled ? 'error' : 'success');
+    } catch {
+      showToast('Failed to update maintenance mode', 'error');
+    } finally {
+      setMaintenanceSaving(false);
     }
   };
 
@@ -3578,6 +3610,35 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               </div>
             </div>
           </div>
+
+          {/* Maintenance Mode */}
+          {staff.role === 'super_admin' && (
+            <div className={`border p-6 rounded-xl space-y-4 max-w-xl ${maintenanceMode ? 'bg-red-50 border-red-200' : 'bg-white border-[#1B2D3C]/10'}`}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Maintenance Mode</h2>
+                  <p className="text-xs text-[#1B2D3C]/70 mt-1">When ON, the public site shows a maintenance page with studio contact details. Only logged-in staff can access the site.</p>
+                </div>
+                <button
+                  onClick={() => toggleMaintenanceMode(!maintenanceMode)}
+                  disabled={maintenanceSaving}
+                  className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                    maintenanceMode ? 'bg-red-500' : 'bg-[#1B2D3C]/20'
+                  } ${maintenanceSaving ? 'opacity-50' : ''}`}
+                >
+                  <span className={`pointer-events-none inline-block h-6 w-6 rounded-full bg-white shadow transform transition-transform duration-200 ${
+                    maintenanceMode ? 'translate-x-5' : 'translate-x-0'
+                  }`} />
+                </button>
+              </div>
+              {maintenanceMode && (
+                <div className="flex items-center gap-2 p-3 bg-red-100 rounded-lg">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse inline-block flex-shrink-0" />
+                  <p className="text-xs font-bold text-red-700">Site is currently in maintenance — public visitors see the maintenance page</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Stripe Mode */}
           <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 max-w-xl">

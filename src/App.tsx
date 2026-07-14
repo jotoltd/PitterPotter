@@ -30,6 +30,7 @@ import PartyDetailView from './components/PartyDetailView';
 import PriceListView from './components/PriceListView';
 import PotteryPaintingView from './components/PotteryPaintingView';
 import FoodDrinkView from './components/FoodDrinkView';
+import MaintenanceView from './components/MaintenanceView';
 import { ToastProvider } from './components/ToastContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import SessionWatcher from './components/SessionWatcher';
@@ -46,6 +47,7 @@ export default function App() {
  const [showSplash, setShowSplash] = useState(true);
  const [adminMode, setAdminMode] = useState(false);
  const [disabledPages, setDisabledPages] = useState<Set<string>>(new Set());
+ const [maintenanceMode, setMaintenanceMode] = useState(false);
 
  const isAdminLoggedIn = !!currentStaff;
 
@@ -97,6 +99,17 @@ export default function App() {
       }
     };
     loadPageSettings();
+  }, []);
+
+  useEffect(() => {
+    if (!isSupabaseEnabled()) return;
+    const loadMaintenance = async () => {
+      try {
+        const { data } = await supabase!.from('settings').select('value').eq('key', 'maintenance_mode').maybeSingle();
+        if (data?.value === 'true') setMaintenanceMode(true);
+      } catch {}
+    };
+    loadMaintenance();
   }, []);
 
  useEffect(() => {
@@ -274,6 +287,16 @@ case 'party-birthday-putney':
  return <NotFoundView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  }
  };
+
+ if (maintenanceMode && !isAdminLoggedIn) {
+   return (
+     <ErrorBoundary>
+       <ToastProvider>
+         <MaintenanceView />
+       </ToastProvider>
+     </ErrorBoundary>
+   );
+ }
 
  return (
  <ErrorBoundary>
