@@ -23,6 +23,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
     { label: 'Baby Prints', value: 'baby-prints', keyPrefix: 'baby_prints' },
     { label: 'Parties & Events', value: 'parties', keyPrefix: 'parties' },
     { label: 'Prices', value: 'pricing', keyPrefix: 'pricing' },
+    { label: 'Price List', value: 'price-list', keyPrefix: 'price_list' },
     { label: 'Food & Drink', value: 'food-drink', keyPrefix: 'food_drink' },
     { label: 'Gift Cards', value: 'buy-gift-card', keyPrefix: 'gift_cards' },
     { label: 'FAQs', value: 'faqs', keyPrefix: 'faqs' },

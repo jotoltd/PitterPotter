@@ -20,6 +20,7 @@ const INTERNAL_PAGES: { value: Page; label: string }[] = [
   { value: 'buy-gift-card', label: 'Buy Gift Card' },
   { value: 'gift-card-balance', label: 'Gift Card Balance' },
   { value: 'food-drink', label: 'Food & Drink' },
+  { value: 'price-list', label: 'Price List' },
 ];
 
 interface EditableButtonProps {

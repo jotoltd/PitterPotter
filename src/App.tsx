@@ -27,6 +27,7 @@ import NotFoundView from './components/NotFoundView';
 import GiftCardBalanceView from './components/GiftCardBalanceView';
 import PartyBookingView from './components/PartyBookingView';
 import PartyDetailView from './components/PartyDetailView';
+import PriceListView from './components/PriceListView';
 import FoodDrinkView from './components/FoodDrinkView';
 import { ToastProvider } from './components/ToastContext';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -219,6 +220,8 @@ export default function App() {
  return <PricingView setCurrentPage={setCurrentPage} initialPainters={paintersCountPreset} adminMode={adminMode} />;
  case 'food-drink':
  return <FoodDrinkView adminMode={adminMode} />;
+case 'price-list':
+ return <PriceListView adminMode={adminMode} />;
  case 'gallery':
  return <GalleryView adminMode={adminMode} />;
  case 'faqs':
