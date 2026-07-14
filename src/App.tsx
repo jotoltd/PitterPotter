@@ -26,6 +26,7 @@ import GiftCardSuccessView from './components/GiftCardSuccessView';
 import NotFoundView from './components/NotFoundView';
 import GiftCardBalanceView from './components/GiftCardBalanceView';
 import PartyBookingView from './components/PartyBookingView';
+import PartyDetailView from './components/PartyDetailView';
 import FoodDrinkView from './components/FoodDrinkView';
 import { ToastProvider } from './components/ToastContext';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -238,7 +239,11 @@ export default function App() {
  return <PutneyView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'wimbledon':
  return <WimbledonView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
- case 'party-birthday-putney':
+ case 'party-birthday-detail':
+return <PartyDetailView partyType="birthday" setCurrentPage={setCurrentPage} adminMode={adminMode} />;
+case 'party-babyshower-detail':
+return <PartyDetailView partyType="baby-shower-hen" setCurrentPage={setCurrentPage} adminMode={adminMode} />;
+case 'party-birthday-putney':
  return <PartyBookingView partyType="birthday" studio="Putney" setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'party-birthday-wimbledon':
  return <PartyBookingView partyType="birthday" studio="Wimbledon" setCurrentPage={setCurrentPage} adminMode={adminMode} />;

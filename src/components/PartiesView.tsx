@@ -27,6 +27,11 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
     setShowLocationModal(true);
   };
 
+  const handleSeeMore = (type: PartyType) => {
+    if (type === 'birthday') setCurrentPage('party-birthday-detail');
+    if (type === 'baby-shower-hen') setCurrentPage('party-babyshower-detail');
+  };
+
   const handleSelectLocation = (location: 'putney' | 'wimbledon') => {
     setShowLocationModal(false);
     if (!selectedPartyType) return;
@@ -59,20 +64,14 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
               <EditableImage contentKey="birthday_image" page="parties" defaultSrc={Images.birthdayParties} alt="Birthday party" className="w-full h-full object-cover rounded-lg" adminMode={adminMode} />
             </div>
             <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
-              <EditableText contentKey="birthday_desc1" page="parties" defaultValue="A painting party at Pitter Potter is a fun and creative way of celebrating birthdays. We provide the space, materials and help to ensure everything runs smoothly." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
-            </p>
-            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
-              <EditableText contentKey="birthday_desc2" page="parties" defaultValue="Our birthday package is £28.95 per head for a standard 2 hour party session (for children under the age of 7, we recommend a 1.5 hours session). Included in the cost is the studio fee and an item of pottery up to the value of £22.95. We have a vast array of items you can choose from, including all our party animals, all money banks, all mugs and some bowls and plates. Hosts are more than welcome to bring their own food/drinks/cakes. Please bring your own paper plates, cups and cutlery." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
-            </p>
-            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
-              <EditableText contentKey="birthday_desc3" page="parties" defaultValue="To confirm your party booking, we will require an non-refundable £50 deposit that will be deducted from your final bill on the day. Please contact us via phone or email should you have any further questions." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
+              <EditableText contentKey="birthday_desc_short" page="parties" defaultValue="A fun and creative painting party — we provide the space, materials and help. £28.95 per head including pottery up to £22.95 in value." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
             </p>
           </div>
           <button
-            onClick={() => handleBookParty('birthday')}
+            onClick={() => handleSeeMore('birthday')}
             className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
           >
-            Book Party
+            See More
           </button>
         </div>
 
@@ -86,17 +85,14 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
               <EditableImage contentKey="baby_shower_image" page="parties" defaultSrc={Images.clayImprint} alt="Baby shower and hen party" className="w-full h-full object-cover rounded-lg" adminMode={adminMode} />
             </div>
             <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
-              <EditableText contentKey="baby_shower_desc1" page="parties" defaultValue="For the bride, groom or parents to be who are seeking a creative alternative to a traditional celebration. Get everyone to paint a piece for the happy couple or the new addition to the family." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
-            </p>
-            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
-              <EditableText contentKey="baby_shower_desc2" page="parties" defaultValue="The same terms apply as per our weekend birthday party package above. If you would like your event to run after hours, there is a surcharge and a minimum 10 seats is required. You are welcome to provide your own nibbles/drinks or we are happy to organise catering for you upon request." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
+              <EditableText contentKey="baby_shower_desc_short" page="parties" defaultValue="A creative alternative to a traditional celebration — paint a piece for the happy couple or new arrival. £28.95 per head." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
             </p>
           </div>
           <button
-            onClick={() => handleBookParty('baby-shower-hen')}
+            onClick={() => handleSeeMore('baby-shower-hen')}
             className="w-full py-2.5 bg-[#DBE7E4] text-[#1B2D3C] border border-[#1B2D3C]/20 text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-lg cursor-pointer"
           >
-            Book Party
+            See More
           </button>
         </div>
 
