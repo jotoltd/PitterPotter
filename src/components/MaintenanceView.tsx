@@ -40,20 +40,22 @@ export default function MaintenanceView() {
           {studios.map(studio => (
             <div
               key={studio.name}
-              className="bg-white border border-[#1B2D3C]/10 rounded-2xl p-6 space-y-4 text-left shadow-sm"
+              className="bg-white border border-[#1B2D3C]/10 rounded-2xl overflow-hidden text-left shadow-sm"
             >
-              <div className="aspect-[4/3] overflow-hidden rounded-xl mb-2">
+              <div className="aspect-[3/2] overflow-hidden">
                 <img src={studio.image} alt={studio.name} className="w-full h-full object-cover" />
               </div>
-              <p className="text-sm font-black text-[#1B2D3C]">{studio.name}</p>
-              <p className="text-xs text-[#1B2D3C]/60 leading-relaxed">{studio.address}</p>
-              <a
-                href={`tel:${studio.tel}`}
-                className="flex items-center gap-2.5 w-full py-3 px-4 bg-[#DBE7E4] text-[#1B2D3C] rounded-xl hover:bg-[#D6E2E9] transition-colors"
-              >
-                <Phone className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm font-black tracking-wide">{studio.phone}</span>
-              </a>
+              <div className="p-5 space-y-3">
+                <p className="text-sm font-black text-[#1B2D3C]">{studio.name}</p>
+                <p className="text-xs text-[#1B2D3C]/60 leading-relaxed">{studio.address}</p>
+                <a
+                  href={`tel:${studio.tel}`}
+                  className="flex items-center gap-2.5 w-full py-3 px-4 bg-[#DBE7E4] text-[#1B2D3C] rounded-xl hover:bg-[#D6E2E9] transition-colors"
+                >
+                  <Phone className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-sm font-black tracking-wide">{studio.phone}</span>
+                </a>
+              </div>
             </div>
           ))}
         </div>
