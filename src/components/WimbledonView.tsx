@@ -6,7 +6,7 @@ import { format, getDay } from 'date-fns';
 import {Clock, Calendar as CalendarIcon, ArrowRight} from 'lucide-react';
 import { getRemainingCapacity, getBusyDates } from '../lib/bookings';
 import { getSlots } from '../lib/timeSlots';
-import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange } from '../lib/closures';
+import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange, getClosedDatesForStudio } from '../lib/closures';
 import { useToast } from './ToastContext';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
@@ -103,7 +103,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const closedDatesAsDate = closures.closedDates.map(d => new Date(d + 'T00:00:00'));
+  const closedDatesAsDate = getClosedDatesForStudio(closures.closedDates, 'Wimbledon').map(d => new Date(d + 'T00:00:00'));
   const timeSlots = date ? getTimeSlots(date, closures) : [];
 
   return (

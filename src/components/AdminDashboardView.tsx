@@ -80,6 +80,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [newHolidayTo, setNewHolidayTo] = useState('');
   const [newHolidayLabel, setNewHolidayLabel] = useState('');
   const [newClosedInput, setNewClosedInput] = useState('');
+  const [newClosedStudio, setNewClosedStudio] = useState<'Putney' | 'Wimbledon' | 'Both'>('Both');
   const [showGiftCardModal, setShowGiftCardModal] = useState(false);
   const [newGiftCard, setNewGiftCard] = useState({
     amount: 50,
@@ -3516,36 +3517,48 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
             {/* Closed Dates */}
             <div className="space-y-3">
-              <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">Closed Dates <span className="text-[#1B2D3C]/40 font-medium normal-case tracking-normal">(no bookings any day)</span></h3>
+              <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">Closed Dates <span className="text-[#1B2D3C]/40 font-medium normal-case tracking-normal">(no bookings on that day)</span></h3>
               <div className="flex flex-wrap gap-2">
                 {closures.closedDates.length === 0 && <p className="text-xs text-[#1B2D3C]/40 italic">No closed dates set</p>}
-                {closures.closedDates.map(date => (
-                  <span key={date} className="flex items-center gap-1 px-2.5 py-1.5 bg-red-100 text-red-800 text-xs font-bold rounded-lg">
-                    {date}
+                {closures.closedDates.map((entry, idx) => (
+                  <span key={idx} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-100 text-red-800 text-xs font-bold rounded-lg">
+                    {entry.date}
+                    <span className="px-1.5 py-0.5 bg-red-200 text-red-700 text-[10px] rounded">{entry.studio}</span>
                     <button onClick={() => {
-                      const next = { ...closures, closedDates: closures.closedDates.filter(d => d !== date) };
+                      const next = { ...closures, closedDates: closures.closedDates.filter((_, i) => i !== idx) };
                       setClosures(next);
                       saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
                     }} className="ml-0.5 hover:text-red-600 cursor-pointer"><XIcon className="w-3 h-3" /></button>
                   </span>
                 ))}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <input
                   type="date"
                   value={newClosedInput}
                   onChange={e => setNewClosedInput(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
+                  className="flex-1 min-w-[140px] px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
                 />
+                <select
+                  value={newClosedStudio}
+                  onChange={e => setNewClosedStudio(e.target.value as 'Putney' | 'Wimbledon' | 'Both')}
+                  className="px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50 cursor-pointer"
+                >
+                  <option value="Both">Both Studios</option>
+                  <option value="Putney">Putney Only</option>
+                  <option value="Wimbledon">Wimbledon Only</option>
+                </select>
                 <button
                   onClick={async () => {
                     const val = newClosedInput.trim();
-                    if (!val || closures.closedDates.includes(val)) return;
-                    const existingOnDate = inquiries.filter(b => b.date === val);
+                    if (!val) return;
+                    const alreadyExists = closures.closedDates.some(e => e.date === val && e.studio === newClosedStudio);
+                    if (alreadyExists) return;
+                    const existingOnDate = inquiries.filter(b => b.date === val && (newClosedStudio === 'Both' || b.studio === newClosedStudio));
                     if (existingOnDate.length > 0) {
-                      showToast(`Warning: ${existingOnDate.length} booking(s) already exist on ${val}. Date closed anyway — contact customers manually.`, 'error');
+                      showToast(`Warning: ${existingOnDate.length} booking(s) already exist on ${val} for ${newClosedStudio}. Date closed anyway — contact customers manually.`, 'error');
                     }
-                    const next = { ...closures, closedDates: [...closures.closedDates, val].sort() };
+                    const next = { ...closures, closedDates: [...closures.closedDates, { date: val, studio: newClosedStudio }].sort((a, b) => a.date.localeCompare(b.date)) };
                     setClosures(next);
                     setNewClosedInput('');
                     saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));

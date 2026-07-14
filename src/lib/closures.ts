@@ -11,9 +11,22 @@ export interface HolidayRange {
   label?: string;
 }
 
+export interface ClosedDate {
+  date: string;
+  studio: 'Putney' | 'Wimbledon' | 'Both';
+}
+
 export interface ClosureDates {
   schoolHolidays: HolidayRange[];
-  closedDates: string[];
+  closedDates: ClosedDate[];
+}
+
+function parseClosedDates(raw: unknown[]): ClosedDate[] {
+  return raw.map(item =>
+    typeof item === 'string'
+      ? { date: item, studio: 'Both' as const }
+      : item as ClosedDate
+  );
 }
 
 function loadFromStorage(): ClosureDates {
@@ -22,7 +35,7 @@ function loadFromStorage(): ClosureDates {
     const c = localStorage.getItem(STORAGE_KEY_CLOSED);
     return {
       schoolHolidays: h ? JSON.parse(h) : [],
-      closedDates: c ? JSON.parse(c) : [],
+      closedDates: c ? parseClosedDates(JSON.parse(c)) : [],
     };
   } catch {
     return { schoolHolidays: [], closedDates: [] };
@@ -55,7 +68,7 @@ export async function loadClosuresFromSupabase(): Promise<ClosureDates> {
 
       const result: ClosureDates = {
         schoolHolidays: map[SUPABASE_KEY_HOLIDAYS] ? JSON.parse(map[SUPABASE_KEY_HOLIDAYS]) : [],
-        closedDates: map[SUPABASE_KEY_CLOSED] ? JSON.parse(map[SUPABASE_KEY_CLOSED]) : [],
+        closedDates: map[SUPABASE_KEY_CLOSED] ? parseClosedDates(JSON.parse(map[SUPABASE_KEY_CLOSED])) : [],
       };
       saveToStorage(result);
       return result;
@@ -99,6 +112,10 @@ export function isDateInHolidayRange(dateStr: string, schoolHolidays: HolidayRan
   return schoolHolidays.some(({ from, to }) => dateStr >= from && dateStr <= to);
 }
 
-export function isClosedDate(dateStr: string, closedDates: string[]): boolean {
-  return closedDates.includes(dateStr);
+export function isClosedDate(dateStr: string, closedDates: ClosedDate[], studio?: 'Putney' | 'Wimbledon'): boolean {
+  return closedDates.some(c => c.date === dateStr && (!studio || c.studio === 'Both' || c.studio === studio));
+}
+
+export function getClosedDatesForStudio(closedDates: ClosedDate[], studio: 'Putney' | 'Wimbledon'): string[] {
+  return closedDates.filter(c => c.studio === 'Both' || c.studio === studio).map(c => c.date);
 }

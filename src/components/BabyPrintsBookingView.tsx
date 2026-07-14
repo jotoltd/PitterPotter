@@ -5,7 +5,7 @@ import { format, getDay, isBefore, startOfDay } from 'date-fns';
 import { BookingInquiry } from '../types';
 import { createPublicBooking, getBusyDates, getRemainingCapacity } from '../lib/bookings';
 import { getSlots } from '../lib/timeSlots';
-import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange } from '../lib/closures';
+import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange, getClosedDatesForStudio } from '../lib/closures';
 import Calendar from './Calendar';
 import EditableText from './EditableText';
 
@@ -51,7 +51,7 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
   }, [calendarMonth, studio]);
 
   const minDate = useMemo(() => startOfDay(new Date()), []);
-  const closedDatesAsDate = useMemo(() => closures.closedDates.map(d => new Date(d + 'T00:00:00')), [closures.closedDates]);
+  const closedDatesAsDate = useMemo(() => getClosedDatesForStudio(closures.closedDates, studio).map(d => new Date(d + 'T00:00:00')), [closures.closedDates, studio]);
   const disabledDates = useMemo(() => [...busyDates, ...closedDatesAsDate], [busyDates, closedDatesAsDate]);
   const timeSlots = date ? getTimeSlots(date, closures) : [];
   const today = new Date();
