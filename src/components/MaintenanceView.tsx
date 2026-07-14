@@ -21,7 +21,7 @@ const studios = [
 export default function MaintenanceView() {
   return (
     <div className="min-h-screen bg-[#F7F4F0] flex flex-col items-center justify-center px-4 py-16">
-      <div className="max-w-xl w-full space-y-10 text-center">
+      <div className="max-w-3xl w-full space-y-10 text-center">
         {/* Icon + heading */}
         <div className="space-y-4">
           <div className="flex justify-center">
@@ -42,7 +42,7 @@ export default function MaintenanceView() {
               key={studio.name}
               className="bg-white border border-[#1B2D3C]/10 rounded-2xl overflow-hidden text-left shadow-sm"
             >
-              <div className="aspect-square overflow-hidden">
+              <div className="aspect-[16/9] overflow-hidden">
                 <img src={studio.image} alt={studio.name} className="w-full h-full object-cover" />
               </div>
               <div className="p-5 space-y-3">
