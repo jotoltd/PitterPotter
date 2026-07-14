@@ -3423,7 +3423,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           e.preventDefault();
                           const val = newSlotInput[type].trim();
                           if (!val || timeSlotConfig[type].includes(val)) return;
-                          const updated = [...timeSlotConfig[type], val];
+                          const updated = [...timeSlotConfig[type], val].sort((a, b) => a.split('-')[0].localeCompare(b.split('-')[0]));
                           applySlotChange({ ...timeSlotConfig, [type]: updated });
                           setNewSlotInput(prev => ({ ...prev, [type]: '' }));
                           showToast(`Slot added to ${labels[type]}`, 'success');
@@ -3434,7 +3434,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       onClick={() => {
                         const val = newSlotInput[type].trim();
                         if (!val || timeSlotConfig[type].includes(val)) return;
-                        const updated = [...timeSlotConfig[type], val];
+                        const updated = [...timeSlotConfig[type], val].sort((a, b) => a.split('-')[0].localeCompare(b.split('-')[0]));
                         applySlotChange({ ...timeSlotConfig, [type]: updated });
                         setNewSlotInput(prev => ({ ...prev, [type]: '' }));
                         showToast(`Slot added to ${labels[type]}`, 'success');
