@@ -31,7 +31,7 @@ export default function MaintenanceView() {
             We'll be back soon
           </h1>
           <p className="text-sm text-[#1B2D3C]/60 max-w-sm mx-auto leading-relaxed">
-            Our site is currently undergoing maintenance. Want to book? Give one of our studios a call — we'd love to hear from you.
+            Our site is currently undergoing maintenance. If you would like to book, give one of our studios a call — we'd love to hear from you.
           </p>
           <p className="text-sm text-[#1B2D3C]/50">
             Got any questions?{' '}
