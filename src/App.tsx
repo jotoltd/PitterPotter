@@ -288,7 +288,7 @@ case 'party-birthday-putney':
  }
  };
 
- if (maintenanceMode && !isAdminLoggedIn) {
+ if (maintenanceMode && !isAdminLoggedIn && currentPage !== 'admin') {
    return (
      <ErrorBoundary>
        <ToastProvider>
