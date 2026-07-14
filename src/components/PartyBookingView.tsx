@@ -8,9 +8,7 @@ import { getRemainingCapacity, createPublicBooking, getBusyDates } from '../lib/
 import { getSlots } from '../lib/timeSlots';
 import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange, getClosedDatesForStudio } from '../lib/closures';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
-import { Images } from '../images';
 import EditableText from './EditableText';
-import EditableImage from './EditableImage';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
@@ -102,7 +100,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
   const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [childAge, setChildAge] = useState<number | ''>('');
-  const [partyArea, setPartyArea] = useState<'Area 1' | 'Area 2'>('Area 1');
+
   const [slotCapacity, setSlotCapacity] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -247,8 +245,8 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
       sessionType: sessionTypeMap[partyType],
       notes: studio === 'Wimbledon'
         ? (partyType === 'birthday' && childAge !== ''
-          ? `[${info.title}] ${partyArea} | Age: ${childAge} | ${notes}`.trim()
-          : `[${info.title}] ${partyArea} | ${notes}`.trim())
+          ? `[${info.title}] | Age: ${childAge} | ${notes}`.trim()
+          : `[${info.title}] | ${notes}`.trim())
         : (partyType === 'birthday' && childAge !== ''
           ? `[${info.title}] Age: ${childAge} | ${notes}`.trim()
           : `[${info.title}] ${notes}`.trim()),
@@ -429,7 +427,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
               </button>
             </p>
             <p><span className="font-bold"><EditableText contentKey="party_event_label" page="party-booking" defaultValue="Event:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {info.title}</p>
-            <p><span className="font-bold"><EditableText contentKey="party_studio_label" page="party-booking" defaultValue="Studio:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {studio}{studio === 'Wimbledon' && ` - ${partyArea}`}</p>
+            <p><span className="font-bold"><EditableText contentKey="party_studio_label" page="party-booking" defaultValue="Studio:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {studio}</p>
             <p><span className="font-bold"><EditableText contentKey="party_date_label" page="party-booking" defaultValue="Date:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {date && format(date, 'EEEE, do MMMM yyyy')}</p>
             <p><span className="font-bold"><EditableText contentKey="party_time_label" page="party-booking" defaultValue="Time:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {time}</p>
             <p><span className="font-bold"><EditableText contentKey="party_guests_label" page="party-booking" defaultValue="Guests:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {guests === '' ? 1 : guests}</p>
@@ -588,59 +586,6 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
           </div>
         )}
 
-        {/* Party Area (Wimbledon Only) */}
-        {studio === 'Wimbledon' && (
-          <div className="space-y-4">
-            <h3 className="font-heading text-lg font-black text-[#1B2D3C]"><EditableText contentKey="party_area_heading" page="party-booking" defaultValue="Choose Party Area" adminMode={adminMode} className="font-heading text-lg text-[#1B2D3C]" /></h3>
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-              <div className="flex gap-3">
-                <div className="text-blue-600 text-xl flex-shrink-0">ℹ️</div>
-                <div className="space-y-1">
-                  <p className="text-sm font-bold text-blue-900"><EditableText contentKey="party_area_info_title" page="party-booking" defaultValue="Two Separate Party Areas" adminMode={adminMode} className="text-sm font-bold text-blue-900" /></p>
-                  <p className="text-xs font-medium text-blue-800 leading-relaxed">
-                    <EditableText contentKey="party_area_info_description" page="party-booking" defaultValue="Wimbledon has 2 distinct party spaces. Another celebration may be happening in the other area at the same time. Both areas are separately enclosed for privacy." adminMode={adminMode} className="text-xs text-blue-800 leading-relaxed" />
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button
-                onClick={() => setPartyArea('Area 1')}
-                className={`overflow-hidden border-2 transition-all cursor-pointer rounded-lg ${
-                  partyArea === 'Area 1'
-                    ? 'border-[#1B2D3C] ring-2 ring-[#1B2D3C] ring-offset-2'
-                    : 'border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
-                }`}
-              >
-                <div className="aspect-[4/3] overflow-hidden">
-                  <EditableImage contentKey="party_area_1_image" page="party-booking" defaultSrc={Images.wimbledonGallery[1]} alt="Party Area 1" adminMode={adminMode} className="w-full h-full object-cover" />
-                </div>
-                <div className={`py-3 px-4 text-sm font-bold uppercase tracking-wider ${
-                  partyArea === 'Area 1' ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]'
-                }`}>
-                  <EditableText contentKey="party_area_1_label" page="party-booking" defaultValue="Area 1" adminMode={adminMode} className="text-sm font-bold uppercase tracking-wider" />
-                </div>
-              </button>
-              <button
-                onClick={() => setPartyArea('Area 2')}
-                className={`overflow-hidden border-2 transition-all cursor-pointer rounded-lg ${
-                  partyArea === 'Area 2'
-                    ? 'border-[#1B2D3C] ring-2 ring-[#1B2D3C] ring-offset-2'
-                    : 'border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
-                }`}
-              >
-                <div className="aspect-[4/3] overflow-hidden">
-                  <EditableImage contentKey="party_area_2_image" page="party-booking" defaultSrc={Images.wimbledonGallery[3]} alt="Party Area 2" adminMode={adminMode} className="w-full h-full object-cover" />
-                </div>
-                <div className={`py-3 px-4 text-sm font-bold uppercase tracking-wider ${
-                  partyArea === 'Area 2' ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]'
-                }`}>
-                  <EditableText contentKey="party_area_2_label" page="party-booking" defaultValue="Area 2" adminMode={adminMode} className="text-sm font-bold uppercase tracking-wider" />
-                </div>
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Guests */}
         <div className="space-y-3">
@@ -671,7 +616,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
         {/* Summary */}
         {date && time && (
           <div className="bg-[#D6E2E9]/50 p-4 rounded-lg text-sm font-bold text-[#1B2D3C] space-y-2">
-            <p>{info.title} · {studio} Studio{studio === 'Wimbledon' && ` - ${partyArea}`}</p>
+            <p>{info.title} · {studio} Studio</p>
             <p>{format(date, 'EEEE, do MMMM yyyy')} · {time}</p>
             <p>{guests === '' ? 1 : guests} guest{(guests === '' ? 1 : guests) !== 1 ? 's' : ''}</p>
             <p>£{partyPrice.toFixed(2)} per person (includes the £5.95 studio fee) · estimated total £{((guests === '' ? 1 : guests) * partyPrice).toFixed(2)}</p>
