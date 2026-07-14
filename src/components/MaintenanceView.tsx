@@ -33,6 +33,12 @@ export default function MaintenanceView() {
           <p className="text-sm text-[#1B2D3C]/60 max-w-sm mx-auto leading-relaxed">
             Our site is currently undergoing maintenance. Want to book? Give one of our studios a call — we'd love to hear from you.
           </p>
+          <p className="text-sm text-[#1B2D3C]/50">
+            Got any questions?{' '}
+            <a href="mailto:info@pitterpotter.co.uk" className="font-bold text-[#1B2D3C]/70 hover:text-[#1B2D3C] transition-colors underline underline-offset-2">
+              info@pitterpotter.co.uk
+            </a>
+          </p>
         </div>
 
         {/* Studio cards */}
