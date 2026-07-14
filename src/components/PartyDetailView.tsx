@@ -90,7 +90,7 @@ export default function PartyDetailView({ partyType, setCurrentPage, adminMode =
         Back to Parties
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start mb-16">
         {/* Left — Image */}
         <div className="space-y-6">
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
@@ -145,6 +145,27 @@ export default function PartyDetailView({ partyType, setCurrentPage, adminMode =
           >
             Book Now — Choose Studio
           </button>
+        </div>
+      </div>
+
+      {/* Gallery */}
+      <div className="space-y-6">
+        <h2 className="font-heading text-2xl font-black text-[#1B2D3C]">
+          <EditableText contentKey={`${content.descKey}_gallery_heading`} page="parties" defaultValue="Gallery" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" />
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {[1,2,3,4,5,6,7,8].map(n => (
+            <div key={n} className="aspect-square overflow-hidden rounded-xl">
+              <EditableImage
+                contentKey={`${content.descKey}_gallery_${n}`}
+                page="parties"
+                defaultSrc={content.image}
+                alt={`${content.title} photo ${n}`}
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                adminMode={adminMode}
+              />
+            </div>
+          ))}
         </div>
       </div>
 
