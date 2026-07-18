@@ -37,9 +37,9 @@ export default function PriceListView({ adminMode = false }: PriceListViewProps)
       </div>
 
       {/* Studio Fee */}
-      <div className="bg-[#1B2D3C] text-white rounded-xl px-6 py-4 mb-8 text-center">
+      <div className="bg-[#DBE7E4] text-[#1B2D3C] rounded-xl px-6 py-4 mb-8 text-center">
         <p className="font-black text-lg uppercase tracking-widest">
-          <EditableText contentKey="price_list_studio_fee" page="price-list" defaultValue="STUDIO FEE: £5.95 per painter" adminMode={adminMode} className="text-lg text-white" />
+          <EditableText contentKey="price_list_studio_fee" page="price-list" defaultValue="STUDIO FEE: £5.95 per painter" adminMode={adminMode} className="text-lg text-[#1B2D3C]" />
         </p>
       </div>
 
