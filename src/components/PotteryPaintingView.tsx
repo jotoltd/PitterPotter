@@ -35,7 +35,7 @@ export default function PotteryPaintingView({ setCurrentPage, adminMode = false 
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => setCurrentPage('book')}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#1B2D3C] text-white text-xs font-black uppercase tracking-widest hover:bg-[#486581] transition-colors rounded-xl cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-black uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-xl cursor-pointer"
               >
                 Book a Session <ArrowRight className="w-4 h-4" />
               </button>
