@@ -52,7 +52,7 @@ function SortHeader({ field, label, sort, setSort }: SortHeaderProps) {
   return (
     <th
       onClick={handleClick}
-      className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] cursor-pointer select-none hover:bg-[#1B2D3C]/5"
+      className="text-left px-2 sm:px-4 py-2 sm:py-3 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] cursor-pointer select-none hover:bg-[#D6E2E9]"
     >
       <span className="inline-flex items-center gap-1">
         {label}
@@ -1801,7 +1801,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   return (
     <div className="min-h-screen bg-[#FFFFFF]">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-[#1B2D3C] text-white py-3 px-4 sm:px-6 shadow-md">
+      <div className="sticky top-0 z-30 bg-[#DBE7E4] text-[#1B2D3C] py-3 px-4 sm:px-6 shadow-md">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
             <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
@@ -1990,7 +1990,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowGiftCardModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1B2D3C] text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#DBE7E4] text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
                 <Plus className="w-3 h-3" /> Create Gift Card
               </button>
@@ -2115,13 +2115,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 onClick={() => setBookingTypeTab(value)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
                   bookingTypeTab === value
-                    ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                    ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
                     : 'bg-white text-[#1B2D3C]/60 border-[#1B2D3C]/20 hover:text-[#1B2D3C] hover:border-[#1B2D3C]/40'
                 }`}
               >
                 {label}
                 <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
-                  bookingTypeTab === value ? 'bg-white/20 text-white' : 'bg-[#1B2D3C]/10 text-[#1B2D3C]/70'
+                  bookingTypeTab === value ? 'bg-white/20 text-[#1B2D3C]' : 'bg-[#1B2D3C]/10 text-[#1B2D3C]/70'
                 }`}>{count}</span>
               </button>
             );
@@ -2147,7 +2147,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             {([['all','All'],['pending','Awaiting'],['confirmed','Confirmed'],['cancelled','Cancelled']] as const).map(([val, label]) => (
               <button key={val} onClick={() => setFilter(val as any)}
                 className={`px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
-                  filter === val ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                  filter === val ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
                 }`}>{label}</button>
             ))}
           </div>
@@ -2157,7 +2157,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               {([['all','All Studios'],['Putney','Putney'],['Wimbledon','Wimbledon']] as const).map(([val, label]) => (
                 <button key={val} onClick={() => setStudioFilter(val as any)}
                   className={`px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
-                    studioFilter === val ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                    studioFilter === val ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
                   }`}>{label}</button>
               ))}
             </div>
@@ -2180,7 +2180,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
         {/* Bulk action bar */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-[#1B2D3C] text-white rounded-xl">
+          <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-[#DBE7E4] text-[#1B2D3C] rounded-xl">
             <span className="text-xs font-black">{selectedIds.size} selected</span>
             <div className="flex-1" />
             {canUpdateStatus && (
@@ -2307,7 +2307,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       <span>{inq.time}</span>
                       <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#D6E2E9] text-[#1B2D3C] rounded-full text-[10px] font-black"><Users className="w-2.5 h-2.5" />{inq.paintersCount}</span>
                       {inq.source === 'walk-in' && <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold">Walk-in</span>}
-                      {tablePlanEnabled && inq.tableId && <span className="px-1.5 py-0.5 bg-[#1B2D3C] text-white rounded-full text-[10px] font-bold">{inq.tableId}</span>}
+                      {tablePlanEnabled && inq.tableId && <span className="px-1.5 py-0.5 bg-[#DBE7E4] text-[#1B2D3C] rounded-full text-[10px] font-bold">{inq.tableId}</span>}
                     </div>
                     {canUpdateStatus && inq.status !== 'cancelled' && (
                       <div className="flex gap-2 pt-1" onClick={e => e.stopPropagation()}>
@@ -2408,7 +2408,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                             <button onClick={() => setAssignModalBooking(inq)}
                               className={`px-2 py-1 text-[10px] font-bold border transition-all cursor-pointer rounded-lg ${
-                                inq.tableId ? 'bg-[#1B2D3C] text-white border-[#1B2D3C] hover:bg-[#486581]' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                                inq.tableId ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C] hover:bg-[#D6E2E9]' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
                               }`}>
                               {inq.tableId ?? 'Assign'}
                             </button>
@@ -2586,7 +2586,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg max-h-[90vh] overflow-y-auto sm:rounded-xl">
             <div className="flex items-center justify-between">
               <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Add Booking</h3>
-              <button onClick={() => setShowAddModal(false)} className="p-1.5 rounded-full hover:bg-[#1B2D3C]/5 transition-colors cursor-pointer">
+              <button onClick={() => setShowAddModal(false)} className="p-1.5 rounded-full hover:bg-[#D6E2E9] transition-colors cursor-pointer">
                 <XIcon className="w-5 h-5 text-[#1B2D3C]/60" />
               </button>
             </div>
@@ -2623,7 +2623,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         <button key={t} type="button"
                           onClick={() => setNewBooking(prev => ({ ...prev, sessionType: t, time: undefined }))}
                           className={`flex-1 px-2 py-2 text-[10px] font-bold transition-all cursor-pointer ${
-                            newBooking.sessionType === t ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                            newBooking.sessionType === t ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
                           }`}>{labels[t]}</button>
                       );
                     })}
@@ -2959,7 +2959,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <span className="text-[10px] text-[#1B2D3C]/50 font-semibold">or click a table below</span>
               </div>
               {assignModalBooking.tableId && (
-                <div className="mb-3 flex items-center justify-between bg-[#1B2D3C] text-white px-4 py-2 rounded-lg text-xs font-bold">
+                <div className="mb-3 flex items-center justify-between bg-[#DBE7E4] text-[#1B2D3C] px-4 py-2 rounded-lg text-xs font-bold">
                   <span>Currently assigned: {assignModalBooking.tableId}</span>
                   <button
                     onClick={() => updateBookingTable(assignModalBooking.id, null)}
@@ -3066,7 +3066,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           <button key={opt.label} type="button"
                             onClick={() => setNewStaff({ ...newStaff, allowedStudios: opt.value })}
                             className={`flex-1 py-2 text-xs font-bold transition-all cursor-pointer ${
-                              isSelected ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                              isSelected ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
                             }`}>
                             {opt.label}
                           </button>
@@ -3390,7 +3390,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     <button
                       onClick={() => updateCapacity(capacityRows[index])}
                       disabled={capacitySaving}
-                      className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#1B2D3C]/90 disabled:opacity-50 cursor-pointer rounded-lg"
+                      className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider hover:bg-[#D6E2E9] disabled:opacity-50 cursor-pointer rounded-lg"
                     >
                       Save
                     </button>
@@ -3414,7 +3414,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   onClick={() => setTimeSlotStudio(studio)}
                   className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer border transition-colors ${
                     timeSlotStudio === studio
-                      ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                      ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
                       : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:bg-[#D6E2E9]/20'
                   }`}
                 >
@@ -3497,7 +3497,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         setNewSlotInput(prev => ({ ...prev, [type]: '' }));
                         showToast(`Slot added to ${labels[type]}`, 'success');
                       }}
-                      className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#1B2D3C]/90 cursor-pointer flex items-center gap-1"
+                      className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] cursor-pointer flex items-center gap-1"
                     >
                       <Plus className="w-3.5 h-3.5" /> Add
                     </button>
@@ -3566,7 +3566,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
                     showToast('School holiday period added', 'success');
                   }}
-                  className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#1B2D3C]/90 cursor-pointer flex items-center justify-center gap-1"
+                  className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] cursor-pointer flex items-center justify-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add Period
                 </button>
@@ -3622,7 +3622,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
                     if (existingOnDate.length === 0) showToast('Closed date added', 'success');
                   }}
-                  className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#1B2D3C]/90 cursor-pointer flex items-center gap-1"
+                  className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] cursor-pointer flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add
                 </button>
@@ -3667,7 +3667,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               {(['sandbox', 'live'] as const).map(mode => (
                 <button key={mode} onClick={() => updateStripeMode(mode)}
                   className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                    stripeMode === mode ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                    stripeMode === mode ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
                   }`}>
                   {mode}
                 </button>
@@ -3698,7 +3698,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               />
               <button
                 onClick={() => updatePartyPrice(partyPrice)}
-                className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-all cursor-pointer"
+                className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
                 Save
               </button>
@@ -3858,7 +3858,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <button
                   onClick={createDbBackup}
                   disabled={dbBackupLoading || selectedBackupTables.length === 0}
-                  className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                  className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" /> Create Backup
                 </button>
@@ -3985,7 +3985,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     <button
                       onClick={addSampleData}
                       disabled={sampleDataLoading}
-                      className="flex-1 px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                      className="flex-1 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                     >
                       <Plus className="w-4 h-4" /> Add Sample Data
                     </button>
@@ -4260,7 +4260,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setDrawerBooking(null)} />
           <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-2xl z-50 flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="px-5 py-4 bg-[#1B2D3C] text-white flex items-start justify-between">
+            <div className="px-5 py-4 bg-[#DBE7E4] text-[#1B2D3C] flex items-start justify-between">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Booking</p>
                 <p className="font-heading font-black text-lg leading-tight">{drawerBooking.name}</p>
@@ -4281,7 +4281,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   {drawerBooking.status === 'confirmed' ? 'Confirmed' : drawerBooking.status === 'cancelled' ? 'Cancelled' : 'Awaiting confirmation'}
                 </span>
                 {drawerBooking.tableId && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-black bg-[#1B2D3C] text-white rounded-full">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-black bg-[#DBE7E4] text-[#1B2D3C] rounded-full">
                     {drawerBooking.tableId}
                   </span>
                 )}
@@ -4399,7 +4399,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               <div className="flex gap-2">
                 {tablePlanEnabled && (
                   <button onClick={() => { setAssignModalBooking(drawerBooking); setDrawerBooking(null); }}
-                    className={`flex-1 px-3 py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${drawerBooking.tableId ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                    className={`flex-1 px-3 py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${drawerBooking.tableId ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                     {drawerBooking.tableId ? `Tables: ${drawerBooking.tableId}` : 'Assign Table'}
                   </button>
                 )}
@@ -4476,7 +4476,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 Cancel
               </button>
               <button onClick={sendPartyReminder} disabled={sendingReminder}
-                className="flex-1 py-3 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-all cursor-pointer disabled:opacity-50">
+                className="flex-1 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-all cursor-pointer disabled:opacity-50">
                 {sendingReminder ? 'Sending...' : 'Send reminder'}
               </button>
             </div>

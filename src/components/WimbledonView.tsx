@@ -182,7 +182,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
                         disabled={isFull}
                         className={`py-3 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
                           time === slot
-                            ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                            ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
                             : isFull
                               ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
                               : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'

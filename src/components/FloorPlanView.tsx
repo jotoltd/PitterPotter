@@ -46,7 +46,7 @@ export default function FloorPlanView({ bookings = [] }: FloorPlanViewProps) {
               onClick={() => setStudio(s)}
               className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
                 studio === s
-                  ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                  ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
                   : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
               }`}
             >
@@ -57,7 +57,7 @@ export default function FloorPlanView({ bookings = [] }: FloorPlanViewProps) {
             onClick={() => setShowAnalytics(v => !v)}
             className={`px-4 py-2 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
               showAnalytics
-                ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
                 : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
             }`}
           >

@@ -51,7 +51,7 @@ function PaymentForm({ onSuccess, amount, loading, setLoading }: { onSuccess: ()
         <PaymentElement options={{ layout: 'tabs' }} />
       </div>
       {error && <p className="text-xs font-bold text-red-600">{error}</p>}
-      <button type="submit" disabled={!stripe || loading} className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer rounded-lg disabled:opacity-50">
+      <button type="submit" disabled={!stripe || loading} className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer rounded-lg disabled:opacity-50">
         {loading ? 'Processing...' : `Pay £${amount.toFixed(2)} deposit`}
       </button>
       <p className="text-[10px] text-[#1B2D3C]/50 text-center">Payments processed securely by Stripe.</p>
@@ -457,7 +457,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
 
           <button
             onClick={() => setCurrentPage('home')}
-            className="w-full py-3 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer"
+            className="w-full py-3 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer"
           >
             <EditableText contentKey="party_success_home" page="party-booking" defaultValue="Back to Home" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
@@ -567,7 +567,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
                     disabled={isFull}
                     className={`py-3 px-2 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer rounded-lg ${
                       time === slot
-                        ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                        ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
                         : isFull
                           ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
                           : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
@@ -725,7 +725,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
         <button
           onClick={handleSubmit}
           disabled={!date || !time || !name || !phone || submitting}
-          className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitting ? <EditableText contentKey="party_submitting" page="party-booking" defaultValue="Submitting..." adminMode={adminMode} className="text-xs uppercase tracking-widest" /> : <><EditableText contentKey={`party_submit_button_${partyType}`} page="party-booking" defaultValue={info.title === 'Corporate Event' ? 'Submit Enquiry' : `Book Party & Pay £${depositAmount.toFixed(2)} Deposit`} adminMode={adminMode} className="text-xs uppercase tracking-widest" /> <ArrowRight className="w-4 h-4" /></>}
         </button>

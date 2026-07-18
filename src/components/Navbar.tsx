@@ -90,7 +90,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                   onClick={() => setAdminMode(!adminMode)}
                   className={`ml-3 px-3 py-2.5 text-[11px] font-normal uppercase tracking-widest border transition-all cursor-pointer flex items-center gap-1.5 ${
                     adminMode
-                      ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                      ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
                       : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
                   }`}
                 >

@@ -186,7 +186,7 @@ export default function EditableText({ contentKey, page, defaultValue, className
               <h3 className="font-heading text-base font-black text-[#1B2D3C] flex items-center gap-2">
                 <Pencil className="w-4 h-4 text-amber-500" /> Edit Text
               </h3>
-              <button onClick={handleCancel} className="p-1.5 rounded-full hover:bg-[#1B2D3C]/5 cursor-pointer">
+              <button onClick={handleCancel} className="p-1.5 rounded-full hover:bg-[#D6E2E9] cursor-pointer">
                 <X className="w-4 h-4 text-[#1B2D3C]/50" />
               </button>
             </div>
@@ -196,7 +196,7 @@ export default function EditableText({ contentKey, page, defaultValue, className
               <button
                 onClick={handleUndo}
                 disabled={historyIndex <= 0}
-                className="p-2 rounded hover:bg-[#1B2D3C]/10 disabled:opacity-30 cursor-pointer transition-colors"
+                className="p-2 rounded hover:bg-[#D6E2E9] disabled:opacity-30 cursor-pointer transition-colors"
                 title="Undo"
               >
                 <Undo className="w-4 h-4 text-[#1B2D3C]" />
@@ -204,7 +204,7 @@ export default function EditableText({ contentKey, page, defaultValue, className
               <button
                 onClick={handleRedo}
                 disabled={historyIndex >= history.length - 1}
-                className="p-2 rounded hover:bg-[#1B2D3C]/10 disabled:opacity-30 cursor-pointer transition-colors"
+                className="p-2 rounded hover:bg-[#D6E2E9] disabled:opacity-30 cursor-pointer transition-colors"
                 title="Redo"
               >
                 <Redo className="w-4 h-4 text-[#1B2D3C]" />
@@ -212,28 +212,28 @@ export default function EditableText({ contentKey, page, defaultValue, className
               <div className="w-px h-6 bg-[#1B2D3C]/20 mx-1" />
               <button
                 onClick={() => execCommand('bold')}
-                className="p-2 rounded hover:bg-[#1B2D3C]/10 cursor-pointer transition-colors"
+                className="p-2 rounded hover:bg-[#D6E2E9] cursor-pointer transition-colors"
                 title="Bold"
               >
                 <Bold className="w-4 h-4 text-[#1B2D3C]" />
               </button>
               <button
                 onClick={() => execCommand('italic')}
-                className="p-2 rounded hover:bg-[#1B2D3C]/10 cursor-pointer transition-colors"
+                className="p-2 rounded hover:bg-[#D6E2E9] cursor-pointer transition-colors"
                 title="Italic"
               >
                 <Italic className="w-4 h-4 text-[#1B2D3C]" />
               </button>
               <button
                 onClick={() => execCommand('underline')}
-                className="p-2 rounded hover:bg-[#1B2D3C]/10 cursor-pointer transition-colors"
+                className="p-2 rounded hover:bg-[#D6E2E9] cursor-pointer transition-colors"
                 title="Underline"
               >
                 <Underline className="w-4 h-4 text-[#1B2D3C]" />
               </button>
               <button
                 onClick={handleAddLink}
-                className="p-2 rounded hover:bg-[#1B2D3C]/10 cursor-pointer transition-colors"
+                className="p-2 rounded hover:bg-[#D6E2E9] cursor-pointer transition-colors"
                 title="Add Link"
               >
                 <Link className="w-4 h-4 text-[#1B2D3C]" />
@@ -241,21 +241,21 @@ export default function EditableText({ contentKey, page, defaultValue, className
               <div className="w-px h-6 bg-[#1B2D3C]/20 mx-1" />
               <button
                 onClick={() => execCommand('justifyLeft')}
-                className="p-2 rounded hover:bg-[#1B2D3C]/10 cursor-pointer transition-colors"
+                className="p-2 rounded hover:bg-[#D6E2E9] cursor-pointer transition-colors"
                 title="Align Left"
               >
                 <AlignLeft className="w-4 h-4 text-[#1B2D3C]" />
               </button>
               <button
                 onClick={() => execCommand('justifyCenter')}
-                className="p-2 rounded hover:bg-[#1B2D3C]/10 cursor-pointer transition-colors"
+                className="p-2 rounded hover:bg-[#D6E2E9] cursor-pointer transition-colors"
                 title="Align Center"
               >
                 <AlignCenter className="w-4 h-4 text-[#1B2D3C]" />
               </button>
               <button
                 onClick={() => execCommand('justifyRight')}
-                className="p-2 rounded hover:bg-[#1B2D3C]/10 cursor-pointer transition-colors"
+                className="p-2 rounded hover:bg-[#D6E2E9] cursor-pointer transition-colors"
                 title="Align Right"
               >
                 <AlignRight className="w-4 h-4 text-[#1B2D3C]" />
@@ -281,7 +281,7 @@ export default function EditableText({ contentKey, page, defaultValue, className
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="flex-1 py-2.5 bg-[#1B2D3C] text-white rounded-xl text-xs font-bold hover:bg-[#486581] cursor-pointer transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 py-2.5 bg-[#DBE7E4] text-[#1B2D3C] rounded-xl text-xs font-bold hover:bg-[#D6E2E9] cursor-pointer transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Check className="w-4 h-4" /> {loading ? 'Saving…' : 'Save'}
               </button>

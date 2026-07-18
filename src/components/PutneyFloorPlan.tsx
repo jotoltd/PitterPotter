@@ -350,7 +350,7 @@ export default function PutneyFloorPlan({
           <p className="text-[10px] text-[#1B2D3C]/50 font-semibold mt-0.5">10 tables · 234 Upper Richmond Road, London, SW15 6TG</p>
         </div>
         {selectedTable && (
-          <div className="bg-[#1B2D3C] text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+          <div className="bg-[#DBE7E4] text-[#1B2D3C] px-3 py-1.5 rounded-lg text-xs font-bold">
             {selectedTable.label} selected · {selectedTable.chairs.length} seats
           </div>
         )}

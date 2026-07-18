@@ -164,7 +164,7 @@ export default function EditableButton({
               <h3 className="font-heading text-base font-black text-[#1B2D3C] flex items-center gap-2">
                 <Pencil className="w-4 h-4 text-amber-500" /> Edit Button
               </h3>
-              <button onClick={() => setIsEditing(false)} className="p-1.5 rounded-full hover:bg-[#1B2D3C]/5 cursor-pointer">
+              <button onClick={() => setIsEditing(false)} className="p-1.5 rounded-full hover:bg-[#D6E2E9] cursor-pointer">
                 <X className="w-4 h-4 text-[#1B2D3C]/50" />
               </button>
             </div>
@@ -186,14 +186,14 @@ export default function EditableButton({
                 <button
                   type="button"
                   onClick={() => setLinkType('internal')}
-                  className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 ${linkType === 'internal' ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'}`}
+                  className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 ${linkType === 'internal' ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'}`}
                 >
                   <ArrowRight className="w-3 h-3" /> Internal Page
                 </button>
                 <button
                   type="button"
                   onClick={() => setLinkType('external')}
-                  className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 ${linkType === 'external' ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'}`}
+                  className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 ${linkType === 'external' ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'}`}
                 >
                   <ExternalLink className="w-3 h-3" /> External URL
                 </button>
@@ -231,7 +231,7 @@ export default function EditableButton({
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="flex-1 py-2.5 bg-[#1B2D3C] text-white rounded-xl text-xs font-bold hover:bg-[#486581] cursor-pointer transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 py-2.5 bg-[#DBE7E4] text-[#1B2D3C] rounded-xl text-xs font-bold hover:bg-[#D6E2E9] cursor-pointer transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Check className="w-4 h-4" /> {loading ? 'Saving…' : 'Save'}
               </button>

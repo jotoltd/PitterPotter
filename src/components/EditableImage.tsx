@@ -316,7 +316,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
               <h3 className="font-heading text-base font-black text-[#1B2D3C] flex items-center gap-2">
                 <ImageIcon className="w-4 h-4 text-amber-500" /> Image Gallery
               </h3>
-              <button onClick={() => setShowGallery(false)} className="p-1.5 rounded-full hover:bg-[#1B2D3C]/5 cursor-pointer">
+              <button onClick={() => setShowGallery(false)} className="p-1.5 rounded-full hover:bg-[#D6E2E9] cursor-pointer">
                 <X className="w-4 h-4 text-[#1B2D3C]/50" />
               </button>
             </div>
@@ -342,13 +342,13 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => scrollSet(set, 'left')}
-                            className="p-1 rounded hover:bg-[#1B2D3C]/10 text-[#1B2D3C]/60 transition-colors cursor-pointer"
+                            className="p-1 rounded hover:bg-[#D6E2E9] text-[#1B2D3C]/60 transition-colors cursor-pointer"
                           >
                             <ChevronLeft className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => scrollSet(set, 'right')}
-                            className="p-1 rounded hover:bg-[#1B2D3C]/10 text-[#1B2D3C]/60 transition-colors cursor-pointer"
+                            className="p-1 rounded hover:bg-[#D6E2E9] text-[#1B2D3C]/60 transition-colors cursor-pointer"
                           >
                             <ChevronRight className="w-4 h-4" />
                           </button>
@@ -393,7 +393,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={loading}
-                className="w-full py-3 bg-[#1B2D3C] text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#486581] cursor-pointer transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3 bg-[#DBE7E4] text-[#1B2D3C] rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#D6E2E9] cursor-pointer transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Upload className="w-4 h-4" /> Upload New Image
               </button>

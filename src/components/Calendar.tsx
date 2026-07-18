@@ -68,7 +68,7 @@ export default function Calendar({
       <div className="flex items-center justify-between mb-4 px-2">
         <button
           onClick={() => onMonthChange(subMonths(month, 1))}
-          className="p-2 rounded-full hover:bg-[#1B2D3C]/5 transition-colors"
+          className="p-2 rounded-full hover:bg-[#D6E2E9] transition-colors"
           aria-label="Previous month"
         >
           <ChevronLeft className="w-5 h-5 text-[#1B2D3C]" />
@@ -78,7 +78,7 @@ export default function Calendar({
         </h2>
         <button
           onClick={() => onMonthChange(addMonths(month, 1))}
-          className="p-2 rounded-full hover:bg-[#1B2D3C]/5 transition-colors"
+          className="p-2 rounded-full hover:bg-[#D6E2E9] transition-colors"
           aria-label="Next month"
         >
           <ChevronRight className="w-5 h-5 text-[#1B2D3C]" />
@@ -113,13 +113,13 @@ export default function Calendar({
                 ${!inMonth ? 'opacity-0 pointer-events-none bg-white' : ''}
                 ${disabledDay && inMonth ? 'bg-stone-100 text-stone-400 cursor-not-allowed' : ''}
                 ${!disabledDay && inMonth ? 'text-[#1B2D3C] cursor-pointer hover:bg-[#D6E2E9]/30' : ''}
-                ${selectedDay && inMonth ? 'bg-[#1B2D3C] text-white hover:bg-[#1B2D3C]' : ''}
+                ${selectedDay && inMonth ? 'bg-[#DBE7E4] text-[#1B2D3C] hover:bg-[#D6E2E9]' : ''}
                 ${today && !selectedDay && inMonth ? 'bg-[#D6E2E9]/50 font-black' : ''}
               `}
             >
               <span className={`
                 w-8 h-8 flex items-center justify-center text-sm rounded-full
-                ${today && !selectedDay && inMonth ? 'bg-[#1B2D3C] text-white' : ''}
+                ${today && !selectedDay && inMonth ? 'bg-[#DBE7E4] text-[#1B2D3C]' : ''}
                 ${selectedDay && inMonth ? 'font-bold' : ''}
               `}>
                 {format(day, 'do')}

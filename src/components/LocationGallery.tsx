@@ -301,7 +301,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={loading}
-              className="md:hidden flex items-center gap-2 px-3 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-colors cursor-pointer disabled:opacity-50"
+              className="md:hidden flex items-center gap-2 px-3 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer disabled:opacity-50"
             >
               <Upload className="w-4 h-4" /> {loading ? 'Uploading...' : 'Add Image'}
             </button>
@@ -325,7 +325,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
               <button
                 onClick={handleAddUrl}
                 disabled={loading || !urlValue.trim()}
-                className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold rounded-lg hover:bg-[#486581] cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold rounded-lg hover:bg-[#D6E2E9] cursor-pointer disabled:opacity-50"
               >
                 Add
               </button>

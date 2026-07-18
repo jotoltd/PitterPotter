@@ -81,7 +81,7 @@ export default function GiftCardSuccessView({ setCurrentPage, adminMode = false 
           <p className="text-red-700 font-bold">{error}</p>
           <button
             onClick={() => setCurrentPage('buy-gift-card')}
-            className="px-6 py-2.5 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-widest cursor-pointer"
+            className="px-6 py-2.5 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest cursor-pointer"
           >
             <EditableText contentKey="giftcardsuccess_try_again" page="gift-card-success" defaultValue="Try Again" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
@@ -129,7 +129,7 @@ export default function GiftCardSuccessView({ setCurrentPage, adminMode = false 
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <button
             onClick={() => setCurrentPage('home')}
-            className="flex-1 py-3 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-widest cursor-pointer"
+            className="flex-1 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest cursor-pointer"
           >
             <EditableText contentKey="giftcardsuccess_home" page="gift-card-success" defaultValue="Back to Home" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>

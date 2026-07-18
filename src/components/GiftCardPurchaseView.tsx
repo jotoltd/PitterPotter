@@ -80,7 +80,7 @@ function PaymentForm({ onSuccess, onError, loading, setLoading, finalAmount, rec
       <button
         type="submit"
         disabled={!stripe || loading}
-        className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
+        className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {loading ? <EditableText contentKey="buygiftcard_processing" page="buy-gift-card" defaultValue="Processing..." adminMode={adminMode} className="text-xs uppercase tracking-widest" /> : (
           <>
@@ -180,7 +180,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
           </p>
           <button
             onClick={() => setCurrentPage('home')}
-            className="w-full py-3 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer rounded-lg"
+            className="w-full py-3 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer rounded-lg"
           >
             <EditableText contentKey="buygiftcard_success_home" page="buy-gift-card" defaultValue="Back to Home" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
@@ -225,7 +225,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
                     }}
                     className={`py-2 text-xs font-bold border transition-all cursor-pointer rounded-lg ${
                       !useCustom && amount === preset
-                        ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                        ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
                         : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
                     }`}
                   >
@@ -318,7 +318,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {loading ? <EditableText contentKey="buygiftcard_loading" page="buy-gift-card" defaultValue="Loading..." adminMode={adminMode} className="text-xs uppercase tracking-widest" /> : (
                   <>

@@ -194,7 +194,7 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
                         type="button"
                         onClick={() => setTime(slot)}
                         className={`px-3 py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer ${
-                          time === slot ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]' : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]/60'
+                          time === slot ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]' : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]/60'
                         }`}
                       >
                         {slot} – {parseInt(slot.split(':')[0], 10) + 2}:00
@@ -269,7 +269,7 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-4 bg-[#1B2D3C] text-white font-bold text-sm uppercase tracking-widest rounded-xl hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-sm uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : <>Confirm Booking <ArrowRight className="w-4 h-4" /></>}
           </button>

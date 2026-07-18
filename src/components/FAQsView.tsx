@@ -229,7 +229,7 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
         {adminMode && (
           <button
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Add FAQ
           </button>
@@ -241,7 +241,7 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
         <div className="bg-white border-2 border-[#1B2D3C]/20 rounded-xl p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-heading text-base font-black text-[#1B2D3C]">Add New FAQ</h3>
-            <button onClick={() => setIsAdding(false)} className="p-1.5 rounded-full hover:bg-[#1B2D3C]/5 cursor-pointer">
+            <button onClick={() => setIsAdding(false)} className="p-1.5 rounded-full hover:bg-[#D6E2E9] cursor-pointer">
               <X className="w-4 h-4 text-[#1B2D3C]/50" />
             </button>
           </div>
@@ -268,7 +268,7 @@ export default function FAQsView({ adminMode = false, setCurrentPage }: FAQsView
           <button
             onClick={handleAddFAQ}
             disabled={loading}
-            className="w-full py-3 bg-[#1B2D3C] text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#486581] cursor-pointer transition-colors disabled:opacity-50"
+            className="w-full py-3 bg-[#DBE7E4] text-[#1B2D3C] rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#D6E2E9] cursor-pointer transition-colors disabled:opacity-50"
           >
             {loading ? 'Adding...' : 'Add FAQ'}
           </button>

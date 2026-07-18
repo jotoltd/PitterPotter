@@ -320,7 +320,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         {adminMode && (
           <button
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Add Image
           </button>
@@ -333,7 +333,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
           <div className="bg-white border-2 border-[#1B2D3C]/20 rounded-xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-heading text-base font-black text-[#1B2D3C]">Add New Image</h3>
-              <button onClick={() => { setIsAdding(false); setUploadProgress(0); setImageUrl(''); }} className="p-1.5 rounded-full hover:bg-[#1B2D3C]/5 cursor-pointer">
+              <button onClick={() => { setIsAdding(false); setUploadProgress(0); setImageUrl(''); }} className="p-1.5 rounded-full hover:bg-[#D6E2E9] cursor-pointer">
                 <X className="w-4 h-4 text-[#1B2D3C]/50" />
               </button>
             </div>
@@ -343,14 +343,14 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
               <button
                 type="button"
                 onClick={() => setAddMethod('file')}
-                className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 ${addMethod === 'file' ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'}`}
+                className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 ${addMethod === 'file' ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'}`}
               >
                 <Upload className="w-3 h-3" /> Upload File
               </button>
               <button
                 type="button"
                 onClick={() => setAddMethod('url')}
-                className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 ${addMethod === 'url' ? 'bg-[#1B2D3C] text-white' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'}`}
+                className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 ${addMethod === 'url' ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'}`}
               >
                 <Plus className="w-3 h-3" /> From URL
               </button>
@@ -403,7 +403,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
                     }
                   }}
                   disabled={loading || !imageUrl.trim()}
-                  className="mt-3 w-full py-3 bg-[#1B2D3C] text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#486581] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="mt-3 w-full py-3 bg-[#DBE7E4] text-[#1B2D3C] rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#D6E2E9] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Adding...' : 'Add Image'}
                 </button>

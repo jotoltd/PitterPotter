@@ -179,7 +179,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
                       disabled={(slotCapacity[slot] ?? MAX_PAINTERS) === 0}
                       className={`py-3 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
                         time === slot
-                          ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                          ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
                           : (slotCapacity[slot] ?? MAX_PAINTERS) === 0
                             ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
                             : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
@@ -213,9 +213,9 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
             <button
               onClick={handleBookDate}
               disabled={!date || !time}
-              className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <EditableText contentKey="putney_book_button" page="putney" defaultValue="Book This Session" adminMode={adminMode} className="text-xs uppercase tracking-widest text-white" /> <ArrowRight className="w-4 h-4" />
+              <EditableText contentKey="putney_book_button" page="putney" defaultValue="Book This Session" adminMode={adminMode} className="text-xs uppercase tracking-widest text-[#1B2D3C]" /> <ArrowRight className="w-4 h-4" />
             </button>
 
             <button

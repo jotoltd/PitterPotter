@@ -75,7 +75,7 @@ function BookingModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-[#1B2D3C]/5 transition-colors"
+            className="p-2 rounded-full hover:bg-[#D6E2E9] transition-colors"
             aria-label="Close"
           >
             <X className="w-5 h-5 text-[#1B2D3C]" />
@@ -182,7 +182,7 @@ function BookingModal({
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     {b.tableId && (
-                      <span className="px-2 py-1 bg-[#1B2D3C] text-white text-[9px] font-bold rounded">{b.tableId}</span>
+                      <span className="px-2 py-1 bg-[#DBE7E4] text-[#1B2D3C] text-[9px] font-bold rounded">{b.tableId}</span>
                     )}
                     {b.status === 'pending' && onConfirm && (
                       <button

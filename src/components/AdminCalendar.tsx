@@ -74,14 +74,14 @@ export default function AdminCalendar({
           <div className="flex items-center">
             <button
               onClick={() => onMonthChange(subMonths(month, 1))}
-              className="p-2 rounded-l-lg hover:bg-[#1B2D3C]/5 transition-colors border border-[#1B2D3C]/20"
+              className="p-2 rounded-l-lg hover:bg-[#D6E2E9] transition-colors border border-[#1B2D3C]/20"
               aria-label="Previous month"
             >
               <ChevronLeft className="w-4 h-4 text-[#1B2D3C]" />
             </button>
             <button
               onClick={() => onMonthChange(addMonths(month, 1))}
-              className="p-2 rounded-r-lg hover:bg-[#1B2D3C]/5 transition-colors border border-[#1B2D3C]/20 border-l-0"
+              className="p-2 rounded-r-lg hover:bg-[#D6E2E9] transition-colors border border-[#1B2D3C]/20 border-l-0"
               aria-label="Next month"
             >
               <ChevronRight className="w-4 h-4 text-[#1B2D3C]" />
@@ -120,7 +120,7 @@ export default function AdminCalendar({
             >
               <span className={`
                 w-6 h-6 flex items-center justify-center text-xs font-black rounded-full
-                ${today ? 'bg-[#1B2D3C] text-white' : 'text-[#1B2D3C]'}
+                ${today ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'text-[#1B2D3C]'}
               `}>
                 {format(day, 'd')}
               </span>

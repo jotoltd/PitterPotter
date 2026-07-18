@@ -289,7 +289,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
               <div key={num} className="flex items-center flex-1 last:flex-none">
                 <div className="flex flex-col items-center gap-1">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all ${
-                    isDone ? 'bg-[#1B2D3C] border-[#1B2D3C] text-white'
+                    isDone ? 'bg-[#DBE7E4] border-[#1B2D3C] text-[#1B2D3C]'
                     : isActive ? 'bg-white border-[#1B2D3C] text-[#1B2D3C]'
                     : 'bg-white border-[#1B2D3C]/20 text-[#1B2D3C]/30'
                   }`}>
@@ -410,10 +410,10 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                     {(['Putney', 'Wimbledon'] as const).map((loc) => (
                       <button key={loc} type="button" onClick={() => setStudio(loc)}
                         className={`p-4 border-2 text-left transition-all cursor-pointer rounded-xl ${
-                          studio === loc ? 'border-[#1B2D3C] bg-[#1B2D3C] text-white' : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
+                          studio === loc ? 'border-[#1B2D3C] bg-[#DBE7E4] text-[#1B2D3C]' : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
                         }`}>
                         <p className="font-heading font-black italic text-base">{loc} Studio</p>
-                        <p className={`text-[11px] font-semibold mt-0.5 ${studio === loc ? 'text-white/70' : 'text-[#1B2D3C]/50'}`}>
+                        <p className={`text-[11px] font-semibold mt-0.5 ${studio === loc ? 'text-[#1B2D3C]' : 'text-[#1B2D3C]/50'}`}>
                           {loc === 'Putney' ? '234 Upper Richmond Road, London, SW15 6TG' : '52 Wimbledon Hill Road, London, SW19 7PA'}
                         </p>
                       </button>
@@ -428,7 +428,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                     {(['painting', 'birthday-party', 'baby-shower-hen', 'clay-imprints', 'corporate'] as const).map((type) => (
                       <button key={type} type="button" onClick={() => setSessionType(type)}
                         className={`py-2.5 px-3 border-2 text-left text-xs font-bold transition-all rounded-lg cursor-pointer ${
-                          sessionType === type ? 'border-[#1B2D3C] bg-[#1B2D3C] text-white' : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
+                          sessionType === type ? 'border-[#1B2D3C] bg-[#DBE7E4] text-[#1B2D3C]' : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
                         }`}>
                         {SESSION_TYPE_LABELS[type]}
                       </button>
@@ -461,7 +461,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                 )}
 
                 <button type="button" onClick={handleNext}
-                  className="w-full py-4 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2">
+                  className="w-full py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2">
                   Continue to Your Details <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -502,7 +502,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                     <ArrowLeft className="w-3.5 h-3.5" /> Back
                   </button>
                   <button type="button" onClick={handleNext}
-                    className="flex-1 py-4 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2">
+                    className="flex-1 py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2">
                     Review Booking <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -571,7 +571,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                     <ArrowLeft className="w-3.5 h-3.5" /> Back
                   </button>
                   <button type="submit" disabled={submitting}
-                    className="flex-1 py-4 bg-[#1B2D3C] text-white font-bold text-sm uppercase tracking-widest rounded-xl hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                    className="flex-1 py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-sm uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
                     {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : <>Confirm Booking <ArrowRight className="w-4 h-4" /></>}
                   </button>
                 </div>

@@ -19,7 +19,7 @@ export default function FoodDrinkView({ adminMode = false }: FoodDrinkViewProps)
         <p className="text-sm text-[#1B2D3C]/75 font-medium leading-relaxed max-w-md mx-auto">
           <EditableText contentKey="fooddrink_coming_soon_desc" page="food-drink" defaultValue="We're putting the finishing touches on something delicious. Check back soon for our food and drink menu." adminMode={adminMode} className="text-sm text-[#1B2D3C]/75 leading-relaxed" />
         </p>
-        <span className="inline-block px-4 py-1.5 bg-[#1B2D3C] text-white text-[10px] font-black uppercase tracking-widest rounded-full">
+        <span className="inline-block px-4 py-1.5 bg-[#DBE7E4] text-[#1B2D3C] text-[10px] font-black uppercase tracking-widest rounded-full">
           <EditableText contentKey="fooddrink_badge" page="food-drink" defaultValue="Coming Soon" adminMode={adminMode} className="text-[10px] uppercase tracking-widest" />
         </span>
       </div>
