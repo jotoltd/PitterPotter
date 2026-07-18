@@ -13,11 +13,11 @@ interface BabyPrintsBookingViewProps {
   adminMode?: boolean;
 }
 
-function getTimeSlots(date: Date, closures: ClosureDates): string[] {
+function getTimeSlots(date: Date, closures: ClosureDates, studio: 'Putney' | 'Wimbledon'): string[] {
   const day = getDay(date);
   const dateStr = format(date, 'yyyy-MM-dd');
   const isHoliday = isDateInHolidayRange(dateStr, closures.schoolHolidays);
-  if (day >= 2 || day === 0 || (day === 1 && isHoliday)) return getSlots('baby-prints');
+  if (day >= 2 || day === 0 || (day === 1 && isHoliday)) return getSlots('baby-prints', studio);
   return [];
 }
 
@@ -53,7 +53,7 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
   const minDate = useMemo(() => startOfDay(new Date()), []);
   const closedDatesAsDate = useMemo(() => getClosedDatesForStudio(closures.closedDates, studio).map(d => new Date(d + 'T00:00:00')), [closures.closedDates, studio]);
   const disabledDates = useMemo(() => [...busyDates, ...closedDatesAsDate], [busyDates, closedDatesAsDate]);
-  const timeSlots = date ? getTimeSlots(date, closures) : [];
+  const timeSlots = date ? getTimeSlots(date, closures, studio) : [];
   const today = new Date();
   const dayOfWeekDisabled = [1]; // Monday
 

@@ -53,26 +53,6 @@ export default function PotteryPaintingView({ setCurrentPage, adminMode = false 
         </div>
       </section>
 
-      {/* Studio Fee Banner */}
-      <section className="bg-[#1B2D3C] py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <div>
-            <p className="text-white font-black text-xl uppercase tracking-widest">
-              <EditableText contentKey="pp_fee_title" page="pottery-painting" defaultValue="Studio Fee: £5.95 per painter" adminMode={adminMode} className="text-white text-xl" />
-            </p>
-            <p className="text-white/60 text-sm mt-1">
-              <EditableText contentKey="pp_fee_sub" page="pottery-painting" defaultValue="Plus the cost of your chosen pottery piece — over 150 shapes from £8.95" adminMode={adminMode} className="text-white/60 text-sm" />
-            </p>
-          </div>
-          <button
-            onClick={() => setCurrentPage('price-list')}
-            className="shrink-0 px-5 py-2.5 border border-white/30 text-white text-xs font-black uppercase tracking-widest hover:bg-white/10 transition-colors rounded-xl cursor-pointer"
-          >
-            See Full Price List
-          </button>
-        </div>
-      </section>
-
       {/* How It Works */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <h2 className="font-heading text-3xl font-black text-[#1B2D3C] mb-10 tracking-tight">
@@ -103,7 +83,7 @@ export default function PotteryPaintingView({ setCurrentPage, adminMode = false 
 
       {/* Good To Know */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <div className="bg-[#DBE7E4]/40 border border-[#1B2D3C]/10 rounded-2xl p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <div className="bg-[#F8FAFB] border border-[#1B2D3C]/10 rounded-2xl p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div className="space-y-4">
             <h2 className="font-heading text-2xl font-black text-[#1B2D3C]">
               <EditableText contentKey="pp_info_title" page="pottery-painting" defaultValue="Good to Know" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" />
@@ -137,13 +117,13 @@ export default function PotteryPaintingView({ setCurrentPage, adminMode = false 
             </div>
             <button
               onClick={() => setCurrentPage('book')}
-              className="w-full py-3.5 bg-[#1B2D3C] text-white font-black text-xs uppercase tracking-widest hover:bg-[#486581] transition-colors rounded-xl cursor-pointer"
+              className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-black text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-xl cursor-pointer"
             >
               Book a Session
             </button>
             <button
               onClick={() => setCurrentPage('parties')}
-              className="w-full py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] font-black text-xs uppercase tracking-wider hover:bg-[#DBE7E4]/40 transition-colors rounded-xl cursor-pointer"
+              className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-black text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-xl cursor-pointer"
             >
               View Parties & Events
             </button>

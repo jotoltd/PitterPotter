@@ -8,15 +8,17 @@ function getKey(page: string, key: string): string {
 
 export function getCachedContent(page: string, key: string, defaultValue: string): string {
   const cacheKey = getKey(page, key);
-  if (memoryCache[cacheKey] !== undefined) return memoryCache[cacheKey];
+  const cached = memoryCache[cacheKey];
+  if (cached !== undefined && cached !== null && cached !== '') return cached;
 
   try {
     const stored = localStorage.getItem(CACHE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      if (parsed[cacheKey] !== undefined) {
-        memoryCache[cacheKey] = parsed[cacheKey];
-        return parsed[cacheKey];
+      const storedValue = parsed[cacheKey];
+      if (storedValue !== undefined && storedValue !== null && storedValue !== '') {
+        memoryCache[cacheKey] = storedValue;
+        return storedValue;
       }
     }
   } catch {
@@ -27,6 +29,8 @@ export function getCachedContent(page: string, key: string, defaultValue: string
 }
 
 export function setCachedContent(page: string, key: string, value: string): void {
+  if (value === undefined || value === null || value === '') return;
+
   const cacheKey = getKey(page, key);
   memoryCache[cacheKey] = value;
 

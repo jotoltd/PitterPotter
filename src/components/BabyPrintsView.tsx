@@ -24,6 +24,8 @@ function getDefaultGalleryItems(): GalleryItem[] {
     { key: 'gallery_1', src: getCachedContent('baby-prints', 'gallery_1', Images.productGallery[0]), alt: 'Baby print example 2' },
     { key: 'gallery_2', src: getCachedContent('baby-prints', 'gallery_2', Images.productGallery[1]), alt: 'Baby print example 3' },
     { key: 'gallery_3', src: getCachedContent('baby-prints', 'gallery_3', Images.productGallery[2]), alt: 'Baby print example 4' },
+    { key: 'gallery_4', src: getCachedContent('baby-prints', 'gallery_4', Images.productGallery[3]), alt: 'Baby print example 5' },
+    { key: 'gallery_5', src: getCachedContent('baby-prints', 'gallery_5', Images.productGallery[4]), alt: 'Baby print example 6' },
   ];
 }
 
@@ -87,7 +89,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
     setGalleryImages((prev) => prev.filter((img) => img.key !== key));
   };
 
-  const displayedImages = adminMode ? galleryImages : galleryImages.slice(0, 4);
+  const displayedImages = adminMode ? galleryImages : galleryImages.slice(0, 6);
   const lightboxImages = galleryImages;
 
   return (
@@ -151,7 +153,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
       </div>
 
       {/* Gallery */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {displayedImages.map((item) => (
           <div
             key={item.key}

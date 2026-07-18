@@ -145,7 +145,7 @@ class PosViewModel(application: Application) : AndroidViewModel(application) {
                 code = code,
                 amount = response.amount ?: 0.0,
                 balance = response.balance ?: 0.0,
-                status = response.status ?: "unknown"
+                status = response.sta tus ?: "unknown"
             )
             currentCard = card
             currentScreen = Screen.Payment(card)

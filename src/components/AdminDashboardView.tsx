@@ -10,7 +10,7 @@ import { format, isSameDay, parseISO } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { loadBookings, createBooking, updateBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
-import { getAllSlots, getSlots, setSlots, DEFAULT_SLOTS, SlotSessionType, loadSlotsFromSupabase, saveSlotsToSupabase } from '../lib/timeSlots';
+import { getAllSlots, getSlots, setSlots, DEFAULT_SLOTS, SlotSessionType, Studio, TimeSlotsData, getStudioSlots, sortSlots, loadSlotsFromSupabase, saveSlotsToSupabase } from '../lib/timeSlots';
 import { loadClosuresFromSupabase, saveClosuresToSupabase, getClosureDates, ClosureDates, HolidayRange } from '../lib/closures';
 import { useToast } from './ToastContext';
 import Skeleton from './Skeleton';
@@ -76,7 +76,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [tablePlanEnabled, setTablePlanEnabled] = useState<boolean>(false);
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
   const [capacitySaving, setCapacitySaving] = useState(false);
-  const [timeSlotConfig, setTimeSlotConfig] = useState<Record<SlotSessionType, string[]>>(() => getAllSlots());
+  const [timeSlotConfig, setTimeSlotConfig] = useState<TimeSlotsData>(() => getAllSlots());
+  const [timeSlotStudio, setTimeSlotStudio] = useState<Studio>('Putney');
   const [newSlotInput, setNewSlotInput] = useState<Record<SlotSessionType, string>>({ painting: '', 'baby-prints': '', party: '' });
   const [closures, setClosures] = useState<ClosureDates>(getClosureDates());
   const [newHolidayFrom, setNewHolidayFrom] = useState('');
@@ -2664,7 +2665,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   {(() => {
                     const sType = newBooking.sessionType || 'painting';
                     const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : 'painting';
-                    return getSlots(slotKey).map(s => <option key={s} value={s}>{s}</option>);
+                    return getSlots(slotKey, newBooking.studio || 'Putney').map(s => <option key={s} value={s}>{s}</option>);
                   })()}
                 </select>
               </div>
@@ -2846,7 +2847,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   {(() => {
                     const sType = editingBooking.sessionType || 'painting';
                     const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : 'painting';
-                    const slots = getSlots(slotKey);
+                    const slots = getSlots(slotKey, editingBooking.studio || 'Putney');
                     const existing = editingBooking.time;
                     const allSlots = existing && !slots.includes(existing) ? [existing, ...slots] : slots;
                     return allSlots.map(s => <option key={s} value={s}>{s}</option>);
@@ -3403,27 +3404,44 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-6">
             <div>
               <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Time Slots</h2>
-              <p className="text-xs text-[#1B2D3C]/70 mt-1">Configure available booking times for each session type. Changes are saved globally and apply to all users.</p>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Configure available booking times per studio and session type. Changes are saved globally and apply to all users.</p>
             </div>
+
+            <div className="flex gap-2">
+              {(['Putney', 'Wimbledon'] as Studio[]).map((studio) => (
+                <button
+                  key={studio}
+                  onClick={() => setTimeSlotStudio(studio)}
+                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer border transition-colors ${
+                    timeSlotStudio === studio
+                      ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                      : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:bg-[#D6E2E9]/20'
+                  }`}
+                >
+                  {studio}
+                </button>
+              ))}
+            </div>
+
             {(['painting', 'baby-prints', 'party'] as SlotSessionType[]).map((type) => {
               const labels: Record<SlotSessionType, string> = { painting: 'Painting', 'baby-prints': 'Baby Prints', party: 'Party' };
 
-              const applySlotChange = (nextConfig: Record<SlotSessionType, string[]>) => {
+              const applySlotChange = (nextConfig: TimeSlotsData) => {
                 setTimeSlotConfig(nextConfig);
-                setSlots(type, nextConfig[type]);
+                setSlots(type, nextConfig[timeSlotStudio][type], timeSlotStudio);
                 saveSlotsToSupabase(nextConfig, staff.username, staff.sessionToken ?? '').catch(() => {
                   showToast('Failed to save time slots', 'error');
                 });
               };
 
               return (
-                <div key={type} className="space-y-3">
+                <div key={`${timeSlotStudio}-${type}`} className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">{labels[type]}</h3>
                     <button
                       onClick={() => {
-                        const reset = DEFAULT_SLOTS[type];
-                        const nextConfig = { ...timeSlotConfig, [type]: reset };
+                        const reset = DEFAULT_SLOTS[timeSlotStudio][type];
+                        const nextConfig = { ...timeSlotConfig, [timeSlotStudio]: { ...timeSlotConfig[timeSlotStudio], [type]: reset } };
                         applySlotChange(nextConfig);
                         showToast(`${labels[type]} slots reset to default`, 'success');
                       }}
@@ -3433,13 +3451,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {timeSlotConfig[type].map((slot) => (
+                    {timeSlotConfig[timeSlotStudio][type].map((slot) => (
                       <span key={slot} className="flex items-center gap-1 px-2.5 py-1.5 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold rounded-lg">
                         {slot}
                         <button
                           onClick={() => {
-                            const updated = timeSlotConfig[type].filter(s => s !== slot);
-                            applySlotChange({ ...timeSlotConfig, [type]: updated });
+                            const updated = timeSlotConfig[timeSlotStudio][type].filter(s => s !== slot);
+                            const nextConfig = { ...timeSlotConfig, [timeSlotStudio]: { ...timeSlotConfig[timeSlotStudio], [type]: sortSlots(updated) } };
+                            applySlotChange(nextConfig);
                           }}
                           className="ml-0.5 hover:text-red-600 cursor-pointer"
                         >
@@ -3459,9 +3478,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           const val = newSlotInput[type].trim();
-                          if (!val || timeSlotConfig[type].includes(val)) return;
-                          const updated = [...timeSlotConfig[type], val].sort((a, b) => a.split('-')[0].localeCompare(b.split('-')[0]));
-                          applySlotChange({ ...timeSlotConfig, [type]: updated });
+                          if (!val || timeSlotConfig[timeSlotStudio][type].includes(val)) return;
+                          const updated = sortSlots([...timeSlotConfig[timeSlotStudio][type], val]);
+                          const nextConfig = { ...timeSlotConfig, [timeSlotStudio]: { ...timeSlotConfig[timeSlotStudio], [type]: updated } };
+                          applySlotChange(nextConfig);
                           setNewSlotInput(prev => ({ ...prev, [type]: '' }));
                           showToast(`Slot added to ${labels[type]}`, 'success');
                         }
@@ -3470,9 +3490,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     <button
                       onClick={() => {
                         const val = newSlotInput[type].trim();
-                        if (!val || timeSlotConfig[type].includes(val)) return;
-                        const updated = [...timeSlotConfig[type], val].sort((a, b) => a.split('-')[0].localeCompare(b.split('-')[0]));
-                        applySlotChange({ ...timeSlotConfig, [type]: updated });
+                        if (!val || timeSlotConfig[timeSlotStudio][type].includes(val)) return;
+                        const updated = sortSlots([...timeSlotConfig[timeSlotStudio][type], val]);
+                        const nextConfig = { ...timeSlotConfig, [timeSlotStudio]: { ...timeSlotConfig[timeSlotStudio], [type]: updated } };
+                        applySlotChange(nextConfig);
                         setNewSlotInput(prev => ({ ...prev, [type]: '' }));
                         showToast(`Slot added to ${labels[type]}`, 'success');
                       }}

@@ -152,6 +152,25 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+
+      // Ensure the public content bucket exists so uploaded images are viewable.
+      try {
+        await supabase
+          .from('storage.buckets')
+          .upsert(
+            {
+              id: 'content',
+              name: 'content',
+              public: true,
+              file_size_limit: 5242880,
+              allowed_mime_types: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'],
+            },
+            { onConflict: 'id' }
+          );
+      } catch (err) {
+        console.error('Failed to ensure content bucket is public:', err);
+      }
+
       const { fileData, fileName } = body;
       if (!isString(fileData) || !isNonEmptyString(fileName)) {
         return new Response(JSON.stringify({ error: 'Missing file data or name' }), {

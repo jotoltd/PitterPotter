@@ -28,7 +28,7 @@ function getTimeSlots(date: Date, closures: ClosureDates): string[] {
   const day = getDay(date);
   const dateStr = format(date, 'yyyy-MM-dd');
   const isHoliday = isDateInHolidayRange(dateStr, closures.schoolHolidays);
-  if (day >= 2 || day === 0 || (day === 1 && isHoliday)) return getSlots('painting');
+  if (day >= 2 || day === 0 || (day === 1 && isHoliday)) return getSlots('painting', 'Putney');
   return [];
 }
 

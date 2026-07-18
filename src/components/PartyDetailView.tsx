@@ -103,17 +103,6 @@ export default function PartyDetailView({ partyType, setCurrentPage, adminMode =
               adminMode={adminMode}
             />
           </div>
-          <div className="bg-[#DBE7E4]/40 rounded-xl p-5 flex items-center gap-4 border border-[#1B2D3C]/10">
-            <div className="p-3 bg-white rounded-xl shadow-sm">
-              <Icon className="w-6 h-6 text-[#1B2D3C]" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]/50">Starting from</p>
-              <p className="text-xl font-black text-[#1B2D3C]">
-                <EditableText contentKey={`${content.descKey}_price`} page="parties" defaultValue={content.price} adminMode={adminMode} className="text-xl text-[#1B2D3C]" />
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Right — Info */}
@@ -141,7 +130,7 @@ export default function PartyDetailView({ partyType, setCurrentPage, adminMode =
 
           <button
             onClick={() => setShowLocationModal(true)}
-            className="w-full py-4 bg-[#1B2D3C] text-white font-black text-sm uppercase tracking-widest hover:bg-[#486581] transition-colors rounded-xl cursor-pointer"
+            className="w-full py-4 bg-[#DBE7E4] text-[#1B2D3C] font-black text-sm uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-xl cursor-pointer border border-[#1B2D3C]/20"
           >
             Book Now — Choose Studio
           </button>
@@ -153,19 +142,47 @@ export default function PartyDetailView({ partyType, setCurrentPage, adminMode =
         <h2 className="font-heading text-2xl font-black text-[#1B2D3C]">
           <EditableText contentKey={`${content.descKey}_gallery_heading`} page="parties" defaultValue="Gallery" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" />
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {[1,2,3,4,5,6,7,8].map(n => (
-            <div key={n} className="aspect-square overflow-hidden rounded-xl">
-              <EditableImage
-                contentKey={`${content.descKey}_gallery_${n}`}
-                page="parties"
-                defaultSrc={content.image}
-                alt={`${content.title} photo ${n}`}
-                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                adminMode={adminMode}
-              />
-            </div>
-          ))}
+
+        {/* Putney */}
+        <div className="space-y-3">
+          <h3 className="font-heading text-lg font-black text-[#1B2D3C]">
+            <EditableText contentKey={`${content.descKey}_gallery_putney_heading`} page="parties" defaultValue="Putney Studio" adminMode={adminMode} className="font-heading text-lg text-[#1B2D3C]" />
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {[1,2,3,4].map(n => (
+              <div key={`putney-${n}`} className="aspect-square overflow-hidden rounded-xl">
+                <EditableImage
+                  contentKey={`${content.descKey}_gallery_putney_${n}`}
+                  page="parties"
+                  defaultSrc={content.image}
+                  alt={`${content.title} Putney photo ${n}`}
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  adminMode={adminMode}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Wimbledon */}
+        <div className="space-y-3">
+          <h3 className="font-heading text-lg font-black text-[#1B2D3C]">
+            <EditableText contentKey={`${content.descKey}_gallery_wimbledon_heading`} page="parties" defaultValue="Wimbledon Studio" adminMode={adminMode} className="font-heading text-lg text-[#1B2D3C]" />
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {[1,2,3,4].map(n => (
+              <div key={`wimbledon-${n}`} className="aspect-square overflow-hidden rounded-xl">
+                <EditableImage
+                  contentKey={`${content.descKey}_gallery_wimbledon_${n}`}
+                  page="parties"
+                  defaultSrc={content.image}
+                  alt={`${content.title} Wimbledon photo ${n}`}
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  adminMode={adminMode}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

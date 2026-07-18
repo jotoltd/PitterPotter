@@ -34,6 +34,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
   const [imageUrl, setImageUrl] = useState('');
   const [addMethod, setAddMethod] = useState<'file' | 'url'>('file');
   const draggedOrderRef = useRef<string[]>([]);
+  const loadVersionRef = useRef<number>(0);
 
   useEffect(() => {
     loadGalleryItems();
@@ -41,7 +42,8 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
 
   const loadGalleryItems = async () => {
     if (!isSupabaseEnabled()) return;
-    
+
+    const version = ++loadVersionRef.current;
     try {
       const { data } = await supabase!
         .from('content')
@@ -114,8 +116,9 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
           })),
           ...loadedItems
         ];
-        
-        setItems(mergedItems);
+        if (version === loadVersionRef.current) {
+          setItems(mergedItems);
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -139,22 +142,34 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
             const newId = `gallery${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             const base64 = await compressImage(file);
             
-            const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
               body: JSON.stringify({ action: 'upload', username: staff.username, sessionToken: staff.sessionToken, key: `gallery_${newId}_image`, page: 'gallery', fileData: base64, fileName: file.name }),
             });
-            const data = await res.json();
-            if (data.url) {
-              newItems.push({ id: newId, title: '', imageUrl: data.url });
+            const uploadData = await uploadRes.json();
+            if (uploadData.url) {
+              const saveRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+                body: JSON.stringify({ action: 'save', username: staff.username, sessionToken: staff.sessionToken, key: `gallery_${newId}_image`, page: 'gallery', value: uploadData.url, type: 'image' }),
+              });
+              if (saveRes.ok) {
+                newItems.push({ id: newId, title: '', imageUrl: uploadData.url });
+              } else {
+                const saveErr = await saveRes.json().catch(() => ({}));
+                console.error('Failed to save gallery image:', saveErr);
+                throw new Error(saveErr.error || 'Failed to save image metadata');
+              }
             }
-            
+
             setUploadProgress(Math.round(((i + 1) / files.length) * 100));
           }
         }
       }
       
       if (newItems.length > 0) {
+        loadVersionRef.current++;
         setItems([...items, ...newItems]);
         await saveOrder([...items, ...newItems]);
         showToast(`${newItems.length} image${newItems.length > 1 ? 's' : ''} added!`, 'success');
@@ -187,6 +202,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
           });
           
           if (res.ok) {
+            loadVersionRef.current++;
             setItems([...items, { id: newId, title: '', imageUrl: url }]);
             await saveOrder([...items, { id: newId, title: '', imageUrl: url }]);
             setUploadProgress(100);
@@ -228,6 +244,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
       }
 
       const newItems = items.filter(i => i.id !== id);
+      loadVersionRef.current++;
       setItems(newItems);
       await saveOrder(newItems);
       showToast('Image removed', 'success');
@@ -266,6 +283,9 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
     }
   };
 
+  const filteredItems = items.filter(item => item.imageUrl);
+  const displayedItems = adminMode ? filteredItems : filteredItems.slice(0, 6);
+
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
   };
@@ -273,11 +293,12 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
-    
-    const newItems = [...items];
+
+    const newItems = [...filteredItems];
     const [draggedItem] = newItems.splice(draggedIndex, 1);
     newItems.splice(index, 0, draggedItem);
     draggedOrderRef.current = newItems.map(i => i.id);
+    loadVersionRef.current++;
     setItems(newItems);
     setDraggedIndex(index);
   };
@@ -408,28 +429,28 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         </div>
       )}
 
-      {/* Masonry columns */}
+      {/* Gallery thumbnails */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <div className="columns-2 md:columns-3 lg:columns-4 gap-3">
-          {items.filter(item => item.imageUrl).map((item, index) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {displayedItems.map((item, index) => (
             <div
-              key={`${item.id}-${index}`}
+              key={item.id}
               draggable={adminMode}
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDragEnd={handleDragEnd}
-              className={`break-inside-avoid mb-3 relative group ${adminMode ? 'cursor-move' : ''}`}
+              className={`aspect-square overflow-hidden rounded-lg relative group ${adminMode ? 'cursor-move' : ''}`}
             >
               <button
                 onClick={() => setLightboxIndex(index)}
-                className="w-full text-left cursor-pointer"
+                className="w-full h-full cursor-pointer"
               >
                 <EditableImage
                   contentKey={`gallery_${item.id}_image`}
                   page="gallery"
                   defaultSrc={item.imageUrl}
                   alt={item.title}
-                  className="w-full rounded-lg object-cover"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   adminMode={adminMode}
                   onSave={(value) => setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, imageUrl: value } : i))}
                   onDelete={() => removeImage(item.id)}
@@ -465,14 +486,14 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
           </button>
           
           <button
-            onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex === 0 ? items.filter(item => item.imageUrl).length - 1 : lightboxIndex - 1); }}
+            onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex === 0 ? filteredItems.length - 1 : lightboxIndex - 1); }}
             className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2.5 bg-white/90 hover:bg-white text-[#1B2D3C] rounded-full transition-colors shadow-lg cursor-pointer"
           >
             <ChevronLeft className="w-8 h-8" />
           </button>
           
           <button
-            onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex === items.filter(item => item.imageUrl).length - 1 ? 0 : lightboxIndex + 1); }}
+            onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex === filteredItems.length - 1 ? 0 : lightboxIndex + 1); }}
             className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2.5 bg-white/90 hover:bg-white text-[#1B2D3C] rounded-full transition-colors shadow-lg cursor-pointer"
           >
             <ChevronRight className="w-8 h-8" />
@@ -480,14 +501,14 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
           
           <div className="max-w-5xl max-h-[90vh] w-full">
             <img
-              src={items.filter(item => item.imageUrl)[lightboxIndex].imageUrl}
-              alt={items.filter(item => item.imageUrl)[lightboxIndex].title}
+              src={filteredItems[lightboxIndex].imageUrl}
+              alt={filteredItems[lightboxIndex].title}
               className="w-full h-full object-contain max-h-[90vh]"
             />
           </div>
-          
+
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {items.filter(item => item.imageUrl).map((_, idx) => (
+            {filteredItems.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setLightboxIndex(idx)}

@@ -14,15 +14,15 @@ interface LocationGalleryProps {
 
 export default function LocationGallery({ location, defaultImages, adminMode }: LocationGalleryProps) {
   const { showToast } = useToast();
-  const [images, setImages] = useState<string[]>(defaultImages);
+  const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [mobileIndex, setMobileIndex] = useState(0);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [addMode, setAddMode] = useState<'upload' | 'url' | null>(null);
   const draggedOrderRef = useRef<string[]>([]);
   const [urlValue, setUrlValue] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const loadVersionRef = useRef(0);
 
   const contentKey = `${location}_gallery`;
   const page = location;
@@ -30,10 +30,13 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
 
   useEffect(() => {
     loadImages();
-  }, []);
+  }, [location]);
+
+  const isPersistableUrl = (url: string) => /^https?:\/\//i.test(url) || /^data:/i.test(url);
 
   const loadImages = async () => {
     if (!isSupabaseEnabled()) return;
+    const version = ++loadVersionRef.current;
     try {
       const { data } = await supabase!
         .from('content')
@@ -41,11 +44,12 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
         .eq('key', contentKey)
         .eq('page', page)
         .maybeSingle();
+      if (version !== loadVersionRef.current) return;
       if (data?.value) {
         try {
           const parsed = JSON.parse(data.value) as unknown;
           const validImages = Array.isArray(parsed)
-            ? parsed.filter((image): image is string => typeof image === 'string' && image.trim().length > 0)
+            ? parsed.filter((image): image is string => typeof image === 'string' && isPersistableUrl(image.trim()))
             : [];
           if (validImages.length > 0) {
             setImages(validImages);
@@ -67,8 +71,12 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
 
     setLoading(true);
     try {
+      // Invalidate any in-flight load so an older read doesn't overwrite this save.
+      loadVersionRef.current++;
       const savedStaff = localStorage.getItem('pp_current_staff');
       const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
+
+      const persistableImages = nextImages.filter(isPersistableUrl);
 
       let usedDirectSave = false;
       if (adminMode && staff?.sessionToken) {
@@ -81,7 +89,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
             sessionToken: staff.sessionToken,
             key: contentKey,
             page,
-            value: JSON.stringify(nextImages),
+            value: JSON.stringify(persistableImages),
             type: 'text',
           }),
         });
@@ -100,16 +108,15 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
           .upsert({
             key: contentKey,
             page,
-            value: JSON.stringify(nextImages),
+            value: JSON.stringify(persistableImages),
             type: 'text',
             updated_at: new Date().toISOString(),
-          });
+          }, { onConflict: 'key,page' });
         if (error) throw error;
       }
 
-      setImages(nextImages);
+      setImages(persistableImages);
       showToast('Gallery updated!', 'success');
-      loadImages();
       return true;
     } catch (err) {
       console.error('Failed to save gallery:', err);
@@ -121,8 +128,13 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
   };
 
   const handleAddUrl = async () => {
-    if (!urlValue.trim()) return;
-    const nextImages = [...images, urlValue.trim()];
+    const rawUrl = urlValue.trim();
+    if (!rawUrl) return;
+    if (!isPersistableUrl(rawUrl)) {
+      showToast('Please enter a valid image URL', 'error');
+      return;
+    }
+    const nextImages = [...images, rawUrl];
     if (await saveImages(nextImages)) {
       setUrlValue('');
       setAddMode(null);
@@ -146,27 +158,24 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
         let imageUrl = dataUrl;
 
         if (isSupabaseEnabled() && adminMode && staff?.sessionToken) {
-          try {
-            const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-              body: JSON.stringify({
-                action: 'upload',
-                username: staff.username,
-                sessionToken: staff.sessionToken,
-                key: `${location}_gallery_${Date.now()}`,
-                page,
-                fileData: dataUrl,
-                fileName: file.name,
-              }),
-            });
-            const uploadData = await uploadRes.json();
-            if (uploadRes.ok && !uploadData.error && uploadData.url) {
-              imageUrl = uploadData.url;
-            }
-          } catch {
-            // fall through — use data URL
+          const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({
+              action: 'upload',
+              username: staff.username,
+              sessionToken: staff.sessionToken,
+              key: `${location}_gallery_${Date.now()}`,
+              page,
+              fileData: dataUrl,
+              fileName: file.name,
+            }),
+          });
+          const uploadData = await uploadRes.json();
+          if (!uploadRes.ok || uploadData.error || !uploadData.url) {
+            throw new Error(uploadData.error || uploadData.details || 'Image upload failed');
           }
+          imageUrl = uploadData.url;
         }
 
         newUrls.push(imageUrl);
@@ -193,9 +202,6 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
     } else if (lightboxIndex !== null && lightboxIndex > index) {
       setLightboxIndex(lightboxIndex - 1);
     }
-    if (mobileIndex >= nextImages.length) {
-      setMobileIndex(Math.max(0, nextImages.length - 1));
-    }
   };
 
   const handleDragStart = (index: number) => {
@@ -220,26 +226,28 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
     draggedOrderRef.current = [];
   };
 
-  const handleImageError = (event: React.SyntheticEvent<HTMLImageElement>, index: number) => {
-    const fallbackImage = defaultImages[index % defaultImages.length];
-    if (fallbackImage) {
-      event.currentTarget.onerror = null;
-      event.currentTarget.src = fallbackImage;
-    }
+  const handleImageError = (event: React.SyntheticEvent<HTMLImageElement>) => {
+    const failedSrc = event.currentTarget.src;
+    event.currentTarget.onerror = null;
+    console.error('Gallery image failed to load:', failedSrc);
   };
+
+  const galleryImages = images.length > 0 ? images : defaultImages;
+  const displayedImages = adminMode ? galleryImages : galleryImages.slice(0, 6);
+  const lightboxImages = galleryImages;
 
   return (
     <div className="space-y-8">
-      {/* Desktop grid */}
-      <div className="hidden md:grid grid-cols-3 gap-4">
-        {images.map((src, idx) => (
+      {/* Thumbnail grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {displayedImages.map((src, idx) => (
           <div
             key={`${src}-${idx}`}
             draggable={adminMode}
             onDragStart={() => handleDragStart(idx)}
             onDragOver={(e) => handleDragOver(e, idx)}
             onDragEnd={handleDragEnd}
-            className={`aspect-[4/3] overflow-hidden rounded-lg relative group ${adminMode ? 'cursor-move' : ''}`}
+            className={`aspect-square overflow-hidden rounded-lg relative group ${adminMode ? 'cursor-move' : ''}`}
           >
             <button
               onClick={() => setLightboxIndex(idx)}
@@ -248,7 +256,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
               <img
                 src={src}
                 alt={`${title} gallery ${idx + 1}`}
-                onError={(event) => handleImageError(event, idx)}
+                onError={(event) => handleImageError(event)}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
               />
             </button>
@@ -270,7 +278,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
           </div>
         ))}
         {adminMode && (
-          <div className="aspect-[4/3] rounded-lg border-2 border-dashed border-[#1B2D3C]/20 flex flex-col items-center justify-center gap-2 bg-[#F8FAFB] hover:bg-[#eef3f6] transition-colors">
+          <div className="aspect-square rounded-lg border-2 border-dashed border-[#1B2D3C]/20 flex flex-col items-center justify-center gap-2 bg-[#F8FAFB] hover:bg-[#eef3f6] transition-colors">
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={loading}
@@ -281,40 +289,6 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
             </button>
           </div>
         )}
-      </div>
-
-      {/* Mobile carousel */}
-      <div className="md:hidden relative">
-        <div className="aspect-[4/3] overflow-hidden rounded-lg">
-          <button
-            onClick={() => setLightboxIndex(mobileIndex)}
-            className="w-full h-full cursor-pointer"
-          >
-            <img
-              src={images[mobileIndex]}
-              alt={`${title} gallery ${mobileIndex + 1}`}
-              onError={(event) => handleImageError(event, mobileIndex)}
-              className="w-full h-full object-cover"
-            />
-          </button>
-        </div>
-        <div className="flex items-center justify-between mt-3">
-          <button
-            onClick={() => setMobileIndex((mobileIndex - 1 + images.length) % images.length)}
-            className="p-2 bg-[#DBE7E4] text-[#1B2D3C] rounded-lg hover:bg-[#D6E2E9] transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <span className="text-xs font-bold text-[#1B2D3C]">
-            {mobileIndex + 1} / {images.length}
-          </span>
-          <button
-            onClick={() => setMobileIndex((mobileIndex + 1) % images.length)}
-            className="p-2 bg-[#DBE7E4] text-[#1B2D3C] rounded-lg hover:bg-[#D6E2E9] transition-colors"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
       </div>
 
       {/* Hidden file input (shared) */}

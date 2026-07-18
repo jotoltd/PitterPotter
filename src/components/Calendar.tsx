@@ -86,8 +86,8 @@ export default function Calendar({
       </div>
 
       <div className="grid grid-cols-7 mb-1">
-        {WEEKDAYS.map((day) => (
-          <div key={day} className="text-center text-xs font-medium text-[#1B2D3C]/60 py-2">
+        {WEEKDAYS.map((day, index) => (
+          <div key={`${day}-${index}`} className="text-center text-xs font-medium text-[#1B2D3C]/60 py-2">
             {day}
           </div>
         ))}
