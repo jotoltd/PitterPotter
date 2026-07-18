@@ -144,7 +144,7 @@ export default function GiftCardView({ adminMode = false }: GiftCardViewProps) {
                   onClick={() => handlePreset(value)}
                   className={`py-3 px-4 rounded-lg border text-sm font-black transition-all ${
                     amount === value && !customAmount
-                      ? 'bg-[#1B2D3C] text-white border-[#1B2D3C]'
+                      ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#DBE7E4]'
                       : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
                   }`}
                 >
@@ -219,7 +219,7 @@ export default function GiftCardView({ adminMode = false }: GiftCardViewProps) {
               </div>
               <button
                 type="submit"
-                className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-[#486581] transition-all"
+                className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-lg hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
                 <EditableText contentKey="giftcard_purchase_button" page="giftcard" defaultValue="Purchase Gift Card" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
               </button>
@@ -253,7 +253,7 @@ export default function GiftCardView({ adminMode = false }: GiftCardViewProps) {
                 </code>
                 <button
                   onClick={copyCode}
-                  className="p-2.5 bg-[#1B2D3C] text-white rounded-lg hover:bg-[#486581] transition-colors"
+                  className="p-2.5 bg-[#DBE7E4] text-[#1B2D3C] rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
                 >
                   {copied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
                 </button>

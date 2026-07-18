@@ -103,7 +103,7 @@ export default function GiftCardBalanceView({ setCurrentPage, adminMode = false 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-widest hover:bg-[#486581] transition-all cursor-pointer rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer rounded-lg disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? <EditableText contentKey="giftcardbalance_checking" page="gift-card-balance" defaultValue="Checking..." adminMode={adminMode} className="text-xs uppercase tracking-widest" /> : <EditableText contentKey="giftcardbalance_check_button" page="gift-card-balance" defaultValue="Check Balance" adminMode={adminMode} className="text-xs uppercase tracking-widest" />}
           </button>
@@ -158,7 +158,7 @@ export default function GiftCardBalanceView({ setCurrentPage, adminMode = false 
         <div className="flex gap-3 pt-2">
           <button
             onClick={() => setCurrentPage('buy-gift-card')}
-            className="flex-1 py-3 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-widest cursor-pointer rounded-lg"
+            className="flex-1 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest hover:bg-[#D6E2E9] cursor-pointer rounded-lg"
           >
             <EditableText contentKey="giftcardbalance_buy_button" page="gift-card-balance" defaultValue="Buy a Gift Card" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
           </button>
