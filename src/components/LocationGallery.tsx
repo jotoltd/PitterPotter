@@ -43,9 +43,12 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
         .maybeSingle();
       if (data?.value) {
         try {
-          const parsed = JSON.parse(data.value) as string[];
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setImages(parsed);
+          const parsed = JSON.parse(data.value) as unknown;
+          const validImages = Array.isArray(parsed)
+            ? parsed.filter((image): image is string => typeof image === 'string' && image.trim().length > 0)
+            : [];
+          if (validImages.length > 0) {
+            setImages(validImages);
           }
         } catch (err) {
           console.error('Failed to parse gallery JSON:', err);
@@ -217,6 +220,14 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
     draggedOrderRef.current = [];
   };
 
+  const handleImageError = (event: React.SyntheticEvent<HTMLImageElement>, index: number) => {
+    const fallbackImage = defaultImages[index % defaultImages.length];
+    if (fallbackImage) {
+      event.currentTarget.onerror = null;
+      event.currentTarget.src = fallbackImage;
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Desktop grid */}
@@ -237,6 +248,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
               <img
                 src={src}
                 alt={`${title} gallery ${idx + 1}`}
+                onError={(event) => handleImageError(event, idx)}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
               />
             </button>
@@ -281,6 +293,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
             <img
               src={images[mobileIndex]}
               alt={`${title} gallery ${mobileIndex + 1}`}
+              onError={(event) => handleImageError(event, mobileIndex)}
               className="w-full h-full object-cover"
             />
           </button>
