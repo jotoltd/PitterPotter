@@ -16,6 +16,7 @@ interface ImageLibraryProps {
   onClose: () => void;
   onSelect: (url: string) => void;
   onUpload?: (files: File[]) => void;
+  excludeUrls?: string[];
 }
 
 const setLabels: Record<LibraryImage['set'], string> = {
@@ -41,7 +42,7 @@ const getImageSet = (key: string, page: string): LibraryImage['set'] => {
 
 const isPersistableUrl = (url: string) => /^https?:\/\//i.test(url) || /^data:/i.test(url);
 
-export default function ImageLibrary({ open, onClose, onSelect, onUpload }: ImageLibraryProps) {
+export default function ImageLibrary({ open, onClose, onSelect, onUpload, excludeUrls = [] }: ImageLibraryProps) {
   const [images, setImages] = useState<LibraryImage[]>([]);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -139,6 +140,11 @@ export default function ImageLibrary({ open, onClose, onSelect, onUpload }: Imag
     }
   };
 
+  const visibleImages = useMemo(() => {
+    const excluded = new Set(excludeUrls.map((u) => u.trim()));
+    return images.filter((img) => !excluded.has(img.value.trim()));
+  }, [images, excludeUrls]);
+
   const groupedImages = useMemo(() => {
     const groups: Record<LibraryImage['set'], LibraryImage[]> = {
       static: [],
@@ -147,9 +153,9 @@ export default function ImageLibrary({ open, onClose, onSelect, onUpload }: Imag
       product: [],
       uploaded: [],
     };
-    images.forEach((img) => groups[img.set].push(img));
+    visibleImages.forEach((img) => groups[img.set].push(img));
     return groups;
-  }, [images]);
+  }, [visibleImages]);
 
   const scrollSet = (set: LibraryImage['set'], direction: 'left' | 'right') => {
     const el = scrollRefs.current[set];
@@ -189,7 +195,7 @@ export default function ImageLibrary({ open, onClose, onSelect, onUpload }: Imag
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 text-[#1B2D3C]/40 animate-spin" />
             </div>
-          ) : images.length === 0 ? (
+          ) : visibleImages.length === 0 ? (
             <div className="text-center py-12 text-[#1B2D3C]/40">
               <ImageIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p className="text-sm">No images found</p>

@@ -257,14 +257,14 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
             />
           </div>
         ))}
-        {adminMode && galleryImages.length < 6 && (
+        {adminMode && (
           <button
             onClick={handleAddImage}
-            disabled={uploading}
+            disabled={uploading || galleryImages.length >= 6}
             className="aspect-square flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#1B2D3C]/20 rounded-xl text-[#1B2D3C] hover:bg-[#F8FAFB] transition-colors cursor-pointer disabled:opacity-50"
           >
             <Plus className="w-6 h-6" />
-            <span className="text-xs font-bold uppercase tracking-wider">{uploading ? 'Uploading...' : 'Add Image'}</span>
+            <span className="text-xs font-bold uppercase tracking-wider">{uploading ? 'Uploading...' : `Add Image (${galleryImages.length}/6)`}</span>
           </button>
         )}
       </div>
@@ -274,6 +274,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
         onClose={() => setShowLibrary(false)}
         onSelect={handleSelectExisting}
         onUpload={handleUploadFiles}
+        excludeUrls={galleryImages.map((img) => img.src)}
       />
 
       {/* Image Lightbox */}

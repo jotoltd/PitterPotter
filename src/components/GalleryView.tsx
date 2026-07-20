@@ -336,12 +336,13 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         <div className="flex-1">
           <EditableText contentKey="gallery_title" page="gallery" defaultValue="Gallery" adminMode={adminMode} className="font-heading text-3xl font-black text-[#1B2D3C]" />
         </div>
-        {adminMode && filteredItems.length < 6 && (
+        {adminMode && (
           <button
             onClick={() => setShowLibrary(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
+            disabled={filteredItems.length >= 6}
+            className="flex items-center gap-2 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Plus className="w-4 h-4" /> Add Image
+            <Plus className="w-4 h-4" /> Add Image ({filteredItems.length}/6)
           </button>
         )}
       </div>
@@ -351,6 +352,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         onClose={() => setShowLibrary(false)}
         onSelect={handleSelectExisting}
         onUpload={handleAddImages}
+        excludeUrls={items.map((item) => item.imageUrl)}
       />
 
       {/* Gallery thumbnails */}

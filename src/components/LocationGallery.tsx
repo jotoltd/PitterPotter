@@ -282,14 +282,14 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
             )}
           </div>
         ))}
-        {adminMode && images.length < 6 && (
+        {adminMode && (
           <button
             onClick={() => setShowLibrary(true)}
-            disabled={loading}
+            disabled={loading || images.length >= 6}
             className="aspect-square rounded-lg border-2 border-dashed border-[#1B2D3C]/20 flex flex-col items-center justify-center gap-2 bg-[#F8FAFB] hover:bg-[#eef3f6] transition-colors cursor-pointer disabled:opacity-50"
           >
             <Plus className="w-6 h-6 text-[#1B2D3C]/60" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[#1B2D3C]/60">{loading ? 'Uploading...' : 'Add Image'}</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#1B2D3C]/60">{loading ? 'Uploading...' : `Add Image (${images.length}/6)`}</span>
           </button>
         )}
       </div>
@@ -299,6 +299,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
         onClose={() => setShowLibrary(false)}
         onSelect={handleSelectExisting}
         onUpload={handleUploadFiles}
+        excludeUrls={images}
       />
 
       {/* Lightbox — rendered via portal to escape stacking contexts */}
