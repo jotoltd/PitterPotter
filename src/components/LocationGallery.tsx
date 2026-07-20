@@ -20,6 +20,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const draggedOrderRef = useRef<string[]>([]);
   const loadVersionRef = useRef(0);
 
@@ -127,23 +128,13 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
   };
 
   const handleUploadFiles = async (files: File[]) => {
-    if (images.length >= 6) {
-      showToast('Gallery can only hold 6 images', 'error');
-      return;
-    }
     setLoading(true);
     try {
       const savedStaff = localStorage.getItem('pp_current_staff');
       const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
 
-      const remaining = 6 - images.length;
-      const filesToUpload = files.slice(0, remaining);
-      if (filesToUpload.length < files.length) {
-        showToast(`Only ${remaining} of ${files.length} images can be added (6 max)`, 'error');
-      }
-
       const newUrls: string[] = [];
-      for (const file of filesToUpload) {
+      for (const file of Array.from(files)) {
         const dataUrl = await compressImage(file);
 
         let imageUrl = dataUrl;
@@ -184,11 +175,6 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
   };
 
   const handleSelectExisting = async (url: string) => {
-    if (images.length >= 6) {
-      showToast('Gallery can only hold 6 images', 'error');
-      setShowLibrary(false);
-      return;
-    }
     const trimmedUrl = url.trim();
     const nextImages = [...images, trimmedUrl];
     const ok = await saveImages(nextImages);
@@ -237,8 +223,9 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
     console.error('Gallery image failed to load:', failedSrc);
   };
 
-  const galleryImages = (images.length > 0 ? images : defaultImages).slice(0, 6);
-  const displayedImages = galleryImages;
+  const galleryImages = images.length > 0 ? images : defaultImages;
+  const displayedImages = adminMode || expanded ? galleryImages : galleryImages.slice(0, 6);
+  const hasMore = galleryImages.length > 6;
   const lightboxImages = galleryImages;
 
   return (
@@ -285,14 +272,24 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
         {adminMode && (
           <button
             onClick={() => setShowLibrary(true)}
-            disabled={loading || images.length >= 6}
+            disabled={loading}
             className="aspect-square rounded-lg border-2 border-dashed border-[#1B2D3C]/20 flex flex-col items-center justify-center gap-2 bg-[#F8FAFB] hover:bg-[#eef3f6] transition-colors cursor-pointer disabled:opacity-50"
           >
             <Plus className="w-6 h-6 text-[#1B2D3C]/60" />
-            <span className="text-xs font-bold uppercase tracking-wider text-[#1B2D3C]/60">{loading ? 'Uploading...' : `Add Image (${images.length}/6)`}</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#1B2D3C]/60">{loading ? 'Uploading...' : 'Add Image'}</span>
           </button>
         )}
       </div>
+      {!adminMode && hasMore && !expanded && (
+        <div className="text-center">
+          <button
+            onClick={() => setExpanded(true)}
+            className="px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
+          >
+            View all {galleryImages.length} photos
+          </button>
+        </div>
+      )}
 
       <ImageLibrary
         open={showLibrary}

@@ -28,6 +28,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
     imageUrl: item.imageUrl
   })));
   const [showLibrary, setShowLibrary] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -126,19 +127,11 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
   };
 
   const handleAddImages = async (files: File[]) => {
-    if (filteredItems.length >= 6) {
-      showToast('Gallery can only hold 6 images', 'error');
-      return;
-    }
     setLoading(true);
     setUploadProgress(0);
     try {
       const newItems: GalleryItem[] = [];
-      const remaining = 6 - filteredItems.length;
-      const filesToUpload = files.slice(0, remaining);
-      if (filesToUpload.length < files.length) {
-        showToast(`Only ${remaining} of ${files.length} images can be added (6 max)`, 'error');
-      }
+      const filesToUpload = Array.from(files);
       
       if (isSupabaseEnabled() && adminMode) {
         const savedStaff = localStorage.getItem('pp_current_staff');
@@ -171,7 +164,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
               }
             }
 
-            setUploadProgress(Math.round(((i + 1) / files.length) * 100));
+            setUploadProgress(Math.round(((i + 1) / filesToUpload.length) * 100));
           }
         }
       }
@@ -197,11 +190,6 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
   };
 
   const handleSelectExisting = async (url: string) => {
-    if (filteredItems.length >= 6) {
-      showToast('Gallery can only hold 6 images', 'error');
-      setShowLibrary(false);
-      return;
-    }
     setLoading(true);
     setUploadProgress(0);
     try {
@@ -303,7 +291,8 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
   };
 
   const filteredItems = items.filter(item => item.imageUrl);
-  const displayedItems = filteredItems.slice(0, 6);
+  const displayedItems = adminMode || expanded ? filteredItems : filteredItems.slice(0, 6);
+  const hasMore = filteredItems.length > 6;
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
@@ -339,10 +328,9 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         {adminMode && (
           <button
             onClick={() => setShowLibrary(true)}
-            disabled={filteredItems.length >= 6}
-            className="flex items-center gap-2 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> Add Image ({filteredItems.length}/6)
+            <Plus className="w-4 h-4" /> Add Image
           </button>
         )}
       </div>
@@ -368,7 +356,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
               className={`aspect-square overflow-hidden rounded-lg relative group ${adminMode ? 'cursor-move' : ''}`}
             >
               <button
-                onClick={() => setLightboxIndex(index)}
+                onClick={() => setLightboxIndex(filteredItems.findIndex((i) => i.id === item.id))}
                 className="w-full h-full cursor-pointer"
               >
                 <EditableImage
@@ -399,6 +387,16 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
             </div>
           ))}
         </div>
+        {!adminMode && hasMore && !expanded && (
+          <div className="text-center mt-6">
+            <button
+              onClick={() => setExpanded(true)}
+              className="px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
+            >
+              View all {filteredItems.length} photos
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Lightbox */}

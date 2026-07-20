@@ -46,6 +46,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [galleryImages, setGalleryImages] = useState<GalleryItem[]>(getDefaultGalleryItems);
   const [showLibrary, setShowLibrary] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -106,15 +107,10 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
   };
 
   const handleAddImage = () => {
-    if (galleryImages.length >= 6) return;
     setShowLibrary(true);
   };
 
   const handleSelectExisting = async (url: string) => {
-    if (galleryImages.length >= 6) {
-      setShowLibrary(false);
-      return;
-    }
     try {
       const newKey = getNextGalleryKey();
       await persistGalleryImage(newKey, url);
@@ -129,18 +125,12 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
   };
 
   const handleUploadFiles = async (files: File[]) => {
-    if (galleryImages.length >= 6) {
-      setShowLibrary(false);
-      return;
-    }
     setUploading(true);
     try {
       const savedStaff = localStorage.getItem('pp_current_staff');
       const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
-      const remaining = 6 - galleryImages.length;
-      const filesToUpload = files.slice(0, remaining);
 
-      for (const file of filesToUpload) {
+      for (const file of Array.from(files)) {
         const dataUrl = await compressImage(file);
         let imageUrl = dataUrl;
         if (isSupabaseEnabled() && adminMode && staff?.sessionToken) {
@@ -174,8 +164,9 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
     setGalleryImages((prev) => prev.filter((img) => img.key !== key));
   };
 
-  const displayedImages = galleryImages.slice(0, 6);
-  const lightboxImages = galleryImages.slice(0, 6);
+  const displayedImages = adminMode || expanded ? galleryImages : galleryImages.slice(0, 6);
+  const hasMore = galleryImages.length > 6;
+  const lightboxImages = galleryImages;
 
   return (
     <div id="baby-prints-view" className="space-y-20 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
@@ -260,14 +251,24 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
         {adminMode && (
           <button
             onClick={handleAddImage}
-            disabled={uploading || galleryImages.length >= 6}
+            disabled={uploading}
             className="aspect-square flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#1B2D3C]/20 rounded-xl text-[#1B2D3C] hover:bg-[#F8FAFB] transition-colors cursor-pointer disabled:opacity-50"
           >
             <Plus className="w-6 h-6" />
-            <span className="text-xs font-bold uppercase tracking-wider">{uploading ? 'Uploading...' : `Add Image (${galleryImages.length}/6)`}</span>
+            <span className="text-xs font-bold uppercase tracking-wider">{uploading ? 'Uploading...' : 'Add Image'}</span>
           </button>
         )}
       </div>
+      {!adminMode && hasMore && !expanded && (
+        <div className="text-center mt-6">
+          <button
+            onClick={() => setExpanded(true)}
+            className="px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
+          >
+            View all {galleryImages.length} photos
+          </button>
+        </div>
+      )}
 
       <ImageLibrary
         open={showLibrary}
