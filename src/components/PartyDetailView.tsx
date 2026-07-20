@@ -148,8 +148,8 @@ export default function PartyDetailView({ partyType, setCurrentPage, adminMode =
           <h3 className="font-heading text-lg font-black text-[#1B2D3C]">
             <EditableText contentKey={`${content.descKey}_gallery_putney_heading`} page="parties" defaultValue="Putney Studio" adminMode={adminMode} className="font-heading text-lg text-[#1B2D3C]" />
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {[1,2,3,4].map(n => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {[1,2,3,4,5,6].map(n => (
               <div key={`putney-${n}`} className="aspect-square overflow-hidden rounded-xl">
                 <EditableImage
                   contentKey={`${content.descKey}_gallery_putney_${n}`}
@@ -169,8 +169,8 @@ export default function PartyDetailView({ partyType, setCurrentPage, adminMode =
           <h3 className="font-heading text-lg font-black text-[#1B2D3C]">
             <EditableText contentKey={`${content.descKey}_gallery_wimbledon_heading`} page="parties" defaultValue="Wimbledon Studio" adminMode={adminMode} className="font-heading text-lg text-[#1B2D3C]" />
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {[1,2,3,4].map(n => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {[1,2,3,4,5,6].map(n => (
               <div key={`wimbledon-${n}`} className="aspect-square overflow-hidden rounded-xl">
                 <EditableImage
                   contentKey={`${content.descKey}_gallery_wimbledon_${n}`}

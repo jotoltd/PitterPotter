@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, X, Plus, Link, GripVertical, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Plus, GripVertical } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { compressImage } from '../lib/imageCompression';
+import ImageLibrary from './ImageLibrary';
 import { Staff } from '../types';
 import { useToast } from './ToastContext';
 
@@ -18,10 +19,8 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
   const [loading, setLoading] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [addMode, setAddMode] = useState<'upload' | 'url' | null>(null);
+  const [showLibrary, setShowLibrary] = useState(false);
   const draggedOrderRef = useRef<string[]>([]);
-  const [urlValue, setUrlValue] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const loadVersionRef = useRef(0);
 
   const contentKey = `${location}_gallery`;
@@ -127,32 +126,24 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
     }
   };
 
-  const handleAddUrl = async () => {
-    const rawUrl = urlValue.trim();
-    if (!rawUrl) return;
-    if (!isPersistableUrl(rawUrl)) {
-      showToast('Please enter a valid image URL', 'error');
+  const handleUploadFiles = async (files: File[]) => {
+    if (images.length >= 6) {
+      showToast('Gallery can only hold 6 images', 'error');
       return;
     }
-    const nextImages = [...images, rawUrl];
-    if (await saveImages(nextImages)) {
-      setUrlValue('');
-      setAddMode(null);
-    }
-  };
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    e.target.value = '';
-
     setLoading(true);
     try {
       const savedStaff = localStorage.getItem('pp_current_staff');
       const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
 
+      const remaining = 6 - images.length;
+      const filesToUpload = files.slice(0, remaining);
+      if (filesToUpload.length < files.length) {
+        showToast(`Only ${remaining} of ${files.length} images can be added (6 max)`, 'error');
+      }
+
       const newUrls: string[] = [];
-      for (const file of Array.from(files)) {
+      for (const file of filesToUpload) {
         const dataUrl = await compressImage(file);
 
         let imageUrl = dataUrl;
@@ -184,13 +175,26 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
       const merged = [...images, ...newUrls];
       setImages(merged);
       await saveImages(merged);
-      setAddMode(null);
+      setShowLibrary(false);
     } catch (err) {
       console.error('Failed to upload image:', err);
       showToast('Failed to upload image', 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSelectExisting = async (url: string) => {
+    if (images.length >= 6) {
+      showToast('Gallery can only hold 6 images', 'error');
+      setShowLibrary(false);
+      return;
+    }
+    const nextImages = [...images, url];
+    setImages(nextImages);
+    await saveImages(nextImages);
+    setShowLibrary(false);
+    showToast('Image added from library!', 'success');
   };
 
   const handleDelete = async (index: number) => {
@@ -232,8 +236,8 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
     console.error('Gallery image failed to load:', failedSrc);
   };
 
-  const galleryImages = images.length > 0 ? images : defaultImages;
-  const displayedImages = adminMode ? galleryImages : galleryImages.slice(0, 6);
+  const galleryImages = (images.length > 0 ? images : defaultImages).slice(0, 6);
+  const displayedImages = galleryImages;
   const lightboxImages = galleryImages;
 
   return (
@@ -277,62 +281,24 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
             )}
           </div>
         ))}
-        {adminMode && (
-          <div className="aspect-square rounded-lg border-2 border-dashed border-[#1B2D3C]/20 flex flex-col items-center justify-center gap-2 bg-[#F8FAFB] hover:bg-[#eef3f6] transition-colors">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={loading}
-              className="flex flex-col items-center gap-2 text-[#1B2D3C]/60 hover:text-[#1B2D3C] cursor-pointer disabled:opacity-50 transition-colors"
-            >
-              <Upload className="w-6 h-6" />
-              <span className="text-xs font-bold uppercase tracking-wider">{loading ? 'Uploading...' : 'Add Image'}</span>
-            </button>
-          </div>
+        {adminMode && images.length < 6 && (
+          <button
+            onClick={() => setShowLibrary(true)}
+            disabled={loading}
+            className="aspect-square rounded-lg border-2 border-dashed border-[#1B2D3C]/20 flex flex-col items-center justify-center gap-2 bg-[#F8FAFB] hover:bg-[#eef3f6] transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Plus className="w-6 h-6 text-[#1B2D3C]/60" />
+            <span className="text-xs font-bold uppercase tracking-wider text-[#1B2D3C]/60">{loading ? 'Uploading...' : 'Add Image'}</span>
+          </button>
         )}
       </div>
 
-      {/* Hidden file input (shared) */}
-      <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleUpload} className="hidden" />
-
-      {/* Admin controls — URL option + mobile upload */}
-      {adminMode && (
-        <div className="border border-[#1B2D3C]/10 rounded-xl p-3 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={loading}
-              className="md:hidden flex items-center gap-2 px-3 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <Upload className="w-4 h-4" /> {loading ? 'Uploading...' : 'Add Image'}
-            </button>
-            <button
-              onClick={() => setAddMode(addMode === 'url' ? null : 'url')}
-              disabled={loading}
-              className="flex items-center gap-2 px-3 py-2 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#F8FAFB] transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <Link className="w-4 h-4" /> Add by URL
-            </button>
-          </div>
-          {addMode === 'url' && (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={urlValue}
-                onChange={(e) => setUrlValue(e.target.value)}
-                placeholder="https://..."
-                className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-sm text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/50"
-              />
-              <button
-                onClick={handleAddUrl}
-                disabled={loading || !urlValue.trim()}
-                className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold rounded-lg hover:bg-[#D6E2E9] cursor-pointer disabled:opacity-50"
-              >
-                Add
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      <ImageLibrary
+        open={showLibrary}
+        onClose={() => setShowLibrary(false)}
+        onSelect={handleSelectExisting}
+        onUpload={handleUploadFiles}
+      />
 
       {/* Lightbox — rendered via portal to escape stacking contexts */}
       {lightboxIndex !== null && createPortal(

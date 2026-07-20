@@ -5,6 +5,7 @@ import EditableText from './EditableText';
 import EditableImage from './EditableImage';
 import { Plus, Upload, GripVertical, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import ImageLibrary from './ImageLibrary';
 import { compressImage } from '../lib/imageCompression';
 import { Staff } from '../types';
 import { useToast } from './ToastContext';
@@ -26,13 +27,11 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
     title: item.title,
     imageUrl: item.imageUrl
   })));
-  const [isAdding, setIsAdding] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
   const [loading, setLoading] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [imageUrl, setImageUrl] = useState('');
-  const [addMethod, setAddMethod] = useState<'file' | 'url'>('file');
   const draggedOrderRef = useRef<string[]>([]);
   const loadVersionRef = useRef<number>(0);
 
@@ -127,18 +126,27 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
   };
 
   const handleAddImages = async (files: File[]) => {
+    if (filteredItems.length >= 6) {
+      showToast('Gallery can only hold 6 images', 'error');
+      return;
+    }
     setLoading(true);
     setUploadProgress(0);
     try {
       const newItems: GalleryItem[] = [];
+      const remaining = 6 - filteredItems.length;
+      const filesToUpload = files.slice(0, remaining);
+      if (filesToUpload.length < files.length) {
+        showToast(`Only ${remaining} of ${files.length} images can be added (6 max)`, 'error');
+      }
       
       if (isSupabaseEnabled() && adminMode) {
         const savedStaff = localStorage.getItem('pp_current_staff');
         const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
         
         if (staff?.sessionToken) {
-          for (let i = 0; i < files.length; i++) {
-            const file = files[i];
+          for (let i = 0; i < filesToUpload.length; i++) {
+            const file = filesToUpload[i];
             const newId = `gallery${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             const base64 = await compressImage(file);
             
@@ -170,9 +178,13 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
       
       if (newItems.length > 0) {
         loadVersionRef.current++;
-        setItems([...items, ...newItems]);
-        await saveOrder([...items, ...newItems]);
+        const merged = [...items, ...newItems];
+        setItems(merged);
+        await saveOrder(merged);
         showToast(`${newItems.length} image${newItems.length > 1 ? 's' : ''} added!`, 'success');
+        setShowLibrary(false);
+      } else {
+        setShowLibrary(false);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -184,7 +196,12 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
     }
   };
 
-  const handleAddFromUrl = async (url: string) => {
+  const handleSelectExisting = async (url: string) => {
+    if (filteredItems.length >= 6) {
+      showToast('Gallery can only hold 6 images', 'error');
+      setShowLibrary(false);
+      return;
+    }
     setLoading(true);
     setUploadProgress(0);
     try {
@@ -203,10 +220,12 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
           
           if (res.ok) {
             loadVersionRef.current++;
-            setItems([...items, { id: newId, title: '', imageUrl: url }]);
-            await saveOrder([...items, { id: newId, title: '', imageUrl: url }]);
+            const merged = [...items, { id: newId, title: '', imageUrl: url }];
+            setItems(merged);
+            await saveOrder(merged);
             setUploadProgress(100);
-            showToast('Image added from URL!', 'success');
+            showToast('Image added from library!', 'success');
+            setShowLibrary(false);
           } else {
             throw new Error('Failed to save image URL');
           }
@@ -284,7 +303,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
   };
 
   const filteredItems = items.filter(item => item.imageUrl);
-  const displayedItems = adminMode ? filteredItems : filteredItems.slice(0, 6);
+  const displayedItems = filteredItems.slice(0, 6);
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
@@ -317,9 +336,9 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         <div className="flex-1">
           <EditableText contentKey="gallery_title" page="gallery" defaultValue="Gallery" adminMode={adminMode} className="font-heading text-3xl font-black text-[#1B2D3C]" />
         </div>
-        {adminMode && (
+        {adminMode && filteredItems.length < 6 && (
           <button
-            onClick={() => setIsAdding(true)}
+            onClick={() => setShowLibrary(true)}
             className="flex items-center gap-2 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Add Image
@@ -327,107 +346,12 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         )}
       </div>
 
-      {/* Add Image Form */}
-      {isAdding && (
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 md:px-8">
-          <div className="bg-white border-2 border-[#1B2D3C]/20 rounded-xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-heading text-base font-black text-[#1B2D3C]">Add New Image</h3>
-              <button onClick={() => { setIsAdding(false); setUploadProgress(0); setImageUrl(''); }} className="p-1.5 rounded-full hover:bg-[#D6E2E9] cursor-pointer">
-                <X className="w-4 h-4 text-[#1B2D3C]/50" />
-              </button>
-            </div>
-            
-            {/* Method Toggle */}
-            <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setAddMethod('file')}
-                className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 ${addMethod === 'file' ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'}`}
-              >
-                <Upload className="w-3 h-3" /> Upload File
-              </button>
-              <button
-                type="button"
-                onClick={() => setAddMethod('url')}
-                className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1 ${addMethod === 'url' ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'}`}
-              >
-                <Plus className="w-3 h-3" /> From URL
-              </button>
-            </div>
-            
-            {addMethod === 'file' ? (
-              <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Images</label>
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => {
-                      const input = document.createElement('input');
-                      input.type = 'file';
-                      input.accept = 'image/*';
-                      input.multiple = true;
-                      input.onchange = (e) => {
-                        const files = Array.from((e.target as HTMLInputElement).files || []);
-                        if (files.length > 0) {
-                          handleAddImages(files);
-                          setIsAdding(false);
-                        }
-                      };
-                      input.click();
-                    }}
-                    disabled={loading}
-                    className="w-20 h-20 border-2 border-dashed border-[#1B2D3C]/20 rounded-lg flex items-center justify-center hover:border-[#1B2D3C] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Upload className="w-5 h-5 text-[#1B2D3C]/40" />
-                  </button>
-                  <p className="text-xs text-[#1B2D3C]/60">Click to upload images (multiple allowed)</p>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Image URL</label>
-                <input
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-4 py-3 border-2 border-[#1B2D3C]/20 rounded-xl text-sm text-[#1B2D3C] font-medium focus:outline-none focus:border-amber-400"
-                  disabled={loading}
-                />
-                <button
-                  onClick={() => {
-                    if (imageUrl.trim()) {
-                      handleAddFromUrl(imageUrl.trim());
-                      setImageUrl('');
-                      setIsAdding(false);
-                    }
-                  }}
-                  disabled={loading || !imageUrl.trim()}
-                  className="mt-3 w-full py-3 bg-[#DBE7E4] text-[#1B2D3C] rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#D6E2E9] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Adding...' : 'Add Image'}
-                </button>
-              </div>
-            )}
-            
-            {/* Progress Bar */}
-            {loading && uploadProgress > 0 && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs text-[#1B2D3C]/60">
-                  <span>Uploading...</span>
-                  <span>{uploadProgress}%</span>
-                </div>
-                <div className="w-full bg-[#1B2D3C]/10 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className="bg-[#1B2D3C] h-full transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <ImageLibrary
+        open={showLibrary}
+        onClose={() => setShowLibrary(false)}
+        onSelect={handleSelectExisting}
+        onUpload={handleAddImages}
+      />
 
       {/* Gallery thumbnails */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">

@@ -6,6 +6,9 @@ import { getCachedContent } from '../lib/contentCache';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
+import ImageLibrary from './ImageLibrary';
+import { compressImage } from '../lib/imageCompression';
+import { Staff } from '../types';
 
 interface BabyPrintsViewProps {
   setCurrentPage: (page: Page) => void;
@@ -42,6 +45,8 @@ function getDefaultSrc(index: number): string {
 export default function BabyPrintsView({ setCurrentPage, adminMode = false }: BabyPrintsViewProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [galleryImages, setGalleryImages] = useState<GalleryItem[]>(getDefaultGalleryItems);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!isSupabaseEnabled()) return;
@@ -75,22 +80,102 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
     setGalleryImages((prev) => prev.map((img) => img.key === key ? { ...img, src: value } : img));
   };
 
-  const handleAddImage = () => {
+  const getNextGalleryKey = () => {
     const maxIndex = galleryImages.length > 0 ? Math.max(...galleryImages.map((i) => getKeyIndex(i.key))) : 0;
-    const nextIndex = maxIndex + 1;
-    const newKey = `gallery_${nextIndex}`;
-    setGalleryImages((prev) => [
-      ...prev,
-      { key: newKey, src: Images.clayImprint, alt: `Baby print example ${nextIndex + 1}` },
-    ]);
+    return `gallery_${maxIndex + 1}`;
+  };
+
+  const persistGalleryImage = async (key: string, url: string) => {
+    if (!isSupabaseEnabled()) return;
+    const savedStaff = localStorage.getItem('pp_current_staff');
+    const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
+
+    if (adminMode && staff?.sessionToken) {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'save', username: staff.username, sessionToken: staff.sessionToken, key, page: 'baby-prints', value: url, type: 'image' }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to save image');
+      }
+    } else {
+      await supabase!.from('content').upsert({ key, page: 'baby-prints', value: url, type: 'image', updated_at: new Date().toISOString() });
+    }
+  };
+
+  const handleAddImage = () => {
+    if (galleryImages.length >= 6) return;
+    setShowLibrary(true);
+  };
+
+  const handleSelectExisting = async (url: string) => {
+    if (galleryImages.length >= 6) {
+      setShowLibrary(false);
+      return;
+    }
+    try {
+      const newKey = getNextGalleryKey();
+      await persistGalleryImage(newKey, url);
+      setGalleryImages((prev) => [
+        ...prev,
+        { key: newKey, src: url, alt: `Baby print example ${getKeyIndex(newKey) + 1}` },
+      ]);
+      setShowLibrary(false);
+    } catch (err) {
+      console.error('Failed to add existing image:', err);
+    }
+  };
+
+  const handleUploadFiles = async (files: File[]) => {
+    if (galleryImages.length >= 6) {
+      setShowLibrary(false);
+      return;
+    }
+    setUploading(true);
+    try {
+      const savedStaff = localStorage.getItem('pp_current_staff');
+      const staff: Staff | null = savedStaff ? JSON.parse(savedStaff) : null;
+      const remaining = 6 - galleryImages.length;
+      const filesToUpload = files.slice(0, remaining);
+
+      for (const file of filesToUpload) {
+        const dataUrl = await compressImage(file);
+        let imageUrl = dataUrl;
+        if (isSupabaseEnabled() && adminMode && staff?.sessionToken) {
+          const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ action: 'upload', username: staff.username, sessionToken: staff.sessionToken, key: getNextGalleryKey(), page: 'baby-prints', fileData: dataUrl, fileName: file.name }),
+          });
+          const uploadData = await uploadRes.json();
+          if (!uploadRes.ok || uploadData.error || !uploadData.url) {
+            throw new Error(uploadData.error || 'Upload failed');
+          }
+          imageUrl = uploadData.url;
+        }
+        const newKey = getNextGalleryKey();
+        await persistGalleryImage(newKey, imageUrl);
+        setGalleryImages((prev) => [
+          ...prev,
+          { key: newKey, src: imageUrl, alt: `Baby print example ${getKeyIndex(newKey) + 1}` },
+        ]);
+      }
+      setShowLibrary(false);
+    } catch (err) {
+      console.error('Failed to upload image:', err);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDeleteImage = (key: string) => {
     setGalleryImages((prev) => prev.filter((img) => img.key !== key));
   };
 
-  const displayedImages = adminMode ? galleryImages : galleryImages.slice(0, 6);
-  const lightboxImages = galleryImages;
+  const displayedImages = galleryImages.slice(0, 6);
+  const lightboxImages = galleryImages.slice(0, 6);
 
   return (
     <div id="baby-prints-view" className="space-y-20 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
@@ -172,16 +257,24 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
             />
           </div>
         ))}
-        {adminMode && (
+        {adminMode && galleryImages.length < 6 && (
           <button
             onClick={handleAddImage}
-            className="aspect-square flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#1B2D3C]/20 rounded-xl text-[#1B2D3C] hover:bg-[#F8FAFB] transition-colors cursor-pointer"
+            disabled={uploading}
+            className="aspect-square flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#1B2D3C]/20 rounded-xl text-[#1B2D3C] hover:bg-[#F8FAFB] transition-colors cursor-pointer disabled:opacity-50"
           >
             <Plus className="w-6 h-6" />
-            <span className="text-xs font-bold uppercase tracking-wider">Add Image</span>
+            <span className="text-xs font-bold uppercase tracking-wider">{uploading ? 'Uploading...' : 'Add Image'}</span>
           </button>
         )}
       </div>
+
+      <ImageLibrary
+        open={showLibrary}
+        onClose={() => setShowLibrary(false)}
+        onSelect={handleSelectExisting}
+        onUpload={handleUploadFiles}
+      />
 
       {/* Image Lightbox */}
       {selectedImageIndex !== null && lightboxImages[selectedImageIndex] && (
