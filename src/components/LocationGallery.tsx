@@ -31,7 +31,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
     loadImages();
   }, [location]);
 
-  const isPersistableUrl = (url: string) => /^https?:\/\//i.test(url) || /^data:/i.test(url);
+  const isPersistableUrl = (url: string) => typeof url === 'string' && url.trim().length > 0;
 
   const loadImages = async () => {
     if (!isSupabaseEnabled()) return;
@@ -173,9 +173,8 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
       }
 
       const merged = [...images, ...newUrls];
-      setImages(merged);
-      await saveImages(merged);
-      setShowLibrary(false);
+      const ok = await saveImages(merged);
+      if (ok) setShowLibrary(false);
     } catch (err) {
       console.error('Failed to upload image:', err);
       showToast('Failed to upload image', 'error');
@@ -190,11 +189,13 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
       setShowLibrary(false);
       return;
     }
-    const nextImages = [...images, url];
-    setImages(nextImages);
-    await saveImages(nextImages);
-    setShowLibrary(false);
-    showToast('Image added from library!', 'success');
+    const trimmedUrl = url.trim();
+    const nextImages = [...images, trimmedUrl];
+    const ok = await saveImages(nextImages);
+    if (ok) {
+      setShowLibrary(false);
+      showToast('Image added from library!', 'success');
+    }
   };
 
   const handleDelete = async (index: number) => {
