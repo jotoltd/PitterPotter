@@ -80,8 +80,16 @@ describe('toBookingRow', () => {
       notes: null,
       estimated_price: null,
       final_price: null,
+      final_balance: null,
+      final_seats: null,
+      deposit_amount: null,
       gift_card_code: null,
       gift_card_discount: null,
+      payment_status: null,
+      payment_link_url: null,
+      payment_link_sent_at: null,
+      stripe_payment_intent_id: null,
+      table_id: null,
     });
   });
 });
