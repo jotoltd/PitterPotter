@@ -28,7 +28,6 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
     imageUrl: item.imageUrl
   })));
   const [showLibrary, setShowLibrary] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -291,7 +290,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
   };
 
   const filteredItems = items.filter(item => item.imageUrl);
-  const displayedItems = adminMode || expanded ? filteredItems : filteredItems.slice(0, 4);
+  const displayedItems = adminMode ? filteredItems : filteredItems.slice(0, 4);
   const hasMore = filteredItems.length > 4;
 
   const handleDragStart = (index: number) => {
@@ -387,10 +386,10 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
             </div>
           ))}
         </div>
-        {!adminMode && hasMore && !expanded && (
+        {!adminMode && hasMore && (
           <div className="text-center mt-6">
             <button
-              onClick={() => setExpanded(true)}
+              onClick={() => setLightboxIndex(4)}
               className="px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
             >
               View more photos

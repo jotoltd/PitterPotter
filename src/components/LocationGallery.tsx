@@ -20,7 +20,6 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const draggedOrderRef = useRef<string[]>([]);
   const loadVersionRef = useRef(0);
 
@@ -224,7 +223,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
   };
 
   const galleryImages = images.length > 0 ? images : defaultImages;
-  const displayedImages = adminMode || expanded ? galleryImages : galleryImages.slice(0, 4);
+  const displayedImages = adminMode ? galleryImages : galleryImages.slice(0, 4);
   const hasMore = galleryImages.length > 4;
   const lightboxImages = galleryImages;
 
@@ -280,10 +279,10 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
           </button>
         )}
       </div>
-      {!adminMode && hasMore && !expanded && (
+      {!adminMode && hasMore && (
         <div className="text-center">
           <button
-            onClick={() => setExpanded(true)}
+            onClick={() => setLightboxIndex(4)}
             className="px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
           >
             View more photos

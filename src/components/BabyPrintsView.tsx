@@ -46,7 +46,6 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [galleryImages, setGalleryImages] = useState<GalleryItem[]>(getDefaultGalleryItems);
   const [showLibrary, setShowLibrary] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -164,7 +163,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
     setGalleryImages((prev) => prev.filter((img) => img.key !== key));
   };
 
-  const displayedImages = adminMode || expanded ? galleryImages : galleryImages.slice(0, 4);
+  const displayedImages = adminMode ? galleryImages : galleryImages.slice(0, 4);
   const hasMore = galleryImages.length > 4;
   const lightboxImages = galleryImages;
 
@@ -259,10 +258,10 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
           </button>
         )}
       </div>
-      {!adminMode && hasMore && !expanded && (
+      {!adminMode && hasMore && (
         <div className="text-center mt-6">
           <button
-            onClick={() => setExpanded(true)}
+            onClick={() => setSelectedImageIndex(4)}
             className="px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
           >
             View more photos
