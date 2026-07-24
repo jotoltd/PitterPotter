@@ -291,8 +291,8 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
   };
 
   const filteredItems = items.filter(item => item.imageUrl);
-  const displayedItems = adminMode || expanded ? filteredItems : filteredItems.slice(0, 6);
-  const hasMore = filteredItems.length > 6;
+  const displayedItems = adminMode || expanded ? filteredItems : filteredItems.slice(0, 4);
+  const hasMore = filteredItems.length > 4;
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
@@ -393,7 +393,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
               onClick={() => setExpanded(true)}
               className="px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
             >
-              View all {filteredItems.length} photos
+              View more photos
             </button>
           </div>
         )}

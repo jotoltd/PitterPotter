@@ -90,7 +90,7 @@ export default function PartyDetailView({ partyType, setCurrentPage, adminMode =
         Back to Parties
       </button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start mb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start mb-12">
         {/* Left — Image */}
         <div className="space-y-6">
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
@@ -138,7 +138,7 @@ export default function PartyDetailView({ partyType, setCurrentPage, adminMode =
       </div>
 
       {/* Gallery */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         <h2 className="font-heading text-2xl font-black text-[#1B2D3C]">
           <EditableText contentKey={`${content.descKey}_gallery_heading`} page="parties" defaultValue="Gallery" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" />
         </h2>

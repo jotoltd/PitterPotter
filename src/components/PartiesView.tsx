@@ -46,7 +46,7 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
   };
 
   return (
-    <div id="parties-view" className="space-y-20 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
+    <div id="parties-view" className="space-y-12 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
       {/* Page Title Header */}
       <div className="text-center space-y-4 max-w-3xl mx-auto">
         <EditableText contentKey="parties_title" page="parties" defaultValue="Parties & Events" adminMode={adminMode} className="font-heading text-3xl md:text-4xl font-black text-[#1B2D3C] tracking-tight" />
@@ -106,10 +106,7 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
               <EditableImage contentKey="corporate_image" page="parties" defaultSrc={Images.studioHero} alt="Corporate event" className="w-full h-full object-cover rounded-lg" adminMode={adminMode} />
             </div>
             <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
-              <EditableText contentKey="corporate_desc1" page="parties" defaultValue="Whether it's a team-building exercise or an end-of-year alternative to a Christmas party, Pitter Potter provides a relaxing and meditative activity for your business." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
-            </p>
-            <p className="text-[#1B2D3C]/85 text-xs leading-relaxed">
-              <EditableText contentKey="corporate_desc2" page="parties" defaultValue="Please contact us to tailor a package for you." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
+              <EditableText contentKey="corporate_desc1" page="parties" defaultValue="Whether it's a team-building exercise or an end-of-year alternative to a Christmas party, Pitter Potter provides a relaxing and meditative activity for your business. Please contact us to tailor a package for you." adminMode={adminMode} className="text-xs text-[#1B2D3C]/85 leading-relaxed" />
             </p>
           </div>
           <a
