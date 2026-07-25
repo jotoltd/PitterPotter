@@ -72,7 +72,7 @@ export default function Footer({ setCurrentPage, adminMode = false }: FooterProp
                 <a href="#" className="text-[#1B2D3C]/60 hover:text-[#1B2D3C] transition-colors">
                   <Facebook className="w-5 h-5" />
                 </a>
-                <a href="#" className="text-[#1B2D3C]/60 hover:text-[#1B2D3C] transition-colors">
+                <a href="https://instagram.com/pitterpotteruk" target="_blank" rel="noopener noreferrer" className="text-[#1B2D3C]/60 hover:text-[#1B2D3C] transition-colors">
                   <Instagram className="w-5 h-5" />
                 </a>
                 <a href="#" className="text-[#1B2D3C]/60 hover:text-[#1B2D3C] transition-colors">
