@@ -223,8 +223,8 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
   };
 
   const galleryImages = images.length > 0 ? images : defaultImages;
-  const displayedImages = adminMode ? galleryImages : galleryImages.slice(0, 4);
-  const hasMore = galleryImages.length > 4;
+  const displayedImages = adminMode ? galleryImages : galleryImages.slice(0, 6);
+  const hasMore = galleryImages.length > 6;
   const lightboxImages = galleryImages;
 
   return (
@@ -282,7 +282,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
       {!adminMode && hasMore && (
         <div className="text-center">
           <button
-            onClick={() => setLightboxIndex(4)}
+            onClick={() => setLightboxIndex(6)}
             className="px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
           >
             View more photos

@@ -228,7 +228,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
       </div>
 
       {/* Gallery */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {displayedImages.map((item) => (
           <div
             key={item.key}
