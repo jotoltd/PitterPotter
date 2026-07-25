@@ -6,11 +6,11 @@ import WimbledonFloorPlan, { findAvailableTable, findMultipleTables } from './Wi
 import PutneyFloorPlan, { findAvailablePutneyTable, findMultiplePutneyTables } from './PutneyFloorPlan';
 import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
-import { format, isSameDay, parseISO } from 'date-fns';
+import { format, isSameDay, parseISO, getDay } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { loadBookings, createBooking, updateBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
-import { getAllSlots, getSlots, setSlots, DEFAULT_SLOTS, SlotSessionType, Studio, TimeSlotsData, getStudioSlots, sortSlots, loadSlotsFromSupabase, saveSlotsToSupabase } from '../lib/timeSlots';
+import { getAllSlots, getSlots, setSlots, DEFAULT_SLOTS, SlotSessionType, Studio, TimeSlotsData, getStudioSlots, sortSlots, loadSlotsFromSupabase, saveSlotsToSupabase, DayType } from '../lib/timeSlots';
 import { loadClosuresFromSupabase, saveClosuresToSupabase, getClosureDates, ClosureDates, HolidayRange } from '../lib/closures';
 import { useToast } from './ToastContext';
 import Skeleton from './Skeleton';
@@ -78,6 +78,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [capacitySaving, setCapacitySaving] = useState(false);
   const [timeSlotConfig, setTimeSlotConfig] = useState<TimeSlotsData>(() => getAllSlots());
   const [timeSlotStudio, setTimeSlotStudio] = useState<Studio>('Putney');
+  const [timeSlotDayType, setTimeSlotDayType] = useState<DayType>('weekday');
   const [newSlotInput, setNewSlotInput] = useState<Record<SlotSessionType, string>>({ painting: '', 'baby-prints': '', party: '' });
   const [closures, setClosures] = useState<ClosureDates>(getClosureDates());
   const [newHolidayFrom, setNewHolidayFrom] = useState('');
@@ -2665,7 +2666,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   {(() => {
                     const sType = newBooking.sessionType || 'painting';
                     const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : 'painting';
-                    return getSlots(slotKey, newBooking.studio || 'Putney').map(s => <option key={s} value={s}>{s}</option>);
+                    const dt: DayType = newBooking.date ? ((d => d === 0 || d === 6)(getDay(parseISO(newBooking.date))) ? 'weekend' : 'weekday') : 'weekday';
+                    return getSlots(slotKey, newBooking.studio || 'Putney', dt).map(s => <option key={s} value={s}>{s}</option>);
                   })()}
                 </select>
               </div>
@@ -2847,7 +2849,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   {(() => {
                     const sType = editingBooking.sessionType || 'painting';
                     const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : 'painting';
-                    const slots = getSlots(slotKey, editingBooking.studio || 'Putney');
+                    const dt: DayType = editingBooking.date ? ((d => d === 0 || d === 6)(getDay(parseISO(editingBooking.date))) ? 'weekend' : 'weekday') : 'weekday';
+                    const slots = getSlots(slotKey, editingBooking.studio || 'Putney', dt);
                     const existing = editingBooking.time;
                     const allSlots = existing && !slots.includes(existing) ? [existing, ...slots] : slots;
                     return allSlots.map(s => <option key={s} value={s}>{s}</option>);
@@ -3404,23 +3407,40 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-6">
             <div>
               <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Time Slots</h2>
-              <p className="text-xs text-[#1B2D3C]/70 mt-1">Configure available booking times per studio and session type. Changes are saved globally and apply to all users.</p>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Configure available booking times per studio, session type, and weekday/weekend. Changes are saved globally and apply to all users.</p>
             </div>
 
-            <div className="flex gap-2">
-              {(['Putney', 'Wimbledon'] as Studio[]).map((studio) => (
-                <button
-                  key={studio}
-                  onClick={() => setTimeSlotStudio(studio)}
-                  className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer border transition-colors ${
-                    timeSlotStudio === studio
-                      ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
-                      : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:bg-[#D6E2E9]/20'
-                  }`}
-                >
-                  {studio}
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex gap-2">
+                {(['Putney', 'Wimbledon'] as Studio[]).map((studio) => (
+                  <button
+                    key={studio}
+                    onClick={() => setTimeSlotStudio(studio)}
+                    className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer border transition-colors ${
+                      timeSlotStudio === studio
+                        ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
+                        : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:bg-[#D6E2E9]/20'
+                    }`}
+                  >
+                    {studio}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                {(['weekday', 'weekend'] as DayType[]).map((dt) => (
+                  <button
+                    key={dt}
+                    onClick={() => setTimeSlotDayType(dt)}
+                    className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg cursor-pointer border transition-colors ${
+                      timeSlotDayType === dt
+                        ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
+                        : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:bg-[#D6E2E9]/20'
+                    }`}
+                  >
+                    {dt === 'weekday' ? 'Weekdays' : 'Weekends'}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {(['painting', 'baby-prints', 'party'] as SlotSessionType[]).map((type) => {
@@ -3428,20 +3448,20 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
               const applySlotChange = (nextConfig: TimeSlotsData) => {
                 setTimeSlotConfig(nextConfig);
-                setSlots(type, nextConfig[timeSlotStudio][type], timeSlotStudio);
+                setSlots(type, timeSlotDayType, nextConfig[timeSlotStudio][type][timeSlotDayType], timeSlotStudio);
                 saveSlotsToSupabase(nextConfig, staff.username, staff.sessionToken ?? '').catch(() => {
                   showToast('Failed to save time slots', 'error');
                 });
               };
 
               return (
-                <div key={`${timeSlotStudio}-${type}`} className="space-y-3">
+                <div key={`${timeSlotStudio}-${timeSlotDayType}-${type}`} className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">{labels[type]}</h3>
                     <button
                       onClick={() => {
-                        const reset = DEFAULT_SLOTS[timeSlotStudio][type];
-                        const nextConfig = { ...timeSlotConfig, [timeSlotStudio]: { ...timeSlotConfig[timeSlotStudio], [type]: reset } };
+                        const reset = DEFAULT_SLOTS[timeSlotStudio][type][timeSlotDayType];
+                        const nextConfig = { ...timeSlotConfig, [timeSlotStudio]: { ...timeSlotConfig[timeSlotStudio], [type]: { ...timeSlotConfig[timeSlotStudio][type], [timeSlotDayType]: reset } } };
                         applySlotChange(nextConfig);
                         showToast(`${labels[type]} slots reset to default`, 'success');
                       }}
@@ -3451,13 +3471,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {timeSlotConfig[timeSlotStudio][type].map((slot) => (
+                    {timeSlotConfig[timeSlotStudio][type][timeSlotDayType].map((slot) => (
                       <span key={slot} className="flex items-center gap-1 px-2.5 py-1.5 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold rounded-lg">
                         {slot}
                         <button
                           onClick={() => {
-                            const updated = timeSlotConfig[timeSlotStudio][type].filter(s => s !== slot);
-                            const nextConfig = { ...timeSlotConfig, [timeSlotStudio]: { ...timeSlotConfig[timeSlotStudio], [type]: sortSlots(updated) } };
+                            const updated = timeSlotConfig[timeSlotStudio][type][timeSlotDayType].filter(s => s !== slot);
+                            const nextConfig = { ...timeSlotConfig, [timeSlotStudio]: { ...timeSlotConfig[timeSlotStudio], [type]: { ...timeSlotConfig[timeSlotStudio][type], [timeSlotDayType]: sortSlots(updated) } } };
                             applySlotChange(nextConfig);
                           }}
                           className="ml-0.5 hover:text-red-600 cursor-pointer"
@@ -3478,9 +3498,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           const val = newSlotInput[type].trim();
-                          if (!val || timeSlotConfig[timeSlotStudio][type].includes(val)) return;
-                          const updated = sortSlots([...timeSlotConfig[timeSlotStudio][type], val]);
-                          const nextConfig = { ...timeSlotConfig, [timeSlotStudio]: { ...timeSlotConfig[timeSlotStudio], [type]: updated } };
+                          if (!val || timeSlotConfig[timeSlotStudio][type][timeSlotDayType].includes(val)) return;
+                          const updated = sortSlots([...timeSlotConfig[timeSlotStudio][type][timeSlotDayType], val]);
+                          const nextConfig = { ...timeSlotConfig, [timeSlotStudio]: { ...timeSlotConfig[timeSlotStudio], [type]: { ...timeSlotConfig[timeSlotStudio][type], [timeSlotDayType]: updated } } };
                           applySlotChange(nextConfig);
                           setNewSlotInput(prev => ({ ...prev, [type]: '' }));
                           showToast(`Slot added to ${labels[type]}`, 'success');
@@ -3490,9 +3510,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     <button
                       onClick={() => {
                         const val = newSlotInput[type].trim();
-                        if (!val || timeSlotConfig[timeSlotStudio][type].includes(val)) return;
-                        const updated = sortSlots([...timeSlotConfig[timeSlotStudio][type], val]);
-                        const nextConfig = { ...timeSlotConfig, [timeSlotStudio]: { ...timeSlotConfig[timeSlotStudio], [type]: updated } };
+                        if (!val || timeSlotConfig[timeSlotStudio][type][timeSlotDayType].includes(val)) return;
+                        const updated = sortSlots([...timeSlotConfig[timeSlotStudio][type][timeSlotDayType], val]);
+                        const nextConfig = { ...timeSlotConfig, [timeSlotStudio]: { ...timeSlotConfig[timeSlotStudio], [type]: { ...timeSlotConfig[timeSlotStudio][type], [timeSlotDayType]: updated } } };
                         applySlotChange(nextConfig);
                         setNewSlotInput(prev => ({ ...prev, [type]: '' }));
                         showToast(`Slot added to ${labels[type]}`, 'success');

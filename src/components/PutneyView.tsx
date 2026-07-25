@@ -5,7 +5,7 @@ import Calendar from './Calendar';
 import { format, getDay } from 'date-fns';
 import {Clock, Calendar as CalendarIcon, ArrowRight} from 'lucide-react';
 import { getRemainingCapacity, getBusyDates } from '../lib/bookings';
-import { getSlots } from '../lib/timeSlots';
+import { getSlots, DayType } from '../lib/timeSlots';
 import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange, getClosedDatesForStudio } from '../lib/closures';
 import { useToast } from './ToastContext';
 import EditableText from './EditableText';
@@ -28,7 +28,10 @@ function getTimeSlots(date: Date, closures: ClosureDates): string[] {
   const day = getDay(date);
   const dateStr = format(date, 'yyyy-MM-dd');
   const isHoliday = isDateInHolidayRange(dateStr, closures.schoolHolidays);
-  if (day >= 2 || day === 0 || (day === 1 && isHoliday)) return getSlots('painting', 'Putney');
+  if (day >= 2 || day === 0 || (day === 1 && isHoliday)) {
+    const dayType: DayType = (day === 0 || day === 6) ? 'weekend' : 'weekday';
+    return getSlots('painting', 'Putney', dayType);
+  }
   return [];
 }
 
