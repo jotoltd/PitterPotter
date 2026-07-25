@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, X, ArrowLeft, Gift, Heart } from 'lucide-react';
+import { MapPin, X, Gift, Heart } from 'lucide-react';
 import { Page } from '../types';
 import { Images } from '../images';
 import EditableText from './EditableText';
@@ -56,8 +56,6 @@ export default function PartyDetailView({ partyType, setCurrentPage, adminMode =
   const content = DETAIL_CONTENT[partyType];
   const Icon = content.icon;
 
-  const backPage: Page = 'parties';
-
   const pageMap: Record<PartyType, Record<string, Page>> = {
     birthday: { putney: 'party-birthday-putney', wimbledon: 'party-birthday-wimbledon' },
     'baby-shower-hen': { putney: 'party-babyshower-putney', wimbledon: 'party-babyshower-wimbledon' },
@@ -81,15 +79,6 @@ export default function PartyDetailView({ partyType, setCurrentPage, adminMode =
 
   return (
     <div className="pb-20 pt-6 max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-      {/* Back */}
-      <button
-        onClick={() => setCurrentPage(backPage)}
-        className="flex items-center gap-2 text-[#1B2D3C]/60 hover:text-[#1B2D3C] text-xs font-bold uppercase tracking-wider mb-8 transition-colors cursor-pointer"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Parties
-      </button>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start mb-12">
         {/* Left — Image */}
         <div className="space-y-6">
