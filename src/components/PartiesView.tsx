@@ -55,7 +55,7 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
       {/* Main Services Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-start">
         {/* Birthday Parties — first/left */}
-        <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-between space-y-6 rounded-xl">
+        <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-start space-y-6 rounded-xl">
           <div className="space-y-4">
             <h3 className="font-heading text-xl text-[#1B2D3C]">
               <EditableText contentKey="birthday_title" page="parties" defaultValue="Birthday Parties" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" />
@@ -76,7 +76,7 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
         </div>
 
         {/* Baby Showers & Hen Parties */}
-        <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-between space-y-6 rounded-xl">
+        <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-start space-y-6 rounded-xl">
           <div className="space-y-4">
             <h3 className="font-heading text-xl text-[#1B2D3C]">
               <EditableText contentKey="baby_shower_title" page="parties" defaultValue="Baby Shower / Hen Party / Stag Do" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" />
@@ -97,7 +97,7 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
         </div>
 
         {/* Corporate Team Events */}
-        <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-between space-y-6 rounded-xl">
+        <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-start space-y-6 rounded-xl">
           <div className="space-y-4">
             <h3 className="font-heading text-xl text-[#1B2D3C]">
               <EditableText contentKey="corporate_title" page="parties" defaultValue="Corporate Events" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" />
@@ -118,7 +118,7 @@ export default function PartiesView({ setCurrentPage, adminMode = false }: Parti
         </div>
 
         {/* After Hour & Exclusive Hire */}
-        <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-between space-y-6 rounded-xl">
+        <div className="bg-white border border-[#1B2D3C]/20 p-8 flex flex-col justify-start space-y-6 rounded-xl">
           <div className="space-y-4">
             <h3 className="font-heading text-xl text-[#1B2D3C]">
               <EditableText contentKey="after_hours_title" page="parties" defaultValue="After Hour & Exclusive Hire" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" />
