@@ -72,6 +72,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
   const [maintenanceSaving, setMaintenanceSaving] = useState(false);
   const [partyPrice, setPartyPrice] = useState<number>(28.95);
+  const [partyGuestLimitPutney, setPartyGuestLimitPutney] = useState<number>(16);
+  const [partyGuestLimitWimbledon, setPartyGuestLimitWimbledon] = useState<number>(16);
   const [depositNoticeType, setDepositNoticeTypeState] = useState<'info' | 'warning' | 'success' | 'error'>('info');
   const [tablePlanEnabled, setTablePlanEnabled] = useState<boolean>(false);
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
@@ -413,6 +415,50 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       if (noticeData?.value && ['info','warning','success','error'].includes(noticeData.value)) {
         setDepositNoticeTypeState(noticeData.value as 'info' | 'warning' | 'success' | 'error');
       }
+    }
+
+    // Load party guest limits
+    try {
+      const [putneyRes, wimbledonRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ action: 'load', username: staff.username, sessionToken: staff.sessionToken, key: 'party_guest_limit_putney' }),
+        }),
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ action: 'load', username: staff.username, sessionToken: staff.sessionToken, key: 'party_guest_limit_wimbledon' }),
+        }),
+      ]);
+      const putneyData = await putneyRes.json();
+      if (putneyData.value) setPartyGuestLimitPutney(Number(putneyData.value));
+      const wimbledonData = await wimbledonRes.json();
+      if (wimbledonData.value) setPartyGuestLimitWimbledon(Number(wimbledonData.value));
+    } catch (err) {
+      console.error('Failed to load party guest limits:', err);
+    }
+  };
+
+  const updatePartyGuestLimit = async (studio: 'putney' | 'wimbledon', value: number) => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'update', username: staff.username, sessionToken: staff.sessionToken, key: `party_guest_limit_${studio}`, value: String(value) }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        showToast('Failed to update party guest limit', 'error');
+        return;
+      }
+      if (studio === 'putney') setPartyGuestLimitPutney(value);
+      else setPartyGuestLimitWimbledon(value);
+      showToast('Party guest limit updated', 'success');
+    } catch (err) {
+      console.error('Failed to update party guest limit:', err);
+      showToast('Failed to update party guest limit', 'error');
     }
   };
 
@@ -3722,6 +3768,54 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               >
                 Save
               </button>
+            </div>
+          </div>
+
+          {/* Party Guest Limit */}
+          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 max-w-xl">
+            <div>
+              <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Party Guest Limit</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Maximum number of guests per party booking at each studio.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#1B2D3C] uppercase tracking-wider">Putney</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={partyGuestLimitPutney}
+                    onChange={(e) => setPartyGuestLimitPutney(Math.max(1, Number(e.target.value)))}
+                    className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  />
+                  <button
+                    onClick={() => updatePartyGuestLimit('putney', partyGuestLimitPutney)}
+                    className="px-3 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-all cursor-pointer"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[#1B2D3C] uppercase tracking-wider">Wimbledon</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="80"
+                    value={partyGuestLimitWimbledon}
+                    onChange={(e) => setPartyGuestLimitWimbledon(Math.max(1, Number(e.target.value)))}
+                    className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  />
+                  <button
+                    onClick={() => updatePartyGuestLimit('wimbledon', partyGuestLimitWimbledon)}
+                    className="px-3 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-all cursor-pointer"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 

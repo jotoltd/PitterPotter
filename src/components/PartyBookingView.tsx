@@ -80,7 +80,7 @@ const PARTY_INFO: Record<PartyType, { title: string; price: string; description:
   },
 };
 
-const PARTY_GUEST_LIMIT: Record<Studio, number> = { Putney: 20, Wimbledon: 40 };
+const DEFAULT_PARTY_GUEST_LIMIT: Record<Studio, number> = { Putney: 16, Wimbledon: 16 };
 
 function getTimeSlots(date: Date, closures: ClosureDates, studio: 'Putney' | 'Wimbledon'): string[] {
   const day = getDay(date);
@@ -113,6 +113,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [closures, setClosures] = useState<ClosureDates>(getClosureDates());
   const [partyPrice, setPartyPrice] = useState<number>(28.95);
+  const [partyGuestLimit, setPartyGuestLimit] = useState<number>(DEFAULT_PARTY_GUEST_LIMIT[studio]);
   const [depositAmount] = useState<number>(50);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
@@ -194,6 +195,24 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
     loadPartyPrice();
   }, []);
 
+  useEffect(() => {
+    const loadGuestLimit = async () => {
+      try {
+        const key = `party_guest_limit_${studio.toLowerCase()}`;
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ action: 'load', key }),
+        });
+        const data = await response.json();
+        if (data.value) setPartyGuestLimit(Number(data.value));
+      } catch (err) {
+        console.error('Failed to load party guest limit:', err);
+      }
+    };
+    loadGuestLimit();
+  }, [studio]);
+
   const handleSubmit = async () => {
     setError('');
     if (!date || !time || !name || !phone) {
@@ -213,7 +232,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
     }
 
     const guestCount = guests === '' ? 1 : guests;
-    const partyLimit = PARTY_GUEST_LIMIT[studio];
+    const partyLimit = partyGuestLimit;
     if (guestCount > partyLimit) {
       if (studio === 'Putney') {
         setError(`Putney can accommodate up to 16 guests for a party. For larger groups, please call us to discuss arrangements.`);
@@ -559,7 +578,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {timeSlots.map((slot) => {
-                const remaining = slotCapacity[slot] ?? PARTY_GUEST_LIMIT[studio];
+                const remaining = slotCapacity[slot] ?? partyGuestLimit;
                 const isFull = remaining === 0;
                 const isLimited = remaining > 0 && remaining <= 5;
                 
@@ -599,9 +618,9 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
           <input
             type="number"
             min={1}
-            max={PARTY_GUEST_LIMIT[studio]}
+            max={partyGuestLimit}
             value={guests}
-            onChange={(e) => setGuests(e.target.value === '' ? '' : Math.max(1, Math.min(PARTY_GUEST_LIMIT[studio], parseInt(e.target.value) || 1)))}
+            onChange={(e) => setGuests(e.target.value === '' ? '' : Math.max(1, Math.min(partyGuestLimit, parseInt(e.target.value) || 1)))}
             className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
           />
           {studio === 'Putney' && (

@@ -290,8 +290,20 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
   };
 
   const filteredItems = items.filter(item => item.imageUrl);
-  const displayedItems = adminMode ? filteredItems : filteredItems.slice(0, 4);
-  const hasMore = filteredItems.length > 4;
+  const INITIAL_COUNT = 8;
+  const displayedItems = adminMode ? filteredItems : filteredItems.slice(0, INITIAL_COUNT);
+  const hasMore = filteredItems.length > INITIAL_COUNT;
+
+  const tilePatterns = [
+    'aspect-[4/5]',   // tall
+    'aspect-square',  // square
+    'aspect-[4/3]',   // wide
+    'aspect-[3/4]',   // portrait
+    'aspect-[4/5]',   // tall
+    'aspect-[3/2]',   // wide
+    'aspect-square',  // square
+    'aspect-[4/3]',   // wide
+  ];
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index);
@@ -344,7 +356,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
 
       {/* Gallery thumbnails */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {displayedItems.map((item, index) => (
             <div
               key={item.id}
@@ -352,7 +364,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDragEnd={handleDragEnd}
-              className={`aspect-square overflow-hidden rounded-lg relative group ${adminMode ? 'cursor-move' : ''}`}
+              className={`${tilePatterns[index % tilePatterns.length]} overflow-hidden rounded-lg relative group ${adminMode ? 'cursor-move' : ''}`}
             >
               <button
                 onClick={() => setLightboxIndex(filteredItems.findIndex((i) => i.id === item.id))}
@@ -389,7 +401,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
         {!adminMode && hasMore && (
           <div className="text-center mt-6">
             <button
-              onClick={() => setLightboxIndex(4)}
+              onClick={() => setLightboxIndex(INITIAL_COUNT)}
               className="px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-widest rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
             >
               View more photos

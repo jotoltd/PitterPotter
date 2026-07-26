@@ -111,7 +111,7 @@ export default function Calendar({
               className={`
                 relative flex flex-col items-center justify-center min-h-[4.5rem] border-r border-b border-[#1B2D3C]/5 transition-colors
                 ${!inMonth ? 'opacity-0 pointer-events-none bg-white' : ''}
-                ${disabledDay && inMonth ? 'bg-stone-100 text-stone-400 cursor-not-allowed' : ''}
+                ${disabledDay && inMonth ? 'bg-white cursor-not-allowed' : ''}
                 ${!disabledDay && inMonth ? 'text-[#1B2D3C] cursor-pointer hover:bg-[#D6E2E9]/30' : ''}
                 ${selectedDay && inMonth ? 'bg-[#DBE7E4] text-[#1B2D3C] hover:bg-[#D6E2E9]' : ''}
                 ${today && !selectedDay && inMonth ? 'bg-[#D6E2E9]/50 font-black' : ''}
@@ -121,6 +121,8 @@ export default function Calendar({
                 w-8 h-8 flex items-center justify-center text-sm rounded-full
                 ${today && !selectedDay && inMonth ? 'bg-[#DBE7E4] text-[#1B2D3C]' : ''}
                 ${selectedDay && inMonth ? 'font-bold' : ''}
+                ${disabledDay && inMonth && !selectedDay ? 'text-stone-400' : ''}
+                ${!disabledDay && inMonth && !selectedDay ? 'text-[#1B2D3C]' : ''}
               `}>
                 {format(day, 'do')}
               </span>
