@@ -2,6 +2,7 @@ import { createClient } from 'supabase';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 import type { StaffRecord } from '../_shared/types.ts';
 import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts';
+import { getStudioInfo } from '../_shared/studio-info.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,10 +41,13 @@ async function sendEmail(details: BookingDetails): Promise<{ success: boolean; e
 
   const subject = `Booking confirmed — ${details.studio} on ${details.date}`;
 
+  const studioInfo = getStudioInfo(details.studio);
   const templateVars: Record<string, string | number | undefined> = {
     bookingId: details.bookingId,
     name: details.name,
     studio: details.studio,
+    studioAddress: studioInfo.address,
+    studioPhone: studioInfo.phone,
     date: details.date,
     time: details.time,
     paintersCount: details.paintersCount,
@@ -65,6 +69,11 @@ async function sendEmail(details: BookingDetails): Promise<{ success: boolean; e
               <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Session</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${details.sessionType}</td></tr>
             </table>
             <p>We look forward to seeing you in the studio!</p>
+            <p style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #DBE7E4; font-size: 12px; color: #666;">
+              <strong>${details.studio} Studio</strong><br/>
+              ${studioInfo.address}<br/>
+              ${studioInfo.phone}
+            </p>
             <p>Pitter Potter</p>
           </div>
         `;

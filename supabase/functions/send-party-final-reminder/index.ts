@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { isObject, isNonEmptyString, isInteger } from '../_shared/validate.ts';
 import type { StaffRecord } from '../_shared/types.ts';
 import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts';
+import { getStudioInfo } from '../_shared/studio-info.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,10 +47,13 @@ async function sendReminderEmail(
 
   const subject = `Final payment for your party — ${details.studio} on ${details.date}`;
 
+  const studioInfo = getStudioInfo(details.studio);
   const templateVars: Record<string, string | number | undefined> = {
     bookingId: details.bookingId,
     name: details.name,
     studio: details.studio,
+    studioAddress: studioInfo.address,
+    studioPhone: studioInfo.phone,
     date: details.date,
     time: details.time,
     finalSeats: details.finalSeats,
@@ -79,6 +83,11 @@ async function sendReminderEmail(
               <a href="${details.paymentLinkUrl}" style="background: #1B2D3C; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Pay final balance</a>
             </p>
             <p>If your numbers have changed, please reply to this email or call us and we will adjust the balance.</p>
+            <p style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #DBE7E4; font-size: 12px; color: #666;">
+              <strong>${details.studio} Studio</strong><br/>
+              ${studioInfo.address}<br/>
+              ${studioInfo.phone}
+            </p>
             <p>Pitter Potter</p>
           </div>
         `;

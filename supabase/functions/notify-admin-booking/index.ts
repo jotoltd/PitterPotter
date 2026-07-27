@@ -1,6 +1,7 @@
 import { createClient } from 'supabase';
 import { isObject, isNonEmptyString, isOneOf } from '../_shared/validate.ts';
 import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts';
+import { getStudioInfo } from '../_shared/studio-info.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,12 +32,15 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
 
   const subject = `New booking request — ${details.studio} on ${details.date} (${details.bookingId})`;
 
+  const studioInfo = getStudioInfo(details.studio);
   const templateVars: Record<string, string | number | undefined> = {
     bookingId: details.bookingId,
     name: details.name,
     email: details.email,
     phone: details.phone,
     studio: details.studio,
+    studioAddress: studioInfo.address,
+    studioPhone: studioInfo.phone,
     date: details.date,
     time: details.time,
     paintersCount: details.paintersCount,
@@ -61,6 +65,11 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
               ${details.notes ? `<tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Notes</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${details.notes}</td></tr>` : ''}
             </table>
             <p style="color: #666; font-size: 12px;">Log in to the Pitter Potter admin dashboard to confirm or manage this booking.</p>
+            <p style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #DBE7E4; font-size: 12px; color: #666;">
+              <strong>${details.studio} Studio</strong><br/>
+              ${studioInfo.address}<br/>
+              ${studioInfo.phone}
+            </p>
           </div>
         `;
   const html = tpl ? renderTemplate(tpl.html_content, templateVars) : fallbackHtml;
