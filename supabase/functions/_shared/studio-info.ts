@@ -5,12 +5,12 @@ export interface StudioInfo {
 
 const STUDIO_INFO: Record<string, StudioInfo> = {
   Putney: {
-    address: 'Pitter Potter Putney, 2 Lacy Street, London, SW15 1NH',
-    phone: '020 8789 1234',
+    address: '234 Upper Richmond Road, London, SW15 6TG',
+    phone: '020 8788 1635',
   },
   Wimbledon: {
-    address: 'Pitter Potter Wimbledon, 78 Wimbledon Hill Road, London, SW19 7AH',
-    phone: '020 8946 5678',
+    address: '52 Wimbledon Hill Road, London, SW19 7PA',
+    phone: '020 3770 4499',
   },
 };
 

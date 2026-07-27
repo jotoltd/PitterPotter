@@ -98,8 +98,8 @@ async function sendEmail(
 </body>
 </html>
         `;
-  const html = tpl ? renderTemplate(tpl.html_content, templateVars) : fallbackHtml;
-  const finalSubject = tpl ? renderTemplate(tpl.subject, templateVars) : subject;
+  const html = fallbackHtml;
+  const finalSubject = subject;
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
