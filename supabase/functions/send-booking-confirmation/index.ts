@@ -50,29 +50,53 @@ async function sendEmail(
 
   const tpl = await loadEmailTemplate('booking_confirmation');
   const fallbackHtml = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1B2D3C;">
-            <h2 style="color: #1B2D3C;">Your booking is confirmed</h2>
-            <p>Hi ${booking.name},</p>
-            <p>Your booking at <strong>${booking.studio}</strong> has been confirmed.</p>
-            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-              <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Date</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${booking.date}</td></tr>
-              <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Time</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${booking.time}</td></tr>
-              <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Studio</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${booking.studio}</td></tr>
-              <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Painters</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${booking.painters_count}</td></tr>
-              <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Session</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${booking.session_type}</td></tr>
-            </table>
-            <div style="margin: 24px 0; padding: 16px; background: #FFF1E6; border-radius: 8px; text-align: center;">
-              <p style="margin: 0 0 8px; font-size: 14px; color: #1B2D3C;">Need to reschedule or cancel?</p>
-              <a href="${manageUrl}" style="display: inline-block; padding: 10px 24px; background: #1B2D3C; color: #fff; text-decoration: none; font-weight: bold; border-radius: 6px; font-size: 14px;">Manage your booking</a>
-            </div>
-            <p>We look forward to seeing you in the studio!</p>
-            <p style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #DBE7E4; font-size: 12px; color: #666;">
-              <strong>${booking.studio} Studio</strong><br/>
-              ${studioInfo.address}<br/>
-              ${studioInfo.phone}
-            </p>
-            <p>Pitter Potter</p>
-          </div>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#FFF8F0;font-family:'DM Sans','Outfit','Plus Jakarta Sans','Inter',sans-serif;color:#1B2D3C;">
+  <div style="max-width:560px;margin:0 auto;padding:32px 24px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <h1 style="font-family:'Montserrat','Outfit','Plus Jakarta Sans','Inter',sans-serif;font-size:28px;font-weight:900;color:#1B2D3C;margin:0 0 8px;letter-spacing:-0.5px;">Pitter Potter</h1>
+      <p style="font-size:12px;color:#1B2D3C;opacity:0.5;margin:0;text-transform:uppercase;letter-spacing:2px;font-weight:700;">Pottery Painting Studio</p>
+    </div>
+
+    <div style="background:#FFFFFF;border-radius:16px;padding:32px;border:1px solid #D6E2E9;">
+      <h2 style="font-family:'Montserrat','Outfit','Plus Jakarta Sans','Inter',sans-serif;font-size:22px;font-weight:900;color:#1B2D3C;margin:0 0 16px;">Your booking is confirmed!</h2>
+
+      <p style="font-size:15px;line-height:1.6;color:#1B2D3C;margin:0 0 24px;">Hi ${booking.name},</p>
+      <p style="font-size:15px;line-height:1.6;color:#1B2D3C;margin:0 0 24px;">We're looking forward to seeing you at <strong style="color:#1B2D3C;">${booking.studio}</strong>. Here are your booking details:</p>
+
+      <div style="background:#FFF8F0;border-radius:12px;padding:24px;margin:0 0 24px;">
+        <p style="font-size:14px;line-height:1.8;margin:0;color:#1B2D3C;">
+          <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Date</strong> ${booking.date}<br/>
+          <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Time</strong> ${booking.time}<br/>
+          <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Studio</strong> ${booking.studio}<br/>
+          <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Seats</strong> ${booking.painters_count}<br/>
+          <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Session</strong> ${booking.session_type}
+        </p>
+      </div>
+
+      <div style="background:#FFF1E6;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px;">
+        <p style="font-size:14px;color:#1B2D3C;margin:0 0 12px;font-weight:600;">Need to reschedule or cancel?</p>
+        <a href="${manageUrl}" style="display:inline-block;padding:12px 32px;background:#1B2D3C;color:#FFFFFF;text-decoration:none;font-weight:700;border-radius:8px;font-size:14px;font-family:'DM Sans','Outfit','Inter',sans-serif;">Manage your booking</a>
+      </div>
+
+      <p style="font-size:15px;line-height:1.6;color:#1B2D3C;margin:0 0 8px;">We can't wait to see your creations!</p>
+    </div>
+
+    <div style="text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid #D6E2E9;">
+      <p style="font-size:13px;color:#1B2D3C;font-weight:700;margin:0 0 4px;">${booking.studio} Studio</p>
+      <p style="font-size:12px;color:#1B2D3C;opacity:0.6;margin:0 0 2px;line-height:1.5;">${studioInfo.address}</p>
+      <p style="font-size:12px;color:#1B2D3C;opacity:0.6;margin:0;">${studioInfo.phone}</p>
+    </div>
+
+    <p style="text-align:center;font-size:11px;color:#1B2D3C;opacity:0.4;margin:24px 0 0;">Pitter Potter — Paint your story</p>
+  </div>
+</body>
+</html>
         `;
   const html = tpl ? renderTemplate(tpl.html_content, templateVars) : fallbackHtml;
   const finalSubject = tpl ? renderTemplate(tpl.subject, templateVars) : subject;
