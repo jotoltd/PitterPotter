@@ -213,3 +213,9 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/sample-data/deno.json"
 entrypoint = "./functions/sample-data/index.ts"
+
+[functions.create-party-payment]
+enabled = true
+verify_jwt = false
+import_map = "./functions/create-party-payment/deno.json"
+entrypoint = "./functions/create-party-payment/index.ts"
