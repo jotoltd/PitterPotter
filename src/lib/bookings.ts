@@ -142,30 +142,6 @@ export async function createPublicBooking(booking: BookingInquiry): Promise<void
     console.error('Failed to create booking:', error);
     throw new Error('Failed to create booking');
   }
-
-  try {
-    await fetch(functionUrl('notify-admin-booking'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({
-        bookingId: booking.id,
-        name: booking.name,
-        email: booking.email,
-        phone: booking.phone,
-        studio: booking.studio,
-        date: booking.date,
-        time: booking.time,
-        paintersCount: booking.paintersCount,
-        sessionType: booking.sessionType,
-        notes: booking.notes,
-      }),
-    });
-  } catch (err) {
-    console.error('Failed to send admin notification:', err);
-  }
 }
 
 export async function createBooking(booking: BookingInquiry, staff?: Staff | null): Promise<void> {
