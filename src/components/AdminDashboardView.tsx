@@ -39,10 +39,10 @@ const SESSION_BADGE: Record<string, string> = {
 };
 
 interface SortHeaderProps {
-  field: 'date' | 'name' | 'studio' | 'status';
+  field: 'date' | 'name' | 'studio' | 'status' | 'added';
   label: string;
-  sort: { field: 'date' | 'name' | 'studio' | 'status'; direction: 'asc' | 'desc' };
-  setSort: (sort: { field: 'date' | 'name' | 'studio' | 'status'; direction: 'asc' | 'desc' }) => void;
+  sort: { field: 'date' | 'name' | 'studio' | 'status' | 'added'; direction: 'asc' | 'desc' };
+  setSort: (sort: { field: 'date' | 'name' | 'studio' | 'status' | 'added'; direction: 'asc' | 'desc' }) => void;
 }
 
 function SortHeader({ field, label, sort, setSort }: SortHeaderProps) {
@@ -121,7 +121,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const ITEMS_PER_PAGE = 10;
   const [editingBooking, setEditingBooking] = useState<BookingInquiry | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [sort, setSort] = useState<{ field: 'date' | 'name' | 'studio' | 'status'; direction: 'asc' | 'desc' }>({ field: 'date', direction: 'desc' });
+  const [sort, setSort] = useState<{ field: 'date' | 'name' | 'studio' | 'status' | 'added'; direction: 'asc' | 'desc' }>({ field: 'added', direction: 'desc' });
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [lockedSessionType, setLockedSessionType] = useState<string | null>(null);
@@ -1209,6 +1209,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     })
     .sort((a, b) => {
       const dir = sort.direction === 'asc' ? 1 : -1;
+      if (sort.field === 'added') {
+        const dateA = new Date(a.requestDate || a.date).getTime();
+        const dateB = new Date(b.requestDate || b.date).getTime();
+        return (dateA - dateB) * dir;
+      }
       if (sort.field === 'date') {
         const dateA = new Date(a.date).getTime();
         const dateB = new Date(b.date).getTime();
@@ -2565,6 +2570,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           }}
                           className="w-4 h-4 accent-[#1B2D3C] cursor-pointer" />
                       </th>
+                      <SortHeader field="added" label="Added" sort={sort} setSort={setSort} />
                       <SortHeader field="date" label="Date" sort={sort} setSort={setSort} />
                       <SortHeader field="name" label="Guest" sort={sort} setSort={setSort} />
                       <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] hidden lg:table-cell">Session</th>
