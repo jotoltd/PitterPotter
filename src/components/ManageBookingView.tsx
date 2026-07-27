@@ -361,7 +361,7 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
         {/* Footer note */}
         {!isCancelled && (
           <p className="text-center text-xs text-[#1B2D3C]/50 mt-6">
-            Payment is collected in person at the studio. Questions? Call us at {booking.studio === 'Putney' ? '020 8789 1234' : '020 8946 5678'}.
+            Questions? Call us at {booking.studio === 'Putney' ? '020 8789 1234' : '020 8946 5678'}.
           </p>
         )}
       </div>

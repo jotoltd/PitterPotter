@@ -414,11 +414,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Phone</span>{phone}</div>
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Email</span>{email || '—'}</div>
                   </div>
-                  <div className="border-t border-[#1B2D3C]/10 pt-3 space-y-1 text-xs font-semibold text-[#1B2D3C]">
-                    <div className="flex justify-between text-sm font-black">
-                      <span>Payment</span><span>Pay in person</span>
-                    </div>
-                  </div>
                 </div>
 
                 <div className="flex gap-3">
