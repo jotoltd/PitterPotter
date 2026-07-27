@@ -1411,21 +1411,25 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const saveNewBooking = async () => {
-    if (!newBooking.name || !newBooking.email || !newBooking.phone || !newBooking.date || !newBooking.time) {
-      showToast('Please fill in all required fields', 'error');
+    if (!newBooking.name || !newBooking.date || !newBooking.time) {
+      showToast('Please fill in name, date, and time', 'error');
       return;
     }
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newBooking.email)) {
-      showToast('Please enter a valid email address', 'error');
-      return;
+    // Validate email format if provided
+    if (newBooking.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newBooking.email)) {
+        showToast('Please enter a valid email address', 'error');
+        return;
+      }
     }
-    // Validate phone format (basic check for UK phone numbers)
-    const phoneRegex = /^(\+44|0)[1-9]\d{8,9}$/;
-    if (!phoneRegex.test(newBooking.phone.replace(/\s/g, ''))) {
-      showToast('Please enter a valid UK phone number', 'error');
-      return;
+    // Validate phone format if provided
+    if (newBooking.phone) {
+      const phoneRegex = /^(\+44|0)[1-9]\d{8,9}$/;
+      if (!phoneRegex.test(newBooking.phone.replace(/\s/g, ''))) {
+        showToast('Please enter a valid UK phone number', 'error');
+        return;
+      }
     }
     // Validate date is not in the past
     const bookingDate = new Date(newBooking.date);
@@ -2789,6 +2793,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Date *</label>
                 <input
                   type="date"
+                  min={format(new Date(), 'yyyy-MM-dd')}
                   value={newBooking.date}
                   onChange={(e) => setNewBooking({ ...newBooking, date: e.target.value })}
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
@@ -2870,7 +2875,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Phone *</label>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Phone</label>
                 <input
                   type="tel"
                   value={newBooking.phone}
@@ -3101,6 +3106,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Date</label>
                 <input
                   type="date"
+                  min={format(new Date(), 'yyyy-MM-dd')}
                   value={editingBooking.date}
                   onChange={(e) => setEditingBooking({ ...editingBooking, date: e.target.value })}
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
