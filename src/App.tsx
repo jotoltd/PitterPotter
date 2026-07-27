@@ -64,6 +64,7 @@ const PAGE_TO_PATH: Record<Page, string> = {
   'party-babyshower-wimbledon': '/parties/baby-shower-hen/wimbledon',
   'party-corporate-putney': '/parties/corporate/putney',
   'party-corporate-wimbledon': '/parties/corporate/wimbledon',
+  'not-found': '/not-found',
 };
 
 const PATH_TO_PAGE: Record<string, Page> = Object.entries(PAGE_TO_PATH).reduce((acc, [page, path]) => {
@@ -80,7 +81,7 @@ function getPageFromPath(): Page {
   const params = new URLSearchParams(window.location.search);
   const legacyPage = params.get('page') as Page | null;
   if (legacyPage && legacyPage in PAGE_TO_PATH) return legacyPage;
-  return 'home';
+  return 'not-found';
 }
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase, isSupabaseEnabled } from './lib/supabase';
@@ -318,6 +319,8 @@ case 'party-birthday-putney':
               );
             }
             return <AdminLoginView onLogin={handleAdminLogin} />;
+ case 'not-found':
+ return <NotFoundView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  default:
  return <NotFoundView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  }
@@ -357,7 +360,7 @@ case 'party-birthday-putney':
 
  {/* Main Pages Content Window with graceful layout transitions */}
  <main className="flex-grow">
- {currentPage !== 'home' && currentPage !== 'admin' && (
+ {currentPage !== 'home' && currentPage !== 'admin' && currentPage !== 'not-found' && (
  <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-4">
  <button
  onClick={() => setCurrentPage('home')}
