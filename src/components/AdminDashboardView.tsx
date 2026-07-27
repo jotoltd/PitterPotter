@@ -98,8 +98,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     message: '',
   });
   const [giftCardCreating, setGiftCardCreating] = useState(false);
-  const [redeemingGiftCard, setRedeemingGiftCard] = useState(false);
-  const [giftCardDiscount, setGiftCardDiscount] = useState(0);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [emailLogsLoading, setEmailLogsLoading] = useState(false);
@@ -905,7 +903,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const exportBookingsCSV = () => {
-    const headers = ['Reference', 'Name', 'Email', 'Phone', 'Studio', 'Date', 'Time', 'Seats', 'Session Type', 'Status', 'Request Date', 'Notes', 'Estimated Price', 'Final Price', 'Gift Card Code'];
+    const headers = ['Reference', 'Name', 'Email', 'Phone', 'Studio', 'Date', 'Time', 'Seats', 'Session Type', 'Status', 'Request Date', 'Notes', 'Estimated Price', 'Final Price'];
     const rows = inquiries.map((inq) => [
       inq.id,
       inq.name,
@@ -921,7 +919,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       inq.notes || '',
       inq.estimatedPrice || '',
       inq.finalPrice || '',
-      inq.giftCardCode || '',
     ]);
     const csv = [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -954,35 +951,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     a.download = `gift_cards_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  };
-
-  const redeemGiftCard = async (code: string, amount: number) => {
-    if (!code || amount <= 0) {
-      showToast('Invalid gift card code or amount', 'error');
-      return;
-    }
-    setRedeemingGiftCard(true);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redeem-gift-card`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({ code, amount }),
-      });
-      const data = await response.json();
-      if (!response.ok || data.error) {
-        showToast(data.error || 'Failed to redeem gift card', 'error');
-        return;
-      }
-      setGiftCardDiscount(data.discount);
-      showToast(`Gift card redeemed: £${data.discount.toFixed(2)} discount applied`, 'success');
-    } catch {
-      showToast('Failed to redeem gift card', 'error');
-    } finally {
-      setRedeemingGiftCard(false);
-    }
   };
 
   const createGiftCardCheckout = async () => {
@@ -1403,15 +1371,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
 
     try {
-      const bookingWithDiscount = {
-        ...updatedBooking,
-        giftCardDiscount: giftCardDiscount > 0 ? giftCardDiscount : updatedBooking.giftCardDiscount,
-      };
-      await updateBooking(bookingWithDiscount, staff);
-      setInquiries(inquiries.map((i) => i.id === updatedBooking.id ? bookingWithDiscount : i));
+      await updateBooking(updatedBooking, staff);
+      setInquiries(inquiries.map((i) => i.id === updatedBooking.id ? updatedBooking : i));
       setShowEditModal(false);
       setEditingBooking(null);
-      setGiftCardDiscount(0);
       showToast('Booking updated', 'success');
     } catch {
       showToast('Failed to update booking', 'error');
@@ -1476,8 +1439,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         status: isParty ? 'pending' : 'confirmed',
         requestDate: new Date().toISOString(),
         source: 'walk-in',
-        giftCardCode: newBooking.giftCardCode,
-        giftCardDiscount: giftCardDiscount > 0 ? giftCardDiscount : undefined,
         ...(isParty ? {
           depositAmount: newBookingPaymentMethod === 'paid' ? newBookingDepositAmount : undefined,
           finalSeats: seats,
@@ -1505,7 +1466,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       });
       setNewBabiesCount(1);
       setNewAdultsCount(1);
-      setGiftCardDiscount(0);
       showToast('Booking added successfully', 'success');
     } catch (err) {
       console.error('Failed to add booking:', err);
@@ -2997,33 +2957,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 resize-none"
                 />
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Gift Card Code</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newBooking.giftCardCode ?? ''}
-                    onChange={(e) => setNewBooking({ ...newBooking, giftCardCode: e.target.value.toUpperCase() })}
-                    placeholder="PP-XXXXXXXXXX"
-                    className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 font-mono"
-                  />
-                  <button
-                    onClick={() => {
-                      if (newBooking.giftCardCode) {
-                        const estimatedPrice = newBooking.paintersCount * (newBooking.sessionType?.includes('party') ? 25 : 15);
-                        redeemGiftCard(newBooking.giftCardCode, estimatedPrice);
-                      }
-                    }}
-                    disabled={redeemingGiftCard || !newBooking.giftCardCode}
-                    className="px-3 py-2 bg-[#D6E2E9] text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    {redeemingGiftCard ? 'Checking...' : 'Redeem'}
-                  </button>
-                </div>
-                {giftCardDiscount > 0 && (
-                  <p className="text-[10px] text-emerald-700 font-bold mt-1">£{giftCardDiscount.toFixed(2)} discount applied</p>
-                )}
-              </div>
               {newBooking.date && newBooking.time && (
                 <>
                   {newBookingConflict ? (
@@ -3320,33 +3253,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   placeholder="Allergies, special requests, etc."
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 resize-none"
                 />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Gift Card Code</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={editingBooking.giftCardCode ?? ''}
-                    onChange={(e) => setEditingBooking({ ...editingBooking, giftCardCode: e.target.value.toUpperCase() })}
-                    placeholder="PP-XXXXXXXXXX"
-                    className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 font-mono"
-                  />
-                  <button
-                    onClick={() => {
-                      if (editingBooking.giftCardCode) {
-                        const estimatedPrice = editingBooking.paintersCount * (editingBooking.sessionType?.includes('party') ? 25 : 15);
-                        redeemGiftCard(editingBooking.giftCardCode, estimatedPrice);
-                      }
-                    }}
-                    disabled={redeemingGiftCard || !editingBooking.giftCardCode}
-                    className="px-3 py-2 bg-[#D6E2E9] text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    {redeemingGiftCard ? 'Checking...' : 'Redeem'}
-                  </button>
-                </div>
-                {giftCardDiscount > 0 && (
-                  <p className="text-[10px] text-emerald-700 font-bold mt-1">£{giftCardDiscount.toFixed(2)} discount applied</p>
-                )}
               </div>
               {editingBooking.date && editingBooking.time && (
                 <div className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 ${

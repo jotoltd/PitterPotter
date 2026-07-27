@@ -2,8 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { Mail, Phone, MapPin, Clock, CheckCircle2, Copy, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from './ToastContext';
 import { format } from 'date-fns';
-import { BookingInquiry, GiftCard } from '../types';
-import { supabase, isSupabaseEnabled } from '../lib/supabase';
+import { BookingInquiry } from '../types';
 import { getRemainingCapacity, createPublicBooking } from '../lib/bookings';
 import EditableText from './EditableText';
 
@@ -33,10 +32,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-
-  const [giftCardCode, setGiftCardCode] = useState('');
-  const [appliedGiftCard, setAppliedGiftCard] = useState<GiftCard | null>(null);
-  const [giftCardError, setGiftCardError] = useState('');
 
   // Load draft from localStorage on mount
   useEffect(() => {
@@ -87,70 +82,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
   };
 
   const estimatedPrice = paintersCount * 5.95;
-  const giftCardDiscount = appliedGiftCard ? Math.min(appliedGiftCard.balance, estimatedPrice) : 0;
-  const finalPrice = Math.max(0, estimatedPrice - giftCardDiscount);
-
-  const applyGiftCard = async () => {
-    setGiftCardError('');
-    setAppliedGiftCard(null);
-    if (!giftCardCode.trim()) return;
-
-    const code = giftCardCode.trim();
-
-    if (isSupabaseEnabled()) {
-      try {
-        const { data, error } = await supabase!
-          .from('gift_cards')
-          .select('*')
-          .eq('code', code)
-          .eq('status', 'active')
-          .gt('balance', 0)
-          .single();
-
-        if (error || !data) {
-          setGiftCardError('Invalid or expired gift card code.');
-          return;
-        }
-
-        if (data.expiry_date && new Date(data.expiry_date) < new Date()) {
-          setGiftCardError('This gift card has expired.');
-          return;
-        }
-
-        setAppliedGiftCard({
-          id: data.id,
-          code: data.code,
-          amount: Number(data.amount),
-          balance: Number(data.balance),
-          recipientName: data.recipient_name,
-          recipientEmail: data.recipient_email,
-          senderName: data.sender_name,
-          message: data.message,
-          purchaseDate: new Date(data.purchase_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-          status: data.status,
-        });
-        return;
-      } catch (err) {
-        console.error('Supabase gift card lookup failed:', err);
-      }
-    }
-
-    const cards: GiftCard[] = JSON.parse(localStorage.getItem('pp_gift_cards') || '[]');
-    const card = cards.find((c) => c.code === code && c.status === 'active' && c.balance > 0);
-
-    if (!card) {
-      setGiftCardError('Invalid or expired gift card code.');
-      return;
-    }
-
-    setAppliedGiftCard(card);
-  };
-
-  const removeGiftCard = () => {
-    setAppliedGiftCard(null);
-    setGiftCardError('');
-    setGiftCardCode('');
-  };
 
   const handleNext = () => {
     setError('');
@@ -197,8 +128,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
     }
 
     const currentEstimatedPrice = paintersCount * 5.95;
-    const currentGiftCardDiscount = appliedGiftCard ? Math.min(appliedGiftCard.balance, currentEstimatedPrice) : 0;
-    const currentFinalPrice = Math.max(0, currentEstimatedPrice - currentGiftCardDiscount);
 
     const newInquiry: BookingInquiry = {
       id: `PP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
@@ -214,46 +143,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
       source: 'online',
       requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
       estimatedPrice: currentEstimatedPrice > 0 ? currentEstimatedPrice : undefined,
-      giftCardCode: appliedGiftCard ? appliedGiftCard.code : undefined,
-      giftCardDiscount: currentGiftCardDiscount > 0 ? currentGiftCardDiscount : undefined,
-      finalPrice: currentFinalPrice > 0 ? currentFinalPrice : undefined,
     };
-
-    if (appliedGiftCard && currentGiftCardDiscount > 0) {
-      if (isSupabaseEnabled()) {
-        try {
-          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/redeem-gift-card`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            },
-            body: JSON.stringify({
-              code: appliedGiftCard.code,
-              amount: currentEstimatedPrice,
-            }),
-          });
-
-          const data = await response.json();
-          if (!response.ok || data.error) {
-            console.error('Gift card redeem error:', data.error);
-          }
-        } catch (err) {
-          console.error('Gift card redeem failed:', err);
-        }
-      }
-
-      const newBalance = Math.max(0, appliedGiftCard.balance - currentGiftCardDiscount);
-      const newStatus = newBalance <= 0 ? 'redeemed' : 'active';
-      const cards: GiftCard[] = JSON.parse(localStorage.getItem('pp_gift_cards') || '[]');
-      const updatedCards = cards.map((c) => {
-        if (c.code === appliedGiftCard.code) {
-          return { ...c, balance: newBalance, status: newStatus };
-        }
-        return c;
-      });
-      localStorage.setItem('pp_gift_cards', JSON.stringify(updatedCards));
-    }
 
     try {
       await createPublicBooking(newInquiry);
@@ -531,38 +421,10 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                   </div>
                   <div className="border-t border-[#1B2D3C]/10 pt-3 space-y-1 text-xs font-semibold text-[#1B2D3C]">
                     <div className="flex justify-between"><span>Estimated price</span><span>£{estimatedPrice.toFixed(2)}</span></div>
-                    {appliedGiftCard && (
-                      <div className="flex justify-between text-emerald-700">
-                        <span>Gift card ({appliedGiftCard.code})</span><span>−£{giftCardDiscount.toFixed(2)}</span>
-                      </div>
-                    )}
                     <div className="flex justify-between text-sm font-black pt-1 border-t border-[#1B2D3C]/10">
-                      <span>Total due</span><span>£{finalPrice.toFixed(2)}</span>
+                      <span>Total due</span><span>Pay in person</span>
                     </div>
                   </div>
-                </div>
-
-                {/* Gift card */}
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Gift Card Code <span className="text-[#1B2D3C]/40 font-semibold normal-case tracking-normal">(optional)</span></label>
-                  {appliedGiftCard ? (
-                    <div className="flex items-center justify-between bg-emerald-50 p-3 rounded-lg border border-emerald-200">
-                      <div className="text-xs text-emerald-800 font-semibold">
-                        <span className="font-black block">{appliedGiftCard.code} applied ✓</span>
-                        <span className="text-[11px] text-emerald-600">Balance after use: £{Math.max(0, appliedGiftCard.balance - giftCardDiscount).toFixed(2)}</span>
-                      </div>
-                      <button type="button" onClick={removeGiftCard} className="text-[10px] font-black uppercase text-emerald-800 hover:text-red-600 underline cursor-pointer">Remove</button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <input type="text" value={giftCardCode} onChange={(e) => setGiftCardCode(e.target.value)}
-                        placeholder="PP-XXXX-XXXX-XXXX"
-                        className="flex-1 py-2.5 px-3 border border-[#1B2D3C]/20 rounded-lg text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C] uppercase" />
-                      <button type="button" onClick={applyGiftCard}
-                        className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-[10px] uppercase tracking-widest rounded-lg border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer">Apply</button>
-                    </div>
-                  )}
-                  {giftCardError && <p className="text-[10px] text-red-600 font-semibold">{giftCardError}</p>}
                 </div>
 
                 <div className="flex gap-3">
