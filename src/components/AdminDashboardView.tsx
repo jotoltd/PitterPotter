@@ -238,6 +238,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     if (activeTab === 'settings') {
       loadCapacity();
       loadPageSettings();
+      loadStaffList();
       loadSlotsFromSupabase().then(slots => setTimeSlotConfig(slots));
       loadClosuresFromSupabase().then(setClosures);
     }
@@ -1646,10 +1647,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           },
           body: JSON.stringify({
             action,
-            id: editingStaff?.id,
             username: staff.username,
             sessionToken: staff.sessionToken,
             staff: {
+              id: editingStaff?.id,
               name: newStaff.name,
               username: newStaff.username,
               password: newStaff.password || undefined,
@@ -2744,7 +2745,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   <Lock className="w-4 h-4" /> My Password
                 </button>
                 <button
-                  onClick={() => { setShowStaffModal(true); loadStaffList(); }}
+                  onClick={() => { setShowStaffModal(true); }}
                   className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" /> Add Staff
