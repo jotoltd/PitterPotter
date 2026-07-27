@@ -1,6 +1,15 @@
 import Stripe from 'stripe';
 import { createClient } from 'supabase';
 
+function generateCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = 'PP-';
+  for (let i = 0; i < 10; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 Deno.serve(async (req) => {
   const signature = req.headers.get('stripe-signature');
   if (!signature) {
@@ -30,15 +39,51 @@ Deno.serve(async (req) => {
     const event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
 
     if (event.type === 'checkout.session.completed' || event.type === 'payment_intent.succeeded') {
-      const session = event.data.object as any;
-      const bookingId = session.metadata?.bookingId;
-      if (!bookingId) {
-        return new Response(JSON.stringify({ received: true, ignored: 'No bookingId' }), { status: 200 });
+      const obj = event.data.object as any;
+      const metadata = obj.metadata || {};
+      const type = metadata.type;
+
+      if (type === 'party_deposit') {
+        // Update party booking payment status
+        const bookingId = metadata.bookingId;
+        if (bookingId) {
+          const { error: updateError } = await supabase.from('bookings').update({
+            payment_status: 'paid',
+          }).eq('booking_id', bookingId);
+          if (updateError) throw updateError;
+        }
+      } else if (type === 'gift_card') {
+        // Create gift card if not already created (idempotent)
+        const paymentIntentId = obj.id;
+        const { data: existing } = await supabase
+          .from('gift_cards')
+          .select('id')
+          .eq('stripe_session_id', paymentIntentId)
+          .maybeSingle();
+
+        if (!existing) {
+          const amount = Number(metadata.amount) || (obj.amount / 100);
+          const code = generateCode();
+          const purchaseDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          const expiryDate = new Date();
+          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+          const { error: insertError } = await supabase.from('gift_cards').insert({
+            code,
+            amount,
+            balance: amount,
+            recipient_name: metadata.recipientName || '',
+            recipient_email: metadata.recipientEmail || '',
+            sender_name: metadata.senderName || '',
+            message: metadata.message || '',
+            status: 'active',
+            purchase_date: purchaseDate,
+            expiry_date: expiryDate.toISOString(),
+            stripe_session_id: paymentIntentId,
+          });
+          if (insertError) throw insertError;
+        }
       }
-      const { error: updateError } = await supabase.from('bookings').update({
-        payment_status: 'paid',
-      }).eq('booking_id', bookingId);
-      if (updateError) throw updateError;
     }
 
     return new Response(JSON.stringify({ received: true }), { status: 200 });

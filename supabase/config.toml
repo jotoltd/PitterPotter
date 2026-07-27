@@ -162,7 +162,7 @@ entrypoint = "./functions/send-party-final-reminder/index.ts"
 
 [functions.stripe-party-webhook]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 import_map = "./functions/stripe-party-webhook/deno.json"
 entrypoint = "./functions/stripe-party-webhook/index.ts"
 

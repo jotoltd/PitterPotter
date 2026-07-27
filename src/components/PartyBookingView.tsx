@@ -283,6 +283,9 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
 
     setSubmitting(true);
     try {
+      // Create booking FIRST (before payment) so webhook can find it
+      await createPublicBooking({ ...booking, stripePaymentIntentId: undefined });
+
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-party-deposit-payment`, {
         method: 'POST',
         headers: {
@@ -295,6 +298,10 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
       if (!response.ok || data.error) {
         setError(data.error || 'Failed to set up deposit payment');
         return;
+      }
+      // Update booking with the payment intent ID
+      if (supabase && isSupabaseEnabled()) {
+        await supabase.from('bookings').update({ stripe_payment_intent_id: data.paymentIntentId }).eq('booking_id', bookingId);
       }
       setPendingBooking(booking);
       setClientSecret(data.clientSecret);
@@ -313,7 +320,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
     if (!pendingBooking) return;
     setSubmitting(true);
     try {
-      await createPublicBooking({ ...pendingBooking, stripePaymentIntentId: paymentIntentId || undefined });
+      // Booking was already created before payment. Webhook handles payment_status update.
       setBookingRef(pendingBooking.id);
       setSubmitted(true);
       setShowPayment(false);
