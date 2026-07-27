@@ -349,7 +349,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
 <html>
 <head>
 <meta charset="utf-8">
-<title>Party Invitation – ${bookingRef}</title>
+<title>Party Invitation – Pitter Potter</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;600;700&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -410,7 +410,6 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
   <p class="detail-value" style="text-align:center;margin-top:3px">${studio} Studio</p>
   <p class="address-line">${studioAddress}</p>
   <p class="hosted-by">Hosted by ${name}</p>
-  <p class="ref-line">Ref: ${bookingRef}</p>
 </div>
 </body>
 </html>`;
@@ -423,7 +422,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
   const handleShareInvitation = async () => {
     const guestCount = guests === '' ? 1 : guests;
     const dateStr = date ? format(date, 'EEEE, do MMMM yyyy') : '';
-    const shareText = `🎉 You're invited to a ${info.title} at Pitter Potter ${studio}!\n📅 ${dateStr}\n⏰ ${time}\n👥 ${guestCount} guest${guestCount !== 1 ? 's' : ''}\n\nRef: ${bookingRef}`;
+    const shareText = `🎉 You're invited to a ${info.title} at Pitter Potter ${studio}!\n📅 ${dateStr}\n⏰ ${time}\n👥 ${guestCount} guest${guestCount !== 1 ? 's' : ''}\n\nHosted by ${name}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: `${info.title} at Pitter Potter`, text: shareText });
