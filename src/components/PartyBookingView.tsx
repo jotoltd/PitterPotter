@@ -276,7 +276,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
         : (partyType === 'birthday' && childAge !== ''
           ? `[${info.title}] Age: ${childAge} | ${notes}`.trim()
           : `[${info.title}] ${notes}`.trim()),
-      status: 'pending',
+      status: 'confirmed',
       source: 'online',
       requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
       depositAmount,

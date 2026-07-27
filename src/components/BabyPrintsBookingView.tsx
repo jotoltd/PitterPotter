@@ -284,9 +284,9 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
           <div className="bg-white border border-[#1B2D3C]/20 p-8 max-w-md w-full space-y-4 rounded-xl">
             <div className="text-center">
               <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-              <h3 className="font-heading text-2xl font-black text-[#1B2D3C] mb-2">Booking Received!</h3>
+              <h3 className="font-heading text-2xl font-black text-[#1B2D3C] mb-2">Booking Confirmed!</h3>
               <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed">
-                Thank you {name}! Your baby print session on {format(new Date(submittedBooking.date), 'PPP')} at {submittedBooking.time} has been received.
+                Thank you {name}! Your baby print session on {format(new Date(submittedBooking.date), 'PPP')} at {submittedBooking.time} is confirmed.
               </p>
               <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed mt-2 flex items-center justify-center gap-2">
                 Reference: <span className="font-black text-[#1B2D3C]">{submittedBooking.id}</span>

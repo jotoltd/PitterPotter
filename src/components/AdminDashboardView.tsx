@@ -137,7 +137,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     time: '10:00',
     paintersCount: 1,
     sessionType: 'painting',
-    status: 'pending',
+    status: 'confirmed',
   });
 
   const [newBabiesCount, setNewBabiesCount] = useState(1);
@@ -1435,7 +1435,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         notes: newBooking.sessionType === 'clay-imprints'
           ? `Babies: ${newBabiesCount}, Adults: ${newAdultsCount}${newBooking.notes ? ` | ${newBooking.notes}` : ''}`
           : newBooking.notes,
-        status: isParty ? 'pending' : 'confirmed',
+        status: 'confirmed',
         requestDate: new Date().toISOString(),
         source: 'walk-in',
         ...(isParty ? {

@@ -135,7 +135,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
       time,
       paintersCount,
       sessionType,
-      status: ['birthday-party', 'baby-shower-hen', 'corporate'].includes(sessionType) ? 'pending' : 'confirmed',
+      status: 'confirmed',
       source: 'online',
       requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
     };
@@ -439,9 +439,9 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
           <div className="bg-white border border-[#1B2D3C]/20 p-8 max-w-md w-full space-y-4">
             <div className="text-center">
               <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
-              <h3 className="font-heading text-2xl font-black text-[#1B2D3C] mb-2"><EditableText contentKey="contact_success_title" page="contact" defaultValue="Booking Received!" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" /></h3>
+              <h3 className="font-heading text-2xl font-black text-[#1B2D3C] mb-2"><EditableText contentKey="contact_success_title" page="contact" defaultValue="Booking Confirmed!" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" /></h3>
               <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed">
-                <EditableText contentKey="contact_success_message" page="contact" defaultValue={`Thank you ${name}! Your booking request for ${format(new Date(submittedInquiry.date), 'PPP')} at ${submittedInquiry.time} has been received.`} adminMode={adminMode} className="text-xs text-[#1B2D3C] leading-relaxed" />
+                <EditableText contentKey="contact_success_message" page="contact" defaultValue={`Thank you ${name}! Your booking for ${format(new Date(submittedInquiry.date), 'PPP')} at ${submittedInquiry.time} is confirmed.`} adminMode={adminMode} className="text-xs text-[#1B2D3C] leading-relaxed" />
               </p>
               <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed mt-2 flex items-center justify-center gap-2">
                 <EditableText contentKey="contact_success_reference" page="contact" defaultValue="Reference:" adminMode={adminMode} className="text-xs text-[#1B2D3C]" /> <span className="font-black text-[#1B2D3C]">{submittedInquiry.id}</span>
