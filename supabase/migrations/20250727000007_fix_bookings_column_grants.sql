@@ -1,0 +1,4 @@
+-- Fix: Grant column-level INSERT on estimated_price to anon and authenticated
+-- The table may have been recreated with column-level grants that exclude estimated_price
+GRANT INSERT (booking_id, studio, name, email, phone, date, time, painters_count, session_type, notes, status, request_date, estimated_price, source, gift_card_code, gift_card_discount, final_price, table_id, deposit_amount, final_seats, final_balance, payment_link_url, payment_link_sent_at, payment_status, stripe_payment_intent_id, created_at) ON bookings TO anon;
+GRANT INSERT (booking_id, studio, name, email, phone, date, time, painters_count, session_type, notes, status, request_date, estimated_price, source, gift_card_code, gift_card_discount, final_price, table_id, deposit_amount, final_seats, final_balance, payment_link_url, payment_link_sent_at, payment_status, stripe_payment_intent_id, created_at) ON bookings TO authenticated;
