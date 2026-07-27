@@ -61,7 +61,6 @@ async function sendEmail(details: BookingDetails): Promise<{ success: boolean; e
             <p>Hi ${details.name},</p>
             <p>Your booking at <strong>${details.studio}</strong> has been confirmed.</p>
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-              <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Reference</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${details.bookingId}</td></tr>
               <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Date</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${details.date}</td></tr>
               <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Time</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${details.time}</td></tr>
               <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Studio</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${details.studio}</td></tr>

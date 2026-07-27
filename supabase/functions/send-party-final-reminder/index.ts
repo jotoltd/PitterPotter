@@ -72,7 +72,6 @@ async function sendReminderEmail(
             <p>Your party at <strong>${details.studio}</strong> is on <strong>${details.date}</strong> at <strong>${details.time}</strong>.</p>
             <p>Please confirm your final number of seats so we can prepare everything for you.</p>
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-              <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Reference</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${details.bookingId}</td></tr>
               <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Final seats</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${details.finalSeats}</td></tr>
               <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Price per person</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">£${details.partyPrice.toFixed(2)}</td></tr>
               <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Total</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">£${(details.finalSeats * details.partyPrice).toFixed(2)}</td></tr>

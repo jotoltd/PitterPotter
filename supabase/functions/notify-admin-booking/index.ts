@@ -30,7 +30,7 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
     return { success: false, error: 'Email service not configured' };
   }
 
-  const subject = `New booking request — ${details.studio} on ${details.date} (${details.bookingId})`;
+  const subject = `New booking request — ${details.studio} on ${details.date}`;
 
   const studioInfo = getStudioInfo(details.studio);
   const templateVars: Record<string, string | number | undefined> = {
@@ -54,7 +54,6 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
             <h2 style="color: #1B2D3C;">New Booking Request — ${details.studio}</h2>
             <p>A new booking request has been submitted for the <strong>${details.studio}</strong> studio.</p>
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-              <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Reference</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${details.bookingId}</td></tr>
               <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Customer Name</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${details.name}</td></tr>
               <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Email</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;"><a href="mailto:${details.email}">${details.email}</a></td></tr>
               <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Phone</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${details.phone}</td></tr>

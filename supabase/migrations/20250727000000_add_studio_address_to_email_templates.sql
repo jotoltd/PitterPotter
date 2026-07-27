@@ -2,12 +2,11 @@
 -- and update default template HTML to include studio address footer
 
 UPDATE email_templates
-SET available_variables = ARRAY['bookingId', 'name', 'email', 'phone', 'studio', 'studioAddress', 'studioPhone', 'date', 'time', 'paintersCount', 'sessionType', 'notes'],
+SET available_variables = ARRAY['name', 'email', 'phone', 'studio', 'studioAddress', 'studioPhone', 'date', 'time', 'paintersCount', 'sessionType', 'notes'],
     html_content = '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1B2D3C;">
   <h2 style="color: #1B2D3C;">New Booking Request — {{studio}}</h2>
   <p>A new booking request has been submitted for the <strong>{{studio}}</strong> studio.</p>
   <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-    <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Reference</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">{{bookingId}}</td></tr>
     <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Customer Name</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">{{name}}</td></tr>
     <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Email</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;"><a href="mailto:{{email}}">{{email}}</a></td></tr>
     <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Phone</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">{{phone}}</td></tr>
@@ -27,13 +26,12 @@ SET available_variables = ARRAY['bookingId', 'name', 'email', 'phone', 'studio',
 WHERE template_key = 'admin_booking_notification';
 
 UPDATE email_templates
-SET available_variables = ARRAY['bookingId', 'name', 'studio', 'studioAddress', 'studioPhone', 'date', 'time', 'paintersCount', 'sessionType'],
+SET available_variables = ARRAY['name', 'studio', 'studioAddress', 'studioPhone', 'date', 'time', 'paintersCount', 'sessionType'],
     html_content = '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1B2D3C;">
   <h2 style="color: #1B2D3C;">Your booking is confirmed</h2>
   <p>Hi {{name}},</p>
   <p>Your booking at <strong>{{studio}}</strong> has been confirmed.</p>
   <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-    <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Reference</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">{{bookingId}}</td></tr>
     <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Date</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">{{date}}</td></tr>
     <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Time</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">{{time}}</td></tr>
     <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Studio</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">{{studio}}</td></tr>
@@ -51,14 +49,13 @@ SET available_variables = ARRAY['bookingId', 'name', 'studio', 'studioAddress', 
 WHERE template_key = 'booking_confirmation';
 
 UPDATE email_templates
-SET available_variables = ARRAY['bookingId', 'name', 'studio', 'studioAddress', 'studioPhone', 'date', 'time', 'finalSeats', 'partyPrice', 'totalAmount', 'depositAmount', 'finalBalance', 'paymentLinkUrl'],
+SET available_variables = ARRAY['name', 'studio', 'studioAddress', 'studioPhone', 'date', 'time', 'finalSeats', 'partyPrice', 'totalAmount', 'depositAmount', 'finalBalance', 'paymentLinkUrl'],
     html_content = '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1B2D3C;">
   <h2 style="color: #1B2D3C;">Your party is almost here</h2>
   <p>Hi {{name}},</p>
   <p>Your party at <strong>{{studio}}</strong> is on <strong>{{date}}</strong> at <strong>{{time}}</strong>.</p>
   <p>Please confirm your final number of seats so we can prepare everything for you.</p>
   <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-    <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Reference</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">{{bookingId}}</td></tr>
     <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Final seats</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">{{finalSeats}}</td></tr>
     <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Price per person</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">£{{partyPrice}}</td></tr>
     <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Total</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">£{{totalAmount}}</td></tr>
