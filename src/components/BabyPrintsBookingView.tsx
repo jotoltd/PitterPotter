@@ -109,7 +109,6 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
       source: 'online',
       requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
       notes: `Babies: ${babiesCount}, Adults: ${adultsCount}${notes ? ` | ${notes}` : ''}`,
-      estimatedPrice: babiesCount * 5.95,
     };
 
     setSubmitting(true);
@@ -300,7 +299,7 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
                 </button>
               </p>
               <p className="text-xs text-stone-500 font-semibold leading-relaxed mt-2">
-                We'll confirm your session within 24 hours via email.
+                A confirmation email is on its way to you with a link to reschedule or cancel if needed.
               </p>
             </div>
             <button

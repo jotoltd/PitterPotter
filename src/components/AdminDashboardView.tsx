@@ -903,7 +903,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const exportBookingsCSV = () => {
-    const headers = ['Reference', 'Name', 'Email', 'Phone', 'Studio', 'Date', 'Time', 'Seats', 'Session Type', 'Status', 'Request Date', 'Notes', 'Estimated Price', 'Final Price'];
+    const headers = ['Reference', 'Name', 'Email', 'Phone', 'Studio', 'Date', 'Time', 'Seats', 'Session Type', 'Status', 'Request Date', 'Notes', 'Final Price'];
     const rows = inquiries.map((inq) => [
       inq.id,
       inq.name,
@@ -917,7 +917,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       inq.status,
       inq.requestDate || '',
       inq.notes || '',
-      inq.estimatedPrice || '',
       inq.finalPrice || '',
     ]);
     const csv = [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -4974,7 +4973,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               <div className="text-[10px] text-[#1B2D3C]/40 space-y-1 border-t border-[#1B2D3C]/10 pt-3">
                 {drawerBooking.requestDate && <p>Booked on {drawerBooking.requestDate}</p>}
                 {drawerBooking.source && <p>Source: {drawerBooking.source}</p>}
-                {drawerBooking.estimatedPrice != null && <p>Est. price: £{drawerBooking.estimatedPrice.toFixed(2)}</p>}
                 <button onClick={() => { navigator.clipboard.writeText(drawerBooking.id); showToast('Reference copied', 'success'); }}
                   className="flex items-center gap-1 text-[#1B2D3C]/40 hover:text-[#1B2D3C] cursor-pointer">
                   <Copy className="w-3 h-3" /> Copy reference

@@ -20,7 +20,6 @@ interface BookingData {
   sessionType: string;
   status: string;
   notes: string | null;
-  estimatedPrice: number | null;
 }
 
 const SESSION_LABELS: Record<string, string> = {
@@ -253,12 +252,6 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
             <p className="text-sm font-bold text-[#1B2D3C]">{SESSION_LABELS[booking.sessionType] || booking.sessionType}</p>
           </div>
 
-          {booking.estimatedPrice && (
-            <div className="mt-3">
-              <p className="text-[10px] font-bold text-[#1B2D3C]/50 uppercase tracking-wider mb-1">Estimated Price</p>
-              <p className="text-sm font-bold text-[#1B2D3C]">£{booking.estimatedPrice.toFixed(2)} <span className="font-normal text-[#1B2D3C]/50">(pay in person)</span></p>
-            </div>
-          )}
         </div>
 
         {/* Reschedule form */}

@@ -81,8 +81,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
     localStorage.removeItem('pp_booking_draft');
   };
 
-  const estimatedPrice = paintersCount * 5.95;
-
   const handleNext = () => {
     setError('');
     if (step === 1) {
@@ -127,8 +125,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
       return;
     }
 
-    const currentEstimatedPrice = paintersCount * 5.95;
-
     const newInquiry: BookingInquiry = {
       id: `PP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
       studio,
@@ -142,7 +138,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
       status: ['birthday-party', 'baby-shower-hen', 'corporate'].includes(sessionType) ? 'pending' : 'confirmed',
       source: 'online',
       requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-      estimatedPrice: currentEstimatedPrice > 0 ? currentEstimatedPrice : undefined,
     };
 
     try {
@@ -420,9 +415,8 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                     <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Email</span>{email || '—'}</div>
                   </div>
                   <div className="border-t border-[#1B2D3C]/10 pt-3 space-y-1 text-xs font-semibold text-[#1B2D3C]">
-                    <div className="flex justify-between"><span>Estimated price</span><span>£{estimatedPrice.toFixed(2)}</span></div>
-                    <div className="flex justify-between text-sm font-black pt-1 border-t border-[#1B2D3C]/10">
-                      <span>Total due</span><span>Pay in person</span>
+                    <div className="flex justify-between text-sm font-black">
+                      <span>Payment</span><span>Pay in person</span>
                     </div>
                   </div>
                 </div>
@@ -468,7 +462,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                 </button>
               </p>
               <p className="text-xs text-stone-500 font-semibold leading-relaxed mt-2">
-                <EditableText contentKey="contact_success_footer" page="contact" defaultValue="We'll confirm your table within 24 hours via email." adminMode={adminMode} className="text-xs text-stone-500 leading-relaxed" />
+                <EditableText contentKey="contact_success_footer" page="contact" defaultValue="A confirmation email is on its way to you with a link to reschedule or cancel if needed." adminMode={adminMode} className="text-xs text-stone-500 leading-relaxed" />
               </p>
             </div>
             <button

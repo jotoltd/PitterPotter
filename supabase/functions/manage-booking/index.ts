@@ -18,7 +18,6 @@ interface BookingRow {
   session_type: string;
   status: string;
   notes: string | null;
-  estimated_price: number | null;
   management_token: string | null;
 }
 
@@ -93,7 +92,6 @@ Deno.serve(async (req) => {
           sessionType: booking.session_type,
           status: booking.status,
           notes: booking.notes,
-          estimatedPrice: booking.estimated_price ? Number(booking.estimated_price) : null,
         },
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
