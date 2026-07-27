@@ -12,7 +12,7 @@ interface FooterProps {
 export default function Footer({ setCurrentPage, adminMode = false }: FooterProps) {
   const handlePageLink = (page: Page) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   return (

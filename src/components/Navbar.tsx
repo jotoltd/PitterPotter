@@ -37,7 +37,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
   const handleNavClick = (page: Page) => {
     setCurrentPage(page);
     setIsOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const isActive = (page: Page) => currentPage === page;
