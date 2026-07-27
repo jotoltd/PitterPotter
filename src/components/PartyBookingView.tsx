@@ -241,17 +241,21 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
       }
       return;
     }
-    const remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time);
-    if (guestCount > remaining) {
-      setError(`This session only has room for ${remaining} more guest${remaining === 1 ? '' : 's'}. Please choose a different time or reduce the group size.`);
-      return;
-    }
-
     const sessionTypeMap: Record<PartyType, 'birthday-party' | 'baby-shower-hen' | 'corporate'> = {
       birthday: 'birthday-party',
       'baby-shower-hen': 'baby-shower-hen',
       corporate: 'corporate',
     };
+
+    const remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time, sessionTypeMap[partyType]);
+    if (remaining <= 0) {
+      setError('This time slot is already booked for a party. Please choose a different time.');
+      return;
+    }
+    if (guestCount > remaining) {
+      setError(`This session only has room for ${remaining} more guest${remaining === 1 ? '' : 's'}. Please choose a different time or reduce the group size.`);
+      return;
+    }
 
     const bookingId = `PP-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
 

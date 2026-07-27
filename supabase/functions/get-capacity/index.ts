@@ -75,6 +75,12 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    // Only one party booking per slot
+    if (incomingIsParty && hasPartyBooking) {
+      return new Response(JSON.stringify({ booked: 0, remaining: 0, max: 0, hasPartyBooking: true, conflict: 'party_session_exists' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const booked = rows.reduce((sum: number, row: { painters_count?: number }) => sum + (row.painters_count || 1), 0);
 
