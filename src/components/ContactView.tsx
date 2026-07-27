@@ -443,19 +443,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
               <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed">
                 <EditableText contentKey="contact_success_message" page="contact" defaultValue={`Thank you ${name}! Your booking for ${format(new Date(submittedInquiry.date), 'PPP')} at ${submittedInquiry.time} is confirmed.`} adminMode={adminMode} className="text-xs text-[#1B2D3C] leading-relaxed" />
               </p>
-              <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed mt-2 flex items-center justify-center gap-2">
-                <EditableText contentKey="contact_success_reference" page="contact" defaultValue="Reference:" adminMode={adminMode} className="text-xs text-[#1B2D3C]" /> <span className="font-black text-[#1B2D3C]">{submittedInquiry.id}</span>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(submittedInquiry.id);
-                    showToast('Reference copied', 'success');
-                  }}
-                  className="p-1 hover:bg-[#D6E2E9] rounded cursor-pointer"
-                  title="Copy reference"
-                >
-                  <Copy className="w-3.5 h-3.5 text-[#1B2D3C]" />
-                </button>
-              </p>
               <p className="text-xs text-stone-500 font-semibold leading-relaxed mt-2">
                 <EditableText contentKey="contact_success_footer" page="contact" defaultValue="A confirmation email is on its way to you with a link to reschedule or cancel if needed." adminMode={adminMode} className="text-xs text-stone-500 leading-relaxed" />
               </p>

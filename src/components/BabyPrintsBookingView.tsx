@@ -288,16 +288,6 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
               <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed">
                 Thank you {name}! Your baby print session on {format(new Date(submittedBooking.date), 'PPP')} at {submittedBooking.time} is confirmed.
               </p>
-              <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed mt-2 flex items-center justify-center gap-2">
-                Reference: <span className="font-black text-[#1B2D3C]">{submittedBooking.id}</span>
-                <button
-                  onClick={() => { navigator.clipboard.writeText(submittedBooking.id); showToast('Reference copied', 'success'); }}
-                  className="p-1 hover:bg-[#D6E2E9] rounded cursor-pointer"
-                  title="Copy reference"
-                >
-                  <Copy className="w-3.5 h-3.5 text-[#1B2D3C]" />
-                </button>
-              </p>
               <p className="text-xs text-stone-500 font-semibold leading-relaxed mt-2">
                 A confirmation email is on its way to you with a link to reschedule or cancel if needed.
               </p>

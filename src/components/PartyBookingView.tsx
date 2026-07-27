@@ -446,19 +446,6 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
             <EditableText contentKey={`party_${partyType}_success_message`} page="party-booking" defaultValue={`Your ${info.title.toLowerCase()} booking at our ${studio} studio is confirmed. A confirmation email is on its way.`} adminMode={adminMode} className="text-sm text-[#1B2D3C]/70" />
           </p>
           <div className="bg-[#D6E2E9]/30 p-4 rounded-lg text-left space-y-2 text-xs font-semibold text-[#1B2D3C]">
-            <p className="flex items-center gap-2">
-              <span className="font-bold"><EditableText contentKey="party_reference_label" page="party-booking" defaultValue="Reference:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {bookingRef}
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(bookingRef);
-                  showToast('Reference copied', 'success');
-                }}
-                className="p-1 hover:bg-[#D6E2E9] rounded cursor-pointer"
-                title="Copy reference"
-              >
-                <Copy className="w-3.5 h-3.5 text-[#1B2D3C]" />
-              </button>
-            </p>
             <p><span className="font-bold"><EditableText contentKey="party_event_label" page="party-booking" defaultValue="Event:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {info.title}</p>
             <p><span className="font-bold"><EditableText contentKey="party_studio_label" page="party-booking" defaultValue="Studio:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {studio}</p>
             <p><span className="font-bold"><EditableText contentKey="party_date_label" page="party-booking" defaultValue="Date:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {date && format(date, 'EEEE, do MMMM yyyy')}</p>

@@ -181,7 +181,6 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
         {/* Header */}
         <div className="text-center mb-6">
           <h1 className="font-heading text-3xl font-black text-[#1B2D3C]">Manage Your Booking</h1>
-          <p className="text-sm text-[#1B2D3C]/60 mt-1">Reference: {booking.bookingId}</p>
         </div>
 
         {/* Success message */}
