@@ -357,7 +357,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
               <div className="space-y-6">
                 <div className="border-b-2 border-[#1B2D3C]/10 pb-3">
                   <h2 className="font-heading text-xl font-black text-[#1B2D3C]"><EditableText contentKey="contact_step2_title" page="contact" defaultValue="Your details" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" /></h2>
-                  <p className="text-xs text-stone-500 mt-1 font-semibold"><EditableText contentKey="contact_step2_subtitle" page="contact" defaultValue="We'll use these to confirm your booking." adminMode={adminMode} className="text-xs text-stone-500" /></p>
+                  <p className="text-xs text-stone-500 mt-1 font-semibold"><EditableText contentKey="contact_step2_subtitle" page="contact" defaultValue="We'll use these for your booking confirmation." adminMode={adminMode} className="text-xs text-stone-500" /></p>
                 </div>
 
                 <div className="space-y-4">

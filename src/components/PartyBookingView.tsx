@@ -443,7 +443,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
           </div>
           <h2 className="font-heading text-2xl font-black text-[#1B2D3C]"><EditableText contentKey={`party_${partyType}_success_title`} page="party-booking" defaultValue="Booking Confirmed!" adminMode={adminMode} className="font-heading text-2xl text-[#1B2D3C]" /></h2>
           <p className="text-sm text-[#1B2D3C]/70 font-medium">
-            <EditableText contentKey={`party_${partyType}_success_message`} page="party-booking" defaultValue={`Your ${info.title.toLowerCase()} booking at our ${studio} studio has been submitted. We'll be in touch shortly to confirm your event.`} adminMode={adminMode} className="text-sm text-[#1B2D3C]/70" />
+            <EditableText contentKey={`party_${partyType}_success_message`} page="party-booking" defaultValue={`Your ${info.title.toLowerCase()} booking at our ${studio} studio is confirmed. A confirmation email is on its way.`} adminMode={adminMode} className="text-sm text-[#1B2D3C]/70" />
           </p>
           <div className="bg-[#D6E2E9]/30 p-4 rounded-lg text-left space-y-2 text-xs font-semibold text-[#1B2D3C]">
             <p className="flex items-center gap-2">
