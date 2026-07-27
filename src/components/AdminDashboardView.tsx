@@ -149,7 +149,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [newBookingDepositAmount, setNewBookingDepositAmount] = useState<number>(50);
   const [newBookingFinalPending, setNewBookingFinalPending] = useState<boolean>(true);
   const [showGhostModal, setShowGhostModal] = useState(false);
-  const [ghostBooking, setGhostBooking] = useState({ seats: 1, time: '10:00', date: format(new Date(), 'yyyy-MM-dd'), studio: defaultStudio });
+  const [ghostBooking, setGhostBooking] = useState({ seats: 1, studio: defaultStudio });
   const [ghostCapacity, setGhostCapacity] = useState<number | null>(null);
   const [ghostConflict, setGhostConflict] = useState<string | null>(null);
   const [capacityLoading, setCapacityLoading] = useState(false);
@@ -1474,16 +1474,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   useEffect(() => {
-    if (showGhostModal && ghostBooking.studio && ghostBooking.date && ghostBooking.time) {
-      fetchCapacity(ghostBooking.studio, ghostBooking.date, ghostBooking.time, setGhostCapacity, 'painting', setGhostConflict);
+    if (showGhostModal && ghostBooking.studio) {
+      const now = new Date();
+      const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      fetchCapacity(ghostBooking.studio, format(now, 'yyyy-MM-dd'), time, setGhostCapacity, 'painting', setGhostConflict);
     }
-  }, [showGhostModal, ghostBooking.studio, ghostBooking.date, ghostBooking.time, fetchCapacity]);
+  }, [showGhostModal, ghostBooking.studio, fetchCapacity]);
 
   const saveGhostBooking = async () => {
-    if (!ghostBooking.date || !ghostBooking.time) {
-      showToast('Please select date and time', 'error');
-      return;
-    }
     if (!ghostBooking.seats || ghostBooking.seats < 1 || ghostBooking.seats > 50) {
       showToast('Seats must be between 1 and 50', 'error');
       return;
@@ -1496,6 +1494,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       showToast(`Only ${ghostCapacity} spots remaining for this slot`, 'error');
       return;
     }
+    const now = new Date();
+    const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const dateStr = format(now, 'yyyy-MM-dd');
     try {
       const booking: BookingInquiry = {
         id: crypto.randomUUID(),
@@ -1503,19 +1504,19 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         name: 'Walk-in',
         email: '',
         phone: '',
-        date: ghostBooking.date,
-        time: ghostBooking.time,
+        date: dateStr,
+        time,
         paintersCount: ghostBooking.seats,
         sessionType: 'painting',
         notes: `Walk-in: ${ghostBooking.seats} painter${ghostBooking.seats !== 1 ? 's' : ''}`,
         status: 'confirmed',
-        requestDate: new Date().toISOString(),
+        requestDate: now.toISOString(),
         source: 'walk-in',
       };
       await createBooking(booking, staff);
       setInquiries([booking, ...inquiries]);
       setShowGhostModal(false);
-      setGhostBooking({ seats: 1, time: '10:00', date: format(new Date(), 'yyyy-MM-dd'), studio: defaultStudio });
+      setGhostBooking({ seats: 1, studio: defaultStudio });
       showToast(`${ghostBooking.seats} seat${ghostBooking.seats !== 1 ? 's' : ''} blocked as walk-in`, 'success');
     } catch (err) {
       console.error('Failed to add ghost booking:', err);
@@ -3076,7 +3077,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <XIcon className="w-5 h-5 text-[#1B2D3C]/60" />
               </button>
             </div>
-            <p className="text-[10px] text-[#1B2D3C]/60 font-semibold">Blocks seats without customer details — for walk-in painters.</p>
+            <p className="text-[10px] text-[#1B2D3C]/60 font-semibold">Blocks seats from now for a 2-hour session — for walk-in painters.</p>
             <div className="space-y-3">
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Studio *</label>
@@ -3089,29 +3090,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   {(staffAllowedStudios ?? ['Putney', 'Wimbledon']).map(s => (
                     <option key={s} value={s}>{s}</option>
                   ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Date *</label>
-                <input
-                  type="date"
-                  min={format(new Date(), 'yyyy-MM-dd')}
-                  value={ghostBooking.date}
-                  onChange={(e) => setGhostBooking({ ...ghostBooking, date: e.target.value })}
-                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Time *</label>
-                <select
-                  value={ghostBooking.time}
-                  onChange={(e) => setGhostBooking({ ...ghostBooking, time: e.target.value })}
-                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
-                >
-                  {(() => {
-                    const dt: DayType = ghostBooking.date ? ((d => d === 0 || d === 6)(getDay(parseISO(ghostBooking.date))) ? 'weekend' : 'weekday') : 'weekday';
-                    return getSlots('painting', ghostBooking.studio || 'Putney', dt).map(s => <option key={s} value={s}>{s}</option>);
-                  })()}
                 </select>
               </div>
               <div>
@@ -3133,7 +3111,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
               </div>
-              {ghostBooking.date && ghostBooking.time && (
+              {ghostBooking.studio && (
                 <>
                   {ghostConflict ? (
                     <div className="px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 bg-red-50 text-red-700 border border-red-200">
