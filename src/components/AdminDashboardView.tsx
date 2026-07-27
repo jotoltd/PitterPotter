@@ -14,6 +14,7 @@ import { getAllSlots, getSlots, setSlots, DEFAULT_SLOTS, SlotSessionType, Studio
 import { loadClosuresFromSupabase, saveClosuresToSupabase, getClosureDates, ClosureDates, HolidayRange } from '../lib/closures';
 import { useToast } from './ToastContext';
 import Skeleton from './Skeleton';
+import WysiwygEditor from './WysiwygEditor';
 import 'react-day-picker/dist/style.css';
 
 interface AdminDashboardProps {
@@ -4615,12 +4616,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#1B2D3C] mb-1">HTML Content</label>
-                <textarea
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#1B2D3C] mb-1">Email Content</label>
+                <WysiwygEditor
                   value={editingTemplate._editHtml}
-                  onChange={(e) => setEditingTemplate({ ...editingTemplate, _editHtml: e.target.value })}
-                  rows={20}
-                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-xs font-mono text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C] resize-y"
+                  onChange={(html) => setEditingTemplate({ ...editingTemplate, _editHtml: html })}
+                  variables={editingTemplate.available_variables || []}
+                  minHeight={300}
                 />
               </div>
 
