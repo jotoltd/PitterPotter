@@ -125,7 +125,11 @@ Deno.serve(async (req) => {
     const isSuperAdmin = staff.role === 'super_admin';
 
     if (action === 'load') {
-      const { data, error } = await supabase.from('bookings').select('*').order('created_at', { ascending: false });
+      let query = supabase.from('bookings').select('*').order('created_at', { ascending: false });
+      if (!isSuperAdmin && staff.allowed_studios && staff.allowed_studios.length > 0) {
+        query = query.in('studio', staff.allowed_studios);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return new Response(JSON.stringify((data || []).map(toBookingInquiry)), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -142,6 +146,12 @@ Deno.serve(async (req) => {
       if (!isObject(booking)) {
         return new Response(JSON.stringify({ error: 'Invalid booking data' }), {
           status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (!isSuperAdmin && staff.allowed_studios && staff.allowed_studios.length > 0 && !staff.allowed_studios.includes(booking.studio)) {
+        return new Response(JSON.stringify({ error: 'You can only create bookings for your assigned studio' }), {
+          status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -166,6 +176,12 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+      if (!isSuperAdmin && staff.allowed_studios && staff.allowed_studios.length > 0 && !staff.allowed_studios.includes(booking.studio)) {
+        return new Response(JSON.stringify({ error: 'You can only edit bookings for your assigned studio' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       const { error } = await supabase.from('bookings').update(toBookingRow(booking as Record<string, unknown>)).eq('booking_id', booking.id);
       if (error) throw error;
       await logAudit(supabase, staff, 'update', 'booking', booking.id as string, { studio: booking.studio, date: booking.date, time: booking.time });
@@ -186,6 +202,15 @@ Deno.serve(async (req) => {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+      if (!isSuperAdmin && staff.allowed_studios && staff.allowed_studios.length > 0) {
+        const { data: bookingRow } = await supabase.from('bookings').select('studio').eq('booking_id', id).single();
+        if (bookingRow && !staff.allowed_studios.includes(bookingRow.studio)) {
+          return new Response(JSON.stringify({ error: 'You can only update bookings for your assigned studio' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
       const { error } = await supabase.from('bookings').update({ status }).eq('booking_id', id);
       if (error) throw error;
@@ -224,6 +249,15 @@ Deno.serve(async (req) => {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+      if (!isSuperAdmin && staff.allowed_studios && staff.allowed_studios.length > 0) {
+        const { data: bookingRow } = await supabase.from('bookings').select('studio').eq('booking_id', id).single();
+        if (bookingRow && !staff.allowed_studios.includes(bookingRow.studio)) {
+          return new Response(JSON.stringify({ error: 'You can only delete bookings for your assigned studio' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
       }
       const { error } = await supabase.from('bookings').delete().eq('booking_id', id);
       if (error) throw error;

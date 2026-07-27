@@ -96,7 +96,11 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'loadCapacity') {
-      const { data, error: capacityError } = await supabase.from('capacity').select('*').order('studio');
+      let query = supabase.from('capacity').select('*').order('studio');
+      if (staff.role !== 'super_admin' && staff.allowed_studios && staff.allowed_studios.length > 0) {
+        query = query.in('studio', staff.allowed_studios);
+      }
+      const { data, error: capacityError } = await query;
       if (capacityError) throw capacityError;
       return new Response(JSON.stringify({ capacity: data }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -150,6 +154,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'getEmailLogs') {
+      if (staff.role !== 'super_admin') {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       const { limit = 100 } = body;
       const { data, error } = await supabase
         .from('email_logs')
