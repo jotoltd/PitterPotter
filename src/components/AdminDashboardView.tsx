@@ -1430,7 +1430,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       return;
     }
     // Validate seats count
-    if (newBooking.paintersCount < 1 || newBooking.paintersCount > 50) {
+    if (!newBooking.paintersCount || newBooking.paintersCount < 1 || newBooking.paintersCount > 50) {
       showToast('Number of seats must be between 1 and 50', 'error');
       return;
     }
@@ -2879,9 +2879,18 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Seats *</label>
                   <input
                     type="number"
-                    min="1"
-                    value={newBooking.paintersCount}
-                    onChange={(e) => setNewBooking({ ...newBooking, paintersCount: parseInt(e.target.value) || 1 })}
+                    value={newBooking.paintersCount ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setNewBooking({ ...newBooking, paintersCount: undefined });
+                      } else {
+                        const parsed = parseInt(val, 10);
+                        if (!isNaN(parsed) && parsed >= 0) {
+                          setNewBooking({ ...newBooking, paintersCount: parsed });
+                        }
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                   />
                 </div>
