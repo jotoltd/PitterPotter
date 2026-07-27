@@ -35,6 +35,53 @@ import { ToastProvider } from './components/ToastContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import SessionWatcher from './components/SessionWatcher';
 import { Page, Staff } from './types';
+
+const PAGE_TO_PATH: Record<Page, string> = {
+  'home': '/',
+  'baby-prints': '/baby-prints',
+  'baby-prints-book': '/baby-prints/book',
+  'parties': '/parties',
+  'pricing': '/pricing',
+  'food-drink': '/food-drink',
+  'price-list': '/price-list',
+  'pottery-painting': '/pottery-painting',
+  'faqs': '/faqs',
+  'gallery': '/gallery',
+  'contact': '/contact',
+  'contact-info': '/contact-info',
+  'book': '/book',
+  'buy-gift-card': '/buy-gift-card',
+  'gift-card-success': '/gift-card-success',
+  'gift-card-balance': '/gift-card-balance',
+  'putney': '/putney',
+  'wimbledon': '/wimbledon',
+  'admin': '/admin',
+  'party-birthday-detail': '/parties/birthday',
+  'party-babyshower-detail': '/parties/baby-shower-hen',
+  'party-birthday-putney': '/parties/birthday/putney',
+  'party-birthday-wimbledon': '/parties/birthday/wimbledon',
+  'party-babyshower-putney': '/parties/baby-shower-hen/putney',
+  'party-babyshower-wimbledon': '/parties/baby-shower-hen/wimbledon',
+  'party-corporate-putney': '/parties/corporate/putney',
+  'party-corporate-wimbledon': '/parties/corporate/wimbledon',
+};
+
+const PATH_TO_PAGE: Record<string, Page> = Object.entries(PAGE_TO_PATH).reduce((acc, [page, path]) => {
+  acc[path] = page as Page;
+  return acc;
+}, {} as Record<string, Page>);
+
+function getPageFromPath(): Page {
+  const path = window.location.pathname;
+  if (path === '/' || path === '') return 'home';
+  const page = PATH_TO_PAGE[path];
+  if (page) return page;
+  // Legacy ?page= support
+  const params = new URLSearchParams(window.location.search);
+  const legacyPage = params.get('page') as Page | null;
+  if (legacyPage && legacyPage in PAGE_TO_PATH) return legacyPage;
+  return 'home';
+}
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase, isSupabaseEnabled } from './lib/supabase';
 import { loadSlotsFromSupabase } from './lib/timeSlots';
@@ -134,21 +181,11 @@ export default function App() {
       }
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const pageParam = params.get('page') as Page | null;
-    const validPages: Page[] = ['home', 'baby-prints', 'parties', 'pricing', 'faqs', 'gallery', 'contact', 'contact-info', 'book', 'buy-gift-card', 'gift-card-success', 'gift-card-balance', 'putney', 'wimbledon', 'admin', 'baby-prints-book'];
-    if (pageParam && validPages.includes(pageParam)) {
-      setCurrentPage(pageParam);
-    }
+    const initialPage = getPageFromPath();
+    setCurrentPage(initialPage);
 
     const handlePopState = () => {
-      const updatedParams = new URLSearchParams(window.location.search);
-      const updatedPage = updatedParams.get('page') as Page | null;
-      if (updatedPage && validPages.includes(updatedPage)) {
-        setCurrentPage(updatedPage);
-      } else {
-        setCurrentPage('home');
-      }
+      setCurrentPage(getPageFromPath());
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -167,12 +204,10 @@ export default function App() {
  }, [currentPage]);
 
  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const currentUrlPage = params.get('page');
-    const targetPage = currentPage === 'home' ? null : currentPage;
-    if (currentUrlPage !== targetPage) {
-      const newUrl = targetPage ? `${window.location.pathname}?page=${targetPage}` : window.location.pathname;
-      window.history.pushState({}, '', newUrl);
+    const targetPath = PAGE_TO_PATH[currentPage] || '/';
+    const currentPath = window.location.pathname;
+    if (currentPath !== targetPath) {
+      window.history.pushState({}, '', targetPath);
     }
   }, [currentPage]);
 

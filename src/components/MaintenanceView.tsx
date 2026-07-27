@@ -68,7 +68,7 @@ export default function MaintenanceView() {
 
         <div className="flex items-center justify-center gap-4">
           <p className="text-[10px] text-[#1B2D3C]/30 uppercase tracking-widest">Pitter Potter &copy; {new Date().getFullYear()}</p>
-          <a href="/?page=admin" className="text-[10px] text-[#1B2D3C]/30 hover:text-[#1B2D3C]/60 uppercase tracking-widest transition-colors">Staff Login</a>
+          <a href="/admin" className="text-[10px] text-[#1B2D3C]/30 hover:text-[#1B2D3C]/60 uppercase tracking-widest transition-colors">Staff Login</a>
         </div>
       </div>
     </div>
