@@ -32,7 +32,7 @@ async function sendEmail(
   }
 
   const subject = `Booking confirmed — ${booking.studio} on ${booking.date}`;
-  const manageUrl = `${Deno.env.get('SITE_URL') || 'https://pitterpotter.co.uk'}/manage-booking?token=${managementToken}`;
+  const manageUrl = `${Deno.env.get('SITE_URL') || 'https://www.pitterpotter.co.uk'}/manage-booking?token=${managementToken}`;
 
   const studioInfo = getStudioInfo(booking.studio);
   const templateVars: Record<string, string | number | undefined> = {
