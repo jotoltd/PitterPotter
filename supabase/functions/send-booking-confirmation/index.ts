@@ -31,7 +31,7 @@ interface BookingDetails {
 
 async function sendEmail(details: BookingDetails): Promise<{ success: boolean; error?: string }> {
   const resendKey = Deno.env.get('RESEND_API_KEY');
-  const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'bookings@pitterpotter.com';
+  const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'bookings@pitterpotter.co.uk';
   if (!resendKey) {
     console.warn('RESEND_API_KEY not set; skipping confirmation email');
     return { success: false, error: 'Email service not configured' };
