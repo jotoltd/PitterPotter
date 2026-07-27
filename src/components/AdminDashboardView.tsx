@@ -145,6 +145,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [newBabiesCount, setNewBabiesCount] = useState(1);
   const [newAdultsCount, setNewAdultsCount] = useState(1);
   const [newBookingCapacity, setNewBookingCapacity] = useState<number | null>(null);
+  const [newBookingConflict, setNewBookingConflict] = useState<string | null>(null);
   const [editBookingCapacity, setEditBookingCapacity] = useState<number | null>(null);
   const [capacityLoading, setCapacityLoading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -187,14 +188,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     setCurrentPage(1);
   }, [filter, studioFilter, bookingTypeTab, debouncedSearchTerm, dateRange, sort]);
 
-  const fetchCapacity = useCallback(async (studio: string, date: string, time: string, setter: (v: number | null) => void) => {
-    if (!studio || !date || !time) { setter(null); return; }
+  const fetchCapacity = useCallback(async (studio: string, date: string, time: string, setter: (v: number | null) => void, sessionType?: string, conflictSetter?: (v: string | null) => void) => {
+    if (!studio || !date || !time) { setter(null); if (conflictSetter) conflictSetter(null); return; }
     setCapacityLoading(true);
     try {
-      const remaining = await getRemainingCapacity(studio as 'Putney' | 'Wimbledon', date, time);
+      const remaining = await getRemainingCapacity(studio as 'Putney' | 'Wimbledon', date, time, sessionType);
       setter(remaining);
-    } catch {
+      if (conflictSetter) conflictSetter(null);
+    } catch (err) {
       setter(null);
+      if (conflictSetter) conflictSetter(err instanceof Error ? err.message : 'Conflict detected');
     } finally {
       setCapacityLoading(false);
     }
@@ -202,9 +205,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   useEffect(() => {
     if (showAddModal && newBooking.studio && newBooking.date && newBooking.time) {
-      fetchCapacity(newBooking.studio, newBooking.date, newBooking.time, setNewBookingCapacity);
+      fetchCapacity(newBooking.studio, newBooking.date, newBooking.time, setNewBookingCapacity, newBooking.sessionType, setNewBookingConflict);
     }
-  }, [showAddModal, newBooking.studio, newBooking.date, newBooking.time, fetchCapacity]);
+  }, [showAddModal, newBooking.studio, newBooking.date, newBooking.time, newBooking.sessionType, fetchCapacity]);
 
   useEffect(() => {
     if (showEditModal && editingBooking?.studio && editingBooking?.date && editingBooking?.time) {
@@ -1432,6 +1435,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     // Validate seats count
     if (!newBooking.paintersCount || newBooking.paintersCount < 1 || newBooking.paintersCount > 50) {
       showToast('Number of seats must be between 1 and 50', 'error');
+      return;
+    }
+    // Block if party conflict detected
+    if (newBookingConflict) {
+      showToast(newBookingConflict, 'error');
       return;
     }
     try {
@@ -2933,16 +2941,25 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 )}
               </div>
               {newBooking.date && newBooking.time && (
-                <div className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 ${
-                  capacityLoading ? 'bg-[#D6E2E9]/30 text-[#1B2D3C]/60' :
-                  newBookingCapacity !== null && newBookingCapacity <= 0 ? 'bg-red-50 text-red-700 border border-red-200' :
-                  newBookingCapacity !== null && newBookingCapacity <= 5 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                  'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                }`}>
-                  <Users className="w-3.5 h-3.5" />
-                  {capacityLoading ? 'Checking capacity...' :
-                   newBookingCapacity !== null ? `${newBookingCapacity} spots remaining` : 'Unable to check capacity'}
-                </div>
+                <>
+                  {newBookingConflict ? (
+                    <div className="px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 bg-red-50 text-red-700 border border-red-200">
+                      <XCircle className="w-3.5 h-3.5 shrink-0" />
+                      {newBookingConflict}
+                    </div>
+                  ) : (
+                    <div className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 ${
+                      capacityLoading ? 'bg-[#D6E2E9]/30 text-[#1B2D3C]/60' :
+                      newBookingCapacity !== null && newBookingCapacity <= 0 ? 'bg-red-50 text-red-700 border border-red-200' :
+                      newBookingCapacity !== null && newBookingCapacity <= 5 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                      'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    }`}>
+                      <Users className="w-3.5 h-3.5" />
+                      {capacityLoading ? 'Checking capacity...' :
+                       newBookingCapacity !== null ? `${newBookingCapacity} spots remaining` : 'Unable to check capacity'}
+                    </div>
+                  )}
+                </>
               )}
             </div>
             <div className="flex gap-2">
