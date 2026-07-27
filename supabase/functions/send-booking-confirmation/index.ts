@@ -1,6 +1,7 @@
 import { createClient } from 'supabase';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 import type { StaffRecord } from '../_shared/types.ts';
+import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,18 +40,18 @@ async function sendEmail(details: BookingDetails): Promise<{ success: boolean; e
 
   const subject = `Booking confirmed — ${details.studio} on ${details.date}`;
 
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: details.email,
-        subject,
-        html: `
+  const templateVars: Record<string, string | number | undefined> = {
+    bookingId: details.bookingId,
+    name: details.name,
+    studio: details.studio,
+    date: details.date,
+    time: details.time,
+    paintersCount: details.paintersCount,
+    sessionType: details.sessionType,
+  };
+
+  const tpl = await loadEmailTemplate('booking_confirmation');
+  const fallbackHtml = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1B2D3C;">
             <h2 style="color: #1B2D3C;">Your booking is confirmed</h2>
             <p>Hi ${details.name},</p>
@@ -66,7 +67,22 @@ async function sendEmail(details: BookingDetails): Promise<{ success: boolean; e
             <p>We look forward to seeing you in the studio!</p>
             <p>Pitter Potter</p>
           </div>
-        `,
+        `;
+  const html = tpl ? renderTemplate(tpl.html_content, templateVars) : fallbackHtml;
+  const finalSubject = tpl ? renderTemplate(tpl.subject, templateVars) : subject;
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: details.email,
+        subject: finalSubject,
+        html,
       }),
     });
 
@@ -87,7 +103,7 @@ async function sendEmail(details: BookingDetails): Promise<{ success: boolean; e
         await logClient.from('email_logs').insert({
           email_type: 'booking_confirmation',
           recipient: details.email,
-          subject,
+          subject: finalSubject,
           resend_id: resendData.id || null,
           status: 'sent',
           booking_id: details.bookingId,

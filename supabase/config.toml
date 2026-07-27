@@ -115,6 +115,12 @@ verify_jwt = false
 import_map = "./functions/notify-admin-booking/deno.json"
 entrypoint = "./functions/notify-admin-booking/index.ts"
 
+[functions.admin-email-templates]
+enabled = true
+verify_jwt = true
+import_map = "./functions/admin-email-templates/deno.json"
+entrypoint = "./functions/admin-email-templates/index.ts"
+
 [functions.admin-content]
 enabled = true
 verify_jwt = true

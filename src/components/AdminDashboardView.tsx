@@ -67,7 +67,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates'>('dashboard');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
   const [maintenanceSaving, setMaintenanceSaving] = useState(false);
@@ -102,6 +102,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [emailLogsLoading, setEmailLogsLoading] = useState(false);
+  const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
+  const [emailTemplatesLoading, setEmailTemplatesLoading] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
+  const [templateSaving, setTemplateSaving] = useState(false);
   const [auditLogsLoading, setAuditLogsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
@@ -236,6 +240,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
     if (activeTab === 'email-logs' && canManageStaff) {
       loadEmailLogs();
+    }
+    if (activeTab === 'email-templates' && canManageStaff) {
+      loadEmailTemplates();
     }
     return () => { isMounted = false; };
   }, [activeTab, staff.role]);
@@ -718,6 +725,72 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       console.error('Failed to load email logs:', err);
     } finally {
       setEmailLogsLoading(false);
+    }
+  };
+
+  const loadEmailTemplates = async () => {
+    if (!canManageStaff || !staff?.sessionToken) return;
+    setEmailTemplatesLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-email-templates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'load',
+          username: staff.username,
+          sessionToken: staff.sessionToken,
+        }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        console.error('Email templates error:', data.error);
+        return;
+      }
+      setEmailTemplates(data.templates || []);
+    } catch (err) {
+      console.error('Failed to load email templates:', err);
+    } finally {
+      setEmailTemplatesLoading(false);
+    }
+  };
+
+  const saveEmailTemplate = async (templateKey: string, subject: string, htmlContent: string) => {
+    if (!staff?.sessionToken) return;
+    setTemplateSaving(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-email-templates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'update',
+          username: staff.username,
+          sessionToken: staff.sessionToken,
+          templateKey,
+          subject,
+          htmlContent,
+        }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        showToast(data.error || 'Failed to save template', 'error');
+        return;
+      }
+      showToast('Email template saved', 'success');
+      setEditingTemplate(null);
+      loadEmailTemplates();
+    } catch (err) {
+      console.error('Failed to save email template:', err);
+      showToast('Failed to save template', 'error');
+    } finally {
+      setTemplateSaving(false);
     }
   };
 
@@ -1956,6 +2029,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               { value: 'gift-cards', label: 'Gift Vouchers', badge: null },
               ...(canManageStaff ? [{ value: 'audit-logs', label: 'Audit Log', badge: null }] : []),
               ...(canManageStaff ? [{ value: 'email-logs', label: 'Emails', badge: null }] : []),
+              ...(canManageStaff ? [{ value: 'email-templates', label: 'Templates', badge: null }] : []),
             ].map((tab) => (
               <button
                 key={tab.value}
@@ -4491,6 +4565,118 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {activeTab === 'email-templates' && canManageStaff && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Email Templates</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Edit the subject and content of all system emails. Use {'{{variables}}'} for dynamic data.</p>
+            </div>
+            <button
+              onClick={() => loadEmailTemplates()}
+              className="px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-stone-50 transition-all cursor-pointer"
+            >
+              Refresh
+            </button>
+          </div>
+
+          {emailTemplatesLoading ? (
+            <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-4 space-y-3">
+              <Skeleton className="h-16" />
+              <Skeleton className="h-16" />
+              <Skeleton className="h-16" />
+            </div>
+          ) : editingTemplate ? (
+            <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-heading text-lg font-black text-[#1B2D3C]">{editingTemplate.name}</h3>
+                  <p className="text-xs text-[#1B2D3C]/60 mt-1">Use these variables: {editingTemplate.available_variables?.map((v: string) => `{{${v}}}`).join(', ')}</p>
+                </div>
+                <button
+                  onClick={() => setEditingTemplate(null)}
+                  className="text-xs font-bold text-[#1B2D3C]/60 hover:text-[#1B2D3C] cursor-pointer"
+                >
+                  ← Back to list
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#1B2D3C] mb-1">Subject Line</label>
+                <input
+                  type="text"
+                  value={editingTemplate._editSubject}
+                  onChange={(e) => setEditingTemplate({ ...editingTemplate, _editSubject: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-sm text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#1B2D3C] mb-1">HTML Content</label>
+                <textarea
+                  value={editingTemplate._editHtml}
+                  onChange={(e) => setEditingTemplate({ ...editingTemplate, _editHtml: e.target.value })}
+                  rows={20}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-xs font-mono text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C] resize-y"
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => saveEmailTemplate(editingTemplate.template_key, editingTemplate._editSubject, editingTemplate._editHtml)}
+                  disabled={templateSaving}
+                  className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#1B2D3C]/90 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {templateSaving ? 'Saving...' : 'Save Template'}
+                </button>
+                <button
+                  onClick={() => setEditingTemplate(null)}
+                  className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-stone-50 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : emailTemplates.length === 0 ? (
+            <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-12 text-center">
+              <p className="text-sm text-stone-500 font-semibold">No email templates found</p>
+              <p className="text-xs text-stone-400 mt-1">Templates will appear here after the migration is applied</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {emailTemplates.map((tpl) => (
+                <div key={tpl.id} className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-heading text-sm font-black text-[#1B2D3C]">{tpl.name}</h3>
+                      <p className="text-xs text-[#1B2D3C]/60 mt-1">
+                        <span className="font-bold">Subject:</span> {tpl.subject}
+                      </p>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {tpl.available_variables?.map((v: string) => (
+                          <span key={v} className="inline-block px-1.5 py-0.5 bg-[#DBE7E4] text-[#1B2D3C] text-[10px] font-mono rounded">
+                            {`{{${v}}}`}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-[#1B2D3C]/40 mt-2">
+                        Last updated: {new Date(tpl.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setEditingTemplate({ ...tpl, _editSubject: tpl.subject, _editHtml: tpl.html_content })}
+                      className="shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-[#DBE7E4] transition-all cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

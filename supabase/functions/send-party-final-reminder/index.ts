@@ -2,6 +2,7 @@ import { createClient } from 'supabase';
 import Stripe from 'stripe';
 import { isObject, isNonEmptyString, isInteger } from '../_shared/validate.ts';
 import type { StaffRecord } from '../_shared/types.ts';
+import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,18 +46,22 @@ async function sendReminderEmail(
 
   const subject = `Final payment for your party — ${details.studio} on ${details.date}`;
 
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: details.email,
-        subject,
-        html: `
+  const templateVars: Record<string, string | number | undefined> = {
+    bookingId: details.bookingId,
+    name: details.name,
+    studio: details.studio,
+    date: details.date,
+    time: details.time,
+    finalSeats: details.finalSeats,
+    partyPrice: details.partyPrice.toFixed(2),
+    totalAmount: (details.finalSeats * details.partyPrice).toFixed(2),
+    depositAmount: details.depositAmount.toFixed(2),
+    finalBalance: details.finalBalance.toFixed(2),
+    paymentLinkUrl: details.paymentLinkUrl,
+  };
+
+  const tpl = await loadEmailTemplate('party_final_reminder');
+  const fallbackHtml = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1B2D3C;">
             <h2 style="color: #1B2D3C;">Your party is almost here</h2>
             <p>Hi ${details.name},</p>
@@ -76,7 +81,22 @@ async function sendReminderEmail(
             <p>If your numbers have changed, please reply to this email or call us and we will adjust the balance.</p>
             <p>Pitter Potter</p>
           </div>
-        `,
+        `;
+  const html = tpl ? renderTemplate(tpl.html_content, templateVars) : fallbackHtml;
+  const finalSubject = tpl ? renderTemplate(tpl.subject, templateVars) : subject;
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: details.email,
+        subject: finalSubject,
+        html,
       }),
     });
 
@@ -97,7 +117,7 @@ async function sendReminderEmail(
         await logClient.from('email_logs').insert({
           email_type: 'party_final_reminder',
           recipient: details.email,
-          subject,
+          subject: finalSubject,
           resend_id: resendData.id || null,
           status: 'sent',
           booking_id: details.bookingId,

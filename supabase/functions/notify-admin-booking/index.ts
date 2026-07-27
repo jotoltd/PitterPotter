@@ -1,5 +1,6 @@
 import { createClient } from 'supabase';
 import { isObject, isNonEmptyString, isOneOf } from '../_shared/validate.ts';
+import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,18 +31,21 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
 
   const subject = `New booking request — ${details.studio} on ${details.date} (${details.bookingId})`;
 
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: adminEmail,
-        subject,
-        html: `
+  const templateVars: Record<string, string | number | undefined> = {
+    bookingId: details.bookingId,
+    name: details.name,
+    email: details.email,
+    phone: details.phone,
+    studio: details.studio,
+    date: details.date,
+    time: details.time,
+    paintersCount: details.paintersCount,
+    sessionType: details.sessionType,
+    notes: details.notes || '',
+  };
+
+  const tpl = await loadEmailTemplate('admin_booking_notification');
+  const fallbackHtml = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1B2D3C;">
             <h2 style="color: #1B2D3C;">New Booking Request — ${details.studio}</h2>
             <p>A new booking request has been submitted for the <strong>${details.studio}</strong> studio.</p>
@@ -58,7 +62,22 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
             </table>
             <p style="color: #666; font-size: 12px;">Log in to the Pitter Potter admin dashboard to confirm or manage this booking.</p>
           </div>
-        `,
+        `;
+  const html = tpl ? renderTemplate(tpl.html_content, templateVars) : fallbackHtml;
+  const finalSubject = tpl ? renderTemplate(tpl.subject, templateVars) : subject;
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: adminEmail,
+        subject: finalSubject,
+        html,
       }),
     });
 
@@ -79,7 +98,7 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
         await logClient.from('email_logs').insert({
           email_type: 'admin_booking_notification',
           recipient: adminEmail,
-          subject,
+          subject: finalSubject,
           resend_id: resendData.id || null,
           status: 'sent',
           booking_id: details.bookingId,
