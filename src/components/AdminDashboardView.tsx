@@ -623,6 +623,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         return;
       }
       setPageSettings(prev => prev.map(s => s.page_key === pageKey ? { ...s, enabled } : s));
+      window.dispatchEvent(new CustomEvent('pp-page-settings-changed'));
       showToast('Page setting updated', 'success');
     } catch (err) {
       console.error('Failed to update page setting:', err);

@@ -147,6 +147,10 @@ export default function App() {
       }
     };
     loadPageSettings();
+
+    const handlePageSettingsChanged = () => loadPageSettings();
+    window.addEventListener('pp-page-settings-changed', handlePageSettingsChanged);
+    return () => window.removeEventListener('pp-page-settings-changed', handlePageSettingsChanged);
   }, []);
 
   useEffect(() => {
