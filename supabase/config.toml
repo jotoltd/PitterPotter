@@ -109,6 +109,12 @@ entrypoint = "./functions/admin-settings/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/admin-settings/*.html" ]
 
+[functions.notify-admin-booking]
+enabled = true
+verify_jwt = false
+import_map = "./functions/notify-admin-booking/deno.json"
+entrypoint = "./functions/notify-admin-booking/index.ts"
+
 [functions.admin-content]
 enabled = true
 verify_jwt = true
@@ -165,6 +171,12 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/stripe-party-webhook/deno.json"
 entrypoint = "./functions/stripe-party-webhook/index.ts"
+
+[functions.resend-webhook]
+enabled = true
+verify_jwt = false
+import_map = "./functions/resend-webhook/deno.json"
+entrypoint = "./functions/resend-webhook/index.ts"
 
 [functions.process-party-reminders]
 enabled = true

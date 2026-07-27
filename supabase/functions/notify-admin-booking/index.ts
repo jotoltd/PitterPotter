@@ -1,3 +1,4 @@
+import { createClient } from 'supabase';
 import { isObject, isNonEmptyString, isOneOf } from '../_shared/validate.ts';
 
 const corsHeaders = {
@@ -27,6 +28,8 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
     return { success: false, error: 'Email service not configured' };
   }
 
+  const subject = `New booking request — ${details.studio} on ${details.date} (${details.bookingId})`;
+
   try {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -37,7 +40,7 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
       body: JSON.stringify({
         from: fromEmail,
         to: adminEmail,
-        subject: `New booking request — ${details.studio} on ${details.date} (${details.bookingId})`,
+        subject,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1B2D3C;">
             <h2 style="color: #1B2D3C;">New Booking Request — ${details.studio}</h2>
@@ -63,6 +66,27 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
       const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
       console.error('Resend admin notify error:', errorData);
       return { success: false, error: errorData.message || 'Failed to send email' };
+    }
+
+    const resendData = await response.json().catch(() => ({}));
+
+    // Log to email_logs
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (supabaseUrl && supabaseServiceKey) {
+        const logClient = createClient(supabaseUrl, supabaseServiceKey);
+        await logClient.from('email_logs').insert({
+          email_type: 'admin_booking_notification',
+          recipient: adminEmail,
+          subject,
+          resend_id: resendData.id || null,
+          status: 'sent',
+          booking_id: details.bookingId,
+        });
+      }
+    } catch (logErr) {
+      console.error('Failed to log email:', logErr);
     }
 
     return { success: true };

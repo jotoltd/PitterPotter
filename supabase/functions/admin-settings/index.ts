@@ -149,6 +149,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'getEmailLogs') {
+      const { limit = 100 } = body;
+      const { data, error } = await supabase
+        .from('email_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(isInteger(limit) ? limit : 100);
+      if (error) throw error;
+      return new Response(JSON.stringify({ logs: data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     return new Response(JSON.stringify({ error: 'Unknown action' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

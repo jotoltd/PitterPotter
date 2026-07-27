@@ -67,7 +67,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs'>('dashboard');
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
   const [maintenanceSaving, setMaintenanceSaving] = useState(false);
@@ -100,6 +100,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [redeemingGiftCard, setRedeemingGiftCard] = useState(false);
   const [giftCardDiscount, setGiftCardDiscount] = useState(0);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [emailLogs, setEmailLogs] = useState<any[]>([]);
+  const [emailLogsLoading, setEmailLogsLoading] = useState(false);
   const [auditLogsLoading, setAuditLogsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
@@ -231,6 +233,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
     if (activeTab === 'audit-logs' && staff.role === 'super_admin') {
       loadAuditLogs();
+    }
+    if (activeTab === 'email-logs' && canManageStaff) {
+      loadEmailLogs();
     }
     return () => { isMounted = false; };
   }, [activeTab, staff.role]);
@@ -683,6 +688,36 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       console.error('Failed to load audit logs:', err);
     } finally {
       setAuditLogsLoading(false);
+    }
+  };
+
+  const loadEmailLogs = async () => {
+    if (!canManageStaff || !staff?.sessionToken) return;
+    setEmailLogsLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'getEmailLogs',
+          username: staff.username,
+          sessionToken: staff.sessionToken,
+        }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        console.error('Email logs error:', data.error);
+        return;
+      }
+      setEmailLogs(data.logs || []);
+    } catch (err) {
+      console.error('Failed to load email logs:', err);
+    } finally {
+      setEmailLogsLoading(false);
     }
   };
 
@@ -1920,6 +1955,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               { value: 'dashboard', label: 'Dashboard', badge: stats.pending > 0 ? stats.pending : null },
               { value: 'gift-cards', label: 'Gift Vouchers', badge: null },
               ...(canManageStaff ? [{ value: 'audit-logs', label: 'Audit Log', badge: null }] : []),
+              ...(canManageStaff ? [{ value: 'email-logs', label: 'Emails', badge: null }] : []),
             ].map((tab) => (
               <button
                 key={tab.value}
@@ -4350,6 +4386,106 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'email-logs' && canManageStaff && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Email Logs</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Track all emails sent from the system and their delivery status.</p>
+            </div>
+            <button
+              onClick={() => loadEmailLogs()}
+              className="px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-stone-50 transition-all cursor-pointer"
+            >
+              Refresh
+            </button>
+          </div>
+
+          <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl overflow-hidden">
+            {emailLogsLoading ? (
+              <div className="p-4 space-y-3">
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+              </div>
+            ) : emailLogs.length === 0 ? (
+              <div className="p-12 text-center">
+                <p className="text-sm text-stone-500 font-semibold">No emails sent yet</p>
+                <p className="text-xs text-stone-400 mt-1">Emails will appear here once bookings are made and confirmed</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                <table className="w-full text-left min-w-[700px]">
+                  <thead className="bg-[#D6E2E9] border-b border-[#1B2D3C]/20">
+                    <tr>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">When</th>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Type</th>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Recipient</th>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Subject</th>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Status</th>
+                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Booking</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-xs text-[#1B2D3C]">
+                    {emailLogs.map((log) => {
+                      const statusColors: Record<string, string> = {
+                        sent: 'bg-blue-100 text-blue-700',
+                        delivered: 'bg-emerald-100 text-emerald-700',
+                        bounced: 'bg-red-100 text-red-700',
+                        complained: 'bg-amber-100 text-amber-700',
+                        opened: 'bg-purple-100 text-purple-700',
+                        clicked: 'bg-indigo-100 text-indigo-700',
+                        failed: 'bg-red-100 text-red-700',
+                      };
+                      const typeLabels: Record<string, string> = {
+                        admin_booking_notification: 'Admin Notify',
+                        booking_confirmation: 'Confirmation',
+                        party_final_reminder: 'Party Reminder',
+                        general: 'General',
+                      };
+                      return (
+                        <tr key={log.id} className="border-b border-[#1B2D3C]/5 hover:bg-stone-50">
+                          <td className="py-3 px-4 align-top whitespace-nowrap">
+                            <p className="font-bold">{new Date(log.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                            <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{new Date(log.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</p>
+                          </td>
+                          <td className="py-3 px-4 align-top">
+                            <span className="font-bold">{typeLabels[log.email_type] || log.email_type}</span>
+                          </td>
+                          <td className="py-3 px-4 align-top">
+                            <span className="text-xs">{log.recipient}</span>
+                          </td>
+                          <td className="py-3 px-4 align-top">
+                            <span className="text-xs">{log.subject}</span>
+                            {log.error && (
+                              <p className="text-[10px] text-red-600 mt-1">{log.error}</p>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 align-top">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColors[log.status] || 'bg-stone-100 text-stone-700'}`}>
+                              {log.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 align-top">
+                            {log.booking_id ? (
+                              <span className="text-xs font-mono">{log.booking_id}</span>
+                            ) : (
+                              <span className="text-xs text-stone-400">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

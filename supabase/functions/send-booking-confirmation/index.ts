@@ -37,6 +37,8 @@ async function sendEmail(details: BookingDetails): Promise<{ success: boolean; e
     return { success: false, error: 'Email service not configured' };
   }
 
+  const subject = `Booking confirmed — ${details.studio} on ${details.date}`;
+
   try {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -47,7 +49,7 @@ async function sendEmail(details: BookingDetails): Promise<{ success: boolean; e
       body: JSON.stringify({
         from: fromEmail,
         to: details.email,
-        subject: `Booking confirmed — ${details.studio} on ${details.date}`,
+        subject,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1B2D3C;">
             <h2 style="color: #1B2D3C;">Your booking is confirmed</h2>
@@ -72,6 +74,27 @@ async function sendEmail(details: BookingDetails): Promise<{ success: boolean; e
       const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
       console.error('Resend error:', errorData);
       return { success: false, error: errorData.message || 'Failed to send email' };
+    }
+
+    const resendData = await response.json().catch(() => ({}));
+
+    // Log to email_logs
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (supabaseUrl && supabaseServiceKey) {
+        const logClient = createClient(supabaseUrl, supabaseServiceKey);
+        await logClient.from('email_logs').insert({
+          email_type: 'booking_confirmation',
+          recipient: details.email,
+          subject,
+          resend_id: resendData.id || null,
+          status: 'sent',
+          booking_id: details.bookingId,
+        });
+      }
+    } catch (logErr) {
+      console.error('Failed to log email:', logErr);
     }
 
     return { success: true };
