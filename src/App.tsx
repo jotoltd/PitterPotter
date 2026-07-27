@@ -25,6 +25,7 @@ import GiftCardPurchaseView from './components/GiftCardPurchaseView';
 import GiftCardSuccessView from './components/GiftCardSuccessView';
 import NotFoundView from './components/NotFoundView';
 import GiftCardBalanceView from './components/GiftCardBalanceView';
+import PartyPaymentView from './components/PartyPaymentView';
 import PartyBookingView from './components/PartyBookingView';
 import PartyDetailView from './components/PartyDetailView';
 import PriceListView from './components/PriceListView';
@@ -65,6 +66,8 @@ const PAGE_TO_PATH: Record<Page, string> = {
   'party-corporate-putney': '/parties/corporate/putney',
   'party-corporate-wimbledon': '/parties/corporate/wimbledon',
   'not-found': '/not-found',
+  'party-payment': '/party-payment',
+  'party-payment-success': '/party-payment-success',
 };
 
 const PATH_TO_PAGE: Record<string, Page> = Object.entries(PAGE_TO_PATH).reduce((acc, [page, path]) => {
@@ -325,6 +328,10 @@ case 'party-birthday-putney':
             return <AdminLoginView onLogin={handleAdminLogin} />;
  case 'not-found':
  return <NotFoundView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
+ case 'party-payment':
+ return <PartyPaymentView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
+ case 'party-payment-success':
+ return <PartyPaymentView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  default:
  return <NotFoundView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  }

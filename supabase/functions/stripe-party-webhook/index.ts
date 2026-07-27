@@ -52,6 +52,22 @@ Deno.serve(async (req) => {
           }).eq('booking_id', bookingId);
           if (updateError) throw updateError;
         }
+      } else if (type === 'party_final_balance') {
+        // Final balance paid — update booking with final seats and mark as paid
+        const bookingId = metadata.bookingId;
+        if (bookingId) {
+          const updateData: any = {
+            payment_status: 'paid',
+          };
+          if (metadata.finalSeats) {
+            updateData.final_seats = Number(metadata.finalSeats);
+          }
+          if (metadata.finalBalance) {
+            updateData.final_balance = Number(metadata.finalBalance);
+          }
+          const { error: updateError } = await supabase.from('bookings').update(updateData).eq('booking_id', bookingId);
+          if (updateError) throw updateError;
+        }
       } else if (type === 'gift_card') {
         // Create gift card if not already created (idempotent)
         const paymentIntentId = obj.id;

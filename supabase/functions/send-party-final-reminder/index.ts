@@ -1,5 +1,4 @@
 import { createClient } from 'supabase';
-import Stripe from 'stripe';
 import { isObject, isNonEmptyString, isInteger } from '../_shared/validate.ts';
 import type { StaffRecord } from '../_shared/types.ts';
 import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts';
@@ -81,7 +80,7 @@ async function sendReminderEmail(
             <p style="text-align: center; margin: 30px 0;">
               <a href="${details.paymentLinkUrl}" style="background: #1B2D3C; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Pay final balance</a>
             </p>
-            <p>If your numbers have changed, please reply to this email or call us and we will adjust the balance.</p>
+            <p>If your numbers have changed, you can adjust them on the payment page before paying.</p>
             <p style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #DBE7E4; font-size: 12px; color: #666;">
               <strong>${details.studio} Studio</strong><br/>
               ${studioInfo.address}<br/>
@@ -217,35 +216,8 @@ Deno.serve(async (req) => {
     const total = resolvedFinalSeats * partyPrice;
     const finalBalance = Math.max(0, total - depositAmount);
 
-    // Read stripe mode from DB
-    const { data: setting } = await supabase.from('settings').select('value').eq('key', 'stripe_mode').single();
-    const isLive = setting?.value === 'live';
-    const secretKey = isLive
-      ? Deno.env.get('STRIPE_SECRET_KEY_LIVE')
-      : Deno.env.get('STRIPE_SECRET_KEY_SANDBOX');
-
-    if (!secretKey) {
-      return new Response(JSON.stringify({ error: 'Stripe not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const stripe = new Stripe(secretKey);
-
-    const paymentLink = await stripe.paymentLinks.create({
-      line_items: [{ price_data: {
-        currency: 'gbp',
-        product_data: { name: `Party final balance — ${booking.booking_id}` },
-        unit_amount: Math.round(finalBalance * 100),
-      }, quantity: 1 }],
-      metadata: {
-        bookingId: booking.booking_id,
-        type: 'party_final_balance',
-        finalSeats: String(resolvedFinalSeats),
-      },
-      after_completion: { type: 'redirect', redirect: { url: `${Deno.env.get('SITE_URL') || 'https://pitterpotter.co.uk'}/party-payment-success?booking=${booking.booking_id}` } },
-    });
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://pitterpotter.co.uk';
+    const paymentPageUrl = `${siteUrl}/party-payment?booking=${booking.booking_id}`;
 
     const emailResult = await sendReminderEmail({
       bookingId: booking.booking_id,
@@ -258,19 +230,19 @@ Deno.serve(async (req) => {
       partyPrice,
       depositAmount,
       finalBalance,
-      paymentLinkUrl: paymentLink.url,
+      paymentLinkUrl: paymentPageUrl,
     });
 
     const { error: updateError } = await supabase.from('bookings').update({
       final_seats: resolvedFinalSeats,
       final_balance: finalBalance,
-      payment_link_url: paymentLink.url,
+      payment_link_url: paymentPageUrl,
       payment_link_sent_at: new Date().toISOString(),
     }).eq('booking_id', bookingId);
 
     if (updateError) throw updateError;
 
-    return new Response(JSON.stringify({ success: true, email: emailResult, paymentLinkUrl: paymentLink.url, finalBalance }), {
+    return new Response(JSON.stringify({ success: true, email: emailResult, paymentLinkUrl: paymentPageUrl, finalBalance }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {

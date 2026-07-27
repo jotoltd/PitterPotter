@@ -65,7 +65,7 @@ SET available_variables = ARRAY['name', 'studio', 'studioAddress', 'studioPhone'
   <p style="text-align: center; margin: 30px 0;">
     <a href="{{paymentLinkUrl}}" style="background: #1B2D3C; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Pay final balance</a>
   </p>
-  <p>If your numbers have changed, please reply to this email or call us and we will adjust the balance.</p>
+  <p>If your numbers have changed, you can adjust them on the payment page before paying.</p>
   <p style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #DBE7E4; font-size: 12px; color: #666;">
     <strong>{{studio}} Studio</strong><br/>
     {{studioAddress}}<br/>
