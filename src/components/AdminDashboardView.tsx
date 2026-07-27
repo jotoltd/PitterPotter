@@ -150,6 +150,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [newBookingPaymentMethod, setNewBookingPaymentMethod] = useState<'payment-link' | 'paid'>('payment-link');
   const [newBookingDepositAmount, setNewBookingDepositAmount] = useState<number>(50);
   const [newBookingFinalPending, setNewBookingFinalPending] = useState<boolean>(true);
+  const [showGhostModal, setShowGhostModal] = useState(false);
+  const [ghostBooking, setGhostBooking] = useState({ seats: 1, time: '10:00', date: format(new Date(), 'yyyy-MM-dd'), studio: defaultStudio });
+  const [ghostCapacity, setGhostCapacity] = useState<number | null>(null);
+  const [ghostConflict, setGhostConflict] = useState<string | null>(null);
   const [capacityLoading, setCapacityLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [assignModalBooking, setAssignModalBooking] = useState<BookingInquiry | null>(null);
@@ -1505,6 +1509,56 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
+  useEffect(() => {
+    if (showGhostModal && ghostBooking.studio && ghostBooking.date && ghostBooking.time) {
+      fetchCapacity(ghostBooking.studio, ghostBooking.date, ghostBooking.time, setGhostCapacity, 'painting', setGhostConflict);
+    }
+  }, [showGhostModal, ghostBooking.studio, ghostBooking.date, ghostBooking.time, fetchCapacity]);
+
+  const saveGhostBooking = async () => {
+    if (!ghostBooking.date || !ghostBooking.time) {
+      showToast('Please select date and time', 'error');
+      return;
+    }
+    if (!ghostBooking.seats || ghostBooking.seats < 1 || ghostBooking.seats > 50) {
+      showToast('Seats must be between 1 and 50', 'error');
+      return;
+    }
+    if (ghostConflict) {
+      showToast(ghostConflict, 'error');
+      return;
+    }
+    if (ghostCapacity !== null && ghostCapacity < ghostBooking.seats) {
+      showToast(`Only ${ghostCapacity} spots remaining for this slot`, 'error');
+      return;
+    }
+    try {
+      const booking: BookingInquiry = {
+        id: crypto.randomUUID(),
+        studio: ghostBooking.studio as 'Putney' | 'Wimbledon',
+        name: 'Walk-in',
+        email: '',
+        phone: '',
+        date: ghostBooking.date,
+        time: ghostBooking.time,
+        paintersCount: ghostBooking.seats,
+        sessionType: 'painting',
+        notes: `Walk-in: ${ghostBooking.seats} painter${ghostBooking.seats !== 1 ? 's' : ''}`,
+        status: 'confirmed',
+        requestDate: new Date().toISOString(),
+        source: 'walk-in',
+      };
+      await createBooking(booking, staff);
+      setInquiries([booking, ...inquiries]);
+      setShowGhostModal(false);
+      setGhostBooking({ seats: 1, time: '10:00', date: format(new Date(), 'yyyy-MM-dd'), studio: defaultStudio });
+      showToast(`${ghostBooking.seats} seat${ghostBooking.seats !== 1 ? 's' : ''} blocked as walk-in`, 'success');
+    } catch (err) {
+      console.error('Failed to add ghost booking:', err);
+      showToast((err as Error).message || 'Failed to add walk-in', 'error');
+    }
+  };
+
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
   const [newStaff, setNewStaff] = useState({
@@ -1999,6 +2053,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             {canAddWalkIn && (
               <>
+                <button
+                  onClick={() => { setActiveTab('dashboard'); setShowGhostModal(true); }}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-[#1B2D3C] hover:bg-[#486581] text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
+                >
+                  <Users className="w-4 h-4" /> <span className="hidden sm:inline">Walk-in</span>
+                </button>
                 <button
                   onClick={() => { setActiveTab('dashboard'); setNewBooking(prev => ({ ...prev, sessionType: 'painting' as any })); setLockedSessionType('painting'); setShowAddModal(true); }}
                   className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
@@ -3063,6 +3123,113 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 className="flex-1 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
                 Add Booking
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Walk-in / Ghost Booking Modal */}
+      {showGhostModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 sm:p-6">
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-sm w-full space-y-4 shadow-lg max-h-[90vh] overflow-y-auto sm:rounded-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Quick Walk-in</h3>
+              <button onClick={() => setShowGhostModal(false)} className="p-1.5 rounded-full hover:bg-[#D6E2E9] transition-colors cursor-pointer">
+                <XIcon className="w-5 h-5 text-[#1B2D3C]/60" />
+              </button>
+            </div>
+            <p className="text-[10px] text-[#1B2D3C]/60 font-semibold">Blocks seats without customer details — for walk-in painters.</p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Studio *</label>
+                <select
+                  value={ghostBooking.studio}
+                  onChange={(e) => setGhostBooking({ ...ghostBooking, studio: e.target.value as 'Putney' | 'Wimbledon' })}
+                  disabled={!!staffAllowedStudios && staffAllowedStudios.length === 1}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {(staffAllowedStudios ?? ['Putney', 'Wimbledon']).map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Date *</label>
+                <input
+                  type="date"
+                  min={format(new Date(), 'yyyy-MM-dd')}
+                  value={ghostBooking.date}
+                  onChange={(e) => setGhostBooking({ ...ghostBooking, date: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Time *</label>
+                <select
+                  value={ghostBooking.time}
+                  onChange={(e) => setGhostBooking({ ...ghostBooking, time: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                >
+                  {(() => {
+                    const dt: DayType = ghostBooking.date ? ((d => d === 0 || d === 6)(getDay(parseISO(ghostBooking.date))) ? 'weekend' : 'weekday') : 'weekday';
+                    return getSlots('painting', ghostBooking.studio || 'Putney', dt).map(s => <option key={s} value={s}>{s}</option>);
+                  })()}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Seats *</label>
+                <input
+                  type="number"
+                  value={ghostBooking.seats ?? ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      setGhostBooking({ ...ghostBooking, seats: 0 });
+                    } else {
+                      const parsed = parseInt(val, 10);
+                      if (!isNaN(parsed) && parsed >= 0) {
+                        setGhostBooking({ ...ghostBooking, seats: parsed });
+                      }
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              {ghostBooking.date && ghostBooking.time && (
+                <>
+                  {ghostConflict ? (
+                    <div className="px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 bg-red-50 text-red-700 border border-red-200">
+                      <XCircle className="w-3.5 h-3.5 shrink-0" />
+                      {ghostConflict}
+                    </div>
+                  ) : (
+                    <div className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 ${
+                      capacityLoading ? 'bg-[#D6E2E9]/30 text-[#1B2D3C]/60' :
+                      ghostCapacity !== null && ghostCapacity <= 0 ? 'bg-red-50 text-red-700 border border-red-200' :
+                      ghostCapacity !== null && ghostCapacity <= 5 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                      'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    }`}>
+                      <Users className="w-3.5 h-3.5" />
+                      {capacityLoading ? 'Checking capacity...' :
+                       ghostCapacity !== null ? `${ghostCapacity} spots remaining` : 'Unable to check capacity'}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowGhostModal(false)}
+                className="flex-1 px-4 py-2 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveGhostBooking}
+                className="flex-1 px-4 py-2 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-all cursor-pointer"
+              >
+                Block Seats
               </button>
             </div>
           </div>
