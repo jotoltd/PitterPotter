@@ -807,6 +807,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const loadGiftCards = async () => {
+    if (!isSuperAdmin) return;
     if (isSupabaseEnabled() && staff?.sessionToken) {
       try {
         const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift-cards`, {
@@ -819,6 +820,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         });
         const data = await response.json();
         if (response.status === 401) { handleUnauthorized(); return; }
+        if (response.status === 403) { return; }
         if (!response.ok || data.error) {
           console.error('Gift cards list error:', data.error);
         } else if (data.giftCards) {
@@ -2115,7 +2117,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {[
               { value: 'dashboard', label: 'Dashboard', badge: stats.pending > 0 ? stats.pending : null },
-              { value: 'gift-cards', label: 'Gift Vouchers', badge: null },
+              ...(isSuperAdmin ? [{ value: 'gift-cards', label: 'Gift Vouchers', badge: null }] : []),
               ...(canManageStaff ? [{ value: 'audit-logs', label: 'Audit Log', badge: null }] : []),
               ...(canManageStaff ? [{ value: 'email-logs', label: 'Emails', badge: null }] : []),
               ...(canManageStaff ? [{ value: 'email-templates', label: 'Templates', badge: null }] : []),
