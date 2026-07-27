@@ -147,6 +147,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [newBookingCapacity, setNewBookingCapacity] = useState<number | null>(null);
   const [newBookingConflict, setNewBookingConflict] = useState<string | null>(null);
   const [editBookingCapacity, setEditBookingCapacity] = useState<number | null>(null);
+  const [newBookingPaymentMethod, setNewBookingPaymentMethod] = useState<'payment-link' | 'paid'>('payment-link');
+  const [newBookingDepositAmount, setNewBookingDepositAmount] = useState<number>(50);
+  const [newBookingFinalPending, setNewBookingFinalPending] = useState<boolean>(true);
   const [capacityLoading, setCapacityLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [assignModalBooking, setAssignModalBooking] = useState<BookingInquiry | null>(null);
@@ -1443,6 +1446,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       return;
     }
     try {
+      const isParty = ['birthday-party', 'baby-shower-hen', 'corporate'].includes(newBooking.sessionType || 'painting');
+      const seats = newBooking.sessionType === 'clay-imprints' ? newBabiesCount : (newBooking.paintersCount || 1);
       const booking: BookingInquiry = {
         id: crypto.randomUUID(),
         studio: newBooking.studio || 'Putney',
@@ -1451,16 +1456,26 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         phone: newBooking.phone,
         date: newBooking.date,
         time: newBooking.time,
-        paintersCount: newBooking.sessionType === 'clay-imprints' ? newBabiesCount : (newBooking.paintersCount || 1),
+        paintersCount: seats,
         sessionType: newBooking.sessionType || 'painting',
         notes: newBooking.sessionType === 'clay-imprints'
           ? `Babies: ${newBabiesCount}, Adults: ${newAdultsCount}${newBooking.notes ? ` | ${newBooking.notes}` : ''}`
           : newBooking.notes,
-        status: ['birthday-party', 'baby-shower-hen', 'corporate'].includes(newBooking.sessionType || 'painting') ? 'pending' : 'confirmed',
+        status: isParty ? 'pending' : 'confirmed',
         requestDate: new Date().toISOString(),
         source: 'walk-in',
         giftCardCode: newBooking.giftCardCode,
         giftCardDiscount: giftCardDiscount > 0 ? giftCardDiscount : undefined,
+        ...(isParty ? {
+          depositAmount: newBookingPaymentMethod === 'paid' ? newBookingDepositAmount : undefined,
+          finalSeats: seats,
+          finalBalance: newBookingPaymentMethod === 'paid'
+            ? Math.max(0, seats * partyPrice - newBookingDepositAmount)
+            : Math.max(0, seats * partyPrice - 50),
+          paymentStatus: newBookingPaymentMethod === 'paid'
+            ? (newBookingFinalPending ? 'pending' : 'paid')
+            : 'pending',
+        } : {}),
       };
       await createBooking(booking, staff);
       setInquiries([booking, ...inquiries]);
@@ -2960,6 +2975,75 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     </div>
                   )}
                 </>
+              )}
+              {['birthday-party', 'baby-shower-hen', 'corporate'].includes(newBooking.sessionType || '') && (
+                <div className="space-y-3 p-3 rounded-lg bg-[#F8FAFA] border border-[#1B2D3C]/10">
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1.5">Deposit Payment</label>
+                    <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
+                      <button type="button"
+                        onClick={() => setNewBookingPaymentMethod('payment-link')}
+                        className={`flex-1 px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
+                          newBookingPaymentMethod === 'payment-link' ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                        }`}
+                      >
+                        Email Payment Link
+                      </button>
+                      <button type="button"
+                        onClick={() => setNewBookingPaymentMethod('paid')}
+                        className={`flex-1 px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
+                          newBookingPaymentMethod === 'paid' ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                        }`}
+                      >
+                        Mark as Paid
+                      </button>
+                    </div>
+                  </div>
+                  {newBookingPaymentMethod === 'paid' && (
+                    <>
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Deposit Amount (£)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={newBookingDepositAmount}
+                          onChange={(e) => setNewBookingDepositAmount(Math.max(0, Number(e.target.value)))}
+                          className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1.5">Final Payment Status</label>
+                        <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
+                          <button type="button"
+                            onClick={() => setNewBookingFinalPending(true)}
+                            className={`flex-1 px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
+                              newBookingFinalPending ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                            }`}
+                          >
+                            Still Needs Final Payment
+                          </button>
+                          <button type="button"
+                            onClick={() => setNewBookingFinalPending(false)}
+                            className={`flex-1 px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
+                              !newBookingFinalPending ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                            }`}
+                          >
+                            Fully Paid
+                          </button>
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-[#1B2D3C]/60 font-semibold">
+                        Total: £{((newBooking.paintersCount || 1) * partyPrice).toFixed(2)} · Deposit: £{newBookingDepositAmount.toFixed(2)} · Balance: £{Math.max(0, (newBooking.paintersCount || 1) * partyPrice - newBookingDepositAmount).toFixed(2)}
+                      </div>
+                    </>
+                  )}
+                  {newBookingPaymentMethod === 'payment-link' && (
+                    <p className="text-[10px] text-[#1B2D3C]/60 font-semibold">
+                      A £50 deposit payment link will be emailed to the customer. Final balance of £{Math.max(0, (newBooking.paintersCount || 1) * partyPrice - 50).toFixed(2)} will be collected 48 hours before the party.
+                    </p>
+                  )}
+                </div>
               )}
             </div>
             <div className="flex gap-2">
