@@ -109,7 +109,7 @@ async function sendEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: fromEmail,
+        from: `Pitter Potter <${fromEmail}>`,
         to: booking.email,
         subject: finalSubject,
         html,
