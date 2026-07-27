@@ -32,6 +32,7 @@ export function toBookingInquiry(row: any): BookingInquiry {
     paymentLinkSentAt: row.payment_link_sent_at || undefined,
     paymentStatus: row.payment_status || undefined,
     stripePaymentIntentId: row.stripe_payment_intent_id || undefined,
+    managementToken: row.management_token || undefined,
   };
 }
 
@@ -62,6 +63,7 @@ export function toBookingRow(booking: BookingInquiry): any {
     payment_link_sent_at: booking.paymentLinkSentAt || null,
     payment_status: booking.paymentStatus || null,
     stripe_payment_intent_id: booking.stripePaymentIntentId || null,
+    management_token: booking.managementToken || null,
   };
 }
 
@@ -137,10 +139,29 @@ export async function createPublicBooking(booking: BookingInquiry): Promise<void
   if (remaining < booking.paintersCount) {
     throw new Error(`Not enough capacity. Only ${remaining} painter spots remaining for this slot.`);
   }
-  const { error } = await supabase!.from('bookings').insert(toBookingRow(booking));
+  const managementToken = crypto.randomUUID();
+  const bookingWithToken = { ...booking, managementToken };
+  const { error } = await supabase!.from('bookings').insert(toBookingRow(bookingWithToken));
   if (error) {
     console.error('Failed to create booking:', error);
     throw new Error('Failed to create booking');
+  }
+
+  // Send confirmation email with magic link (non-blocking)
+  try {
+    await fetch(functionUrl('send-booking-confirmation'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        bookingId: booking.id,
+        managementToken,
+      }),
+    });
+  } catch (err) {
+    console.error('Failed to send confirmation email:', err);
   }
 }
 

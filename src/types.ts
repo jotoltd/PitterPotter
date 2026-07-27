@@ -1,4 +1,4 @@
-export type Page = 'home' | 'baby-prints' | 'parties' | 'pricing' | 'food-drink' | 'faqs' | 'gallery' | 'contact' | 'contact-info' | 'admin' | 'putney' | 'wimbledon' | 'book' | 'buy-gift-card' | 'gift-card-success' | 'gift-card-balance' | 'party-birthday-putney' | 'party-birthday-wimbledon' | 'party-babyshower-putney' | 'party-babyshower-wimbledon' | 'party-corporate-putney' | 'party-corporate-wimbledon' | 'baby-prints-book' | 'party-birthday-detail' | 'party-babyshower-detail' | 'price-list' | 'pottery-painting' | 'not-found' | 'party-payment' | 'party-payment-success';
+export type Page = 'home' | 'baby-prints' | 'parties' | 'pricing' | 'food-drink' | 'faqs' | 'gallery' | 'contact' | 'contact-info' | 'admin' | 'putney' | 'wimbledon' | 'book' | 'buy-gift-card' | 'gift-card-success' | 'gift-card-balance' | 'party-birthday-putney' | 'party-birthday-wimbledon' | 'party-babyshower-putney' | 'party-babyshower-wimbledon' | 'party-corporate-putney' | 'party-corporate-wimbledon' | 'baby-prints-book' | 'party-birthday-detail' | 'party-babyshower-detail' | 'price-list' | 'pottery-painting' | 'not-found' | 'party-payment' | 'party-payment-success' | 'manage-booking';
 
 export interface PotteryItem {
   id: string;
@@ -44,6 +44,7 @@ export interface BookingInquiry {
   paymentLinkSentAt?: string;
   paymentStatus?: 'pending' | 'paid' | 'refunded';
   stripePaymentIntentId?: string;
+  managementToken?: string;
 }
 
 export interface GalleryItem {
