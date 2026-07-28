@@ -8,6 +8,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const SESSION_LABELS: Record<string, string> = {
+  'painting': 'Pottery Painting',
+  'clay-imprints': 'Baby Prints',
+  'birthday-party': 'Birthday Party',
+  'baby-shower-hen': 'Baby Shower / Hen Party',
+  'corporate': 'Corporate Event',
+};
+
 interface BookingRow {
   booking_id: string;
   name: string;
@@ -75,7 +83,7 @@ async function sendEmail(
           <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Time</strong> ${booking.time}<br/>
           <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Studio</strong> ${booking.studio}<br/>
           <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Seats</strong> ${booking.painters_count}<br/>
-          <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Session</strong> ${booking.session_type}
+          <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Session</strong> ${SESSION_LABELS[booking.session_type] || booking.session_type}
         </p>
       </div>
 
