@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { ArrowRight, CheckCircle2, Copy, Loader2 } from 'lucide-react';
 import { useToast } from './ToastContext';
 import { format, getDay, isBefore, startOfDay } from 'date-fns';
-import { BookingInquiry } from '../types';
+import { BookingInquiry, Page } from '../types';
 import { createPublicBooking, getBusyDates, getRemainingCapacity } from '../lib/bookings';
 import { getSlots, DayType } from '../lib/timeSlots';
 import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange, getClosedDatesForStudio } from '../lib/closures';
@@ -11,6 +11,7 @@ import EditableText from './EditableText';
 
 interface BabyPrintsBookingViewProps {
   adminMode?: boolean;
+  setCurrentPage?: (page: Page) => void;
 }
 
 function getTimeSlots(date: Date, closures: ClosureDates, studio: 'Putney' | 'Wimbledon'): string[] {
@@ -24,7 +25,7 @@ function getTimeSlots(date: Date, closures: ClosureDates, studio: 'Putney' | 'Wi
   return [];
 }
 
-export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsBookingViewProps) {
+export default function BabyPrintsBookingView({ adminMode = false, setCurrentPage }: BabyPrintsBookingViewProps) {
   const { showToast } = useToast();
   const [studio, setStudio] = useState<'Putney' | 'Wimbledon'>('Putney');
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -293,10 +294,13 @@ export default function BabyPrintsBookingView({ adminMode = false }: BabyPrintsB
               </p>
             </div>
             <button
-              onClick={() => setShowSuccess(false)}
+              onClick={() => {
+                setShowSuccess(false);
+                if (setCurrentPage) setCurrentPage('home');
+              }}
               className="w-full py-3 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest border border-[#1B2D3C]/20 hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
             >
-              Close
+              Back to Home
             </button>
           </div>
         </div>

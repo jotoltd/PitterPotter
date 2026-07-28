@@ -2,7 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { Mail, Phone, MapPin, Clock, CheckCircle2, Copy, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from './ToastContext';
 import { format } from 'date-fns';
-import { BookingInquiry } from '../types';
+import { BookingInquiry, Page } from '../types';
 import { getRemainingCapacity, createPublicBooking } from '../lib/bookings';
 import EditableText from './EditableText';
 
@@ -10,9 +10,10 @@ import EditableText from './EditableText';
 interface ContactViewProps {
   initialPainters?: number;
   adminMode?: boolean;
+  setCurrentPage?: (page: Page) => void;
 }
 
-export default function ContactView({ initialPainters = 1, adminMode = false }: ContactViewProps) {
+export default function ContactView({ initialPainters = 1, adminMode = false, setCurrentPage }: ContactViewProps) {
   const { showToast } = useToast();
   const [step, setStep] = useState(1);
   // Booking details from previous stage
@@ -454,10 +455,11 @@ export default function ContactView({ initialPainters = 1, adminMode = false }: 
                 setEmail('');
                 setPhone('');
                 setDate(undefined);
+                if (setCurrentPage) setCurrentPage('home');
               }}
               className="w-full py-3 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest border border-[#1B2D3C]/20 hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
             >
-              <EditableText contentKey="contact_success_close" page="contact" defaultValue="Close" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
+              <EditableText contentKey="contact_success_close" page="contact" defaultValue="Back to Home" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
             </button>
           </div>
         </div>

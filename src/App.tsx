@@ -274,7 +274,7 @@ export default function App() {
  case 'baby-prints':
  return <BabyPrintsView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'baby-prints-book':
- return <BabyPrintsBookingView adminMode={adminMode} />;
+ return <BabyPrintsBookingView adminMode={adminMode} setCurrentPage={setCurrentPage} />;
  case 'parties':
  return <PartiesView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'pricing':
@@ -290,7 +290,7 @@ case 'pottery-painting':
  case 'faqs':
  return <FAQsView adminMode={adminMode} setCurrentPage={setCurrentPage} />;
  case 'contact':
- return <ContactView initialPainters={paintersCountPreset} adminMode={adminMode} />;
+ return <ContactView initialPainters={paintersCountPreset} adminMode={adminMode} setCurrentPage={setCurrentPage} />;
  case 'contact-info':
  return <ContactInfoView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'book':
