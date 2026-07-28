@@ -107,7 +107,6 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
   const [slotCapacity, setSlotCapacity] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [bookingRef, setBookingRef] = useState('');
   const [error, setError] = useState('');
   const [busyDates, setBusyDates] = useState<Date[]>([]);
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
@@ -325,7 +324,6 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
     setSubmitting(true);
     try {
       // Booking was already created before payment. Webhook handles payment_status update.
-      setBookingRef(pendingBooking.id);
       setSubmitted(true);
       setShowPayment(false);
     } catch (err) {
@@ -375,7 +373,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
   .divider { width: 60px; height: 1px; background: #DBE7E4; opacity: 0.4; margin: 0 auto 16px; }
   .you-are-invited { font-family: 'Playfair Display', serif; font-size: 11px; font-weight: 400; color: #DBE7E4; opacity: 0.7; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 10px; }
   .event-title { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 900; color: #fff; text-align: center; line-height: 1.1; margin-bottom: 20px; }
-  .details-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; width: 100%; margin-bottom: 18px; }
+  .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; margin-bottom: 18px; }
   .detail-item { text-align: center; }
   .detail-label { font-size: 8px; font-weight: 700; color: #DBE7E4; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; }
   .detail-value { font-size: 11px; font-weight: 700; color: #fff; line-height: 1.3; }

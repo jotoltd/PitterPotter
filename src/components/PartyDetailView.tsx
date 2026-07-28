@@ -34,7 +34,7 @@ const DETAIL_CONTENT: Record<PartyType, {
     descKey: 'birthday_detail',
     desc1: 'A painting party at Pitter Potter is a fun and creative way of celebrating birthdays. We provide the space, materials and help to ensure everything runs smoothly.',
     desc2: 'Our birthday package is £28.95 per head for a standard 2 hour party session (for children under the age of 7, we recommend a 1.5 hours session). Included in the cost is the studio fee and an item of pottery up to the value of £22.95. We have a vast array of items you can choose from, including all our party animals, all money banks, all mugs and some bowls and plates. Hosts are more than welcome to bring their own food/drinks/cakes. Please bring your own paper plates, cups and cutlery.',
-    desc3: 'To confirm your party booking, we will require a non-refundable £50 deposit that will be deducted from your final bill on the day. Please contact us via phone or email should you have any further questions.',
+    desc3: 'A non-refundable £50 deposit is required to secure your party booking and will be deducted from your final bill on the day. Please contact us via phone or email should you have any further questions.',
   },
   'baby-shower-hen': {
     title: 'Baby Shower / Hen Party',
@@ -45,7 +45,7 @@ const DETAIL_CONTENT: Record<PartyType, {
     descKey: 'baby_shower_detail',
     desc1: 'For the bride, groom or parents to be who are seeking a creative alternative to a traditional celebration. Get everyone to paint a piece for the happy couple or the new addition to the family.',
     desc2: 'The same terms apply as per our weekend birthday party package. If you would like your event to run after hours, there is a surcharge and a minimum of 10 seats is required. You are welcome to provide your own nibbles/drinks or we are happy to organise catering for you upon request.',
-    desc3: 'To confirm your booking, we will require a non-refundable £50 deposit that will be deducted from your final bill on the day. Please contact us via phone or email should you have any further questions.',
+    desc3: 'A non-refundable £50 deposit is required to secure your booking and will be deducted from your final bill on the day. Please contact us via phone or email should you have any further questions.',
   },
 };
 
