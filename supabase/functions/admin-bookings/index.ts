@@ -155,9 +155,25 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const { error } = await supabase.from('bookings').insert(toBookingRow(booking as Record<string, unknown>));
+      const managementToken = crypto.randomUUID();
+      const bookingRow = { ...toBookingRow(booking as Record<string, unknown>), management_token: managementToken };
+      const { error } = await supabase.from('bookings').insert(bookingRow);
       if (error) throw error;
       await logAudit(supabase, staff, 'create', 'booking', booking.id as string, { studio: booking.studio, date: booking.date, time: booking.time });
+
+      // Send confirmation email if the booking has an email address
+      if (booking.email) {
+        try {
+          await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-booking-confirmation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY') ?? ''}` },
+            body: JSON.stringify({ bookingId: booking.id, managementToken }),
+          });
+        } catch (emailErr) {
+          console.error('Failed to send confirmation email for admin booking:', emailErr);
+        }
+      }
+
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
