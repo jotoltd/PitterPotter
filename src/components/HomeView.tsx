@@ -9,9 +9,10 @@ interface HomeViewProps {
   adminMode?: boolean;
  setCurrentPage: (page: Page) => void;
  setVisitPreset?: (preset: { paintersCount: number; itemId: string }) => void;
+ disabledPages?: Set<string>;
 }
 
-export default function HomeView({ setCurrentPage, adminMode = false }: HomeViewProps) {
+export default function HomeView({ setCurrentPage, adminMode = false, disabledPages = new Set() }: HomeViewProps) {
  return (
  <div id="home-view" className="space-y-16 pb-20">
  {/* Hero Banner Section */}
@@ -187,7 +188,7 @@ export default function HomeView({ setCurrentPage, adminMode = false }: HomeView
  { keyPrefix: 'parties', title: 'Parties & Events', desc: 'Birthdays, hen parties, baby showers and corporate groups.', image: Images.birthdayParties, page: 'parties' as Page },
  { keyPrefix: 'workshops', title: 'More Workshops', desc: 'Coming soon...', badge: 'Coming Soon', image: Images.studioHero },
  { keyPrefix: 'giftcards', title: 'Gift Cards', desc: 'Give the gift of creativity with a Pitter Potter gift card.', image: Images.potteryGallery, page: 'buy-gift-card' as Page },
- ].map((item) => (
+ ].filter(item => !item.page || !disabledPages.has(item.page) || adminMode).map((item) => (
  <div
  key={item.keyPrefix}
  onClick={() => item.page && setCurrentPage(item.page)}

@@ -270,7 +270,7 @@ export default function App() {
 
  switch (currentPage) {
  case 'home':
- return <HomeView setCurrentPage={setCurrentPage} setVisitPreset={handleVisitPreset} adminMode={adminMode} />;
+ return <HomeView setCurrentPage={setCurrentPage} setVisitPreset={handleVisitPreset} adminMode={adminMode} disabledPages={disabledPages} />;
  case 'baby-prints':
  return <BabyPrintsView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'baby-prints-book':

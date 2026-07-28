@@ -416,9 +416,17 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
   };
 
   const handleShareInvitation = async () => {
-    const guestCount = guests === '' ? 1 : guests;
     const dateStr = date ? format(date, 'EEEE, do MMMM yyyy') : '';
-    const shareText = `🎉 You're invited to a ${info.title} at Pitter Potter ${studio}!\n📅 ${dateStr}\n⏰ ${time}\n� ${studioAddress}\n\nHosted by ${name}`;
+    const studioAddress = studio === 'Putney'
+      ? '234 Upper Richmond Road, London, SW15 6TG'
+      : '52 Wimbledon Hill Road, London, SW19 7PA';
+    const shareText = [
+      `You're invited to a ${info.title} at Pitter Potter ${studio}!`,
+      `Date: ${dateStr}`,
+      `Time: ${time}`,
+      `Address: ${studioAddress}`,
+      `Hosted by ${name}`,
+    ].join('\n');
     if (navigator.share) {
       try {
         await navigator.share({ title: `${info.title} at Pitter Potter`, text: shareText });
