@@ -400,10 +400,6 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
       <p class="detail-label">Time</p>
       <p class="detail-value">${time}</p>
     </div>
-    <div class="detail-item">
-      <p class="detail-label">Guests</p>
-      <p class="detail-value">${guestCount}</p>
-    </div>
   </div>
   <div class="accent-bar"></div>
   <p class="detail-label">Location</p>
@@ -422,7 +418,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
   const handleShareInvitation = async () => {
     const guestCount = guests === '' ? 1 : guests;
     const dateStr = date ? format(date, 'EEEE, do MMMM yyyy') : '';
-    const shareText = `🎉 You're invited to a ${info.title} at Pitter Potter ${studio}!\n📅 ${dateStr}\n⏰ ${time}\n👥 ${guestCount} guest${guestCount !== 1 ? 's' : ''}\n\nHosted by ${name}`;
+    const shareText = `🎉 You're invited to a ${info.title} at Pitter Potter ${studio}!\n📅 ${dateStr}\n⏰ ${time}\n� ${studioAddress}\n\nHosted by ${name}`;
     if (navigator.share) {
       try {
         await navigator.share({ title: `${info.title} at Pitter Potter`, text: shareText });
