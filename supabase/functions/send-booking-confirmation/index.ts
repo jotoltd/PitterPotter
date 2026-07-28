@@ -71,13 +71,13 @@ async function sendEmail(
       <p style="font-size:11px;color:#1B2D3C;opacity:0.5;margin:0;text-transform:uppercase;letter-spacing:2px;font-weight:700;">Pottery Painting Studio</p>
     </div>
 
-    <div style="background:#DBE7E4;border-radius:16px;padding:32px;">
+    <div style="background:#FFFFFF;border-radius:16px;padding:32px;border:1px solid #D6E2E9;">
       <h2 style="font-family:'Montserrat','Outfit','Plus Jakarta Sans','Inter',sans-serif;font-size:22px;font-weight:900;color:#1B2D3C;margin:0 0 16px;">Your booking is confirmed!</h2>
 
       <p style="font-size:15px;line-height:1.6;color:#1B2D3C;margin:0 0 24px;">Hi ${booking.name},</p>
       <p style="font-size:15px;line-height:1.6;color:#1B2D3C;margin:0 0 24px;">We're looking forward to seeing you at <strong style="color:#1B2D3C;">${booking.studio}</strong>. Here are your booking details:</p>
 
-      <div style="background:#FFFFFF;border-radius:12px;padding:24px;margin:0 0 24px;border:1px solid #D6E2E9;">
+      <div style="background:#DBE7E4;border-radius:12px;padding:24px;margin:0 0 24px;">
         <p style="font-size:14px;line-height:1.8;margin:0;color:#1B2D3C;">
           <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Date</strong> ${booking.date}<br/>
           <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Time</strong> ${booking.time}<br/>
@@ -87,9 +87,9 @@ async function sendEmail(
         </p>
       </div>
 
-      <div style="background:#D6E2E9;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px;">
+      <div style="background:#FFFFFF;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px;border:1px solid #D6E2E9;">
         <p style="font-size:14px;color:#1B2D3C;margin:0 0 12px;font-weight:600;">Need to reschedule or cancel?</p>
-        <a href="${manageUrl}" style="display:inline-block;padding:12px 32px;background:#1B2D3C;color:#FFFFFF;text-decoration:none;font-weight:700;border-radius:8px;font-size:14px;font-family:'DM Sans','Outfit','Inter',sans-serif;">Manage your booking</a>
+        <a href="${manageUrl}" style="display:inline-block;padding:12px 32px;background:#DBE7E4;color:#1B2D3C;text-decoration:none;font-weight:700;border-radius:8px;font-size:14px;font-family:'DM Sans','Outfit','Inter',sans-serif;border:1px solid #1B2D3C;">Manage your booking</a>
       </div>
 
       <p style="font-size:15px;line-height:1.6;color:#1B2D3C;margin:0 0 8px;">We can't wait to see your creations!</p>
