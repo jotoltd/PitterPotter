@@ -39,7 +39,13 @@ async function sendEmail(
     return { success: false, error: 'Email service not configured' };
   }
 
-  const subject = `Booking confirmed — ${booking.studio} on ${booking.date}`;
+  const formatDate = (d: string) => {
+    const parts = d.split('-');
+    return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : d;
+  };
+  const formattedDate = formatDate(booking.date);
+
+  const subject = `Booking confirmed — ${booking.studio} on ${formattedDate}`;
   const manageUrl = `${Deno.env.get('SITE_URL') || 'https://www.pitterpotter.co.uk'}/manage-booking?token=${managementToken}`;
 
   const studioInfo = getStudioInfo(booking.studio);
@@ -49,7 +55,7 @@ async function sendEmail(
     studio: booking.studio,
     studioAddress: studioInfo.address,
     studioPhone: studioInfo.phone,
-    date: booking.date,
+    date: formattedDate,
     time: booking.time,
     paintersCount: booking.painters_count,
     sessionType: booking.session_type,
@@ -79,7 +85,7 @@ async function sendEmail(
 
       <div style="background:#DBE7E4;border-radius:12px;padding:24px;margin:0 0 24px;">
         <p style="font-size:14px;line-height:1.8;margin:0;color:#1B2D3C;">
-          <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Date</strong> ${booking.date}<br/>
+          <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Date</strong> ${formattedDate}<br/>
           <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Time</strong> ${booking.time}<br/>
           <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Studio</strong> ${booking.studio}<br/>
           <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Seats</strong> ${booking.painters_count}<br/>
