@@ -108,7 +108,7 @@ export default function BabyPrintsBookingView({ adminMode = false, setCurrentPag
       sessionType: 'clay-imprints',
       status: 'confirmed',
       source: 'online',
-      requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+      requestDate: new Date().toISOString(),
       notes: `Babies: ${babiesCount}, Adults: ${adultsCount}${notes ? ` | ${notes}` : ''}`,
     };
 

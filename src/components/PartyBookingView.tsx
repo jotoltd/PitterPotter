@@ -277,7 +277,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
           : `[${info.title}] ${notes}`.trim()),
       status: 'confirmed',
       source: 'online',
-      requestDate: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+      requestDate: new Date().toISOString(),
       depositAmount,
       finalSeats: guestCount,
       finalBalance: Math.max(0, guestCount * partyPrice - depositAmount),

@@ -2592,7 +2592,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                             className="w-4 h-4 accent-[#1B2D3C] cursor-pointer" />
                         </td>
                         <td className="px-4 py-3">
-                          <p className="text-xs font-black text-[#1B2D3C]">{inq.requestDate ? format(new Date(inq.requestDate), 'dd MMM yyyy') : '—'}</p>
+                          <p className="text-xs font-black text-[#1B2D3C]">{inq.requestDate ? format(new Date(inq.requestDate), 'dd MMM yyyy, HH:mm') : '—'}</p>
                           <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{inq.studio}</p>
                         </td>
                         <td className="px-4 py-3">
@@ -4981,7 +4981,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
               {/* Meta */}
               <div className="text-[10px] text-[#1B2D3C]/40 space-y-1 border-t border-[#1B2D3C]/10 pt-3">
-                {drawerBooking.requestDate && <p>Booked on {drawerBooking.requestDate}</p>}
+                {drawerBooking.requestDate && <p>Booked on {format(new Date(drawerBooking.requestDate), 'dd MMM yyyy, HH:mm')}</p>}
                 {drawerBooking.source && <p>Source: {drawerBooking.source}</p>}
                 <button onClick={() => { navigator.clipboard.writeText(drawerBooking.id); showToast('Reference copied', 'success'); }}
                   className="flex items-center gap-1 text-[#1B2D3C]/40 hover:text-[#1B2D3C] cursor-pointer">
