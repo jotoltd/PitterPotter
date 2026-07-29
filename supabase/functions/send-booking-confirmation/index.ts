@@ -45,14 +45,15 @@ async function sendEmail(
   };
   const formattedDate = formatDate(booking.date);
 
-  const subject = `Booking confirmed — ${booking.studio} on ${formattedDate}`;
+  const studioName = `Pitter Potter ${booking.studio}`;
+  const subject = `Booking confirmed — ${studioName} on ${formattedDate}`;
   const manageUrl = `${Deno.env.get('SITE_URL') || 'https://www.pitterpotter.co.uk'}/manage-booking?token=${managementToken}`;
 
   const studioInfo = getStudioInfo(booking.studio);
   const templateVars: Record<string, string | number | undefined> = {
     bookingId: booking.booking_id,
     name: booking.name,
-    studio: booking.studio,
+    studio: studioName,
     studioAddress: studioInfo.address,
     studioPhone: studioInfo.phone,
     date: formattedDate,
@@ -81,13 +82,13 @@ async function sendEmail(
       <h2 style="font-family:'Montserrat','Outfit','Plus Jakarta Sans','Inter',sans-serif;font-size:22px;font-weight:900;color:#1B2D3C;margin:0 0 16px;">Your booking is confirmed!</h2>
 
       <p style="font-size:15px;line-height:1.6;color:#1B2D3C;margin:0 0 24px;">Hi ${booking.name},</p>
-      <p style="font-size:15px;line-height:1.6;color:#1B2D3C;margin:0 0 24px;">We're looking forward to seeing you at <strong style="color:#1B2D3C;">${booking.studio}</strong>. Here are your booking details:</p>
+      <p style="font-size:15px;line-height:1.6;color:#1B2D3C;margin:0 0 24px;">We're looking forward to seeing you at <strong style="color:#1B2D3C;">${studioName}</strong>. Here are your booking details:</p>
 
       <div style="background:#DBE7E4;border-radius:12px;padding:24px;margin:0 0 24px;">
         <p style="font-size:14px;line-height:1.8;margin:0;color:#1B2D3C;">
           <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Date</strong> ${formattedDate}<br/>
           <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Time</strong> ${booking.time}<br/>
-          <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Studio</strong> ${booking.studio}<br/>
+          <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Studio</strong> ${studioName}<br/>
           <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Seats</strong> ${booking.painters_count}<br/>
           <strong style="display:inline-block;width:80px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Session</strong> ${SESSION_LABELS[booking.session_type] || booking.session_type}
         </p>
@@ -102,7 +103,7 @@ async function sendEmail(
     </div>
 
     <div style="text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid #D6E2E9;">
-      <p style="font-size:13px;color:#1B2D3C;font-weight:700;margin:0 0 4px;">${booking.studio} Studio</p>
+      <p style="font-size:13px;color:#1B2D3C;font-weight:700;margin:0 0 4px;">${studioName} Studio</p>
       <p style="font-size:12px;color:#1B2D3C;opacity:0.6;margin:0 0 2px;line-height:1.5;">${studioInfo.address}</p>
       <p style="font-size:12px;color:#1B2D3C;opacity:0.6;margin:0;">${studioInfo.phone}</p>
     </div>

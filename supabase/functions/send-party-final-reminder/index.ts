@@ -44,13 +44,14 @@ async function sendReminderEmail(
     return { success: false, error: 'Email service not configured' };
   }
 
-  const subject = `Final payment for your party — ${details.studio} on ${details.date}`;
+  const studioName = `Pitter Potter ${details.studio}`;
+  const subject = `Final payment for your party — ${studioName} on ${details.date}`;
 
   const studioInfo = getStudioInfo(details.studio);
   const templateVars: Record<string, string | number | undefined> = {
     bookingId: details.bookingId,
     name: details.name,
-    studio: details.studio,
+    studio: studioName,
     studioAddress: studioInfo.address,
     studioPhone: studioInfo.phone,
     date: details.date,
@@ -68,7 +69,7 @@ async function sendReminderEmail(
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1B2D3C;">
             <h2 style="color: #1B2D3C;">Your party is almost here</h2>
             <p>Hi ${details.name},</p>
-            <p>Your party at <strong>${details.studio}</strong> is on <strong>${details.date}</strong> at <strong>${details.time}</strong>.</p>
+            <p>Your party at <strong>${studioName}</strong> is on <strong>${details.date}</strong> at <strong>${details.time}</strong>.</p>
             <p>Please confirm your final number of seats so we can prepare everything for you.</p>
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
               <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Final seats</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${details.finalSeats}</td></tr>
@@ -82,7 +83,7 @@ async function sendReminderEmail(
             </p>
             <p>If your numbers have changed, you can adjust them on the payment page before paying.</p>
             <p style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #DBE7E4; font-size: 12px; color: #666;">
-              <strong>${details.studio} Studio</strong><br/>
+              <strong>${studioName} Studio</strong><br/>
               ${studioInfo.address}<br/>
               ${studioInfo.phone}
             </p>
