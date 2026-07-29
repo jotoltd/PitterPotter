@@ -439,6 +439,7 @@ export default function GalleryView({ adminMode = false }: GalleryViewProps) {
               src={filteredItems[lightboxIndex].imageUrl}
               alt={filteredItems[lightboxIndex].title}
               className="w-full h-full object-contain max-h-[90vh]"
+              loading="lazy"
             />
           </div>
 

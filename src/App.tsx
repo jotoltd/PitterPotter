@@ -3,40 +3,41 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { ArrowLeft, Construction } from 'lucide-react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomeView from './components/HomeView';
-import BabyPrintsView from './components/BabyPrintsView';
-import BabyPrintsBookingView from './components/BabyPrintsBookingView';
-import PartiesView from './components/PartiesView';
-import PricingView from './components/PricingView';
-import FAQsView from './components/FAQsView';
-import GalleryView from './components/GalleryView';
-import ContactView from './components/ContactView';
-import ContactInfoView from './components/ContactInfoView';
-import BookView from './components/BookView';
-import AdminLoginView from './components/AdminLoginView';
-import AdminDashboardView from './components/AdminDashboardView';
-import PutneyView from './components/PutneyView';
-import WimbledonView from './components/WimbledonView';
-import GiftCardPurchaseView from './components/GiftCardPurchaseView';
-import GiftCardSuccessView from './components/GiftCardSuccessView';
-import NotFoundView from './components/NotFoundView';
-import GiftCardBalanceView from './components/GiftCardBalanceView';
-import PartyPaymentView from './components/PartyPaymentView';
-import ManageBookingView from './components/ManageBookingView';
-import PartyBookingView from './components/PartyBookingView';
-import PartyDetailView from './components/PartyDetailView';
-import PriceListView from './components/PriceListView';
-import PotteryPaintingView from './components/PotteryPaintingView';
-import FoodDrinkView from './components/FoodDrinkView';
-import MaintenanceView from './components/MaintenanceView';
 import { ToastProvider } from './components/ToastContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import SessionWatcher from './components/SessionWatcher';
 import { Page, Staff } from './types';
+
+const BabyPrintsView = lazy(() => import('./components/BabyPrintsView'));
+const BabyPrintsBookingView = lazy(() => import('./components/BabyPrintsBookingView'));
+const PartiesView = lazy(() => import('./components/PartiesView'));
+const PricingView = lazy(() => import('./components/PricingView'));
+const FAQsView = lazy(() => import('./components/FAQsView'));
+const GalleryView = lazy(() => import('./components/GalleryView'));
+const ContactView = lazy(() => import('./components/ContactView'));
+const ContactInfoView = lazy(() => import('./components/ContactInfoView'));
+const BookView = lazy(() => import('./components/BookView'));
+const AdminLoginView = lazy(() => import('./components/AdminLoginView'));
+const AdminDashboardView = lazy(() => import('./components/AdminDashboardView'));
+const PutneyView = lazy(() => import('./components/PutneyView'));
+const WimbledonView = lazy(() => import('./components/WimbledonView'));
+const GiftCardPurchaseView = lazy(() => import('./components/GiftCardPurchaseView'));
+const GiftCardSuccessView = lazy(() => import('./components/GiftCardSuccessView'));
+const NotFoundView = lazy(() => import('./components/NotFoundView'));
+const GiftCardBalanceView = lazy(() => import('./components/GiftCardBalanceView'));
+const PartyPaymentView = lazy(() => import('./components/PartyPaymentView'));
+const ManageBookingView = lazy(() => import('./components/ManageBookingView'));
+const PartyBookingView = lazy(() => import('./components/PartyBookingView'));
+const PartyDetailView = lazy(() => import('./components/PartyDetailView'));
+const PriceListView = lazy(() => import('./components/PriceListView'));
+const PotteryPaintingView = lazy(() => import('./components/PotteryPaintingView'));
+const FoodDrinkView = lazy(() => import('./components/FoodDrinkView'));
+const MaintenanceView = lazy(() => import('./components/MaintenanceView'));
 
 const PAGE_TO_PATH: Record<Page, string> = {
   'home': '/',
@@ -396,7 +397,9 @@ case 'party-birthday-putney':
  exit={{ opacity: 0, y: -15 }}
  transition={{ duration: 0.28, ease: 'easeInOut' }}
  >
+ <Suspense fallback={<div className="flex items-center justify-center min-h-[50vh]"><div className="w-8 h-8 border-2 border-[#1B2D3C]/20 border-t-[#1B2D3C] rounded-full animate-spin" /></div>}>
  {renderCurrentView()}
+ </Suspense>
  </motion.div>
  </AnimatePresence>
  </main>

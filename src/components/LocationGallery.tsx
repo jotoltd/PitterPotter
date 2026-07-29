@@ -249,6 +249,7 @@ export default function LocationGallery({ location, defaultImages, adminMode }: 
                 alt={`${title} gallery ${idx + 1}`}
                 onError={(event) => handleImageError(event)}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                loading="lazy"
               />
             </button>
             {adminMode && (

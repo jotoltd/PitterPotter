@@ -15,13 +15,15 @@ export default defineConfig(() => {
       rollupOptions: {
         output: {
           manualChunks: {
-            vendor: ['react', 'react-dom', 'motion'],
+            'react-vendor': ['react', 'react-dom'],
+            'motion': ['motion'],
             ui: ['lucide-react', 'react-day-picker', '@stripe/react-stripe-js', '@stripe/stripe-js'],
             supabase: ['@supabase/supabase-js'],
+            'date-fns': ['date-fns'],
           },
         },
       },
-      chunkSizeWarningLimit: 600,
+      chunkSizeWarningLimit: 800,
     },
     test: {
       setupFiles: ['./src/test-setup.ts'],

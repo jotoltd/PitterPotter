@@ -49,7 +49,7 @@ export default function MaintenanceView() {
               className="bg-white border border-[#1B2D3C]/10 rounded-2xl overflow-hidden text-left shadow-sm"
             >
               <div className="aspect-[16/9] overflow-hidden">
-                <img src={studio.image} alt={studio.name} className="w-full h-full object-cover" />
+                <img src={studio.image} alt={studio.name} className="w-full h-full object-cover" loading="lazy" />
               </div>
               <div className="p-5 space-y-3">
                 <p className="text-sm font-black text-[#1B2D3C]">{studio.name}</p>

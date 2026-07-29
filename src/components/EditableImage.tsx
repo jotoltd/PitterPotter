@@ -281,7 +281,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
   };
 
   if (!adminMode) {
-    return <img src={src} alt={alt} className={className} />;
+    return <img src={src} alt={alt} className={className} loading="lazy" />
   }
 
   return (
@@ -292,7 +292,7 @@ export default function EditableImage({ contentKey, page, defaultSrc, alt, class
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleOpenGallery(); }}
         title="Click to change image"
       >
-        <img src={src} alt={alt} className={className} />
+        <img src={src} alt={alt} className={className} loading="lazy" />
         <div className={`absolute inset-0 flex flex-col items-center justify-center gap-2 rounded transition-opacity ${
           loading ? 'bg-black/40 opacity-100' : 'bg-black/0 group-hover:bg-black/40 opacity-0 group-hover:opacity-100'
         }`}>

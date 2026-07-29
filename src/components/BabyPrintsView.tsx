@@ -301,6 +301,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
             className="max-w-full max-h-[85vh] object-contain rounded-lg"
             onClick={(e) => e.stopPropagation()}
             referrerPolicy="no-referrer"
+            loading="lazy"
           />
           <button
             onClick={(e) => { e.stopPropagation(); setSelectedImageIndex((selectedImageIndex + 1) % lightboxImages.length); }}
