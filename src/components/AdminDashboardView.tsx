@@ -146,7 +146,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [newBookingConflict, setNewBookingConflict] = useState<string | null>(null);
   const [editBookingCapacity, setEditBookingCapacity] = useState<number | null>(null);
   const [newBookingPaymentMethod, setNewBookingPaymentMethod] = useState<'payment-link' | 'paid'>('payment-link');
-  const [newBookingDepositAmount, setNewBookingDepositAmount] = useState<number>(50);
+  const [newBookingDepositAmount, setNewBookingDepositAmount] = useState<string>('50');
   const [newBookingFinalPending, setNewBookingFinalPending] = useState<boolean>(true);
   const [showGhostModal, setShowGhostModal] = useState(false);
   const [ghostBooking, setGhostBooking] = useState({ seats: 1, studio: defaultStudio });
@@ -1444,10 +1444,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         requestDate: new Date().toISOString(),
         source: 'walk-in',
         ...(isParty ? {
-          depositAmount: newBookingPaymentMethod === 'paid' ? newBookingDepositAmount : undefined,
+          depositAmount: newBookingPaymentMethod === 'paid' ? Math.max(0, Number(newBookingDepositAmount) || 0) : undefined,
           finalSeats: seats,
           finalBalance: newBookingPaymentMethod === 'paid'
-            ? Math.max(0, seats * partyPrice - newBookingDepositAmount)
+            ? Math.max(0, seats * partyPrice - (Math.max(0, Number(newBookingDepositAmount) || 0)))
             : Math.max(0, seats * partyPrice - 50),
           paymentStatus: newBookingPaymentMethod === 'paid'
             ? (newBookingFinalPending ? 'pending' : 'paid')
@@ -3016,7 +3016,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           min="0"
                           step="0.01"
                           value={newBookingDepositAmount}
-                          onChange={(e) => setNewBookingDepositAmount(Math.max(0, Number(e.target.value)))}
+                          onChange={(e) => setNewBookingDepositAmount(e.target.value)}
                           className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                         />
                       </div>
@@ -3042,7 +3042,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         </div>
                       </div>
                       <div className="text-[10px] text-[#1B2D3C]/60 font-semibold">
-                        Total: £{((newBooking.paintersCount || 1) * partyPrice).toFixed(2)} · Deposit: £{newBookingDepositAmount.toFixed(2)} · Balance: £{Math.max(0, (newBooking.paintersCount || 1) * partyPrice - newBookingDepositAmount).toFixed(2)}
+                        Total: £{((newBooking.paintersCount || 1) * partyPrice).toFixed(2)} · Deposit: £{(Number(newBookingDepositAmount) || 0).toFixed(2)} · Balance: £{Math.max(0, (newBooking.paintersCount || 1) * partyPrice - (Number(newBookingDepositAmount) || 0)).toFixed(2)}
                       </div>
                     </>
                   )}
