@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
             currency: 'gbp',
             product_data: {
               name: `Party final balance — ${booking.name} (${resolvedFinalSeats} seats)`,
-              description: `Final balance for party at Pitter Potter ${booking.studio} on ${booking.date}`,
+              description: `Final balance for party at Pitter Potter ${booking.studio} on ${booking.date.split('-').reverse().join('-')}`,
             },
             unit_amount: Math.round(finalBalance * 100),
           },

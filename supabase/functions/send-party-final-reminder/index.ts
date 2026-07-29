@@ -44,8 +44,14 @@ async function sendReminderEmail(
     return { success: false, error: 'Email service not configured' };
   }
 
+  const formatDate = (d: string) => {
+    const parts = d.split('-');
+    return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : d;
+  };
+  const formattedDate = formatDate(details.date);
+
   const studioName = `Pitter Potter ${details.studio}`;
-  const subject = `Final payment for your party — ${studioName} on ${details.date}`;
+  const subject = `Final payment for your party — ${studioName} on ${formattedDate}`;
 
   const studioInfo = getStudioInfo(details.studio);
   const templateVars: Record<string, string | number | undefined> = {
@@ -54,7 +60,7 @@ async function sendReminderEmail(
     studio: studioName,
     studioAddress: studioInfo.address,
     studioPhone: studioInfo.phone,
-    date: details.date,
+    date: formattedDate,
     time: details.time,
     finalSeats: details.finalSeats,
     partyPrice: details.partyPrice.toFixed(2),
@@ -69,7 +75,7 @@ async function sendReminderEmail(
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1B2D3C;">
             <h2 style="color: #1B2D3C;">Your party is almost here</h2>
             <p>Hi ${details.name},</p>
-            <p>Your party at <strong>${studioName}</strong> is on <strong>${details.date}</strong> at <strong>${details.time}</strong>.</p>
+            <p>Your party at <strong>${studioName}</strong> is on <strong>${formattedDate}</strong> at <strong>${details.time}</strong>.</p>
             <p>Please confirm your final number of seats so we can prepare everything for you.</p>
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
               <tr><td style="padding: 8px; border: 1px solid #DBE7E4;"><strong>Final seats</strong></td><td style="padding: 8px; border: 1px solid #DBE7E4;">${details.finalSeats}</td></tr>
