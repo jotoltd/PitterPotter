@@ -26,7 +26,7 @@ const SESSION_LABELS: Record<string, string> = {
   'painting': 'Painting',
   'birthday-party': 'Birthday',
   'baby-shower-hen': 'Baby Shower / Hen',
-  'clay-imprints': 'Clay Imprints',
+  'clay-imprints': 'Baby Prints',
   'corporate': 'Corporate',
 };
 
@@ -2856,7 +2856,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     'birthday-party': 'Birthday Party',
                     'baby-shower-hen': 'Baby Shower / Hen Party',
                     'corporate': 'Corporate Event',
-                    'clay-imprints': 'Baby Prints (Clay Imprints)',
+                    'clay-imprints': 'Baby Prints',
                   }[lockedSessionType] ?? lockedSessionType}
                 </div>
               ) : (
@@ -2871,7 +2871,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     <option value="birthday-party">Birthday Party</option>
                     <option value="baby-shower-hen">Baby Shower / Hen Party</option>
                     <option value="corporate">Corporate Event</option>
-                    <option value="clay-imprints">Baby Prints (Clay Imprints)</option>
+                    <option value="clay-imprints">Baby Prints</option>
                   </select>
                 </div>
               )}

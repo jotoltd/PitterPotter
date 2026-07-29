@@ -26,7 +26,7 @@ const STUDIOS = [
  id: 'Wimbledon',
  name: 'Wimbledon Studio',
  image: Images.wimbledonStudio,
- description: 'Our cozy, high-street location on Wimbledon Hill Road. Ideal for baby clay imprints and friendly gatherings.',
+ description: 'Our cozy, high-street location on Wimbledon Hill Road. Ideal for baby prints and friendly gatherings.',
  hours: [
  { day: 'Monday', time: 'Closed (except school holidays)' },
  { day: 'Tuesday - Saturday', time: '10:00am - 6:00pm' },

@@ -145,7 +145,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
           <LocationGallery location="wimbledon" defaultImages={Images.wimbledonGallery} adminMode={adminMode} />
           <div className="space-y-4">
             <EditableText contentKey="wimbledon_title" page="wimbledon" defaultValue="Our Wimbledon Studio" adminMode={adminMode} className="font-heading text-3xl font-black text-[#1B2D3C] block" />
-            <EditableText contentKey="wimbledon_description" page="wimbledon" defaultValue="Our cozy, high-street studio on Wimbledon Hill Road, ideal for baby clay imprints, friendly gatherings, and relaxed creative sessions." adminMode={adminMode} className="text-[#1B2D3C] text-sm md:text-base leading-relaxed font-medium" />
+            <EditableText contentKey="wimbledon_description" page="wimbledon" defaultValue="Our cozy, high-street studio on Wimbledon Hill Road, ideal for baby prints, friendly gatherings, and relaxed creative sessions." adminMode={adminMode} className="text-[#1B2D3C] text-sm md:text-base leading-relaxed font-medium" />
           </div>
 
                     {/* Booking Calendar Section */}

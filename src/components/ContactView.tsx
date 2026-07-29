@@ -66,7 +66,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false, se
     'painting': 'Painting Session',
     'birthday-party': 'Birthday Party',
     'baby-shower-hen': 'Baby Shower / Hen Party',
-    'clay-imprints': 'Clay Imprints',
+    'clay-imprints': 'Baby Prints',
     'corporate': 'Corporate Event',
   };
 

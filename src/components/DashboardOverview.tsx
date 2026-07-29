@@ -17,7 +17,7 @@ const SESSION_LABELS: Record<string, string> = {
   'painting': 'Painting',
   'birthday-party': 'Birthday Party',
   'baby-shower-hen': 'Baby Shower / Hen',
-  'clay-imprints': 'Clay Imprints',
+  'clay-imprints': 'Baby Prints',
   'corporate': 'Corporate',
 };
 

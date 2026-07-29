@@ -139,7 +139,7 @@ export default function HomeView({ setCurrentPage, adminMode = false, disabledPa
  <EditableText contentKey="wimbledon_card_title" page="home" defaultValue="Wimbledon Studio" adminMode={adminMode} className="font-heading text-2xl lg:text-3xl tracking-tight text-[#1B2D3C]" />
  </h2>
  <p className="card-body text-[#1B2D3C]/80 leading-relaxed">
- <EditableText contentKey="wimbledon_card_desc" page="home" defaultValue="Our cozy, high-street location on Wimbledon Hill Road, ideal for baby clay imprints and friendly gatherings." adminMode={adminMode} className="card-body text-[#1B2D3C]/80 leading-relaxed" />
+ <EditableText contentKey="wimbledon_card_desc" page="home" defaultValue="Our cozy, high-street location on Wimbledon Hill Road, ideal for baby prints and friendly gatherings." adminMode={adminMode} className="card-body text-[#1B2D3C]/80 leading-relaxed" />
  </p>
  <div className="space-y-2 card-body text-[#1B2D3C]/80">
  <div className="flex items-start gap-2.5">
