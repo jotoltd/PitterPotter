@@ -34,6 +34,12 @@ export default function ContactView({ initialPainters = 1, adminMode = false, se
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  // Scroll to top of form when step changes
+  useEffect(() => {
+    const el = document.getElementById('contact-view');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [step]);
+
   // Load draft from localStorage on mount
   useEffect(() => {
     const draft = localStorage.getItem('pp_booking_draft');
@@ -87,7 +93,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false, se
     if (step === 1) {
       if (!date) { setError('Please select a date and time to continue.'); return; }
       setStep(2);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (step === 2) {
       if (!name || !phone) {
         setError(`Please fill in: ${[!name && 'Name', !phone && 'Phone'].filter(Boolean).join(', ')}`);
@@ -96,7 +101,6 @@ export default function ContactView({ initialPainters = 1, adminMode = false, se
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (email && !emailRegex.test(email)) { setError('Please enter a valid email address'); return; }
       setStep(3);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -383,7 +387,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false, se
                 </div>
 
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => { setStep(1); setError(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  <button type="button" onClick={() => { setStep(1); setError(''); }}
                     className="flex items-center gap-2 px-5 py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#D6E2E9]/40 transition-all cursor-pointer">
                     <ArrowLeft className="w-3.5 h-3.5" /> Back
                   </button>
@@ -418,7 +422,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false, se
                 </div>
 
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => { setStep(2); setError(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  <button type="button" onClick={() => { setStep(2); setError(''); }}
                     className="flex items-center gap-2 px-5 py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#D6E2E9]/40 transition-all cursor-pointer">
                     <ArrowLeft className="w-3.5 h-3.5" /> Back
                   </button>
