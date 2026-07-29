@@ -90,6 +90,7 @@ describe('toBookingRow', () => {
       payment_link_sent_at: null,
       stripe_payment_intent_id: null,
       table_id: null,
+      management_token: null,
     });
   });
 });
