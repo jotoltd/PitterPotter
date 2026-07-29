@@ -30,7 +30,13 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
     return { success: false, error: 'Email service not configured' };
   }
 
-  const subject = `New booking request — ${details.studio} on ${details.date}`;
+  const formatDate = (d: string) => {
+    const parts = d.split('-');
+    return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : d;
+  };
+  const formattedDate = formatDate(details.date);
+
+  const subject = `New booking request — ${details.studio} on ${formattedDate}`;
 
   const studioInfo = getStudioInfo(details.studio);
   const templateVars: Record<string, string | number | undefined> = {
@@ -41,7 +47,7 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
     studio: details.studio,
     studioAddress: studioInfo.address,
     studioPhone: studioInfo.phone,
-    date: details.date,
+    date: formattedDate,
     time: details.time,
     paintersCount: details.paintersCount,
     sessionType: details.sessionType,

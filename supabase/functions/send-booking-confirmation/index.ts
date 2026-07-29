@@ -59,7 +59,7 @@ async function sendEmail(
     date: formattedDate,
     time: booking.time,
     paintersCount: booking.painters_count,
-    sessionType: booking.session_type,
+    sessionType: SESSION_LABELS[booking.session_type] || booking.session_type,
     manageUrl,
   };
 
@@ -113,8 +113,8 @@ async function sendEmail(
 </body>
 </html>
         `;
-  const html = fallbackHtml;
-  const finalSubject = subject;
+  const html = tpl ? renderTemplate(tpl.html_content, templateVars) : fallbackHtml;
+  const finalSubject = tpl ? renderTemplate(tpl.subject, templateVars) : subject;
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
