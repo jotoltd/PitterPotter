@@ -2517,7 +2517,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     </div>
                     <div className="flex gap-2 flex-wrap text-[11px] text-[#1B2D3C]/70 font-semibold">
                       <span className="font-black text-[#1B2D3C]">{inq.studio}</span>
-                      <span>{inq.date}</span>
+                      <span>{inq.date ? format(parseISO(inq.date), 'dd MMM yyyy') : '—'}</span>
                       <span>{inq.time}</span>
                       <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#D6E2E9] text-[#1B2D3C] rounded-full text-[10px] font-black"><Users className="w-2.5 h-2.5" />{inq.paintersCount}</span>
                       {inq.source === 'walk-in' && <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold">Walk-in</span>}
@@ -2592,8 +2592,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                             className="w-4 h-4 accent-[#1B2D3C] cursor-pointer" />
                         </td>
                         <td className="px-4 py-3">
-                          <p className="text-xs font-black text-[#1B2D3C]">{inq.date}</p>
-                          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{inq.time} · {inq.studio}</p>
+                          <p className="text-xs font-black text-[#1B2D3C]">{inq.requestDate ? format(new Date(inq.requestDate), 'dd MMM yyyy') : '—'}</p>
+                          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{inq.studio}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-xs font-black text-[#1B2D3C]">{inq.date ? format(parseISO(inq.date), 'dd MMM yyyy') : '—'}</p>
+                          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{inq.time}</p>
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-xs font-black text-[#1B2D3C]">{inq.name}</p>
