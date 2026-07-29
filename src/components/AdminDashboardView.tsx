@@ -2512,7 +2512,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           {inq.status === 'confirmed' ? <CheckCircle className="w-3 h-3" /> : inq.status === 'cancelled' ? <XCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                           {inq.status === 'confirmed' ? 'Confirmed' : inq.status === 'cancelled' ? 'Cancelled' : 'Awaiting'}
                         </span>
-                        <span className="text-[#1B2D3C]/30 text-base font-black">⋯</span>
+                        <button onClick={() => setDrawerBooking(inq)} className="text-[#1B2D3C]/30 hover:text-[#1B2D3C] text-base font-black cursor-pointer transition-colors">⋯</button>
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap text-[11px] text-[#1B2D3C]/70 font-semibold">
@@ -2665,7 +2665,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                                 <XCircle className="w-3.5 h-3.5" />
                               </button>
                             )}
-                            <span className="text-[#1B2D3C]/30 text-base font-black ml-1">⋯</span>
+                            <button onClick={() => setDrawerBooking(inq)} className="text-[#1B2D3C]/30 hover:text-[#1B2D3C] text-base font-black ml-1 cursor-pointer transition-colors">⋯</button>
                           </div>
                         </td>
                       </tr>
