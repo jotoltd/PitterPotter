@@ -71,7 +71,7 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
             </table>
             <p style="color: #666; font-size: 12px;">Log in to the Pitter Potter admin dashboard to confirm or manage this booking.</p>
             <p style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #DBE7E4; font-size: 12px; color: #666;">
-              <strong>${details.studio} Studio</strong><br/>
+              <strong>${details.studio}</strong><br/>
               ${studioInfo.address}<br/>
               ${studioInfo.phone}
             </p>

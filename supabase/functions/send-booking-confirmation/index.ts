@@ -103,12 +103,11 @@ async function sendEmail(
     </div>
 
     <div style="text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid #D6E2E9;">
-      <p style="font-size:13px;color:#1B2D3C;font-weight:700;margin:0 0 4px;">${studioName} Studio</p>
+      <p style="font-size:13px;color:#1B2D3C;font-weight:700;margin:0 0 4px;">${studioName}</p>
       <p style="font-size:12px;color:#1B2D3C;opacity:0.6;margin:0 0 2px;line-height:1.5;">${studioInfo.address}</p>
       <p style="font-size:12px;color:#1B2D3C;opacity:0.6;margin:0;">${studioInfo.phone}</p>
     </div>
 
-    <p style="text-align:center;font-size:11px;color:#1B2D3C;opacity:0.4;margin:24px 0 0;">Pitter Potter — Paint your story</p>
   </div>
 </body>
 </html>

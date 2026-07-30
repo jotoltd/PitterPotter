@@ -89,7 +89,7 @@ async function sendReminderEmail(
             </p>
             <p>If your numbers have changed, you can adjust them on the payment page before paying.</p>
             <p style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #DBE7E4; font-size: 12px; color: #666;">
-              <strong>${studioName} Studio</strong><br/>
+              <strong>${studioName}</strong><br/>
               ${studioInfo.address}<br/>
               ${studioInfo.phone}
             </p>
