@@ -95,7 +95,7 @@ import { loadSlotsFromSupabase } from './lib/timeSlots';
 import { loadClosuresFromSupabase } from './lib/closures';
 
 export default function App() {
- const [currentPage, setCurrentPage] = useState<Page>('home');
+ const [currentPage, setCurrentPage] = useState<Page>(() => getPageFromPath());
  const [paintersCountPreset, setPaintersCountPreset] = useState<number>(1);
  const [currentStaff, setCurrentStaff] = useState<Staff | null>(null);
  const [showSplash, setShowSplash] = useState(true);
@@ -220,7 +220,8 @@ export default function App() {
     const targetPath = PAGE_TO_PATH[currentPage] || '/';
     const currentPath = window.location.pathname;
     if (currentPath !== targetPath) {
-      window.history.pushState({}, '', targetPath);
+      const search = window.location.search;
+      window.history.pushState({}, '', search ? `${targetPath}${search}` : targetPath);
     }
   }, [currentPage]);
 
