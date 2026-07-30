@@ -47,7 +47,8 @@ async function sendEmail(
 
   const studioName = `Pitter Potter ${booking.studio}`;
   const subject = `Booking confirmed — ${studioName} on ${formattedDate}`;
-  const manageUrl = `${Deno.env.get('SITE_URL') || 'https://www.pitterpotter.co.uk'}/manage-booking?token=${managementToken}`;
+  const siteUrl = (Deno.env.get('SITE_URL') || 'https://www.pitterpotter.co.uk').replace(/\/+$/, '');
+  const manageUrl = `${siteUrl}/manage-booking?token=${managementToken}`;
 
   const studioInfo = getStudioInfo(booking.studio);
   const templateVars: Record<string, string | number | undefined> = {
