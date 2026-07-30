@@ -33,6 +33,7 @@ export function toBookingInquiry(row: any): BookingInquiry {
     paymentStatus: row.payment_status || undefined,
     stripePaymentIntentId: row.stripe_payment_intent_id || undefined,
     managementToken: row.management_token || undefined,
+    createdAt: row.created_at || undefined,
   };
 }
 

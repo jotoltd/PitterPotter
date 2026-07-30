@@ -45,6 +45,7 @@ export interface BookingInquiry {
   paymentStatus?: 'pending' | 'paid' | 'refunded';
   stripePaymentIntentId?: string;
   managementToken?: string;
+  createdAt?: string;
 }
 
 export interface GalleryItem {

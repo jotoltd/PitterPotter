@@ -1210,8 +1210,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     .sort((a, b) => {
       const dir = sort.direction === 'asc' ? 1 : -1;
       if (sort.field === 'added') {
-        const dateA = new Date(a.requestDate || a.date).getTime();
-        const dateB = new Date(b.requestDate || b.date).getTime();
+        const dateA = new Date(a.createdAt || a.requestDate || a.date).getTime();
+        const dateB = new Date(b.createdAt || b.requestDate || b.date).getTime();
         return (dateA - dateB) * dir;
       }
       if (sort.field === 'date') {

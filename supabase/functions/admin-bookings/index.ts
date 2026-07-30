@@ -47,6 +47,7 @@ function toBookingInquiry(row: any): any {
     paymentLinkSentAt: row.payment_link_sent_at || undefined,
     paymentStatus: row.payment_status || undefined,
     stripePaymentIntentId: row.stripe_payment_intent_id || undefined,
+    createdAt: row.created_at || undefined,
   };
 }
 
