@@ -107,6 +107,17 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Reject past dates
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const requestedDate = new Date(newDate + 'T00:00:00');
+      if (requestedDate < today) {
+        return new Response(JSON.stringify({ error: 'Cannot reschedule to a past date. Please select a future date.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       // Check capacity at new slot (query existing bookings, excluding this booking's own seats)
       const { data: existingBookings } = await supabase
         .from('bookings')

@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, Users, Loader2, CheckCircle2, XCircle, AlertCircle, ArrowRight } from 'lucide-react';
-import { format, getDay, parseISO } from 'date-fns';
+import { useState, useEffect, useMemo } from 'react';
+import { Calendar as CalendarIcon, Clock, MapPin, Users, Loader2, CheckCircle2, XCircle, AlertCircle, ArrowRight } from 'lucide-react';
+import { format, getDay, parseISO, startOfDay, isBefore } from 'date-fns';
 import { getSlots, SlotSessionType, DayType, Studio } from '../lib/timeSlots';
+import { getBusyDates } from '../lib/bookings';
+import { loadClosuresFromSupabase, getClosureDates, getClosedDatesForStudio, ClosureDates } from '../lib/closures';
+import Calendar from './Calendar';
 import { Page } from '../types';
 
 interface ManageBookingViewProps {
@@ -40,6 +43,10 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
   const [newTime, setNewTime] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [busyDates, setBusyDates] = useState<Date[]>([]);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [closures, setClosures] = useState<ClosureDates>(getClosureDates());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (!token) {
@@ -48,7 +55,22 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
       return;
     }
     fetchBooking();
+    loadClosuresFromSupabase().then(setClosures).catch(() => {});
   }, [token]);
+
+  useEffect(() => {
+    if (!booking) return;
+    getBusyDates(booking.studio as Studio, calendarMonth.getFullYear(), calendarMonth.getMonth()).then((dates) => {
+      setBusyDates(dates.map((d) => new Date(d)));
+    });
+  }, [calendarMonth, booking]);
+
+  const minDate = useMemo(() => startOfDay(new Date()), []);
+  const closedDatesAsDate = useMemo(() => {
+    if (!booking) return [];
+    return getClosedDatesForStudio(closures.closedDates, booking.studio as 'Putney' | 'Wimbledon').map(d => new Date(d + 'T00:00:00'));
+  }, [closures.closedDates, booking]);
+  const disabledDates = useMemo(() => [...busyDates, ...closedDatesAsDate], [busyDates, closedDatesAsDate]);
 
   const fetchBooking = async () => {
     try {
@@ -69,6 +91,7 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
       setBooking(data.booking);
       setNewDate(data.booking.date);
       setNewTime(data.booking.time);
+      setSelectedDate(new Date(data.booking.date + 'T00:00:00'));
       setLoading(false);
     } catch {
       setError('Failed to load booking');
@@ -222,7 +245,7 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Calendar className="w-4 h-4 text-[#1B2D3C]/50 shrink-0" />
+              <CalendarIcon className="w-4 h-4 text-[#1B2D3C]/50 shrink-0" />
               <div>
                 <p className="text-[10px] font-bold text-[#1B2D3C]/50 uppercase tracking-wider">Date</p>
                 <p className="text-sm font-bold text-[#1B2D3C]">
@@ -260,12 +283,16 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
             <div className="space-y-4">
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">New Date</label>
-                <input
-                  type="date"
-                  min={format(new Date(), 'yyyy-MM-dd')}
-                  value={newDate}
-                  onChange={(e) => { setNewDate(e.target.value); setNewTime(''); }}
-                  className="w-full px-3 py-2.5 border border-[#1B2D3C]/20 text-sm text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                <Calendar
+                  selected={selectedDate}
+                  onSelect={(d) => { if (d) { setSelectedDate(d); setNewDate(format(d, 'yyyy-MM-dd')); setNewTime(''); } }}
+                  month={calendarMonth}
+                  onMonthChange={setCalendarMonth}
+                  disabled={disabledDates}
+                  minDate={minDate}
+                  dayOfWeekDisabled={[1]}
+                  schoolHolidayDates={closures.schoolHolidays}
+                  marks={busyDates}
                 />
               </div>
               <div>
@@ -332,10 +359,10 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
         {mode === 'view' && !isCancelled && (
           <div className="space-y-3">
             <button
-              onClick={() => { setMode('reschedule'); setError(''); setSuccessMsg(''); }}
+              onClick={() => { setMode('reschedule'); setError(''); setSuccessMsg(''); setCalendarMonth(new Date()); }}
               className="w-full px-6 py-3.5 bg-[#1B2D3C] text-white text-sm font-bold rounded-xl hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <Calendar className="w-4 h-4" /> Reschedule Booking
+              <CalendarIcon className="w-4 h-4" /> Reschedule Booking
             </button>
             <button
               onClick={() => { setMode('cancel'); setError(''); setSuccessMsg(''); }}
