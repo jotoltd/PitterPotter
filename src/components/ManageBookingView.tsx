@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Calendar as CalendarIcon, Clock, MapPin, Users, Loader2, CheckCircle2, XCircle, AlertCircle, ArrowRight } from 'lucide-react';
 import { format, getDay, parseISO, startOfDay, isBefore } from 'date-fns';
-import { getSlots, SlotSessionType, DayType, Studio } from '../lib/timeSlots';
+import { getSlots, filterPastSlots, SlotSessionType, DayType, Studio } from '../lib/timeSlots';
 import { getBusyDates } from '../lib/bookings';
 import { loadClosuresFromSupabase, getClosureDates, getClosedDatesForStudio, ClosureDates } from '../lib/closures';
 import Calendar from './Calendar';
@@ -165,7 +165,7 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
       const d = getDay(parseISO(newDate));
       return d === 0 || d === 6 ? 'weekend' : 'weekday';
     })();
-    return getSlots(slotKey, booking.studio as Studio, dt);
+    return filterPastSlots(getSlots(slotKey, booking.studio as Studio, dt), parseISO(newDate));
   };
 
   if (loading) {

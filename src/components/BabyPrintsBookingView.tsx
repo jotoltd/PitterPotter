@@ -4,7 +4,7 @@ import { useToast } from './ToastContext';
 import { format, getDay, isBefore, startOfDay } from 'date-fns';
 import { BookingInquiry, Page } from '../types';
 import { createPublicBooking, getBusyDates, getRemainingCapacity } from '../lib/bookings';
-import { getSlots, DayType } from '../lib/timeSlots';
+import { getSlots, filterPastSlots, DayType } from '../lib/timeSlots';
 import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange, getClosedDatesForStudio } from '../lib/closures';
 import Calendar from './Calendar';
 import EditableText from './EditableText';
@@ -20,7 +20,7 @@ function getTimeSlots(date: Date, closures: ClosureDates, studio: 'Putney' | 'Wi
   const isHoliday = isDateInHolidayRange(dateStr, closures.schoolHolidays);
   if (day >= 2 || day === 0 || (day === 1 && isHoliday)) {
     const dayType: DayType = (day === 0 || day === 6) ? 'weekend' : 'weekday';
-    return getSlots('baby-prints', studio, dayType);
+    return filterPastSlots(getSlots('baby-prints', studio, dayType), date);
   }
   return [];
 }

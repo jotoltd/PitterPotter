@@ -120,6 +120,23 @@ export function getSlots(type: SlotSessionType, studio: Studio, dayType: DayType
   return sortSlots(loadAll()[studio][type][dayType]);
 }
 
+export function filterPastSlots(slots: string[], date: Date, minHoursAhead: number = 1): string[] {
+  const now = new Date();
+  const isSameDay = now.getFullYear() === date.getFullYear() &&
+    now.getMonth() === date.getMonth() &&
+    now.getDate() === date.getDate();
+  if (!isSameDay) return slots;
+
+  const minTime = new Date(now.getTime() + minHoursAhead * 60 * 60 * 1000);
+  return slots.filter((slot) => {
+    const parts = slot.split('-')[0].trim().split(':');
+    const slotHour = parseInt(parts[0], 10);
+    const slotMin = parseInt(parts[1], 10);
+    const slotDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), slotHour, slotMin, 0, 0);
+    return slotDate >= minTime;
+  });
+}
+
 export function setSlots(type: SlotSessionType, dayType: DayType, slots: string[], studio: Studio): void {
   const all = loadAll();
   all[studio][type][dayType] = sortSlots(slots);

@@ -118,6 +118,19 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Reject same-day bookings less than 1 hour before the slot
+      const slotTime = newTime.split('-')[0].trim();
+      const [slotHour, slotMin] = slotTime.split(':').map(Number);
+      const slotDateTime = new Date(newDate + 'T00:00:00');
+      slotDateTime.setHours(slotHour || 0, slotMin || 0, 0, 0);
+      const oneHourAhead = new Date(Date.now() + 60 * 60 * 1000);
+      if (slotDateTime < oneHourAhead) {
+        return new Response(JSON.stringify({ error: 'Bookings must be made at least 1 hour before the session start time. Please choose a later time.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       // Check capacity at new slot (query existing bookings, excluding this booking's own seats)
       const { data: existingBookings } = await supabase
         .from('bookings')

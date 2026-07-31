@@ -136,6 +136,17 @@ export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date:
 
 export async function createPublicBooking(booking: BookingInquiry): Promise<void> {
   if (!isSupabaseEnabled()) return;
+
+  // Validate booking is at least 1 hour ahead
+  const slotTime = booking.time.split('-')[0].trim();
+  const [slotHour, slotMin] = slotTime.split(':').map(Number);
+  const slotDateTime = new Date(booking.date + 'T00:00:00');
+  slotDateTime.setHours(slotHour || 0, slotMin || 0, 0, 0);
+  const oneHourAhead = new Date(Date.now() + 60 * 60 * 1000);
+  if (slotDateTime < oneHourAhead) {
+    throw new Error('Bookings must be made at least 1 hour before the session start time. Please choose a later time.');
+  }
+
   const remaining = await getRemainingCapacity(booking.studio, booking.date, booking.time, booking.sessionType);
   if (remaining < booking.paintersCount) {
     throw new Error(`Not enough capacity. Only ${remaining} painter spots remaining for this slot.`);
