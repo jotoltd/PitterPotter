@@ -1,4 +1,5 @@
 import { createClient } from 'supabase';
+import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +9,11 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  const clientIp = getClientIp(req);
+  if (isRateLimited(`party-price:${clientIp}`, 30, 60_000)) {
+    return rateLimitResponse();
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');

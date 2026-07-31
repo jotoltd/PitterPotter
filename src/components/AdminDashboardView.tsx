@@ -15,6 +15,12 @@ import { loadClosuresFromSupabase, saveClosuresToSupabase, getClosureDates, Clos
 import { useToast } from './ToastContext';
 import Skeleton from './Skeleton';
 import WysiwygEditor from './WysiwygEditor';
+import AnalyticsTab from './admin/AnalyticsTab';
+import AuditLogsTab from './admin/AuditLogsTab';
+import EmailLogsTab from './admin/EmailLogsTab';
+import EmailTemplatesTab from './admin/EmailTemplatesTab';
+import WebmasterTab from './admin/WebmasterTab';
+import { SESSION_LABELS as SESSION_LABELS_UTIL, SESSION_BADGE as SESSION_BADGE_UTIL, ROLE_LABEL, AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL, AUDIT_ACTION_COLOR, formatAuditDetails as formatAuditDetailsUtil, getBookingAnalytics as getBookingAnalyticsUtil, getGiftCardAnalytics as getGiftCardAnalyticsUtil, exportBookingsCSV as exportBookingsCSVUtil, exportGiftCardsCSV as exportGiftCardsCSVUtil, BACKUP_TABLE_OPTIONS } from './admin/adminUtils';
 import 'react-day-picker/dist/style.css';
 
 interface AdminDashboardProps {
@@ -22,21 +28,8 @@ interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-const SESSION_LABELS: Record<string, string> = {
-  'painting': 'Painting',
-  'birthday-party': 'Birthday',
-  'baby-shower-hen': 'Baby Shower / Hen',
-  'clay-imprints': 'Baby Prints',
-  'corporate': 'Corporate',
-};
-
-const SESSION_BADGE: Record<string, string> = {
-  'painting': 'bg-emerald-50 text-emerald-700',
-  'birthday-party': 'bg-purple-50 text-purple-700',
-  'baby-shower-hen': 'bg-purple-50 text-purple-700',
-  'clay-imprints': 'bg-orange-50 text-orange-700',
-  'corporate': 'bg-purple-50 text-purple-700',
-};
+const SESSION_LABELS = SESSION_LABELS_UTIL;
+const SESSION_BADGE = SESSION_BADGE_UTIL;
 
 interface SortHeaderProps {
   field: 'date' | 'name' | 'studio' | 'status' | 'added';
@@ -856,101 +849,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
-  const getBookingAnalytics = () => {
-    const total = inquiries.length;
-    const confirmed = inquiries.filter((b) => b.status === 'confirmed').length;
-    const pending = inquiries.filter((b) => b.status === 'pending').length;
-    const cancelled = inquiries.filter((b) => b.status === 'cancelled').length;
+  const getBookingAnalytics = () => getBookingAnalyticsUtil(inquiries);
+  const getGiftCardAnalytics = () => getGiftCardAnalyticsUtil(giftCards);
+  const exportBookingsCSV = () => exportBookingsCSVUtil(inquiries);
 
-    const dateCounts: Record<string, number> = {};
-    inquiries.forEach((b) => {
-      if (!b.date) return;
-      const key = new Date(b.date).toISOString().split('T')[0];
-      dateCounts[key] = (dateCounts[key] || 0) + 1;
-    });
-    const popularDates = Object.entries(dateCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([date, count]) => ({ date, count }));
-
-    const monthlyCounts: Record<string, number> = {};
-    inquiries.forEach((b) => {
-      if (!b.date) return;
-      const key = new Date(b.date).toISOString().slice(0, 7);
-      monthlyCounts[key] = (monthlyCounts[key] || 0) + 1;
-    });
-    const bookingsByMonth = Object.entries(monthlyCounts)
-      .sort()
-      .map(([month, count]) => ({ month, count }));
-
-    const studioCounts: Record<string, number> = {};
-    inquiries.forEach((b) => {
-      const key = b.studio || 'Unknown';
-      studioCounts[key] = (studioCounts[key] || 0) + 1;
-    });
-
-    return { total, confirmed, pending, cancelled, popularDates, bookingsByMonth, studioCounts };
-  };
-
-  const getGiftCardAnalytics = () => {
-    const total = giftCards.length;
-    const totalRevenue = giftCards.reduce((sum, c) => sum + c.amount, 0);
-    const activeBalance = giftCards.filter((c) => c.status === 'active').reduce((sum, c) => sum + c.balance, 0);
-    const redeemed = giftCards.filter((c) => c.status === 'redeemed').length;
-    const expired = giftCards.filter((c) => c.status === 'expired').length;
-    const active = giftCards.filter((c) => c.status === 'active').length;
-    return { total, totalRevenue, activeBalance, redeemed, expired, active };
-  };
-
-  const exportBookingsCSV = () => {
-    const headers = ['Reference', 'Name', 'Email', 'Phone', 'Studio', 'Date', 'Time', 'Seats', 'Session Type', 'Status', 'Request Date', 'Notes', 'Final Price'];
-    const rows = inquiries.map((inq) => [
-      inq.id,
-      inq.name,
-      inq.email,
-      inq.phone,
-      inq.studio,
-      inq.date,
-      inq.time,
-      inq.paintersCount,
-      inq.sessionType,
-      inq.status,
-      inq.requestDate || '',
-      inq.notes || '',
-      inq.finalPrice || '',
-    ]);
-    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `bookings_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const exportGiftCardsCSV = () => {
-    const headers = ['Code', 'Amount', 'Balance', 'Recipient Name', 'Recipient Email', 'Sender Name', 'Status', 'Purchase Date', 'Expiry Date'];
-    const rows = giftCards.map((card) => [
-      card.code,
-      card.amount,
-      card.balance,
-      card.recipientName,
-      card.recipientEmail,
-      card.senderName,
-      card.status,
-      card.purchaseDate,
-      card.expiryDate || '',
-    ]);
-    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `gift_cards_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  const exportGiftCardsCSV = () => exportGiftCardsCSVUtil(giftCards);
 
   const createGiftCardCheckout = async () => {
     if (!newGiftCard.amount || newGiftCard.amount <= 0) {
@@ -1251,71 +1154,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     remainingValue: giftCards.reduce((sum, c) => sum + c.balance, 0),
   };
 
-  const roleLabel: Record<Staff['role'], string> = {
-    super_admin: 'Super Admin',
-    staff: 'Staff',
-  };
+  const roleLabel = ROLE_LABEL;
 
-  const auditActionLabel: Record<string, string> = {
-    create: 'Created',
-    update: 'Updated',
-    delete: 'Deleted',
-    update_status: 'Changed status',
-    login: 'Logged in',
-    logout: 'Logged out',
-    backup: 'Backed up',
-    restore: 'Restored',
-  };
-
-  const auditEntityLabel: Record<string, string> = {
-    booking: 'Booking',
-    staff: 'Staff member',
-    gift_card: 'Gift card',
-    giftcard: 'Gift card',
-    page_setting: 'Page setting',
-    setting: 'Setting',
-    sample_data: 'Sample data',
-    content: 'Content',
-  };
-
-  const auditActionColor: Record<string, string> = {
-    create: 'bg-emerald-100 text-emerald-700',
-    update: 'bg-amber-100 text-amber-700',
-    update_status: 'bg-sky-100 text-sky-700',
-    delete: 'bg-red-100 text-red-700',
-    login: 'bg-[#DBE7E4] text-[#1B2D3C]',
-    logout: 'bg-stone-100 text-stone-600',
-    backup: 'bg-purple-100 text-purple-700',
-    restore: 'bg-purple-100 text-purple-700',
-  };
-
-  const formatAuditDetails = (log: AuditLog): string => {
-    if (!log.details || typeof log.details !== 'object' || log.details === null) {
-      return log.action === 'delete' ? 'Record removed' : '-';
-    }
-    const details = log.details as Record<string, unknown>;
-    const parts: string[] = [];
-
-    if (log.action === 'update_status' && details.status) {
-      return `Status changed to ${details.status}`;
-    }
-
-    if (details.name && typeof details.name === 'string') parts.push(`Name: ${details.name}`);
-    if (details.username && typeof details.username === 'string') parts.push(`Username: ${details.username}`);
-    if (details.studio && typeof details.studio === 'string') parts.push(`Studio: ${details.studio}`);
-    if (details.date && typeof details.date === 'string') parts.push(`Date: ${details.date}`);
-    if (details.time && typeof details.time === 'string') parts.push(`Time: ${details.time}`);
-    if (details.role && typeof details.role === 'string') parts.push(`Role: ${roleLabel[details.role as Staff['role']] || details.role}`);
-    if (details.page_key && typeof details.page_key === 'string') parts.push(`Page: ${details.page_key}`);
-    if (details.enabled !== undefined) parts.push(`Enabled: ${details.enabled ? 'Yes' : 'No'}`);
-    if (details.amount !== undefined) parts.push(`Amount: £${Number(details.amount).toFixed(2)}`);
-    if (details.code && typeof details.code === 'string') parts.push(`Code: ${details.code}`);
-    if (details.note && typeof details.note === 'string') parts.push(details.note);
-    if (details.passwordChanged) parts.push('Password changed');
-
-    if (parts.length === 0) return Object.entries(details).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(', ');
-    return parts.join(' · ');
-  };
+  const auditActionLabel = AUDIT_ACTION_LABEL;
+  const auditEntityLabel = AUDIT_ENTITY_LABEL;
+  const auditActionColor = AUDIT_ACTION_COLOR;
+  const formatAuditDetails = formatAuditDetailsUtil;
 
   const isSuperAdmin = staff.role === 'super_admin';
 
@@ -1549,16 +1393,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [dbHealthLoading, setDbHealthLoading] = useState(false);
   const [dbBackups, setDbBackups] = useState<{ id: string; name: string; created_at: string; created_by?: { username: string; name: string }; tables?: string[] }[]>([]);
   const [dbBackupLoading, setDbBackupLoading] = useState(false);
-  const BACKUP_TABLE_OPTIONS = [
-    { value: 'staff', label: 'Staff' },
-    { value: 'bookings', label: 'Bookings' },
-    { value: 'gift_cards', label: 'Gift Cards' },
-    { value: 'settings', label: 'Settings' },
-    { value: 'content', label: 'CMS Content' },
-    { value: 'capacity', label: 'Capacity' },
-    { value: 'audit_logs', label: 'Audit Logs' },
-    { value: 'page_settings', label: 'Page Visibility' },
-  ];
   const [selectedBackupTables, setSelectedBackupTables] = useState<string[]>(BACKUP_TABLE_OPTIONS.map((t) => t.value));
   const [restoreModal, setRestoreModal] = useState<{ isOpen: boolean; backupId: string | null; name: string; tables: string[]; selected: string[] }>({
     isOpen: false,
@@ -4201,214 +4035,24 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       )}
 
       {activeTab === 'webmaster' && staff.role === 'super_admin' && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-8 space-y-6">
-
-          {/* Database Health */}
-          {staff.role === 'super_admin' && (
-            <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Database Health</h2>
-                  <p className="text-xs text-[#1B2D3C]/70 mt-1">Check all required tables exist and have data.</p>
-                </div>
-                <button
-                  onClick={loadDbHealth}
-                  disabled={dbHealthLoading}
-                  className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  Refresh
-                </button>
-              </div>
-              {dbHealthLoading ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-12" />
-                  <Skeleton className="h-12" />
-                </div>
-              ) : dbHealth ? (
-                <div className="space-y-3">
-                  <div className={`flex items-center gap-2 p-3 rounded-lg ${dbHealth.healthy ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                    <span className={`w-2 h-2 rounded-full ${dbHealth.healthy ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                    <span className="text-xs font-bold">{dbHealth.healthy ? 'All required tables healthy' : 'Database issues detected'}</span>
-                  </div>
-                  {dbHealth.issues.length > 0 && (
-                    <ul className="space-y-1">
-                      {dbHealth.issues.map((issue, idx) => (
-                        <li key={idx} className="text-xs text-red-600 font-medium">• {issue}</li>
-                      ))}
-                    </ul>
-                  )}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {Object.entries(dbHealth.tables).map(([name, info]) => (
-                      <div key={name} className={`p-2 rounded-lg border ${info.exists ? 'border-emerald-200 bg-emerald-50/50' : 'border-red-200 bg-red-50/50'}`}>
-                        <p className="text-[10px] uppercase tracking-wider font-bold text-[#1B2D3C]/70">{name}</p>
-                        <p className={`text-sm font-black ${info.exists ? 'text-emerald-700' : 'text-red-700'}`}>{info.exists ? info.rows : 'Missing'}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-[#1B2D3C]/50">Click Refresh to check database health.</p>
-              )}
-            </div>
-          )}
-
-          {/* Database Backup */}
-          {staff.role === 'super_admin' && (
-            <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Database Backup</h2>
-                  <p className="text-xs text-[#1B2D3C]/70 mt-1">Choose which tables to include, then create a backup.</p>
-                </div>
-                <button
-                  onClick={createDbBackup}
-                  disabled={dbBackupLoading || selectedBackupTables.length === 0}
-                  className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" /> Create Backup
-                </button>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/70">Tables to backup</span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setSelectedBackupTables(BACKUP_TABLE_OPTIONS.map((t) => t.value))}
-                      className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] bg-[#DBE7E4]/50 rounded hover:bg-[#D6E2E9] transition-colors cursor-pointer"
-                    >
-                      Select All
-                    </button>
-                    <button
-                      onClick={() => setSelectedBackupTables([])}
-                      className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C] bg-[#DBE7E4]/50 rounded hover:bg-[#D6E2E9] transition-colors cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {BACKUP_TABLE_OPTIONS.map((table) => (
-                    <label key={table.value} className="flex items-center gap-2 p-2 rounded-lg border border-[#1B2D3C]/10 cursor-pointer hover:bg-[#DBE7E4]/30 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={selectedBackupTables.includes(table.value)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedBackupTables((prev) => [...prev, table.value]);
-                          } else {
-                            setSelectedBackupTables((prev) => prev.filter((t) => t !== table.value));
-                          }
-                        }}
-                        className="w-4 h-4 accent-[#1B2D3C] cursor-pointer"
-                      />
-                      <span className="text-xs font-semibold text-[#1B2D3C]">{table.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              {dbBackupLoading && dbBackups.length === 0 ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-12" />
-                  <Skeleton className="h-12" />
-                </div>
-              ) : dbBackups.length > 0 ? (
-                <div className="space-y-2">
-                  {dbBackups.map((backup) => (
-                    <div key={backup.id} className="flex items-center justify-between p-3 bg-[#DBE7E4]/30 rounded-lg">
-                      <div>
-                        <p className="text-sm font-bold text-[#1B2D3C]">{backup.name}</p>
-                        <p className="text-[10px] text-[#1B2D3C]/50">
-                          {new Date(backup.created_at).toLocaleString('en-GB')}
-                          {backup.created_by ? ` · ${backup.created_by.name || backup.created_by.username}` : ''}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => downloadDbBackup(backup.id, backup.name)}
-                          className="px-3 py-1.5 bg-white text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-colors cursor-pointer"
-                        >
-                          Download
-                        </button>
-                        <button
-                          onClick={() => {
-                            const availableTables = backup.tables?.length ? backup.tables : BACKUP_TABLE_OPTIONS.map((t) => t.value);
-                            setRestoreModal({ isOpen: true, backupId: backup.id, name: backup.name, tables: availableTables, selected: availableTables });
-                          }}
-                          className="px-3 py-1.5 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider rounded border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
-                        >
-                          Restore
-                        </button>
-                        <button
-                          onClick={() => deleteDbBackup(backup.id)}
-                          className="px-3 py-1.5 bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded border border-red-200 hover:bg-red-100 transition-colors cursor-pointer"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-[#1B2D3C]/50">No backups yet. Create one to get started.</p>
-              )}
-            </div>
-          )}
-
-          {/* Sample Data */}
-          {staff.role === 'super_admin' && (
-            <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Sample Data</h2>
-                  <p className="text-xs text-[#1B2D3C]/70 mt-1">Add or remove sample bookings and gift cards for testing.</p>
-                </div>
-                <button
-                  onClick={loadSampleDataStatus}
-                  disabled={sampleDataLoading}
-                  className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  Refresh
-                </button>
-              </div>
-              {sampleDataLoading ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-12" />
-                </div>
-              ) : sampleDataStatus ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-[#DBE7E4]/30 rounded-lg">
-                      <p className="text-[10px] uppercase tracking-wider font-bold text-[#1B2D3C]/70">Sample Bookings</p>
-                      <p className="text-2xl font-black text-[#1B2D3C]">{sampleDataStatus.sampleBookings}</p>
-                    </div>
-                    <div className="p-3 bg-[#DBE7E4]/30 rounded-lg">
-                      <p className="text-[10px] uppercase tracking-wider font-bold text-[#1B2D3C]/70">Sample Gift Cards</p>
-                      <p className="text-2xl font-black text-[#1B2D3C]">{sampleDataStatus.sampleGiftCards}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={addSampleData}
-                      disabled={sampleDataLoading}
-                      className="flex-1 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      <Plus className="w-4 h-4" /> Add Sample Data
-                    </button>
-                    <button
-                      onClick={removeSampleData}
-                      disabled={sampleDataLoading || (sampleDataStatus.sampleBookings === 0 && sampleDataStatus.sampleGiftCards === 0)}
-                      className="flex-1 px-4 py-2 bg-red-50 text-red-700 text-xs font-bold uppercase tracking-wider rounded-lg border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      <Trash2 className="w-4 h-4" /> Remove Sample Data
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-[#1B2D3C]/50">Click Refresh to load sample data status.</p>
-              )}
-            </div>
-          )}
-        </div>
+        <WebmasterTab
+          dbHealth={dbHealth}
+          dbHealthLoading={dbHealthLoading}
+          onLoadDbHealth={loadDbHealth}
+          dbBackups={dbBackups}
+          dbBackupLoading={dbBackupLoading}
+          onCreateBackup={createDbBackup}
+          onDownloadBackup={downloadDbBackup}
+          onDeleteBackup={deleteDbBackup}
+          onRestoreBackup={(backupId, name, tables) => setRestoreModal({ isOpen: true, backupId, name, tables, selected: tables })}
+          selectedBackupTables={selectedBackupTables}
+          onSelectBackupTables={setSelectedBackupTables}
+          sampleDataStatus={sampleDataStatus}
+          sampleDataLoading={sampleDataLoading}
+          onLoadSampleData={loadSampleDataStatus}
+          onAddSampleData={addSampleData}
+          onRemoveSampleData={removeSampleData}
+        />
       )}
 
       {activeTab === 'settings' && canManageStaff && (
@@ -4442,423 +4086,29 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       )}
 
       {activeTab === 'analytics' && canManageStaff && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-8">
-          <div>
-            <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Analytics Dashboard</h2>
-            <p className="text-xs text-[#1B2D3C]/70 mt-1">Overview of bookings, gift card revenue, and popular dates.</p>
-          </div>
-
-          {(() => {
-            const bookingStats = getBookingAnalytics();
-            const giftCardStats = getGiftCardAnalytics();
-            const maxMonthly = Math.max(...bookingStats.bookingsByMonth.map((d) => d.count), 1);
-            const maxPopular = Math.max(...bookingStats.popularDates.map((d) => d.count), 1);
-            const maxStudio = Math.max(...Object.values(bookingStats.studioCounts), 1);
-
-            return (
-              <>
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
-                    <p className="text-[10px] sm:text-xs text-stone-500 font-bold uppercase tracking-wider">Total Bookings</p>
-                    <p className="font-heading text-3xl font-black text-[#1B2D3C] mt-2">{bookingStats.total}</p>
-                  </div>
-                  <div className="bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
-                    <p className="text-[10px] sm:text-xs text-stone-500 font-bold uppercase tracking-wider">Confirmed</p>
-                    <p className="font-heading text-3xl font-black text-[#1B2D3C] mt-2">{bookingStats.confirmed}</p>
-                    <p className="text-xs text-stone-500 mt-1">{bookingStats.pending} pending</p>
-                  </div>
-                  <div className="bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
-                    <p className="text-[10px] sm:text-xs text-stone-500 font-bold uppercase tracking-wider">Gift Card Revenue</p>
-                    <p className="font-heading text-3xl font-black text-[#1B2D3C] mt-2">£{giftCardStats.totalRevenue.toFixed(2)}</p>
-                    <p className="text-xs text-stone-500 mt-1">{giftCardStats.total} sold</p>
-                  </div>
-                  <div className="bg-white p-4 sm:p-6 border border-[#1B2D3C]/20 shadow-sm">
-                    <p className="text-[10px] sm:text-xs text-stone-500 font-bold uppercase tracking-wider">Active Gift Balance</p>
-                    <p className="font-heading text-3xl font-black text-[#1B2D3C] mt-2">£{giftCardStats.activeBalance.toFixed(2)}</p>
-                    <p className="text-xs text-stone-500 mt-1">{giftCardStats.active} active</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Booking Trends */}
-                  <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
-                    <h3 className="font-heading text-lg font-black text-[#1B2D3C]">Bookings by Month</h3>
-                    {bookingStats.bookingsByMonth.length === 0 ? (
-                      <p className="text-xs text-stone-500">No booking data yet.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {bookingStats.bookingsByMonth.map(({ month, count }) => (
-                          <div key={month} className="flex items-center gap-3">
-                            <span className="text-xs font-bold text-[#1B2D3C] w-20 shrink-0">{month}</span>
-                            <div className="flex-1 h-4 bg-[#D6E2E9]/30 rounded overflow-hidden">
-                              <div
-                                className="h-full bg-[#DBE7E4] rounded"
-                                style={{ width: `${(count / maxMonthly) * 100}%` }}
-                              />
-                            </div>
-                            <span className="text-xs font-bold text-[#1B2D3C] w-8 text-right">{count}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Popular Dates */}
-                  <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
-                    <h3 className="font-heading text-lg font-black text-[#1B2D3C]">Most Popular Dates</h3>
-                    {bookingStats.popularDates.length === 0 ? (
-                      <p className="text-xs text-stone-500">No booking data yet.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {bookingStats.popularDates.map(({ date, count }) => (
-                          <div key={date} className="flex items-center gap-3">
-                            <span className="text-xs font-bold text-[#1B2D3C] w-28 shrink-0">{format(parseISO(date), 'dd MMM yyyy')}</span>
-                            <div className="flex-1 h-4 bg-[#D6E2E9]/30 rounded overflow-hidden">
-                              <div
-                                className="h-full bg-[#FFF1E6] rounded"
-                                style={{ width: `${(count / maxPopular) * 100}%` }}
-                              />
-                            </div>
-                            <span className="text-xs font-bold text-[#1B2D3C] w-8 text-right">{count}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Studio Breakdown */}
-                  <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
-                    <h3 className="font-heading text-lg font-black text-[#1B2D3C]">Bookings by Studio</h3>
-                    {Object.keys(bookingStats.studioCounts).length === 0 ? (
-                      <p className="text-xs text-stone-500">No studio data yet.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {Object.entries(bookingStats.studioCounts).map(([studio, count]) => (
-                          <div key={studio} className="flex items-center gap-3">
-                            <span className="text-xs font-bold text-[#1B2D3C] w-24 shrink-0">{studio}</span>
-                            <div className="flex-1 h-4 bg-[#D6E2E9]/30 rounded overflow-hidden">
-                              <div
-                                className="h-full bg-[#D6E2E9] rounded"
-                                style={{ width: `${(count / maxStudio) * 100}%` }}
-                              />
-                            </div>
-                            <span className="text-xs font-bold text-[#1B2D3C] w-8 text-right">{count}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Gift Card Status */}
-                  <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
-                    <h3 className="font-heading text-lg font-black text-[#1B2D3C]">Gift Card Status</h3>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="bg-[#DBE7E4]/30 p-4 rounded-lg text-center">
-                        <p className="font-heading text-2xl font-black text-[#1B2D3C]">{giftCardStats.active}</p>
-                        <p className="text-[10px] font-bold uppercase text-[#1B2D3C]/70 mt-1">Active</p>
-                      </div>
-                      <div className="bg-[#D6E2E9]/30 p-4 rounded-lg text-center">
-                        <p className="font-heading text-2xl font-black text-[#1B2D3C]">{giftCardStats.redeemed}</p>
-                        <p className="text-[10px] font-bold uppercase text-[#1B2D3C]/70 mt-1">Redeemed</p>
-                      </div>
-                      <div className="bg-red-50 p-4 rounded-lg text-center">
-                        <p className="font-heading text-2xl font-black text-red-700">{giftCardStats.expired}</p>
-                        <p className="text-[10px] font-bold uppercase text-red-700/70 mt-1">Expired</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </>
-            );
-          })()}
-        </div>
+        <AnalyticsTab inquiries={inquiries} giftCards={giftCards} />
       )}
 
       {activeTab === 'audit-logs' && canManageStaff && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-6">
-          <div>
-            <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Staff Activity Audit Log</h2>
-            <p className="text-xs text-[#1B2D3C]/70 mt-1">Track all staff actions and system changes.</p>
-          </div>
-
-          <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl overflow-hidden">
-            {auditLogsLoading ? (
-              <div className="p-4 space-y-3">
-                <div className="grid grid-cols-12 gap-3">
-                  <Skeleton className="col-span-3 h-8" />
-                  <Skeleton className="col-span-2 h-8" />
-                  <Skeleton className="col-span-2 h-8" />
-                  <Skeleton className="col-span-5 h-8" />
-                </div>
-                <Skeleton className="h-12" />
-                <Skeleton className="h-12" />
-                <Skeleton className="h-12" />
-                <Skeleton className="h-12" />
-                <Skeleton className="h-12" />
-              </div>
-            ) : auditLogs.length === 0 ? (
-              <div className="p-12 text-center">
-                <p className="text-sm text-stone-500 font-semibold">No audit logs found</p>
-                <p className="text-xs text-stone-400 mt-1">Activity will appear here as staff perform actions</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-                <table className="w-full text-left min-w-[600px]">
-                  <thead className="bg-[#D6E2E9] border-b border-[#1B2D3C]/20">
-                    <tr>
-                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">When</th>
-                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Staff</th>
-                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">What happened</th>
-                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Details</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-xs text-[#1B2D3C]">
-                    {auditLogs.map((log) => (
-                      <tr key={log.id} className="border-b border-[#1B2D3C]/5 hover:bg-stone-50">
-                        <td className="py-3 px-4 align-top whitespace-nowrap">
-                          <p className="font-bold">{new Date(log.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{new Date(log.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</p>
-                        </td>
-                        <td className="py-3 px-4 align-top whitespace-nowrap">
-                          <span className="font-bold">{log.username || 'Unknown'}</span>
-                        </td>
-                        <td className="py-3 px-4 align-top">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${auditActionColor[log.action] || 'bg-stone-100 text-stone-600'}`}>
-                              {auditActionLabel[log.action] || log.action}
-                            </span>
-                            <span className="font-semibold text-[#1B2D3C]/80">
-                              {auditEntityLabel[log.entity] || log.entity}
-                              {log.entity_id && <span className="text-[#1B2D3C]/40 font-normal ml-1">#{log.entity_id.slice(0, 8)}</span>}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 align-top text-[#1B2D3C]/70 font-medium">
-                          {formatAuditDetails(log)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
+        <AuditLogsTab auditLogs={auditLogs} auditLogsLoading={auditLogsLoading} />
       )}
 
       {activeTab === 'email-logs' && canManageStaff && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Email Logs</h2>
-              <p className="text-xs text-[#1B2D3C]/70 mt-1">Track all emails sent from the system and their delivery status.</p>
-            </div>
-            <button
-              onClick={() => loadEmailLogs()}
-              className="px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-stone-50 transition-all cursor-pointer"
-            >
-              Refresh
-            </button>
-          </div>
-
-          <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl overflow-hidden">
-            {emailLogsLoading ? (
-              <div className="p-4 space-y-3">
-                <Skeleton className="h-12" />
-                <Skeleton className="h-12" />
-                <Skeleton className="h-12" />
-                <Skeleton className="h-12" />
-                <Skeleton className="h-12" />
-              </div>
-            ) : emailLogs.length === 0 ? (
-              <div className="p-12 text-center">
-                <p className="text-sm text-stone-500 font-semibold">No emails sent yet</p>
-                <p className="text-xs text-stone-400 mt-1">Emails will appear here once bookings are made and confirmed</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-                <table className="w-full text-left min-w-[700px]">
-                  <thead className="bg-[#D6E2E9] border-b border-[#1B2D3C]/20">
-                    <tr>
-                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">When</th>
-                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Type</th>
-                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Recipient</th>
-                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Subject</th>
-                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Status</th>
-                      <th className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C] py-3 px-4">Booking</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-xs text-[#1B2D3C]">
-                    {emailLogs.map((log) => {
-                      const statusColors: Record<string, string> = {
-                        sent: 'bg-blue-100 text-blue-700',
-                        delivered: 'bg-emerald-100 text-emerald-700',
-                        bounced: 'bg-red-100 text-red-700',
-                        complained: 'bg-amber-100 text-amber-700',
-                        opened: 'bg-purple-100 text-purple-700',
-                        clicked: 'bg-indigo-100 text-indigo-700',
-                        failed: 'bg-red-100 text-red-700',
-                      };
-                      const typeLabels: Record<string, string> = {
-                        admin_booking_notification: 'Admin Notify',
-                        booking_confirmation: 'Confirmation',
-                        party_final_reminder: 'Party Reminder',
-                        general: 'General',
-                      };
-                      return (
-                        <tr key={log.id} className="border-b border-[#1B2D3C]/5 hover:bg-stone-50">
-                          <td className="py-3 px-4 align-top whitespace-nowrap">
-                            <p className="font-bold">{new Date(log.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                            <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">{new Date(log.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</p>
-                          </td>
-                          <td className="py-3 px-4 align-top">
-                            <span className="font-bold">{typeLabels[log.email_type] || log.email_type}</span>
-                          </td>
-                          <td className="py-3 px-4 align-top">
-                            <span className="text-xs">{log.recipient}</span>
-                          </td>
-                          <td className="py-3 px-4 align-top">
-                            <span className="text-xs">{log.subject}</span>
-                            {log.error && (
-                              <p className="text-[10px] text-red-600 mt-1">{log.error}</p>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 align-top">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColors[log.status] || 'bg-stone-100 text-stone-700'}`}>
-                              {log.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 align-top">
-                            {log.booking_id ? (
-                              <span className="text-xs font-mono">{log.booking_id}</span>
-                            ) : (
-                              <span className="text-xs text-stone-400">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
+        <EmailLogsTab emailLogs={emailLogs} emailLogsLoading={emailLogsLoading} onRefresh={loadEmailLogs} />
       )}
 
       {activeTab === 'email-templates' && canManageStaff && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Email Templates</h2>
-              <p className="text-xs text-[#1B2D3C]/70 mt-1">Edit the subject and content of all system emails. Use {'{{variables}}'} for dynamic data.</p>
-            </div>
-            <button
-              onClick={() => loadEmailTemplates()}
-              className="px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-stone-50 transition-all cursor-pointer"
-            >
-              Refresh
-            </button>
-          </div>
-
-          {emailTemplatesLoading ? (
-            <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-4 space-y-3">
-              <Skeleton className="h-16" />
-              <Skeleton className="h-16" />
-              <Skeleton className="h-16" />
-            </div>
-          ) : editingTemplate ? (
-            <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-heading text-lg font-black text-[#1B2D3C]">{editingTemplate.name}</h3>
-                  <p className="text-xs text-[#1B2D3C]/60 mt-1">Use these variables: {editingTemplate.available_variables?.map((v: string) => `{{${v}}}`).join(', ')}</p>
-                </div>
-                <button
-                  onClick={() => setEditingTemplate(null)}
-                  className="text-xs font-bold text-[#1B2D3C]/60 hover:text-[#1B2D3C] cursor-pointer"
-                >
-                  ← Back to list
-                </button>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#1B2D3C] mb-1">Subject Line</label>
-                <input
-                  type="text"
-                  value={editingTemplate._editSubject}
-                  onChange={(e) => setEditingTemplate({ ...editingTemplate, _editSubject: e.target.value })}
-                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-sm text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#1B2D3C] mb-1">Email Content</label>
-                <WysiwygEditor
-                  value={editingTemplate._editHtml}
-                  onChange={(html) => setEditingTemplate({ ...editingTemplate, _editHtml: html })}
-                  variables={editingTemplate.available_variables || []}
-                  minHeight={300}
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => saveEmailTemplate(editingTemplate.template_key, editingTemplate._editSubject, editingTemplate._editHtml)}
-                  disabled={templateSaving}
-                  className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#1B2D3C]/90 transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {templateSaving ? 'Saving...' : 'Save Template'}
-                </button>
-                <button
-                  onClick={() => setEditingTemplate(null)}
-                  className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-stone-50 transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : emailTemplates.length === 0 ? (
-            <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-12 text-center">
-              <p className="text-sm text-stone-500 font-semibold">No email templates found</p>
-              <p className="text-xs text-stone-400 mt-1">Templates will appear here after the migration is applied</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {emailTemplates.map((tpl) => (
-                <div key={tpl.id} className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-5">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-heading text-sm font-black text-[#1B2D3C]">{tpl.name}</h3>
-                      <p className="text-xs text-[#1B2D3C]/60 mt-1">
-                        <span className="font-bold">Subject:</span> {tpl.subject}
-                      </p>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {tpl.available_variables?.map((v: string) => (
-                          <span key={v} className="inline-block px-1.5 py-0.5 bg-[#DBE7E4] text-[#1B2D3C] text-[10px] font-mono rounded">
-                            {`{{${v}}}`}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-[10px] text-[#1B2D3C]/40 mt-2">
-                        Last updated: {new Date(tpl.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setEditingTemplate({ ...tpl, _editSubject: tpl.subject, _editHtml: tpl.html_content })}
-                      className="shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-[#DBE7E4] transition-all cursor-pointer"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <EmailTemplatesTab
+          emailTemplates={emailTemplates}
+          emailTemplatesLoading={emailTemplatesLoading}
+          templateSaving={templateSaving}
+          editingTemplate={editingTemplate}
+          onRefresh={loadEmailTemplates}
+          onEditTemplate={(tpl) => setEditingTemplate(tpl)}
+          onCancelEdit={() => setEditingTemplate(null)}
+          onUpdateEditingTemplate={(tpl) => setEditingTemplate(tpl)}
+          onSaveTemplate={saveEmailTemplate}
+        />
       )}
 
       <ConfirmDialog

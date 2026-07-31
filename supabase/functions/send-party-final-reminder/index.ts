@@ -4,11 +4,7 @@ import type { StaffRecord } from '../_shared/types.ts';
 import { verifyStaff } from '../_shared/auth.ts';
 import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts';
 import { getStudioInfo } from '../_shared/studio-info.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
 
 const PARTY_TYPES = ['birthday-party', 'baby-shower-hen', 'corporate'];
 
@@ -141,8 +137,9 @@ async function sendReminderEmail(
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return optionsResponse(req, true);
   }
+  const corsHeaders = makeCorsHeaders(req, true);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');

@@ -2,6 +2,7 @@ import { createClient } from 'supabase';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts';
 import { getStudioInfo } from '../_shared/studio-info.ts';
+import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -168,6 +169,11 @@ async function sendEmail(
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  const clientIp = getClientIp(req);
+  if (isRateLimited(`booking-confirm:${clientIp}`, 20, 60_000)) {
+    return rateLimitResponse();
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');

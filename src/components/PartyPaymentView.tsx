@@ -5,6 +5,7 @@ import { Page } from '../types';
 interface PartyPaymentViewProps {
   setCurrentPage: (page: Page) => void;
   adminMode?: boolean;
+  successMode?: boolean;
 }
 
 interface BookingData {
@@ -21,7 +22,7 @@ interface BookingData {
   paymentStatus: string;
 }
 
-export default function PartyPaymentView({ setCurrentPage }: PartyPaymentViewProps) {
+export default function PartyPaymentView({ setCurrentPage, successMode = false }: PartyPaymentViewProps) {
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -103,6 +104,32 @@ export default function PartyPaymentView({ setCurrentPage }: PartyPaymentViewPro
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#1B2D3C]/40" />
+      </div>
+    );
+  }
+
+  if (successMode) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4 py-20">
+        <div className="text-center space-y-6 max-w-md">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+          <h1 className="font-heading text-2xl font-black text-[#1B2D3C]">Payment Complete</h1>
+          <p className="text-sm text-[#1B2D3C]/70">Thank you{booking?.name ? `, ${booking.name}` : ''}! Your final balance has been paid. We look forward to seeing you{booking?.studio ? ` at our ${booking.studio} studio` : ''}.</p>
+          {booking && (
+            <div className="bg-[#D6E2E9]/30 p-4 rounded-lg text-left space-y-2 text-xs font-semibold text-[#1B2D3C]">
+              <p><span className="font-bold">Booking ref:</span> {booking.bookingId}</p>
+              <p><span className="font-bold">Date:</span> {booking.date}</p>
+              <p><span className="font-bold">Time:</span> {booking.time}</p>
+              <p><span className="font-bold">Seats:</span> {booking.finalSeats || booking.paintersCount}</p>
+            </div>
+          )}
+          <button
+            onClick={() => setCurrentPage('home')}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
+          >
+            Back to Home
+          </button>
+        </div>
       </div>
     );
   }

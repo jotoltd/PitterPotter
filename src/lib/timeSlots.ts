@@ -120,7 +120,7 @@ export function getSlots(type: SlotSessionType, studio: Studio, dayType: DayType
   return sortSlots(loadAll()[studio][type][dayType]);
 }
 
-export function filterPastSlots(slots: string[], date: Date, minHoursAhead: number = 1): string[] {
+export function filterPastSlots(slots: string[], date: Date, minHoursAhead: number = 0): string[] {
   const now = new Date();
   const isSameDay = now.getFullYear() === date.getFullYear() &&
     now.getMonth() === date.getMonth() &&

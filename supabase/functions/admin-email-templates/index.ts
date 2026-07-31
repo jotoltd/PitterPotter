@@ -3,17 +3,14 @@ import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 import type { AdminSupabaseClient, StaffRecord } from '../_shared/types.ts';
 import { verifyStaff } from '../_shared/auth.ts';
 import { logAudit } from '../_shared/audit.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
 
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return optionsResponse(req, true);
   }
+  const corsHeaders = makeCorsHeaders(req, true);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');

@@ -347,7 +347,7 @@ case 'party-birthday-putney':
  case 'party-payment':
  return <PartyPaymentView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'party-payment-success':
- return <PartyPaymentView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
+ return <PartyPaymentView setCurrentPage={setCurrentPage} adminMode={adminMode} successMode />;
  case 'manage-booking':
  return <ManageBookingView setCurrentPage={setCurrentPage} />;
  default:

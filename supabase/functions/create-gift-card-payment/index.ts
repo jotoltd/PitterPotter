@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { createClient } from 'supabase';
+import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +10,11 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
+  }
+
+  const clientIp = getClientIp(req);
+  if (isRateLimited(`gift-card-payment:${clientIp}`, 10, 60_000)) {
+    return rateLimitResponse();
   }
 
   try {

@@ -137,43 +137,19 @@ export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date:
 export async function createPublicBooking(booking: BookingInquiry): Promise<void> {
   if (!isSupabaseEnabled()) return;
 
-  // Validate booking is at least 1 hour ahead
-  const slotTime = booking.time.split('-')[0].trim();
-  const [slotHour, slotMin] = slotTime.split(':').map(Number);
-  const slotDateTime = new Date(booking.date + 'T00:00:00');
-  slotDateTime.setHours(slotHour || 0, slotMin || 0, 0, 0);
-  const oneHourAhead = new Date(Date.now() + 60 * 60 * 1000);
-  if (slotDateTime < oneHourAhead) {
-    throw new Error('Bookings must be made at least 1 hour before the session start time. Please choose a later time.');
-  }
+  // Route through edge function for server-side validation
+  const response = await fetch(functionUrl('create-booking'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ booking }),
+  });
 
-  const remaining = await getRemainingCapacity(booking.studio, booking.date, booking.time, booking.sessionType);
-  if (remaining < booking.paintersCount) {
-    throw new Error(`Not enough capacity. Only ${remaining} painter spots remaining for this slot.`);
-  }
-  const managementToken = crypto.randomUUID();
-  const bookingWithToken = { ...booking, managementToken };
-  const { error } = await supabase!.from('bookings').insert(toBookingRow(bookingWithToken));
-  if (error) {
-    console.error('Failed to create booking:', error);
-    throw new Error('Failed to create booking');
-  }
-
-  // Send confirmation email with magic link (non-blocking)
-  try {
-    await fetch(functionUrl('send-booking-confirmation'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({
-        bookingId: booking.id,
-        managementToken,
-      }),
-    });
-  } catch (err) {
-    console.error('Failed to send confirmation email:', err);
+  const data = await response.json();
+  if (!response.ok || data.error) {
+    throw new Error(data.error || 'Failed to create booking');
   }
 }
 
