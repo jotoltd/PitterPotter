@@ -1,6 +1,7 @@
 import { createClient } from 'supabase';
 import { isObject, isNonEmptyString, isInteger } from '../_shared/validate.ts';
 import type { StaffRecord } from '../_shared/types.ts';
+import { verifyStaff } from '../_shared/auth.ts';
 import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts';
 import { getStudioInfo } from '../_shared/studio-info.ts';
 
@@ -11,16 +12,6 @@ const corsHeaders = {
 
 const PARTY_TYPES = ['birthday-party', 'baby-shower-hen', 'corporate'];
 
-async function verifyStaff(supabase: any, username: string, sessionToken: string): Promise<StaffRecord | null> {
-  const { data, error } = await supabase
-    .from('staff')
-    .select('*')
-    .eq('username', username)
-    .eq('session_token', sessionToken)
-    .single();
-  if (error || !data) return null;
-  return data;
-}
 
 async function sendReminderEmail(
   details: {

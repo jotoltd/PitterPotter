@@ -2,24 +2,15 @@ import { createClient } from 'supabase';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 import { logAudit } from '../_shared/audit.ts';
 import type { AdminSupabaseClient, StaffRecord } from '../_shared/types.ts';
+import { verifyStaff } from '../_shared/auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-async function verifyStaff(supabase: AdminSupabaseClient, username: string, sessionToken: string): Promise<StaffRecord | null> {
-  const { data, error } = await supabase
-    .from('staff')
-    .select('*')
-    .eq('username', username)
-    .eq('session_token', sessionToken)
-    .single();
-  if (error || !data) return null;
-  return data;
-}
 
-const BACKUP_TABLES = ['staff', 'bookings', 'gift_cards', 'settings', 'content', 'capacity', 'audit_logs', 'page_settings'];
+const BACKUP_TABLES = ['staff', 'staff_sessions', 'bookings', 'gift_cards', 'settings', 'content', 'capacity', 'audit_logs', 'page_settings'];
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {

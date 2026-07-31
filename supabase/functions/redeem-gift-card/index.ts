@@ -1,4 +1,5 @@
 import { createClient } from 'supabase';
+import { verifyStaff } from '../_shared/auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -60,13 +61,8 @@ Deno.serve(async (req) => {
     }
 
     if (username && sessionToken) {
-      const { data: staff, error: staffError } = await supabase
-        .from('staff')
-        .select('*')
-        .eq('username', username)
-        .eq('session_token', sessionToken)
-        .single();
-      if (staffError || !staff) {
+      const staff = await verifyStaff(supabase, username, sessionToken);
+      if (!staff) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -104,12 +100,7 @@ Deno.serve(async (req) => {
     if (cloverPaymentId || (typeof totalAmount === 'number' && totalAmount > 0)) {
       let staffId = null;
       if (username && sessionToken) {
-        const { data: staff } = await supabase
-          .from('staff')
-          .select('id')
-          .eq('username', username)
-          .eq('session_token', sessionToken)
-          .single();
+        const staff = await verifyStaff(supabase, username, sessionToken);
         if (staff) staffId = staff.id;
       }
       await supabase.from('pos_transactions').insert({

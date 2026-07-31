@@ -96,12 +96,18 @@ Deno.serve(async (req) => {
 
     const token = generateToken();
 
-    const { error: updateError } = await supabase
+    // Insert into staff_sessions for multi-session support
+    const { error: sessionError } = await supabase
+      .from('staff_sessions')
+      .insert({ staff_id: staff.id, session_token: token });
+
+    if (sessionError) throw sessionError;
+
+    // Also update staff.session_token for backward compatibility
+    await supabase
       .from('staff')
       .update({ session_token: token, session_expires_at: null })
       .eq('id', staff.id);
-
-    if (updateError) throw updateError;
 
     return new Response(JSON.stringify({
       id: staff.id,

@@ -2,22 +2,13 @@ import { createClient } from 'supabase';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 import { logAudit } from '../_shared/audit.ts';
 import type { AdminSupabaseClient, StaffRecord } from '../_shared/types.ts';
+import { verifyStaff } from '../_shared/auth.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-async function verifyStaff(supabase: AdminSupabaseClient, username: string, sessionToken: string): Promise<StaffRecord | null> {
-  const { data, error } = await supabase
-    .from('staff')
-    .select('*')
-    .eq('username', username)
-    .eq('session_token', sessionToken)
-    .single();
-  if (error || !data) return null;
-  return data;
-}
 
 const SAMPLE_BOOKINGS = [
   { booking_id: 'BK-SAMPLE-001', studio: 'Putney', name: 'Olivia Smith', email: 'olivia.smith@example.com', phone: '07700 900001', date: '2026-07-10', time: '10:00', painters_count: 2, session_type: 'painting', notes: 'SAMPLE DATA: Adult + child pottery painting', status: 'confirmed', request_date: '2026-07-01', estimated_price: 59.90, final_price: 59.90, table_id: 'T1' },
