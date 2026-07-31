@@ -225,3 +225,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/manage-booking/deno.json"
 entrypoint = "./functions/manage-booking/index.ts"
+
+[functions.create-booking]
+enabled = true
+verify_jwt = false
+import_map = "./functions/create-booking/deno.json"
+entrypoint = "./functions/create-booking/index.ts"
