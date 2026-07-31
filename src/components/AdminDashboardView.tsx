@@ -294,24 +294,27 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     return () => clearInterval(interval);
   }, [activeTab]);
 
-  // Set up Supabase Realtime subscription for bookings
+  // Set up Supabase Realtime subscription for bookings, gift cards, and audit logs
   useEffect(() => {
     if (!isSupabaseEnabled() || !supabase) return;
 
     let isMounted = true;
     const channel = supabase
-      .channel('bookings-changes')
+      .channel('admin-realtime')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'bookings',
-        },
-        () => {
-          // Reload bookings when any change occurs
-          if (isMounted) loadInquiries();
-        }
+        { event: '*', schema: 'public', table: 'bookings' },
+        () => { if (isMounted) loadInquiries(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'gift_cards' },
+        () => { if (isMounted) loadGiftCards(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'audit_logs' },
+        () => { if (isMounted && canManageStaff) loadAuditLogs(); }
       )
       .subscribe((status) => {
         if (isMounted) {
