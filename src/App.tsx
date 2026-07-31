@@ -211,9 +211,19 @@ export default function App() {
  }, []);
 
  useEffect(() => {
- window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
- document.documentElement.scrollTop = 0;
- document.body.scrollTop = 0;
+   const scrollToTop = () => {
+     window.scrollTo(0, 0);
+     document.documentElement.scrollTop = 0;
+     document.body.scrollTop = 0;
+     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+   };
+   // Immediate scroll for browsers that handle it before paint
+   scrollToTop();
+   // After exit animation completes (~280ms) and new content mounts
+   const t1 = setTimeout(scrollToTop, 350);
+   // After full enter animation completes (~560ms) for safety
+   const t2 = setTimeout(scrollToTop, 600);
+   return () => { clearTimeout(t1); clearTimeout(t2); };
  }, [currentPage]);
 
  useEffect(() => {
