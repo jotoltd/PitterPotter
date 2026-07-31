@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Page, BookingInquiry } from '../types';
 import Calendar from './Calendar';
-import { format, getDay } from 'date-fns';
+import { format, getDay, startOfDay } from 'date-fns';
 import { Clock, Calendar as CalendarIcon, ArrowRight, Users, MapPin, Gift, Heart, Briefcase, Copy, Download, Share2 } from 'lucide-react';
 import { useToast } from './ToastContext';
 import { getRemainingCapacity, createPublicBooking, getBusyDates } from '../lib/bookings';
@@ -560,7 +560,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
               month={calendarMonth}
               onMonthChange={setCalendarMonth}
               disabled={[...busyDates, ...closedDatesAsDate]}
-              minDate={new Date()}
+              minDate={startOfDay(new Date())}
               dayOfWeekDisabled={[1]}
               schoolHolidayDates={closures.schoolHolidays}
               marks={busyDates}
