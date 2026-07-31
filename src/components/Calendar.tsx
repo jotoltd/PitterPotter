@@ -124,7 +124,7 @@ export default function Calendar({
                 ${disabledDay && inMonth && !selectedDay ? 'text-stone-400' : ''}
                 ${!disabledDay && inMonth && !selectedDay ? 'text-[#1B2D3C]' : ''}
               `}>
-                {format(day, 'do')}
+                {format(day, 'd')}
               </span>
               {isClosedDay && inMonth && (
                 <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-stone-400">Closed</span>
