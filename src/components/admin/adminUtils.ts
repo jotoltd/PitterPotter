@@ -7,6 +7,7 @@ export const SESSION_LABELS: Record<string, string> = {
   'baby-shower-hen': 'Baby Shower / Hen',
   'clay-imprints': 'Baby Prints',
   'corporate': 'Corporate',
+  'exclusive-hire': 'Exclusive Hire',
 };
 
 export const SESSION_BADGE: Record<string, string> = {
@@ -15,6 +16,7 @@ export const SESSION_BADGE: Record<string, string> = {
   'baby-shower-hen': 'bg-purple-50 text-purple-700',
   'clay-imprints': 'bg-orange-50 text-orange-700',
   'corporate': 'bg-purple-50 text-purple-700',
+  'exclusive-hire': 'bg-indigo-50 text-indigo-700',
 };
 
 export const ROLE_LABEL: Record<Staff['role'], string> = {

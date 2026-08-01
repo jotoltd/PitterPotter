@@ -1893,6 +1893,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 >
                   <Plus className="w-4 h-4" /> <span className="hidden sm:inline">New Baby Print</span><span className="sm:hidden">Baby</span>
                 </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('dashboard');
+                    setNewBooking(prev => ({ ...prev, sessionType: 'exclusive-hire' as any, time: '' }));
+                    setLockedSessionType(null);
+                    setShowAddModal(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
+                >
+                  <Clock className="w-4 h-4" /> <span className="hidden sm:inline">Exclusive Hire</span><span className="sm:hidden">Hire</span>
+                </button>
               </>
             )}
             <button
@@ -2709,23 +2720,36 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     <option value="baby-shower-hen">Baby Shower / Hen Party</option>
                     <option value="corporate">Corporate Event</option>
                     <option value="clay-imprints">Baby Prints</option>
+                    <option value="exclusive-hire">Exclusive Hire (Private / Evening)</option>
                   </select>
                 </div>
               )}
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Time *</label>
-                <select
-                  value={newBooking.time}
-                  onChange={(e) => setNewBooking({ ...newBooking, time: e.target.value })}
-                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
-                >
-                  {(() => {
-                    const sType = newBooking.sessionType || 'painting';
-                    const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : 'painting';
-                    const dt: DayType = newBooking.date ? ((d => d === 0 || d === 6)(getDay(parseISO(newBooking.date))) ? 'weekend' : 'weekday') : 'weekday';
-                    return getSlots(slotKey, newBooking.studio || 'Putney', dt).map(s => <option key={s} value={s}>{s}</option>);
-                  })()}
-                </select>
+                {newBooking.sessionType === 'exclusive-hire' ? (
+                  <input
+                    type="time"
+                    value={newBooking.time || ''}
+                    onChange={(e) => setNewBooking({ ...newBooking, time: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  />
+                ) : (
+                  <select
+                    value={newBooking.time}
+                    onChange={(e) => setNewBooking({ ...newBooking, time: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  >
+                    {(() => {
+                      const sType = newBooking.sessionType || 'painting';
+                      const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : 'painting';
+                      const dt: DayType = newBooking.date ? ((d => d === 0 || d === 6)(getDay(parseISO(newBooking.date))) ? 'weekend' : 'weekday') : 'weekday';
+                      return getSlots(slotKey, newBooking.studio || 'Putney', dt).map(s => <option key={s} value={s}>{s}</option>);
+                    })()}
+                  </select>
+                )}
+                {newBooking.sessionType === 'exclusive-hire' && (
+                  <p className="text-[10px] text-[#1B2D3C]/50 mt-1">Choose any time for private/evening sessions.</p>
+                )}
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Name *</label>
@@ -3042,21 +3066,30 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Time</label>
-                <select
-                  value={editingBooking.time}
-                  onChange={(e) => setEditingBooking({ ...editingBooking, time: e.target.value })}
-                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
-                >
-                  {(() => {
-                    const sType = editingBooking.sessionType || 'painting';
-                    const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : 'painting';
-                    const dt: DayType = editingBooking.date ? ((d => d === 0 || d === 6)(getDay(parseISO(editingBooking.date))) ? 'weekend' : 'weekday') : 'weekday';
-                    const slots = getSlots(slotKey, editingBooking.studio || 'Putney', dt);
-                    const existing = editingBooking.time;
-                    const allSlots = existing && !slots.includes(existing) ? [existing, ...slots] : slots;
-                    return allSlots.map(s => <option key={s} value={s}>{s}</option>);
-                  })()}
-                </select>
+                {editingBooking.sessionType === 'exclusive-hire' ? (
+                  <input
+                    type="time"
+                    value={editingBooking.time || ''}
+                    onChange={(e) => setEditingBooking({ ...editingBooking, time: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  />
+                ) : (
+                  <select
+                    value={editingBooking.time}
+                    onChange={(e) => setEditingBooking({ ...editingBooking, time: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  >
+                    {(() => {
+                      const sType = editingBooking.sessionType || 'painting';
+                      const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : 'painting';
+                      const dt: DayType = editingBooking.date ? ((d => d === 0 || d === 6)(getDay(parseISO(editingBooking.date))) ? 'weekend' : 'weekday') : 'weekday';
+                      const slots = getSlots(slotKey, editingBooking.studio || 'Putney', dt);
+                      const existing = editingBooking.time;
+                      const allSlots = existing && !slots.includes(existing) ? [existing, ...slots] : slots;
+                      return allSlots.map(s => <option key={s} value={s}>{s}</option>);
+                    })()}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Seats</label>
