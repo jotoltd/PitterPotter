@@ -1,6 +1,7 @@
 import { createClient } from 'supabase';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
+import { computeCapacity, StudioName } from '../_shared/capacity.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -124,71 +125,24 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Reject same-day bookings less than 1 hour before the slot
-      const slotTime = newTime.split('-')[0].trim();
-      const [slotHour, slotMin] = slotTime.split(':').map(Number);
-      const slotDateTime = new Date(newDate + 'T00:00:00');
-      slotDateTime.setHours(slotHour || 0, slotMin || 0, 0, 0);
-      const oneHourAhead = new Date(Date.now() + 60 * 60 * 1000);
-      if (slotDateTime < oneHourAhead) {
-        return new Response(JSON.stringify({ error: 'Bookings must be made at least 1 hour before the session start time. Please choose a later time.' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      // Check capacity at new slot (query existing bookings, excluding this booking's own seats)
-      const { data: existingBookings } = await supabase
-        .from('bookings')
-        .select('painters_count, session_type, booking_id')
-        .eq('studio', booking.studio)
-        .eq('date', newDate)
-        .eq('time', newTime)
-        .in('status', ['pending', 'confirmed']);
-
-      const PARTY_SESSION_TYPES = ['birthday-party', 'baby-shower-hen', 'corporate'];
-      const rows = existingBookings || [];
-      const incomingIsParty = PARTY_SESSION_TYPES.includes(booking.session_type);
-      const hasPartyBooking = rows.some((r: { session_type?: string; booking_id?: string }) =>
-        PARTY_SESSION_TYPES.includes(r.session_type ?? '') && r.booking_id !== booking.booking_id
-      );
-      const hasOpenBooking = rows.some((r: { session_type?: string; booking_id?: string }) =>
-        !PARTY_SESSION_TYPES.includes(r.session_type ?? '') && r.booking_id !== booking.booking_id
+      // Check capacity at new slot (independent front/back pools, excluding this booking's own seats)
+      const capacity = await computeCapacity(
+        supabase,
+        booking.studio as StudioName,
+        newDate,
+        newTime,
+        booking.session_type,
+        booking.booking_id,
       );
 
-      if (incomingIsParty && hasOpenBooking) {
-        return new Response(JSON.stringify({ error: 'This time slot has open painting sessions and cannot accommodate a party booking.' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (!incomingIsParty && hasPartyBooking) {
+      if (capacity.conflict === 'party_session_exists') {
         return new Response(JSON.stringify({ error: 'This time slot already has a party booked. Please choose a different time.' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (incomingIsParty && hasPartyBooking) {
-        return new Response(JSON.stringify({ error: 'This time slot already has a party booked. Please choose a different time.' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      const bookedByOthers = rows
-        .filter((r: { booking_id?: string }) => r.booking_id !== booking.booking_id)
-        .reduce((sum: number, r: { painters_count?: number }) => sum + (r.painters_count || 1), 0);
-
-      const DEFAULT_OPEN_CAPACITY: Record<string, number> = { Putney: 32, Wimbledon: 65 };
-      const DEFAULT_PARTY_CAPACITY: Record<string, number> = { Putney: 20, Wimbledon: 40 };
-      const isPartySlot = incomingIsParty || hasPartyBooking;
-      const max = isPartySlot
-        ? DEFAULT_PARTY_CAPACITY[booking.studio] ?? 20
-        : DEFAULT_OPEN_CAPACITY[booking.studio] ?? 32;
-
-      const remaining = max - bookedByOthers;
-      if (remaining < booking.painters_count) {
-        return new Response(JSON.stringify({ error: `Not enough capacity at the selected time. Only ${remaining} spots remaining.` }), {
+      if (capacity.remaining < booking.painters_count) {
+        return new Response(JSON.stringify({ error: `Not enough capacity at the selected time. Only ${Math.max(0, capacity.remaining)} spots remaining.` }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });

@@ -246,7 +246,13 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
       corporate: 'corporate',
     };
 
-    const remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time, sessionTypeMap[partyType]);
+    let remaining: number;
+    try {
+      remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time, sessionTypeMap[partyType]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to check availability. Please try again.');
+      return;
+    }
     if (remaining <= 0) {
       setError('This time slot is already booked for a party. Please choose a different time.');
       return;

@@ -1,6 +1,7 @@
 import { createClient } from 'supabase';
 import { isObject, isNonEmptyString, isInteger } from '../_shared/validate.ts';
 import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
+import { computeCapacity, StudioName } from '../_shared/capacity.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,9 +11,6 @@ const corsHeaders = {
 const VALID_STUDIOS = ['Putney', 'Wimbledon'];
 const VALID_SESSION_TYPES = ['painting', 'birthday-party', 'baby-shower-hen', 'clay-imprints', 'corporate'];
 const VALID_STATUSES = ['pending', 'confirmed', 'cancelled'];
-
-const DEFAULT_MAX_PAINTERS: Record<string, number> = { Putney: 32, Wimbledon: 65 };
-const PARTY_SESSION_TYPES = ['birthday-party', 'baby-shower-hen', 'corporate'];
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -85,46 +83,23 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Invalid status' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Check capacity
-    const { data: existingBookings } = await supabase
-      .from('bookings')
-      .select('painters_count, session_type, booking_id')
-      .eq('studio', booking.studio)
-      .eq('date', booking.date)
-      .eq('time', booking.time)
-      .in('status', ['pending', 'confirmed']);
+    // Check capacity (independent front/back pools; party bookings reduce open capacity to front-tables-only)
+    const capacity = await computeCapacity(
+      supabase,
+      booking.studio as StudioName,
+      booking.date,
+      booking.time,
+      booking.sessionType,
+    );
 
-    const incomingIsParty = PARTY_SESSION_TYPES.includes(booking.sessionType);
-    const rows = existingBookings || [];
-    const hasParty = rows.some(r => PARTY_SESSION_TYPES.includes(r.session_type));
-    const hasOpen = rows.some(r => !PARTY_SESSION_TYPES.includes(r.session_type));
-
-    if (incomingIsParty && hasOpen) {
-      return new Response(JSON.stringify({ error: 'This time slot already has open painting sessions booked. Party bookings cannot be mixed with open sessions.' }), {
-        status: 409,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-    if (!incomingIsParty && hasParty) {
+    if (capacity.conflict === 'party_session_exists') {
       return new Response(JSON.stringify({ error: 'This time slot already has a party booked. Please choose a different time.' }), {
         status: 409,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    // Check capacity limits
-    const { data: capacityRow } = await supabase
-      .from('capacity')
-      .select('max_painters')
-      .eq('studio', booking.studio)
-      .eq('session_type', incomingIsParty ? 'party' : 'painting')
-      .maybeSingle();
-
-    const maxPainters = capacityRow?.max_painters ?? DEFAULT_MAX_PAINTERS[booking.studio as string] ?? 32;
-    const currentPainters = rows.reduce((sum, r) => sum + (r.painters_count || 0), 0);
-    if (currentPainters + booking.paintersCount > maxPainters) {
-      const remaining = maxPainters - currentPainters;
-      return new Response(JSON.stringify({ error: `Not enough capacity. Only ${remaining} painter spots remaining for this slot.` }), {
+    if (capacity.remaining < booking.paintersCount) {
+      return new Response(JSON.stringify({ error: `Not enough capacity. Only ${Math.max(0, capacity.remaining)} spots remaining for this slot.` }), {
         status: 409,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

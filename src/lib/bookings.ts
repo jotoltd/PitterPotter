@@ -129,7 +129,6 @@ export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date:
     console.error('Failed to get capacity:', data.error);
     return DEFAULT_MAX_PAINTERS[studio];
   }
-  if (data.conflict === 'open_session_exists') throw new Error('This time slot already has open painting sessions booked. Party bookings cannot be mixed with open sessions.');
   if (data.conflict === 'party_session_exists') throw new Error('This time slot already has a party booked. Please choose a different time.');
   return data.remaining ?? DEFAULT_MAX_PAINTERS[studio];
 }

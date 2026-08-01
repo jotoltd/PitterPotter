@@ -31,6 +31,17 @@ interface AdminDashboardProps {
 const SESSION_LABELS = SESSION_LABELS_UTIL;
 const SESSION_BADGE = SESSION_BADGE_UTIL;
 
+const CAPACITY_LABEL: Record<string, string> = {
+  open: 'Painting — Full Studio',
+  open_restricted: 'Painting — Front Tables Only',
+  party: 'Party (Back Tables)',
+};
+const CAPACITY_HINT: Record<string, string> = {
+  open: 'Used when no party is booked in the slot (front + back tables).',
+  open_restricted: 'Used when a party IS booked in the slot (front tables only; back reserved for the party).',
+  party: 'Maximum guests for a party booking (back tables).',
+};
+
 interface SortHeaderProps {
   field: 'date' | 'name' | 'studio' | 'status' | 'added';
   label: string;
@@ -568,7 +579,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         console.error('Failed to load capacity:', data.error);
         return;
       }
-      setCapacityRows(data.capacity || []);
+      const order: Record<string, number> = { open: 0, open_restricted: 1, party: 2 };
+      const sorted = [...(data.capacity || [])].sort((a, b) => {
+        if (a.studio !== b.studio) return a.studio.localeCompare(b.studio);
+        return (order[a.session_type] ?? 99) - (order[b.session_type] ?? 99);
+      });
+      setCapacityRows(sorted);
     } catch (err) {
       console.error('Failed to load capacity:', err);
     }
@@ -3580,7 +3596,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     </div>
                     <div className="flex-1">
                       <p className="text-[10px] font-bold uppercase text-[#1B2D3C]/50">Session Type</p>
-                      <p className="text-sm font-bold text-[#1B2D3C]">{row.session_type}</p>
+                      <p className="text-sm font-bold text-[#1B2D3C]">{CAPACITY_LABEL[row.session_type] ?? row.session_type}</p>
+                      <p className="text-[10px] text-[#1B2D3C]/50 mt-0.5">{CAPACITY_HINT[row.session_type] ?? ''}</p>
                     </div>
                     <div className="w-28">
                       <p className="text-[10px] font-bold uppercase text-[#1B2D3C]/50">Max Seats</p>
