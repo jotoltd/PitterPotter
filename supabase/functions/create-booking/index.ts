@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     if (!isNonEmptyString(booking.name) || booking.name.length > 200) {
       return new Response(JSON.stringify({ error: 'Invalid name' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    if (!isNonEmptyString(booking.email) || booking.email.length > 320 || !booking.email.includes('@')) {
+    if (booking.email && (typeof booking.email !== 'string' || booking.email.length > 320 || !booking.email.includes('@'))) {
       return new Response(JSON.stringify({ error: 'Invalid email' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     if (!isNonEmptyString(booking.phone) || booking.phone.length > 30) {
