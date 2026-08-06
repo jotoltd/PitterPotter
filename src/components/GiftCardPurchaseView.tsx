@@ -177,6 +177,20 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
             <p className="text-sm font-bold text-[#1B2D3C]">£{success.amount.toFixed(2)}</p>
             <p className="text-xs text-[#1B2D3C]/60"><EditableText contentKey="buygiftcard_success_validity" page="buy-gift-card" defaultValue="Valid for 12 months from purchase" adminMode={adminMode} className="text-xs text-[#1B2D3C]/60" /></p>
           </div>
+
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-1.5">
+            <div className="flex items-center justify-center gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-600" />
+              <p className="text-sm font-bold text-emerald-800">Gift card emailed!</p>
+            </div>
+            <p className="text-xs text-emerald-700 font-medium">
+              A PDF voucher has been sent to <strong>{recipientName}</strong> at {recipientEmail}
+            </p>
+            <p className="text-xs text-emerald-700 font-medium">
+              A confirmation has also been sent to you at {senderEmail}
+            </p>
+          </div>
+
           <p className="text-xs text-[#1B2D3C]/70 font-medium">
             <EditableText contentKey="buygiftcard_success_for" page="buy-gift-card" defaultValue={`For: ${recipientName} from ${senderName}`} adminMode={adminMode} className="text-xs text-[#1B2D3C]/70" />
           </p>
