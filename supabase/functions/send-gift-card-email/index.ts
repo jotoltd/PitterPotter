@@ -399,7 +399,13 @@ Deno.serve(async (req) => {
 
     // Generate PDF voucher
     const pdfBytes = await generateVoucherPDF(giftCard);
-    const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBytes)));
+    const pdfUint8 = new Uint8Array(pdfBytes);
+    let binary = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < pdfUint8.length; i += chunkSize) {
+      binary += String.fromCharCode(...pdfUint8.subarray(i, i + chunkSize));
+    }
+    const pdfBase64 = btoa(binary);
 
     let recipientSent = false;
     let senderSent = false;
