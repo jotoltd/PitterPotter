@@ -114,7 +114,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [pageSettings, setPageSettings] = useState<{ page_key: string; enabled: boolean }[]>([]);
   const [pageSettingsLoading, setPageSettingsLoading] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled'>('all');
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
   const [bookingTypeTab, setBookingTypeTab] = useState<'all' | 'painting' | 'baby-prints' | 'party'>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -1090,7 +1090,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
-  const updateStatus = async (id: string, status: 'confirmed' | 'pending' | 'cancelled') => {
+  const updateStatus = async (id: string, status: 'confirmed' | 'pending' | 'seated' | 'completed' | 'cancelled') => {
     setConfirmingIds(prev => new Set(prev).add(id));
     try {
       if (status === 'confirmed') {
@@ -1106,7 +1106,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       }
       await updateBookingStatus(id, status, staff);
       setInquiries(prev => prev.map((i) => (i.id === id ? { ...i, status } : i)));
-      showToast(status === 'confirmed' ? 'Booking confirmed' : status === 'cancelled' ? 'Booking cancelled' : 'Booking marked as awaiting', 'success');
+      showToast(status === 'confirmed' ? 'Booking confirmed' : status === 'cancelled' ? 'Booking cancelled' : status === 'seated' ? 'Marked as seated' : status === 'completed' ? 'Marked as complete' : 'Booking marked as awaiting', 'success');
     } catch {
       showToast('Failed to update status', 'error');
     } finally {
@@ -2057,6 +2057,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               setLockedSessionType(opts?.sessionType ?? null);
               setShowAddModal(true);
             }}
+            onUpdateStatus={(id, status) => updateStatus(id, status)}
+            onEditBooking={(booking) => handleEditBooking(booking)}
+            onAddWalkIn={() => setShowGhostModal(true)}
+            canUpdateStatus={canUpdateStatus}
+            canAddWalkIn={canAddWalkIn}
           />
           </>)}
 
@@ -2222,7 +2227,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           </div>
           {/* Status filter */}
           <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
-            {([['all','All'],['pending','Awaiting'],['confirmed','Confirmed'],['cancelled','Cancelled']] as const).map(([val, label]) => (
+            {([['all','All'],['pending','Awaiting'],['confirmed','Confirmed'],['seated','Seated'],['completed','Complete'],['cancelled','Cancelled']] as const).map(([val, label]) => (
               <button key={val} onClick={() => setFilter(val as any)}
                 className={`px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
                   filter === val ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
@@ -2371,10 +2376,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-full ${
-                          inq.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' : inq.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'
+                          inq.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' : inq.status === 'cancelled' ? 'bg-red-100 text-red-700' : inq.status === 'seated' ? 'bg-amber-100 text-amber-800' : inq.status === 'completed' ? 'bg-teal-100 text-teal-800' : 'bg-amber-100 text-amber-800'
                         }`}>
-                          {inq.status === 'confirmed' ? <CheckCircle className="w-3 h-3" /> : inq.status === 'cancelled' ? <XCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                          {inq.status === 'confirmed' ? 'Confirmed' : inq.status === 'cancelled' ? 'Cancelled' : 'Awaiting'}
+                          {inq.status === 'confirmed' ? <CheckCircle className="w-3 h-3" /> : inq.status === 'cancelled' ? <XCircle className="w-3 h-3" /> : inq.status === 'seated' ? <Users className="w-3 h-3" /> : inq.status === 'completed' ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                          {inq.status === 'confirmed' ? 'Confirmed' : inq.status === 'cancelled' ? 'Cancelled' : inq.status === 'seated' ? 'Seated' : inq.status === 'completed' ? 'Complete' : 'Awaiting'}
                         </span>
                         <button onClick={() => setDrawerBooking(inq)} className="text-[#1B2D3C]/30 hover:text-[#1B2D3C] text-base font-black cursor-pointer transition-colors">⋯</button>
                       </div>
@@ -2481,10 +2486,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           <span className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-full ${
                             inq.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800'
                               : inq.status === 'cancelled' ? 'bg-red-100 text-red-700'
+                              : inq.status === 'seated' ? 'bg-amber-100 text-amber-800'
+                              : inq.status === 'completed' ? 'bg-teal-100 text-teal-800'
                               : 'bg-amber-100 text-amber-800'
                           }`}>
-                            {inq.status === 'confirmed' ? <CheckCircle className="w-3 h-3" /> : inq.status === 'cancelled' ? <XCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                            {inq.status === 'confirmed' ? 'Confirmed' : inq.status === 'cancelled' ? 'Cancelled' : 'Awaiting'}
+                            {inq.status === 'confirmed' ? <CheckCircle className="w-3 h-3" /> : inq.status === 'cancelled' ? <XCircle className="w-3 h-3" /> : inq.status === 'seated' ? <Users className="w-3 h-3" /> : inq.status === 'completed' ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                            {inq.status === 'confirmed' ? 'Confirmed' : inq.status === 'cancelled' ? 'Cancelled' : inq.status === 'seated' ? 'Seated' : inq.status === 'completed' ? 'Complete' : 'Awaiting'}
                           </span>
                         </td>
                         {tablePlanEnabled && (

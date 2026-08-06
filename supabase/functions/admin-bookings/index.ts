@@ -202,7 +202,7 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (!isNonEmptyString(id) || !isOneOf(status, ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'] as const)) {
+      if (!isNonEmptyString(id) || !isOneOf(status, ['pending', 'confirmed', 'seated', 'completed', 'cancelled', 'no_show'] as const)) {
         return new Response(JSON.stringify({ error: 'Invalid booking id or status' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
