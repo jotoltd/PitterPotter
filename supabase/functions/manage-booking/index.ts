@@ -185,6 +185,52 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'changeGuests') {
+      const { newGuests } = body;
+      const guestCount = Number(newGuests);
+      if (!Number.isInteger(guestCount) || guestCount < 1 || guestCount > 50) {
+        return new Response(JSON.stringify({ error: 'Number of guests must be between 1 and 50' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Check capacity at current slot (excluding this booking's own seats)
+      const capacity = await computeCapacity(
+        supabase,
+        booking.studio as StudioName,
+        booking.date,
+        booking.time,
+        booking.session_type,
+        booking.booking_id,
+      );
+
+      if (capacity.remaining + booking.painters_count < guestCount) {
+        const available = Math.max(0, capacity.remaining + booking.painters_count);
+        return new Response(JSON.stringify({ error: `Not enough capacity for ${guestCount} guests. Maximum available: ${available}.` }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({ painters_count: guestCount })
+        .eq('booking_id', booking.booking_id);
+
+      if (updateError) {
+        console.error('Change guests error:', updateError);
+        return new Response(JSON.stringify({ error: 'Failed to update number of guests' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, message: 'Number of guests updated successfully' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     return new Response(JSON.stringify({ error: 'Unknown action' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

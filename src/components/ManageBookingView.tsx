@@ -38,9 +38,10 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [mode, setMode] = useState<'view' | 'reschedule' | 'cancel'>('view');
+  const [mode, setMode] = useState<'view' | 'reschedule' | 'cancel' | 'guests'>('view');
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
+  const [newGuests, setNewGuests] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [busyDates, setBusyDates] = useState<Date[]>([]);
@@ -91,6 +92,7 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
       setBooking(data.booking);
       setNewDate(data.booking.date);
       setNewTime(data.booking.time);
+      setNewGuests(data.booking.paintersCount);
       setSelectedDate(new Date(data.booking.date + 'T00:00:00'));
       setLoading(false);
     } catch {
@@ -124,6 +126,36 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
       setSubmitting(false);
     } catch {
       setError('Failed to reschedule booking');
+      setSubmitting(false);
+    }
+  };
+
+  const handleChangeGuests = async () => {
+    if (!booking) return;
+    if (newGuests === booking.paintersCount) { setMode('view'); return; }
+    setSubmitting(true);
+    setError('');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-booking`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ action: 'changeGuests', token, newGuests }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        setError(data.error || 'Failed to update guests');
+        setSubmitting(false);
+        return;
+      }
+      setBooking(prev => prev ? { ...prev, paintersCount: newGuests } : prev);
+      setSuccessMsg('Number of guests updated successfully.');
+      setMode('view');
+      setSubmitting(false);
+    } catch {
+      setError('Failed to update number of guests');
       setSubmitting(false);
     }
   };
@@ -325,6 +357,48 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
           </div>
         )}
 
+        {/* Change guests form */}
+        {mode === 'guests' && !isCancelled && (
+          <div className="bg-white rounded-2xl border border-[#1B2D3C]/20 p-6 mb-4">
+            <h2 className="font-heading text-xl font-black text-[#1B2D3C] mb-4">Change Number of Guests</h2>
+            <p className="text-sm text-[#1B2D3C]/70 mb-4">
+              Currently booked: <strong>{booking.paintersCount}</strong> {booking.paintersCount === 1 ? 'guest' : 'guests'}.
+              Select the new number below.
+            </p>
+            <div className="flex items-center gap-3 mb-4">
+              <button
+                onClick={() => setNewGuests(g => Math.max(1, g - 1))}
+                className="w-12 h-12 flex items-center justify-center bg-[#DBE7E4] text-[#1B2D3C] text-xl font-black rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
+              >−</button>
+              <span className="text-2xl font-black text-[#1B2D3C] w-16 text-center">{newGuests}</span>
+              <button
+                onClick={() => setNewGuests(g => Math.min(50, g + 1))}
+                className="w-12 h-12 flex items-center justify-center bg-[#DBE7E4] text-[#1B2D3C] text-xl font-black rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
+              >+</button>
+              <div className="flex-1" />
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-[#1B2D3C]/50" />
+                <span className="text-xs font-bold text-[#1B2D3C]/70">Max 50</span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setMode('view'); setNewGuests(booking.paintersCount); setError(''); }}
+                className="flex-1 px-4 py-2.5 bg-white text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 rounded-lg hover:bg-[#D6E2E9] transition-all cursor-pointer"
+              >
+                Back
+              </button>
+              <button
+                onClick={handleChangeGuests}
+                disabled={submitting || newGuests === booking.paintersCount || newGuests < 1}
+                className="flex-1 px-4 py-2.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-wider rounded-lg hover:bg-[#486581] transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Cancel confirmation */}
         {mode === 'cancel' && !isCancelled && (
           <div className="bg-white rounded-2xl border border-red-200 p-6 mb-4">
@@ -363,6 +437,12 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
               className="w-full px-6 py-3.5 bg-[#1B2D3C] text-white text-sm font-bold rounded-xl hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <CalendarIcon className="w-4 h-4" /> Reschedule Booking
+            </button>
+            <button
+              onClick={() => { setMode('guests'); setError(''); setSuccessMsg(''); setNewGuests(booking.paintersCount); }}
+              className="w-full px-6 py-3.5 bg-[#1B2D3C] text-white text-sm font-bold rounded-xl hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <Users className="w-4 h-4" /> Change Number of Guests
             </button>
             <button
               onClick={() => { setMode('cancel'); setError(''); setSuccessMsg(''); }}
