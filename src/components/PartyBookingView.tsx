@@ -709,7 +709,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full px-3 py-2.5 border border-[#1B2D3C]/20 text-sm text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
-                placeholder="07xxx xxxxxx"
+                placeholder="07xxx xxxxxx or +49xxx"
               />
             </div>
             {partyType === 'birthday' && (

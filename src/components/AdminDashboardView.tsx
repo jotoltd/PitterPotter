@@ -1263,9 +1263,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
     // Validate phone format if provided
     if (newBooking.phone) {
-      const phoneRegex = /^(\+44|0)[1-9]\d{8,9}$/;
-      if (!phoneRegex.test(newBooking.phone.replace(/\s/g, ''))) {
-        showToast('Please enter a valid UK phone number', 'error');
+      const phoneRegex = /^\+?\d[\d\s\-()]{6,29}$/;
+      if (!phoneRegex.test(newBooking.phone.trim())) {
+        showToast('Please enter a valid phone number (e.g. 07xxx or +49xxx)', 'error');
         return;
       }
     }

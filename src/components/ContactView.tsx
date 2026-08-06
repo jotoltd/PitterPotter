@@ -375,7 +375,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false, se
                   <div className="space-y-2">
                     <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Phone Number *</label>
                     <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
-                      placeholder="07xxx xxx xxx"
+                      placeholder="07xxx xxx xxx or +49xxx"
                       className="w-full py-3 px-4 border border-[#1B2D3C]/20 rounded-lg bg-white text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/60" />
                   </div>
                   <div className="space-y-2">
