@@ -44,13 +44,29 @@ Deno.serve(async (req) => {
       const type = metadata.type;
 
       if (type === 'party_deposit') {
-        // Update party booking payment status
+        // Update party booking payment status and deposit amount
         const bookingId = metadata.bookingId;
+        const depositAmount = Number(metadata.amount) || 50;
         if (bookingId) {
           const { error: updateError } = await supabase.from('bookings').update({
             payment_status: 'paid',
+            deposit_amount: depositAmount,
           }).eq('booking_id', bookingId);
           if (updateError) throw updateError;
+
+          // Now that the deposit is paid, send the confirmation email
+          try {
+            const { data: booking } = await supabase.from('bookings').select('management_token').eq('booking_id', bookingId).single();
+            if (booking?.management_token) {
+              await fetch(`${supabaseUrl}/functions/v1/send-booking-confirmation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookingId, managementToken: booking.management_token }),
+              });
+            }
+          } catch (emailErr) {
+            console.error('Failed to send confirmation email after deposit:', emailErr);
+          }
         }
       } else if (type === 'party_final_balance') {
         // Final balance paid — update booking with final seats and mark as paid

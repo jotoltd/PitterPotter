@@ -151,7 +151,10 @@ Deno.serve(async (req) => {
       await logAudit(supabase, staff, 'create', 'booking', booking.id as string, { studio: booking.studio, date: booking.date, time: booking.time });
 
       // Send confirmation email if the booking has an email address
-      if (booking.email) {
+      // For party bookings, only send if the deposit has been paid (not payment-link)
+      const isPartyBooking = ['birthday-party', 'baby-shower-hen', 'corporate'].includes(booking.sessionType as string);
+      const depositPaid = Number(booking.depositAmount) > 0;
+      if (booking.email && (!isPartyBooking || depositPaid)) {
         try {
           await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-booking-confirmation`, {
             method: 'POST',
@@ -222,18 +225,24 @@ Deno.serve(async (req) => {
       await logAudit(supabase, staff, 'update_status', 'booking', id, { status });
 
       if (status === 'confirmed') {
-        try {
-          const projectUrl = Deno.env.get('SUPABASE_URL')!;
-          await fetch(`${projectUrl}/functions/v1/send-booking-confirmation`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': req.headers.get('Authorization') || '',
-            },
-            body: JSON.stringify({ username, sessionToken, bookingId: id }),
-          });
-        } catch (err) {
-          console.error('Failed to send confirmation email:', err);
+        // For party bookings, only send confirmation if deposit has been paid
+        const { data: bookingRow } = await supabase.from('bookings').select('session_type, deposit_amount').eq('booking_id', id).single();
+        const isPartyBooking = bookingRow && ['birthday-party', 'baby-shower-hen', 'corporate'].includes(bookingRow.session_type);
+        const depositPaid = bookingRow && Number(bookingRow.deposit_amount) > 0;
+        if (!isPartyBooking || depositPaid) {
+          try {
+            const projectUrl = Deno.env.get('SUPABASE_URL')!;
+            await fetch(`${projectUrl}/functions/v1/send-booking-confirmation`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': req.headers.get('Authorization') || '',
+              },
+              body: JSON.stringify({ username, sessionToken, bookingId: id }),
+            });
+          } catch (err) {
+            console.error('Failed to send confirmation email:', err);
+          }
         }
       }
 

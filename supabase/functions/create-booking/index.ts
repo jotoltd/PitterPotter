@@ -138,15 +138,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Send confirmation email (non-blocking)
-    try {
-      await fetch(`${supabaseUrl}/functions/v1/send-booking-confirmation`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookingId: booking.id, managementToken }),
-      });
-    } catch (err) {
-      console.error('Failed to send confirmation email:', err);
+    // Send confirmation email for non-party bookings only.
+    // Party bookings get their confirmation email AFTER the deposit is paid
+    // (triggered by stripe-party-webhook) to ensure we don't confirm unpaid parties.
+    const isPartyBooking = ['birthday-party', 'baby-shower-hen', 'corporate'].includes(booking.sessionType);
+    if (!isPartyBooking) {
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/send-booking-confirmation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookingId: booking.id, managementToken }),
+        });
+      } catch (err) {
+        console.error('Failed to send confirmation email:', err);
+      }
     }
 
     return new Response(JSON.stringify({ success: true, managementToken }), {
