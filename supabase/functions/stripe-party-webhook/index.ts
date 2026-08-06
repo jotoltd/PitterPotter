@@ -122,7 +122,10 @@ Deno.serve(async (req) => {
             if (giftCard) {
               await fetch(`${supabaseUrl}/functions/v1/send-gift-card-email`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                },
                 body: JSON.stringify({ giftCardId: giftCard.id }),
               });
             }
