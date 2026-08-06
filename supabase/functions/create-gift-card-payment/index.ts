@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { amount, recipientName, recipientEmail, senderName, message } = await req.json();
+    const { amount, recipientName, recipientEmail, senderName, senderEmail, message } = await req.json();
 
     if (!amount || amount <= 0) {
       return new Response(JSON.stringify({ error: 'Invalid amount' }), {
@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
         recipientName: recipientName || '',
         recipientEmail: recipientEmail || '',
         senderName: senderName || '',
+        senderEmail: senderEmail || '',
         message: message || '',
         amount: String(amount),
         type: 'gift_card',

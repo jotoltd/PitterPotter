@@ -107,6 +107,7 @@ Deno.serve(async (req) => {
             recipient_name: metadata.recipientName || '',
             recipient_email: metadata.recipientEmail || '',
             sender_name: metadata.senderName || '',
+            sender_email: metadata.senderEmail || '',
             message: metadata.message || '',
             status: 'active',
             purchase_date: purchaseDate,
@@ -114,6 +115,20 @@ Deno.serve(async (req) => {
             stripe_session_id: paymentIntentId,
           });
           if (insertError) throw insertError;
+
+          // Send gift card emails (recipient gets voucher PDF, sender gets confirmation)
+          try {
+            const { data: giftCard } = await supabase.from('gift_cards').select('id').eq('stripe_session_id', paymentIntentId).single();
+            if (giftCard) {
+              await fetch(`${supabaseUrl}/functions/v1/send-gift-card-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ giftCardId: giftCard.id }),
+              });
+            }
+          } catch (emailErr) {
+            console.error('Failed to send gift card email:', emailErr);
+          }
         }
       }
     }

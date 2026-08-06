@@ -102,6 +102,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
   const [recipientName, setRecipientName] = useState('');
   const [recipientEmail, setRecipientEmail] = useState('');
   const [senderName, setSenderName] = useState('');
+  const [senderEmail, setSenderEmail] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -122,7 +123,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
       setError('Please enter a valid amount');
       return;
     }
-    if (!recipientName || !recipientEmail || !senderName) {
+    if (!recipientName || !recipientEmail || !senderName || !senderEmail) {
       setError('Please fill in all required fields');
       return;
     }
@@ -140,6 +141,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
           recipientName,
           recipientEmail,
           senderName,
+          senderEmail,
           message,
         }),
       });
@@ -287,16 +289,29 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="buygiftcard_sender_name_label" page="buy-gift-card" defaultValue="Your Name" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
-              <input
-                type="text"
-                required
-                value={senderName}
-                onChange={(e) => setSenderName(e.target.value)}
-                className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg"
-                placeholder="Full name"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="buygiftcard_sender_name_label" page="buy-gift-card" defaultValue="Your Name" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
+                <input
+                  type="text"
+                  required
+                  value={senderName}
+                  onChange={(e) => setSenderName(e.target.value)}
+                  className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg"
+                  placeholder="Full name"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="buygiftcard_sender_email_label" page="buy-gift-card" defaultValue="Your Email" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
+                <input
+                  type="email"
+                  required
+                  value={senderEmail}
+                  onChange={(e) => setSenderEmail(e.target.value)}
+                  className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg"
+                  placeholder="email@example.com"
+                />
+              </div>
             </div>
 
             <div className="space-y-1">
@@ -332,7 +347,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
           <div className="space-y-5">
             <div className="bg-[#D6E2E9]/30 p-3 rounded-lg text-xs font-bold text-[#1B2D3C] space-y-1">
               <p><EditableText contentKey="buygiftcard_summary_for" page="buy-gift-card" defaultValue={`£${finalAmount.toFixed(2)} Gift Card for ${recipientName}`} adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></p>
-              <p className="font-normal text-[#1B2D3C]/60"><EditableText contentKey="buygiftcard_summary_from" page="buy-gift-card" defaultValue={`From ${senderName}`} adminMode={adminMode} className="text-xs text-[#1B2D3C]/60" /></p>
+              <p className="font-normal text-[#1B2D3C]/60"><EditableText contentKey="buygiftcard_summary_from" page="buy-gift-card" defaultValue={`From ${senderName} (${senderEmail})`} adminMode={adminMode} className="text-xs text-[#1B2D3C]/60" /></p>
               <button
                 type="button"
                 onClick={() => { setShowPayment(false); setClientSecret(''); }}

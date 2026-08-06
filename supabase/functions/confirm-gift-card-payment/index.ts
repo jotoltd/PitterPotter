@@ -96,6 +96,7 @@ Deno.serve(async (req) => {
       recipient_name: metadata.recipientName || '',
       recipient_email: metadata.recipientEmail || '',
       sender_name: metadata.senderName || '',
+      sender_email: metadata.senderEmail || '',
       message: metadata.message || '',
       status: 'active',
       purchase_date: purchaseDate,
@@ -109,6 +110,17 @@ Deno.serve(async (req) => {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Send gift card emails (recipient gets voucher PDF, sender gets confirmation)
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/send-gift-card-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ giftCardId: giftCard.id }),
+      });
+    } catch (emailErr) {
+      console.error('Failed to send gift card email:', emailErr);
     }
 
     return new Response(JSON.stringify({

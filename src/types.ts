@@ -64,6 +64,7 @@ export interface GiftCard {
   recipientName: string;
   recipientEmail: string;
   senderName: string;
+  senderEmail?: string;
   message?: string;
   purchaseDate: string;
   expiryDate?: string;
@@ -106,6 +107,7 @@ export interface GiftCardApiRow {
   recipient_name?: string;
   recipient_email?: string;
   sender_name?: string;
+  sender_email?: string;
   message?: string;
   purchase_date?: string;
   expiry_date?: string;
