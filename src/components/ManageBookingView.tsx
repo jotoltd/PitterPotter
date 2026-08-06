@@ -23,6 +23,12 @@ interface BookingData {
   sessionType: string;
   status: string;
   notes: string | null;
+  depositAmount?: number | null;
+  finalSeats?: number | null;
+  finalBalance?: number | null;
+  finalPrice?: number | null;
+  estimatedPrice?: number | null;
+  paymentStatus?: string | null;
 }
 
 const SESSION_LABELS: Record<string, string> = {
@@ -229,6 +235,7 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
   if (!booking) return null;
 
   const isCancelled = booking.status === 'cancelled';
+  const isParty = ['birthday-party', 'baby-shower-hen', 'corporate'].includes(booking.sessionType);
 
   return (
     <div className="min-h-screen bg-[#FFF8F0] py-8 px-4">
@@ -305,6 +312,26 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
             <p className="text-[10px] font-bold text-[#1B2D3C]/50 uppercase tracking-wider mb-1">Session Type</p>
             <p className="text-sm font-bold text-[#1B2D3C]">{SESSION_LABELS[booking.sessionType] || booking.sessionType}</p>
           </div>
+
+          {isParty && booking.depositAmount && booking.depositAmount > 0 && (
+            <div className="mt-4 pt-4 border-t border-[#1B2D3C]/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#1B2D3C]/60 uppercase tracking-wider">Deposit Paid</span>
+                <span className="text-sm font-black text-emerald-700">&pound;{booking.depositAmount.toFixed(2)}</span>
+              </div>
+              {booking.finalBalance != null && booking.finalBalance > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#1B2D3C]/60 uppercase tracking-wider">Final Balance Due</span>
+                  <span className="text-sm font-black text-amber-700">&pound;{booking.finalBalance.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-2">
+                <p className="text-xs text-amber-800 font-semibold">
+                  You'll receive an email closer to the date with a link to pay your final balance and confirm your final number of guests.
+                </p>
+              </div>
+            </div>
+          )}
 
         </div>
 
@@ -442,7 +469,7 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
               onClick={() => { setMode('guests'); setError(''); setSuccessMsg(''); setNewGuests(booking.paintersCount); }}
               className="w-full px-6 py-3.5 bg-[#1B2D3C] text-white text-sm font-bold rounded-xl hover:bg-[#486581] transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <Users className="w-4 h-4" /> Change Number of Guests
+              <Users className="w-4 h-4" /> {isParty ? 'Change Number of Guests' : 'Change Number of Seats'}
             </button>
             <button
               onClick={() => { setMode('cancel'); setError(''); setSuccessMsg(''); }}

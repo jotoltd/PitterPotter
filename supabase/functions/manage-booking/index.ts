@@ -21,6 +21,12 @@ interface BookingRow {
   status: string;
   notes: string | null;
   management_token: string | null;
+  deposit_amount: number | null;
+  final_seats: number | null;
+  final_balance: number | null;
+  final_price: number | null;
+  estimated_price: number | null;
+  payment_status: string | null;
 }
 
 Deno.serve(async (req) => {
@@ -99,6 +105,12 @@ Deno.serve(async (req) => {
           sessionType: booking.session_type,
           status: booking.status,
           notes: booking.notes,
+          depositAmount: booking.deposit_amount ? Number(booking.deposit_amount) : null,
+          finalSeats: booking.final_seats ? Number(booking.final_seats) : null,
+          finalBalance: booking.final_balance ? Number(booking.final_balance) : null,
+          finalPrice: booking.final_price ? Number(booking.final_price) : null,
+          estimatedPrice: booking.estimated_price ? Number(booking.estimated_price) : null,
+          paymentStatus: booking.payment_status || null,
         },
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
