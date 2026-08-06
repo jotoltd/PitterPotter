@@ -39,22 +39,30 @@ Deno.serve(async (req) => {
 
     const status = statusMap[eventType] || 'sent';
 
-    const { data: existing } = await supabase
-      .from('email_logs')
-      .select('id')
-      .eq('resend_id', resendId)
-      .maybeSingle();
-
-    if (existing) {
-      await supabase
+    if (resendId) {
+      const { error: upsertError } = await supabase
         .from('email_logs')
-        .update({ status, error, updated_at: new Date().toISOString() })
-        .eq('id', existing.id);
+        .upsert({
+          resend_id: resendId,
+          recipient: to,
+          subject,
+          status,
+          error,
+          email_type: 'general',
+        }, { onConflict: 'resend_id', ignoreDuplicates: false });
+
+      if (upsertError) {
+        console.error('Upsert failed, trying update only:', upsertError);
+        await supabase
+          .from('email_logs')
+          .update({ status, error, updated_at: new Date().toISOString() })
+          .eq('resend_id', resendId);
+      }
     } else {
       await supabase
         .from('email_logs')
         .insert({
-          resend_id: resendId,
+          resend_id: null,
           recipient: to,
           subject,
           status,
