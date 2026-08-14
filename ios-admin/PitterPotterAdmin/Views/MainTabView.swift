@@ -6,23 +6,76 @@ struct MainTabView: View {
 
     var body: some View {
         TabView {
-            BookingsListView()
+            DashboardOverviewView()
                 .tabItem {
-                    Label("Bookings", systemImage: "calendar")
+                    Label("Dashboard", systemImage: "square.grid.2x2")
                 }
                 .environmentObject(bookingsVM)
 
-            SettingsView()
+            BookingsListView()
                 .tabItem {
-                    Label("Settings", systemImage: "gearshape")
+                    Label("Bookings", systemImage: "list.bullet.clipboard")
+                }
+                .badge(bookingsVM.bookings.filter { $0.status == "pending" }.count)
+                .environmentObject(bookingsVM)
+
+            CalendarView()
+                .tabItem {
+                    Label("Calendar", systemImage: "calendar")
                 }
                 .environmentObject(bookingsVM)
+
+            CapacityView()
+                .tabItem {
+                    Label("Capacity", systemImage: "chart.bar.xaxis")
+                }
+                .environmentObject(bookingsVM)
+
+            if authVM.staff?.role == "super_admin" {
+                AnalyticsView()
+                    .tabItem {
+                        Label("Analytics", systemImage: "chart.line.uptrend.xyaxis")
+                    }
+                    .environmentObject(bookingsVM)
+
+                GiftCardView()
+                    .tabItem {
+                        Label("Gift Cards", systemImage: "giftcard")
+                    }
+
+                EmailLogsView()
+                    .tabItem {
+                        Label("Emails", systemImage: "envelope")
+                    }
+
+                AuditLogView()
+                    .tabItem {
+                        Label("Audit", systemImage: "doc.text.magnifyingglass")
+                    }
+
+                AdminSettingsView()
+                    .tabItem {
+                        Label("Settings", systemImage: "gearshape")
+                    }
+                    .environmentObject(bookingsVM)
+            } else {
+                SettingsView()
+                    .tabItem {
+                        Label("Settings", systemImage: "gearshape")
+                    }
+                    .environmentObject(bookingsVM)
+            }
         }
-        .tint(.teal)
+        .tint(PPBrand.charcoal)
         .task {
+            bookingsVM.loadFromCache()
             if let staff = authVM.staff {
                 await bookingsVM.loadBookings(staff: staff)
+                bookingsVM.startRealtime(staff: staff)
             }
+        }
+        .onDisappear {
+            bookingsVM.stopRealtime()
         }
     }
 }

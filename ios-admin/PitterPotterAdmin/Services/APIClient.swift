@@ -3,16 +3,23 @@ import Foundation
 // MARK: - API Configuration
 
 enum APIConfig {
-    // These will be set from the app's settings or hardcoded for now.
-    // You can change these to your Supabase project URL and anon key.
-    static let supabaseURL = ProcessInfo.processInfo.environment["SUPABASE_URL"]
-        ?? "https://your-project.supabase.co"
-    static let supabaseAnonKey = ProcessInfo.processInfo.environment["SUPABASE_ANON_KEY"]
-        ?? "your-anon-key"
+    static let supabaseURL = "https://xjtfjlhykfvkckziyvxk.supabase.co"
+    static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqdGZqbGh5a2Z2a2Nreml5dnhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMzA4NzcsImV4cCI6MjA5NzkwNjg3N30.Spa_MrOdkjuRCZA3FcRD9uI18hPahMWiQjqTvFEXFGw"
 
     static let bookingsEndpoint = "\(supabaseURL)/functions/v1/admin-bookings"
     static let loginEndpoint = "\(supabaseURL)/functions/v1/staff-login"
     static let contentEndpoint = "\(supabaseURL)/functions/v1/admin-content"
+    static let staffManagementEndpoint = "\(supabaseURL)/functions/v1/staff-management"
+    static let partyReminderEndpoint = "\(supabaseURL)/functions/v1/send-party-final-reminder"
+    static let capacityEndpoint = "\(supabaseURL)/functions/v1/get-capacity"
+    static let settingsEndpoint = "\(supabaseURL)/functions/v1/admin-settings"
+    static let giftCardsEndpoint = "\(supabaseURL)/functions/v1/admin-gift-cards"
+    static let partyDepositEndpoint = "\(supabaseURL)/functions/v1/create-party-deposit-payment"
+    static let emailTemplatesEndpoint = "\(supabaseURL)/functions/v1/admin-email-templates"
+    static let dbHealthEndpoint = "\(supabaseURL)/functions/v1/db-health"
+    static let dbBackupEndpoint = "\(supabaseURL)/functions/v1/db-backup"
+    static let sampleDataEndpoint = "\(supabaseURL)/functions/v1/sample-data"
+    static let pageSettingsEndpoint = "\(supabaseURL)/functions/v1/page-settings"
 }
 
 // MARK: - API Client
@@ -137,6 +144,830 @@ actor APIClient {
         }
     }
 
+    // MARK: - Create Booking
+
+    func createBooking(_ booking: Booking, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.bookingsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let bookingDict = try booking.toDictionary()
+        let body: [String: Any] = [
+            "action": "create",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "booking": bookingDict,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        if http.statusCode == 401 {
+            throw APIError.unauthorized
+        }
+        if http.statusCode == 403 {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Not permitted")
+        }
+        guard http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to create booking")
+        }
+    }
+
+    // MARK: - Staff Management
+
+    func loadStaff(staff: Staff) async throws -> [StaffMember] {
+        var request = URLRequest(url: URL(string: APIConfig.staffManagementEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "list",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        if http.statusCode == 401 {
+            throw APIError.unauthorized
+        }
+        guard http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to load staff")
+        }
+        let result = try JSONDecoder().decode(StaffListResponse.self, from: data)
+        return result.staff ?? []
+    }
+
+    func createStaff(_ member: StaffMember, password: String, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.staffManagementEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "create",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "staff": [
+                "name": member.name,
+                "username": member.username,
+                "password": password,
+                "role": member.role,
+                "canUpdateStatus": member.canUpdateStatus,
+                "canEditBookings": member.canEditBookings,
+                "canAddWalkIns": member.canAddWalkIns,
+                "canDeleteBookings": member.canDeleteBookings,
+                "allowedStudios": member.allowedStudios ?? [],
+            ],
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        if http.statusCode == 401 {
+            throw APIError.unauthorized
+        }
+        guard http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to create staff member")
+        }
+    }
+
+    func updateStaff(_ member: StaffMember, password: String?, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.staffManagementEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        var staffDict: [String: Any] = [
+            "id": member.id,
+            "name": member.name,
+            "role": member.role,
+            "canUpdateStatus": member.canUpdateStatus,
+            "canEditBookings": member.canEditBookings,
+            "canAddWalkIns": member.canAddWalkIns,
+            "canDeleteBookings": member.canDeleteBookings,
+            "allowedStudios": member.allowedStudios ?? [],
+        ]
+        if let pw = password, !pw.isEmpty {
+            staffDict["password"] = pw
+        }
+
+        let body: [String: Any] = [
+            "action": "update",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "staff": staffDict,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        if http.statusCode == 401 {
+            throw APIError.unauthorized
+        }
+        guard http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to update staff member")
+        }
+    }
+
+    func deleteStaff(id: String, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.staffManagementEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "delete",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "staff": ["id": id],
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        if http.statusCode == 401 {
+            throw APIError.unauthorized
+        }
+        guard http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to delete staff member")
+        }
+    }
+
+    func deleteBooking(id: String, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.bookingsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "delete",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "id": id,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        if http.statusCode == 401 {
+            throw APIError.unauthorized
+        }
+        if http.statusCode == 403 {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Not permitted")
+        }
+        guard http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to delete booking")
+        }
+    }
+
+    // MARK: - Payment Reminder
+
+    func sendPaymentReminder(bookingId: String, finalSeats: Int, staff: Staff) async throws -> (paymentLinkUrl: String?, finalBalance: Double?) {
+        var request = URLRequest(url: URL(string: APIConfig.partyReminderEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "bookingId": bookingId,
+            "finalSeats": finalSeats,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        if http.statusCode == 401 {
+            throw APIError.unauthorized
+        }
+        guard http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to send payment reminder")
+        }
+        let result = try? JSONDecoder().decode(PaymentReminderResponse.self, from: data)
+        return (result?.paymentLinkUrl, result?.finalBalance)
+    }
+
+    // MARK: - Capacity
+
+    func checkCapacity(studio: String, date: String, time: String, sessionType: String?) async throws -> CapacityResult {
+        var request = URLRequest(url: URL(string: APIConfig.capacityEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        var body: [String: Any] = [
+            "studio": studio,
+            "date": date,
+            "time": time,
+        ]
+        if let st = sessionType { body["sessionType"] = st }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        return try JSONDecoder().decode(CapacityResult.self, from: data)
+    }
+
+    // MARK: - Audit Logs
+
+    func loadAuditLogs(staff: Staff, limit: Int = 100) async throws -> [AuditLog] {
+        var request = URLRequest(url: URL(string: APIConfig.settingsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "getAuditLogs",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "limit": limit,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to load audit logs")
+        }
+        let result = try JSONDecoder().decode(AuditLogResponse.self, from: data)
+        return result.logs ?? []
+    }
+
+    // MARK: - Gift Cards
+
+    func loadGiftCards(staff: Staff) async throws -> [GiftCard] {
+        var request = URLRequest(url: URL(string: APIConfig.giftCardsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "list",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to load gift cards")
+        }
+        let result = try JSONDecoder().decode(GiftCardResponse.self, from: data)
+        return result.giftCards ?? []
+    }
+
+    func updateGiftCardStatus(id: String, status: String, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.giftCardsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "updateStatus",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "id": id,
+            "status": status,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to update gift card")
+        }
+    }
+
+    func deleteGiftCard(id: String, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.giftCardsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "delete",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "id": id,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to delete gift card")
+        }
+    }
+
+    func resendGiftCard(id: String, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.giftCardsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "resend",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "id": id,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to resend email")
+        }
+    }
+
+    // MARK: - Party Deposit Payment
+
+    func createPartyDepositPayment(bookingId: String, depositAmount: Double, staff: Staff) async throws -> String? {
+        var request = URLRequest(url: URL(string: APIConfig.partyDepositEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "bookingId": bookingId,
+            "depositAmount": depositAmount,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to create deposit payment")
+        }
+        let result = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        return result?["url"] as? String
+    }
+
+    // MARK: - Settings (load/update key-value)
+
+    func loadSetting(key: String, staff: Staff) async throws -> String? {
+        var request = URLRequest(url: URL(string: APIConfig.settingsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "load",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "key": key,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        let result = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        return result?["value"] as? String
+    }
+
+    func updateSetting(key: String, value: String, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.settingsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "update",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "key": key,
+            "value": value,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to update setting")
+        }
+    }
+
+    // MARK: - Capacity Table (load/update)
+
+    func loadCapacityTable(staff: Staff) async throws -> [CapacityRow] {
+        var request = URLRequest(url: URL(string: APIConfig.settingsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "loadCapacity",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        let result = try JSONDecoder().decode(CapacityTableResponse.self, from: data)
+        return result.capacity ?? []
+    }
+
+    func updateCapacityRow(studio: String, sessionType: String, maxPainters: Int, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.settingsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "updateCapacity",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "studio": studio,
+            "sessionType": sessionType,
+            "maxPainters": maxPainters,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to update capacity")
+        }
+    }
+
+    // MARK: - Email Logs
+
+    func loadEmailLogs(staff: Staff, limit: Int = 100) async throws -> [EmailLog] {
+        var request = URLRequest(url: URL(string: APIConfig.settingsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "getEmailLogs",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "limit": limit,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to load email logs")
+        }
+        let result = try JSONDecoder().decode(EmailLogResponse.self, from: data)
+        return result.logs ?? []
+    }
+
+    // MARK: - Email Templates
+
+    func loadEmailTemplates(staff: Staff) async throws -> [EmailTemplate] {
+        var request = URLRequest(url: URL(string: APIConfig.emailTemplatesEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "load",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        let result = try JSONDecoder().decode(EmailTemplateResponse.self, from: data)
+        return result.templates ?? []
+    }
+
+    func updateEmailTemplate(templateKey: String, subject: String, htmlContent: String, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.emailTemplatesEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "update",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "templateKey": templateKey,
+            "subject": subject,
+            "htmlContent": htmlContent,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to save template")
+        }
+    }
+
+    // MARK: - Page Settings
+
+    func loadPageSettings(staff: Staff) async throws -> [PageSetting] {
+        var request = URLRequest(url: URL(string: APIConfig.pageSettingsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "load",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        let result = try JSONDecoder().decode(PageSettingsResponse.self, from: data)
+        return result.pages ?? []
+    }
+
+    func updatePageSetting(pageKey: String, enabled: Bool, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.pageSettingsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "update",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "pageKey": pageKey,
+            "enabled": enabled,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to update page setting")
+        }
+    }
+
+    // MARK: - DB Health
+
+    func loadDbHealth(staff: Staff) async throws -> DbHealth {
+        var request = URLRequest(url: URL(string: APIConfig.dbHealthEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        return try JSONDecoder().decode(DbHealth.self, from: data)
+    }
+
+    // MARK: - DB Backup
+
+    func loadDbBackups(staff: Staff) async throws -> [DbBackup] {
+        var request = URLRequest(url: URL(string: APIConfig.dbBackupEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "list",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        let result = try JSONDecoder().decode(DbBackupResponse.self, from: data)
+        return result.backups ?? []
+    }
+
+    func createDbBackup(tables: [String], staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.dbBackupEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "create",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "tables": tables,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to create backup")
+        }
+    }
+
+    func deleteDbBackup(id: String, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.dbBackupEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "delete",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "id": id,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to delete backup")
+        }
+    }
+
+    // MARK: - Sample Data
+
+    func loadSampleDataStatus(staff: Staff) async throws -> SampleDataStatus {
+        var request = URLRequest(url: URL(string: APIConfig.sampleDataEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "status",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        return try JSONDecoder().decode(SampleDataStatus.self, from: data)
+    }
+
+    func addSampleData(staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.sampleDataEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "add",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to add sample data")
+        }
+    }
+
+    func removeSampleData(staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.sampleDataEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "remove",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to remove sample data")
+        }
+    }
+
+    // MARK: - Gift Card Creation
+
+    func createGiftCard(amount: Double, recipientName: String, recipientEmail: String, senderName: String, message: String, staff: Staff, isPhysical: Bool = false) async throws -> GiftCard {
+        var request = URLRequest(url: URL(string: APIConfig.giftCardsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        var body: [String: Any] = [
+            "action": "create",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "amount": amount,
+            "recipientName": recipientName,
+            "recipientEmail": recipientEmail,
+            "senderName": senderName,
+            "message": message,
+        ]
+        if isPhysical {
+            body["isPhysical"] = true
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to create gift card")
+        }
+        return try JSONDecoder().decode(GiftCard.self, from: data)
+    }
+
+    // MARK: - Gift Card Balance & Redemption
+
+    func checkGiftCardBalance(code: String, staff: Staff) async throws -> GiftCardBalanceResult {
+        var request = URLRequest(url: URL(string: APIConfig.giftCardsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "balance",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "code": code,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Gift card not found")
+        }
+        return try JSONDecoder().decode(GiftCardBalanceResult.self, from: data)
+    }
+
+    func redeemGiftCard(code: String, amount: Double, staff: Staff) async throws -> GiftCardRedeemResult {
+        var request = URLRequest(url: URL(string: APIConfig.giftCardsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "redeem",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "code": code,
+            "amount": amount,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to redeem gift card")
+        }
+        return try JSONDecoder().decode(GiftCardRedeemResult.self, from: data)
+    }
+
     // MARK: - Photo Upload
 
     func uploadPhoto(imageData: Data, fileName: String, bookingId: String, staff: Staff) async throws -> String {
@@ -191,6 +1022,293 @@ struct ErrorResponse: Codable {
 
 struct UploadResponse: Codable {
     let url: String
+}
+
+struct StaffListResponse: Codable {
+    let staff: [StaffMember]?
+}
+
+struct PaymentReminderResponse: Codable {
+    let paymentLinkUrl: String?
+    let finalBalance: Double?
+}
+
+struct CapacityResult: Codable {
+    let remaining: Int
+    let max: Int
+    let booked: Int
+    let hasPartyBooking: Bool
+    let conflict: String?
+}
+
+struct AuditLog: Codable, Identifiable {
+    let id: String
+    let staffId: String?
+    let username: String?
+    let action: String
+    let entity: String
+    let entityId: String?
+    let details: [String: AnyCodable]?
+    let createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, staffId = "staff_id", username, action, entity
+        case entityId = "entity_id", details, createdAt = "created_at"
+    }
+}
+
+struct AnyCodable: Codable {
+    let value: Any
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let intVal = try? container.decode(Int.self) { value = intVal }
+        else if let doubleVal = try? container.decode(Double.self) { value = doubleVal }
+        else if let boolVal = try? container.decode(Bool.self) { value = boolVal }
+        else if let stringVal = try? container.decode(String.self) { value = stringVal }
+        else { value = "" }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        if let intVal = value as? Int { try container.encode(intVal) }
+        else if let doubleVal = value as? Double { try container.encode(doubleVal) }
+        else if let boolVal = value as? Bool { try container.encode(boolVal) }
+        else if let stringVal = value as? String { try container.encode(stringVal) }
+        else { try container.encodeNil() }
+    }
+}
+
+struct AuditLogResponse: Codable {
+    let logs: [AuditLog]?
+}
+
+struct GiftCard: Codable, Identifiable {
+    let id: String
+    var code: String
+    var amount: Double
+    var balance: Double?
+    var status: String
+    var recipientName: String?
+    var recipientEmail: String?
+    var createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, code, amount, balance, status
+        case recipientName = "recipient_name"
+        case recipientEmail = "recipient_email"
+        case createdAt = "created_at"
+    }
+
+    var statusLabel: String {
+        status.capitalized
+    }
+
+    var statusColor: String {
+        switch status {
+        case "active": return "green"
+        case "redeemed": return "teal"
+        case "expired": return "orange"
+        case "cancelled": return "red"
+        default: return "gray"
+        }
+    }
+}
+
+struct GiftCardResponse: Codable {
+    let giftCards: [GiftCard]?
+}
+
+struct GiftCardBalanceResult: Codable {
+    let id: String
+    let code: String
+    let amount: Double
+    let balance: Double
+    let status: String
+    let recipientName: String?
+    let recipientEmail: String?
+    let expiryDate: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, code, amount, balance, status
+        case recipientName = "recipient_name"
+        case recipientEmail = "recipient_email"
+        case expiryDate = "expiry_date"
+    }
+}
+
+struct GiftCardRedeemResult: Codable {
+    let success: Bool
+    let code: String
+    let discount: Double
+    let balance: Double
+    let status: String
+}
+
+struct CapacityRow: Codable, Identifiable {
+    var id: String { "\(studio)-\(sessionType)" }
+    let studio: String
+    let sessionType: String
+    var maxPainters: Int
+
+    enum CodingKeys: String, CodingKey {
+        case studio
+        case sessionType = "session_type"
+        case maxPainters = "max_painters"
+    }
+
+    var sessionLabel: String {
+        switch sessionType {
+        case "open": return "Painting — Full Studio"
+        case "open_restricted": return "Painting — Front Only"
+        case "party": return "Party (Back Tables)"
+        default: return sessionType
+        }
+    }
+}
+
+struct CapacityTableResponse: Codable {
+    let capacity: [CapacityRow]?
+}
+
+struct EmailLog: Codable, Identifiable {
+    let id: String
+    let createdAt: String?
+    let emailType: String?
+    let recipient: String?
+    let subject: String?
+    let status: String?
+    let bookingId: String?
+    let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case createdAt = "created_at"
+        case emailType = "email_type"
+        case recipient, subject, status
+        case bookingId = "booking_id"
+        case error
+    }
+
+    var typeLabel: String {
+        switch emailType ?? "" {
+        case "admin_booking_notification": return "Admin Notify"
+        case "booking_confirmation": return "Confirmation"
+        case "party_final_reminder": return "Party Reminder"
+        case "general": return "General"
+        default: return emailType ?? "Unknown"
+        }
+    }
+
+    var statusColorName: String {
+        switch status ?? "" {
+        case "sent": return "blue"
+        case "delivered": return "green"
+        case "bounced", "failed": return "red"
+        case "opened": return "purple"
+        case "clicked": return "indigo"
+        case "complained": return "orange"
+        default: return "gray"
+        }
+    }
+}
+
+struct EmailLogResponse: Codable {
+    let logs: [EmailLog]?
+}
+
+struct EmailTemplate: Codable, Identifiable {
+    let id: String
+    let templateKey: String
+    let name: String
+    let subject: String
+    let htmlContent: String
+    let availableVariables: [String]?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case templateKey = "template_key"
+        case name, subject
+        case htmlContent = "html_content"
+        case availableVariables = "available_variables"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct EmailTemplateResponse: Codable {
+    let templates: [EmailTemplate]?
+}
+
+struct PageSetting: Codable, Identifiable {
+    var id: String { pageKey }
+    let pageKey: String
+    var enabled: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case pageKey = "page_key"
+        case enabled
+    }
+
+    var label: String {
+        switch pageKey {
+        case "pottery-painting": return "Pottery Painting"
+        case "baby-prints": return "Baby Prints"
+        case "parties": return "Parties & Events"
+        case "pricing": return "Prices"
+        case "price-list": return "Price List"
+        case "food-drink": return "Food & Drink"
+        case "buy-gift-card": return "Gift Cards"
+        case "faqs": return "FAQs"
+        case "gallery": return "Gallery"
+        case "contact-info": return "Contact"
+        case "putney": return "Putney Studio"
+        case "wimbledon": return "Wimbledon Studio"
+        default: return pageKey
+        }
+    }
+}
+
+struct PageSettingsResponse: Codable {
+    let pages: [PageSetting]?
+}
+
+struct DbHealth: Codable {
+    let healthy: Bool
+    let tables: [String: DbTableInfo]
+    let issues: [String]
+}
+
+struct DbTableInfo: Codable {
+    let exists: Bool
+    let rows: Int
+}
+
+struct DbBackup: Codable, Identifiable {
+    let id: String
+    let name: String
+    let createdAt: String?
+    let tables: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case createdAt = "created_at"
+        case tables
+    }
+}
+
+struct DbBackupResponse: Codable {
+    let backups: [DbBackup]?
+}
+
+struct SampleDataStatus: Codable {
+    let sampleBookings: Int
+    let sampleGiftCards: Int
+
+    enum CodingKeys: String, CodingKey {
+        case sampleBookings = "sample_bookings"
+        case sampleGiftCards = "sample_gift_cards"
+    }
 }
 
 // MARK: - Errors

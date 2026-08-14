@@ -15,25 +15,24 @@ struct LoginView: View {
             VStack(spacing: 24) {
                 Spacer()
 
-                // Logo
-                VStack(spacing: 8) {
-                    Image(systemName: "paintpalette.fill")
-                        .font(.system(size: 56))
-                        .foregroundStyle(.teal)
+                VStack(spacing: 16) {
+                    Image("BrandLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 64)
 
-                    Text("Pitter Potter")
-                        .font(.largeTitle)
-                        .fontWeight(.heavy)
-
-                    Text("Admin")
-                        .font(.title2)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.secondary)
+                    VStack(spacing: 4) {
+                        Text("Admin")
+                            .font(PPBrand.bodyFontSmall)
+                            .fontWeight(.medium)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.6))
+                            .tracking(4)
+                            .textCase(.uppercase)
+                    }
                 }
 
                 Spacer()
 
-                // Form
                 VStack(spacing: 16) {
                     TextField("Username", text: $username)
                         .textFieldStyle(.roundedBorder)
@@ -51,7 +50,7 @@ struct LoginView: View {
 
                     if let error = authVM.error {
                         Text(error)
-                            .font(.caption)
+                            .font(PPBrand.bodyFontCaption)
                             .foregroundStyle(.red)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -61,13 +60,17 @@ struct LoginView: View {
                     } label: {
                         if authVM.isLoading {
                             ProgressView()
+                                .tint(.white)
                                 .frame(maxWidth: .infinity, minHeight: 24)
                         } else {
                             Text("Sign In")
+                                .font(PPBrand.bodyFont)
+                                .fontWeight(.bold)
                                 .frame(maxWidth: .infinity)
                         }
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(PPBrand.charcoal)
                     .controlSize(.large)
                     .disabled(username.isEmpty || password.isEmpty || authVM.isLoading)
                 }
@@ -75,8 +78,19 @@ struct LoginView: View {
 
                 Spacer()
                 Spacer()
+
+                VStack(spacing: 2) {
+                    Text("Pitter Potter")
+                        .font(PPBrand.bodyFontCaption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                    Text("Paint Your Own Pottery Studios")
+                        .font(PPBrand.bodyFontCaption)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.3))
+                }
             }
             .navigationBarHidden(true)
+            .background(PPBrand.brandBackground)
         }
         .onAppear { focusedField = .username }
     }

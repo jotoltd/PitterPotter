@@ -15,6 +15,7 @@ class AuthViewModel: ObservableObject {
     @AppStorage("pp_staff_can_edit") private var storedCanEdit: Bool = false
     @AppStorage("pp_staff_can_walkin") private var storedCanWalkIn: Bool = false
     @AppStorage("pp_staff_can_delete") private var storedCanDelete: Bool = false
+    @AppStorage("pp_staff_allowed_studios") private var storedAllowedStudios: String = ""
 
     var isLoggedIn: Bool {
         staff != nil
@@ -39,7 +40,7 @@ class AuthViewModel: ObservableObject {
             canEditBookings: storedCanEdit,
             canAddWalkIns: storedCanWalkIn,
             canDeleteBookings: storedCanDelete,
-            allowedStudios: nil,
+            allowedStudios: storedAllowedStudios.isEmpty ? nil : storedAllowedStudios.components(separatedBy: ","),
             sessionToken: token
         )
     }
@@ -59,10 +60,13 @@ class AuthViewModel: ObservableObject {
             storedCanEdit = result.canEditBookings
             storedCanWalkIn = result.canAddWalkIns
             storedCanDelete = result.canDeleteBookings
+            storedAllowedStudios = result.allowedStudios?.joined(separator: ",") ?? ""
+            Analytics.startSession()
+            Analytics.track("login", properties: ["username": result.username, "role": result.role])
         } catch let err as APIError {
             self.error = err.errorDescription
-        } catch {
-            self.error = "Login failed: \(error.localizedDescription)"
+        } catch let err {
+            self.error = "Login failed: \(err.localizedDescription)"
         }
         isLoading = false
     }
@@ -78,5 +82,7 @@ class AuthViewModel: ObservableObject {
         storedCanEdit = false
         storedCanWalkIn = false
         storedCanDelete = false
+        storedAllowedStudios = ""
+        Analytics.track("logout")
     }
 }

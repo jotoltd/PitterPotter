@@ -1,8 +1,9 @@
 import { useState, FormEvent } from 'react';
-import { Gift, Search, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Gift, Search, AlertCircle, CheckCircle2, ScanLine } from 'lucide-react';
 import { Page } from '../types';
 import { isSupabaseEnabled } from '../lib/supabase';
 import EditableText from './EditableText';
+import QRScanner from './QRScanner';
 
 interface GiftCardBalanceViewProps {
   setCurrentPage: (page: Page) => void;
@@ -22,6 +23,12 @@ export default function GiftCardBalanceView({ setCurrentPage, adminMode = false 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<GiftCardResult | null>(null);
   const [error, setError] = useState('');
+  const [scanning, setScanning] = useState(false);
+
+  const handleScan = (scannedCode: string) => {
+    setCode(scannedCode);
+    setScanning(false);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -82,15 +89,26 @@ export default function GiftCardBalanceView({ setCurrentPage, adminMode = false 
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <input
-              type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="e.g. PP-ABCD1234EF"
-              className="w-full py-3 px-4 pr-12 border border-[#1B2D3C]/20 bg-white text-sm font-bold text-[#1B2D3C] tracking-wider uppercase focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg"
-            />
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1B2D3C]/50" />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="e.g. PP-ABCD1234EF"
+                className="w-full py-3 px-4 pr-12 border border-[#1B2D3C]/20 bg-white text-sm font-bold text-[#1B2D3C] tracking-wider uppercase focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg"
+              />
+              <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1B2D3C]/50" />
+            </div>
+            <button
+              type="button"
+              onClick={() => setScanning(true)}
+              className="px-4 py-3 bg-[#1B2D3C] text-white rounded-lg hover:bg-[#243B53] transition-colors cursor-pointer flex items-center gap-1.5"
+              title="Scan QR code"
+            >
+              <ScanLine className="w-4 h-4" />
+              <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Scan</span>
+            </button>
           </div>
 
           {error && (
@@ -135,6 +153,17 @@ export default function GiftCardBalanceView({ setCurrentPage, adminMode = false 
                 <span className="text-sm font-bold text-[#1B2D3C]">{result.expiryDate}</span>
               </div>
             )}
+            {result.status === 'active' && (
+              <div className="flex justify-center pt-2">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(result.code)}&bgcolor=FFFFFF&color=1B2D3C&margin=0`}
+                  alt="Gift card QR code"
+                  className="rounded-lg border border-[#1B2D3C]/10"
+                  width={120}
+                  height={120}
+                />
+              </div>
+            )}
             <div className="flex items-center gap-2 pt-2">
               {result.status === 'active' && (
                 <>
@@ -170,6 +199,13 @@ export default function GiftCardBalanceView({ setCurrentPage, adminMode = false 
           </button>
         </div>
       </div>
+
+      {scanning && (
+        <QRScanner
+          onScan={handleScan}
+          onClose={() => setScanning(false)}
+        />
+      )}
     </div>
   );
 }

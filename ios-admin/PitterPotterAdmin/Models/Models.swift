@@ -25,6 +25,34 @@ struct Staff: Codable, Identifiable {
     }
 }
 
+// MARK: - Staff Member (for staff management)
+
+struct StaffMember: Codable, Identifiable, Hashable {
+    let id: String
+    var name: String
+    var username: String
+    var role: String
+    var canUpdateStatus: Bool
+    var canEditBookings: Bool
+    var canAddWalkIns: Bool
+    var canDeleteBookings: Bool
+    var allowedStudios: [String]?
+    var createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, username, role
+        case canUpdateStatus = "can_update_status"
+        case canEditBookings = "can_edit_bookings"
+        case canAddWalkIns = "can_add_walk_ins"
+        case canDeleteBookings = "can_delete_bookings"
+        case allowedStudios = "allowed_studios"
+        case createdAt = "created_at"
+    }
+
+    var isSuperAdmin: Bool { role == "super_admin" }
+    var roleLabel: String { role == "super_admin" ? "Super Admin" : "Staff" }
+}
+
 // MARK: - Booking
 
 enum BookingStatus: String, Codable, CaseIterable {

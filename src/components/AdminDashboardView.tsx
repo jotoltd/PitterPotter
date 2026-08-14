@@ -4,13 +4,14 @@ import ConfirmDialog from './ConfirmDialog';
 import FloorPlanView from './FloorPlanView';
 import WimbledonFloorPlan, { findAvailableTable, findMultipleTables } from './WimbledonFloorPlan';
 import PutneyFloorPlan, { findAvailablePutneyTable, findMultiplePutneyTables } from './PutneyFloorPlan';
-import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock, Camera } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock, Camera, ScanLine } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO, getDay } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { loadBookings, createBooking, updateBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
 import { compressImage } from '../lib/imageCompression';
+import QRScanner from './QRScanner';
 import { getAllSlots, getSlots, setSlots, DEFAULT_SLOTS, SlotSessionType, Studio, TimeSlotsData, getStudioSlots, sortSlots, loadSlotsFromSupabase, saveSlotsToSupabase, DayType } from '../lib/timeSlots';
 import { loadClosuresFromSupabase, saveClosuresToSupabase, getClosureDates, ClosureDates, HolidayRange } from '../lib/closures';
 import { useToast } from './ToastContext';
@@ -103,6 +104,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     message: '',
   });
   const [giftCardCreating, setGiftCardCreating] = useState(false);
+  const [giftCardIsPhysical, setGiftCardIsPhysical] = useState(false);
+  const [showRedeemModal, setShowRedeemModal] = useState(false);
+  const [redeemCode, setRedeemCode] = useState('');
+  const [redeemAmount, setRedeemAmount] = useState('');
+  const [redeemBalanceResult, setRedeemBalanceResult] = useState<{ code: string; amount: number; balance: number; status: string; recipient_name?: string } | null>(null);
+  const [redeemChecking, setRedeemChecking] = useState(false);
+  const [redeeming, setRedeeming] = useState(false);
+  const [redeemResult, setRedeemResult] = useState<{ discount: number; balance: number; status: string } | null>(null);
+  const [redeemError, setRedeemError] = useState('');
+  const [adminScanning, setAdminScanning] = useState(false);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [emailLogsLoading, setEmailLogsLoading] = useState(false);
@@ -952,6 +963,146 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       console.error('Failed to update gift card status:', err);
       showToast('Failed to update gift card status', 'error');
     }
+  };
+
+  const deleteGiftCard = async (id: string, code: string) => {
+    showConfirmDialog({
+      title: 'Delete Gift Card',
+      message: `Are you sure you want to permanently delete gift card ${code}? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+      onConfirm: async () => {
+        closeConfirmDialog();
+        try {
+          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift-cards`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ action: 'delete', username: staff.username, sessionToken: staff.sessionToken, id }),
+          });
+          const data = await response.json();
+          if (!response.ok || data.error) throw new Error(data.error || 'Failed to delete');
+          setGiftCards(giftCards.filter((c) => c.id !== id));
+          showToast('Gift card deleted', 'success');
+        } catch (err) {
+          showToast(err instanceof Error ? err.message : 'Failed to delete gift card', 'error');
+        }
+      },
+    });
+  };
+
+  const resendGiftCard = async (id: string, code: string) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift-cards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'resend', username: staff.username, sessionToken: staff.sessionToken, id }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || 'Failed to resend');
+      showToast(`Gift card ${code} email resent`, 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to resend email', 'error');
+    }
+  };
+
+  const checkRedeemBalance = async () => {
+    if (!redeemCode.trim()) return;
+    setRedeemChecking(true);
+    setRedeemError('');
+    setRedeemBalanceResult(null);
+    setRedeemResult(null);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift-cards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'balance', username: staff.username, sessionToken: staff.sessionToken, code: redeemCode.trim() }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || 'Gift card not found');
+      setRedeemBalanceResult(data);
+    } catch (err) {
+      setRedeemError(err instanceof Error ? err.message : 'Failed to check balance');
+    } finally {
+      setRedeemChecking(false);
+    }
+  };
+
+  const redeemGiftCard = async () => {
+    const amount = parseFloat(redeemAmount);
+    if (!redeemCode.trim() || !amount || amount <= 0) return;
+    setRedeeming(true);
+    setRedeemError('');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift-cards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'redeem', username: staff.username, sessionToken: staff.sessionToken, code: redeemCode.trim(), amount }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || 'Failed to redeem');
+      setRedeemResult({ discount: data.discount, balance: data.balance, status: data.status });
+      if (redeemBalanceResult) {
+        setRedeemBalanceResult({ ...redeemBalanceResult, balance: data.balance, status: data.status });
+      }
+      showToast(`Redeemed £${data.discount.toFixed(2)} from gift card`, 'success');
+      loadGiftCards();
+    } catch (err) {
+      setRedeemError(err instanceof Error ? err.message : 'Failed to redeem gift card');
+    } finally {
+      setRedeeming(false);
+    }
+  };
+
+  const createGiftCardInStore = async () => {
+    if (!newGiftCard.amount || newGiftCard.amount <= 0) {
+      showToast('Please enter a valid amount', 'error');
+      return;
+    }
+    setGiftCardCreating(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift-cards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({
+          action: 'create',
+          username: staff.username,
+          sessionToken: staff.sessionToken,
+          amount: newGiftCard.amount,
+          recipientName: newGiftCard.recipientName,
+          recipientEmail: giftCardIsPhysical ? '' : newGiftCard.recipientEmail,
+          senderName: newGiftCard.senderName || 'In-store',
+          message: newGiftCard.message,
+          isPhysical: giftCardIsPhysical,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error || 'Failed to create gift card');
+      showToast(`Gift card ${data.code} created${giftCardIsPhysical ? ' (physical)' : ''}`, 'success');
+      setShowGiftCardModal(false);
+      setNewGiftCard({ amount: 50, recipientName: '', recipientEmail: '', senderName: '', message: '' });
+      setGiftCardIsPhysical(false);
+      loadGiftCards();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to create gift card', 'error');
+    } finally {
+      setGiftCardCreating(false);
+    }
+  };
+
+  const openRedeemModal = (code?: string) => {
+    setRedeemCode(code || '');
+    setRedeemAmount('');
+    setRedeemBalanceResult(null);
+    setRedeemResult(null);
+    setRedeemError('');
+    setAdminScanning(false);
+    setShowRedeemModal(true);
+  };
+
+  const handleAdminScan = (scannedCode: string) => {
+    setRedeemCode(scannedCode);
+    setAdminScanning(false);
+    checkRedeemBalance();
   };
 
   const loadStaffList = async () => {
@@ -1916,13 +2067,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       <div className="sticky top-0 z-30 bg-[#DBE7E4] text-[#1B2D3C] py-3 px-4 sm:px-6 shadow-md">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
-            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-[#1B2D3C]/10 flex items-center justify-center shrink-0">
               <span className="font-heading font-black text-sm">PP</span>
             </div>
             <div className="min-w-0">
               <p className="font-heading font-black text-sm leading-tight">Pitter Potter</p>
-              <p className="text-[10px] text-white/50 truncate hidden sm:block">{staff.name} · {roleLabel[staff.role]}</p>
-              <p className="text-[10px] text-white/50 truncate sm:hidden">{staff.name}</p>
+              <p className="text-[10px] text-[#1B2D3C]/60 truncate hidden sm:block">{staff.name} · {roleLabel[staff.role]}</p>
+              <p className="text-[10px] text-[#1B2D3C]/60 truncate sm:hidden">{staff.name}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -2125,6 +2276,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             <h2 className="font-heading text-lg font-black text-[#1B2D3C] uppercase tracking-wider">Gift Cards</h2>
             <div className="flex items-center gap-3">
               <button
+                onClick={() => openRedeemModal()}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1B2D3C] text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#243B53] transition-all cursor-pointer"
+              >
+                <Gift className="w-3 h-3" /> Redeem
+              </button>
+              <button
                 onClick={() => setShowGiftCardModal(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[#DBE7E4] text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
@@ -2206,12 +2363,36 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           >
                             Copy
                           </button>
+                          {card.status === 'active' && card.balance > 0 && (
+                            <button
+                              onClick={() => openRedeemModal(card.code)}
+                              className="px-2 py-1 bg-[#1B2D3C] text-white text-[10px] font-bold uppercase tracking-wider rounded hover:bg-[#243B53] cursor-pointer"
+                            >
+                              Redeem
+                            </button>
+                          )}
                           {staff.role === 'super_admin' && card.status === 'active' && (
                             <button
                               onClick={() => updateGiftCardStatus(card.id, 'expired')}
                               className="px-2 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded hover:bg-red-100 cursor-pointer"
                             >
                               Expire
+                            </button>
+                          )}
+                          {staff.role === 'super_admin' && card.recipientEmail && (
+                            <button
+                              onClick={() => resendGiftCard(card.id, card.code)}
+                              className="px-2 py-1 bg-[#D6E2E9]/50 text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded hover:bg-[#D6E2E9] cursor-pointer"
+                            >
+                              Resend
+                            </button>
+                          )}
+                          {staff.role === 'super_admin' && (
+                            <button
+                              onClick={() => deleteGiftCard(card.id, card.code)}
+                              className="px-2 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded hover:bg-red-100 cursor-pointer"
+                            >
+                              Delete
                             </button>
                           )}
                         </div>
@@ -3632,12 +3813,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Recipient Email</label>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Recipient Email{giftCardIsPhysical && ' (skipped for physical)'}</label>
                 <input
                   type="email"
                   value={newGiftCard.recipientEmail}
                   onChange={(e) => setNewGiftCard({ ...newGiftCard, recipientEmail: e.target.value })}
-                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  disabled={giftCardIsPhysical}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 disabled:opacity-40"
                 />
               </div>
               <div>
@@ -3658,24 +3840,167 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 resize-none"
                 />
               </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={giftCardIsPhysical}
+                  onChange={(e) => setGiftCardIsPhysical(e.target.checked)}
+                  className="w-4 h-4 accent-[#1B2D3C]"
+                />
+                <span className="text-xs font-bold text-[#1B2D3C]">Physical card (in-store, no payment)</span>
+              </label>
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setShowGiftCardModal(false)}
+                onClick={() => { setShowGiftCardModal(false); setGiftCardIsPhysical(false); }}
                 className="flex-1 px-4 py-2 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
-                onClick={createGiftCardCheckout}
+                onClick={giftCardIsPhysical ? createGiftCardInStore : createGiftCardCheckout}
                 disabled={giftCardCreating}
                 className="flex-1 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer disabled:opacity-50"
               >
-                {giftCardCreating ? 'Creating...' : 'Proceed to Payment'}
+                {giftCardCreating ? 'Creating...' : giftCardIsPhysical ? 'Create (No Payment)' : 'Proceed to Payment'}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Gift Card Redemption Modal */}
+      {showRedeemModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 sm:p-6">
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg max-h-[90vh] overflow-y-auto sm:rounded-xl">
+            <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Redeem Gift Card</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Gift Card Code</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={redeemCode}
+                    onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+                    placeholder="PP-XXXXXXXXXX"
+                    className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold font-mono rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setAdminScanning(true)}
+                    className="px-3 py-2 bg-[#1B2D3C] text-white rounded-lg hover:bg-[#243B53] transition-colors cursor-pointer flex items-center gap-1"
+                    title="Scan QR code"
+                  >
+                    <ScanLine className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={checkRedeemBalance}
+                    disabled={!redeemCode.trim() || redeemChecking}
+                    className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] cursor-pointer disabled:opacity-50"
+                  >
+                    {redeemChecking ? 'Checking...' : 'Check'}
+                  </button>
+                </div>
+              </div>
+
+              {redeemError && (
+                <div className="p-3 bg-red-50 border border-red-100 text-red-700 text-xs font-semibold rounded-lg">
+                  {redeemError}
+                </div>
+              )}
+
+              {redeemBalanceResult && (
+                <div className="bg-[#DBE7E4]/30 p-4 rounded-lg space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/70">Code</span>
+                    <span className="text-xs font-mono font-bold text-[#1B2D3C]">{redeemBalanceResult.code}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/70">Original Amount</span>
+                    <span className="text-xs font-bold text-[#1B2D3C]">£{redeemBalanceResult.amount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/70">Balance</span>
+                    <span className="text-lg font-black text-[#1B2D3C]">£{redeemBalanceResult.balance.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/70">Status</span>
+                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                      redeemBalanceResult.status === 'active' ? 'bg-emerald-100 text-emerald-700' :
+                      redeemBalanceResult.status === 'expired' ? 'bg-red-100 text-red-700' :
+                      'bg-stone-100 text-stone-500'
+                    }`}>{redeemBalanceResult.status}</span>
+                  </div>
+                </div>
+              )}
+
+              {redeemBalanceResult && redeemBalanceResult.status === 'active' && redeemBalanceResult.balance > 0 && (
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Amount to Redeem (£)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={redeemAmount}
+                      onChange={(e) => setRedeemAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="flex-1 px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                    />
+                    <button
+                      onClick={() => setRedeemAmount(redeemBalanceResult.balance.toFixed(2))}
+                      className="px-3 py-2 bg-[#D6E2E9]/50 text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] cursor-pointer whitespace-nowrap"
+                    >
+                      Full Balance
+                    </button>
+                  </div>
+                  <button
+                    onClick={redeemGiftCard}
+                    disabled={redeeming || !redeemAmount}
+                    className="w-full px-4 py-2.5 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-wider rounded-lg hover:bg-[#243B53] transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {redeeming ? 'Redeeming...' : 'Redeem'}
+                  </button>
+                </div>
+              )}
+
+              {redeemResult && (
+                <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-lg space-y-2">
+                  <p className="text-xs font-bold text-emerald-800">Redemption Successful</p>
+                  <div className="flex justify-between">
+                    <span className="text-[10px] font-bold uppercase text-emerald-700">Discount Applied</span>
+                    <span className="text-sm font-black text-emerald-800">£{redeemResult.discount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[10px] font-bold uppercase text-emerald-700">Remaining Balance</span>
+                    <span className="text-sm font-bold text-emerald-800">£{redeemResult.balance.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[10px] font-bold uppercase text-emerald-700">Status</span>
+                    <span className="text-[10px] font-bold uppercase text-emerald-700">{redeemResult.status}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowRedeemModal(false)}
+                className="flex-1 px-4 py-2 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
+              >
+                {redeemResult ? 'Done' : 'Cancel'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin QR Scanner for gift card redemption */}
+      {adminScanning && (
+        <QRScanner
+          onScan={handleAdminScan}
+          onClose={() => setAdminScanning(false)}
+        />
       )}
 
       {/* Capacity section — inside settings tab */}

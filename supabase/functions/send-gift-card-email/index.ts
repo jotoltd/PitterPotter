@@ -6,6 +6,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function generateQRCodeBytes(text: string): Promise<Uint8Array | null> {
+  try {
+    const response = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(text)}&bgcolor=FFFFFF&color=1B2D3C&margin=0`);
+    if (!response.ok) return null;
+    const arrayBuffer = await response.arrayBuffer();
+    return new Uint8Array(arrayBuffer);
+  } catch {
+    return null;
+  }
+}
+
 interface GiftCardRow {
   id: string;
   code: string;
@@ -248,6 +259,30 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
     font: fontBold,
     color: rgb(0.106, 0.176, 0.235),
   });
+
+  // Embed QR code if available
+  const qrBytes = await generateQRCodeBytes(giftCard.code);
+  if (qrBytes) {
+    try {
+      const qrImage = await pdfDoc.embedPng(qrBytes);
+      const qrSize = 60;
+      page.drawImage(qrImage, {
+        x: width - qrSize - 30,
+        y: 30,
+        width: qrSize,
+        height: qrSize,
+      });
+      page.drawText('Scan to redeem', {
+        x: width - qrSize - 28,
+        y: 20,
+        size: 6,
+        font: fontRegular,
+        color: rgb(0.5, 0.5, 0.5),
+      });
+    } catch (qrErr) {
+      console.error('Failed to embed QR code:', qrErr);
+    }
+  }
 
   return await pdfDoc.save();
 }

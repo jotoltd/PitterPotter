@@ -5,10 +5,16 @@ struct BookingDetailView: View {
     let booking: Booking
     @EnvironmentObject var bookingsVM: BookingsViewModel
     @EnvironmentObject var authVM: AuthViewModel
+    @Environment(\.dismiss) var dismiss
     @State private var showingEdit = false
     @State private var showingPhotoPicker = false
+    @State private var showingCamera = false
     @State private var selectedItems: [PhotosPickerItem] = []
     @State private var isUploading = false
+    @State private var showingDeleteConfirm = false
+    @State private var showingPaymentReminder = false
+    @State private var reminderFinalSeats = 1
+    @State private var isSendingReminder = false
     @State private var currentBooking: Booking
 
     init(booking: Booking) {
@@ -22,6 +28,9 @@ struct BookingDetailView: View {
                 statusHeader
                 bookingInfoCard
                 contactCard
+                if isPartyBooking {
+                    paymentSection
+                }
                 notesCard
                 photosSection
                 metaSection
@@ -34,6 +43,15 @@ struct BookingDetailView: View {
             if authVM.staff?.canEditBookings == true {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Edit") { showingEdit = true }
+                }
+            }
+            if authVM.staff?.canDeleteBookings == true {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(role: .destructive) {
+                        showingDeleteConfirm = true
+                    } label: {
+                        Image(systemName: "trash")
+                    }
                 }
             }
         }
@@ -49,6 +67,45 @@ struct BookingDetailView: View {
         .onChange(of: selectedItems) { newItems in
             Task { await uploadPhotos(newItems) }
         }
+        .sheet(isPresented: $showingCamera) {
+            CameraPicker { imageData in
+                Task { await uploadCameraPhoto(imageData) }
+            }
+        }
+        .confirmationDialog("Delete this booking?", isPresented: $showingDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                if let staff = authVM.staff {
+                    Task {
+                        await bookingsVM.deleteBooking(currentBooking, staff: staff)
+                        dismiss()
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This action cannot be undone. The booking will be permanently removed.")
+        }
+        .sheet(isPresented: $showingPaymentReminder) {
+            PaymentReminderView(
+                booking: currentBooking,
+                finalSeats: $reminderFinalSeats,
+                isSending: $isSendingReminder,
+                onSend: {
+                    if let staff = authVM.staff {
+                        Task {
+                            let success = await bookingsVM.sendPaymentReminder(
+                                for: currentBooking, finalSeats: reminderFinalSeats, staff: staff
+                            )
+                            if success {
+                                currentBooking = bookingsVM.bookings.first(where: { $0.id == currentBooking.id }) ?? currentBooking
+                                showingPaymentReminder = false
+                            }
+                        }
+                    }
+                }
+            )
+            .presentationDetents([.medium])
+        }
     }
 
     private var statusHeader: some View {
@@ -60,12 +117,60 @@ struct BookingDetailView: View {
                     .fontWeight(.bold)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color.teal.opacity(0.2))
-                    .foregroundStyle(.teal)
+                    .background(PPBrand.charcoal.opacity(0.2))
+                    .foregroundStyle(PPBrand.charcoal)
                     .clipShape(Capsule())
             }
             Spacer()
         }
+    }
+
+    private var isPartyBooking: Bool {
+        ["birthday-party", "baby-shower-hen", "corporate"].contains(currentBooking.sessionType)
+    }
+
+    private var paymentSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Payment")
+                .font(.headline)
+
+            if let deposit = currentBooking.depositAmount {
+                InfoRow(icon: "sterlingsign.circle", label: "Deposit", value: "£\(String(format: "%.2f", deposit))")
+            }
+            if let seats = currentBooking.finalSeats {
+                InfoRow(icon: "person.2", label: "Final Seats", value: "\(seats)")
+            }
+            if let balance = currentBooking.finalBalance {
+                InfoRow(icon: "creditcard", label: "Balance", value: "£\(String(format: "%.2f", balance))")
+            }
+
+            if let link = currentBooking.paymentLinkUrl {
+                InfoRow(icon: "link", label: "Payment Link", value: "Sent")
+                if let sentAt = currentBooking.paymentLinkSentAt {
+                    InfoRow(icon: "clock", label: "Sent At", value: sentAt.prefix(10).description)
+                }
+                ShareLink(item: URL(string: link) ?? URL(string: "https://pitterpotter.co.uk")!) {
+                    Label("Open Payment Link", systemImage: "arrow.up.right.square")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundStyle(PPBrand.charcoal)
+                }
+            } else {
+                Button {
+                    reminderFinalSeats = currentBooking.finalSeats ?? currentBooking.paintersCount
+                    showingPaymentReminder = true
+                } label: {
+                    Label("Send Final Payment Reminder", systemImage: "envelope.badge")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
+                .buttonStyle(.bordered)
+                .tint(PPBrand.charcoal)
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var bookingInfoCard: some View {
@@ -126,8 +231,18 @@ struct BookingDetailView: View {
                 Text("Painting Photos")
                     .font(.headline)
                 Spacer()
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    Button {
+                        showingCamera = true
+                    } label: {
+                        Image(systemName: "camera")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+                    .disabled(isUploading || authVM.staff?.canEditBookings != true)
+                }
                 PhotosPicker(selection: $selectedItems, maxSelectionCount: 10, matching: .images) {
-                    Label("Add Photos", systemImage: "camera")
+                    Label("Gallery", systemImage: "photo.on.rectangle")
                         .font(.subheadline)
                         .fontWeight(.medium)
                 }
@@ -226,6 +341,26 @@ struct BookingDetailView: View {
         await bookingsVM.removePhoto(at: index, from: currentBooking, staff: staff)
         currentBooking = bookingsVM.bookings.first(where: { $0.id == currentBooking.id }) ?? currentBooking
     }
+
+    private func uploadCameraPhoto(_ data: Data) async {
+        guard let staff = authVM.staff else { return }
+        isUploading = true
+        do {
+            let url = try await APIClient.shared.uploadPhoto(
+                imageData: data,
+                fileName: "camera_\(Int(Date().timeIntervalSince1970)).jpg",
+                bookingId: currentBooking.id,
+                staff: staff
+            )
+            await bookingsVM.addPhoto(to: currentBooking, url: url, staff: staff)
+            currentBooking = bookingsVM.bookings.first(where: { $0.id == currentBooking.id }) ?? currentBooking
+            Haptics.success()
+        } catch {
+            bookingsVM.error = "Failed to upload photo: \(error.localizedDescription)"
+            Haptics.error()
+        }
+        isUploading = false
+    }
 }
 
 // MARK: - Subviews
@@ -259,7 +394,7 @@ struct ContactRow: View {
         HStack {
             Image(systemName: icon)
                 .frame(width: 24)
-                .foregroundStyle(.teal)
+                .foregroundStyle(PPBrand.charcoal)
             Text(text)
                 .font(.subheadline)
                 .foregroundStyle(.primary)

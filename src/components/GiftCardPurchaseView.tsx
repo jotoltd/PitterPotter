@@ -287,7 +287,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                   className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg"
-                  placeholder="Full name"
+                  placeholder="Name"
                 />
               </div>
               <div className="space-y-1">
@@ -312,7 +312,7 @@ export default function GiftCardPurchaseView({ setCurrentPage, adminMode = false
                   value={senderName}
                   onChange={(e) => setSenderName(e.target.value)}
                   className="w-full py-2.5 px-3 border border-[#1B2D3C]/20 bg-white text-sm text-[#1B2D3C] focus:outline-none focus:bg-[#D6E2E9]/20 rounded-lg"
-                  placeholder="Full name"
+                  placeholder="Name"
                 />
               </div>
               <div className="space-y-1">

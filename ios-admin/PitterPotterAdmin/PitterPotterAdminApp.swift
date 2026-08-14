@@ -6,13 +6,8 @@ struct PitterPotterAdminApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if authVM.isLoggedIn {
-                MainTabView()
-                    .environmentObject(authVM)
-            } else {
-                LoginView()
-                    .environmentObject(authVM)
-            }
+            RootView()
+                .environmentObject(authVM)
         }
     }
 }

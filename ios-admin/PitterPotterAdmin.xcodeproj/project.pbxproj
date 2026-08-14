@@ -7,16 +7,45 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10001 /* PitterPotterAdminApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001; };
-		A10002 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002; };
-		A10003 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20003; };
-		A10004 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20004; };
-		A10005 /* BookingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20005; };
-		A10006 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20006; };
-		A10007 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20007; };
-		A10008 /* BookingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20008; };
-		A10009 /* BookingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20009; };
-		A10010 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20010; };
+		A10001 /* PitterPotterAdminApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001 /* PitterPotterAdminApp.swift */; };
+		A10002 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002 /* Models.swift */; };
+		A10003 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20003 /* APIClient.swift */; };
+		A10004 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20004 /* AuthViewModel.swift */; };
+		A10005 /* BookingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20005 /* BookingsViewModel.swift */; };
+		A10006 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20006 /* LoginView.swift */; };
+		A10007 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20007 /* MainTabView.swift */; };
+		A10008 /* BookingsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20008 /* BookingsListView.swift */; };
+		A10009 /* BookingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20009 /* BookingDetailView.swift */; };
+		A10010 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20010 /* SettingsView.swift */; };
+		A10011 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20012 /* Assets.xcassets */; };
+		A10012 /* StaffViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20013 /* StaffViewModel.swift */; };
+		A10013 /* NewWalkInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20014 /* NewWalkInView.swift */; };
+		A10014 /* StaffManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20015 /* StaffManagementView.swift */; };
+		A10015 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20016 /* CalendarView.swift */; };
+		A10016 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20017 /* Haptics.swift */; };
+		A10017 /* CameraPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20018 /* CameraPicker.swift */; };
+		A10018 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20019 /* RootView.swift */; };
+		A10019 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20020 /* EmptyStateView.swift */; };
+		A10020 /* PaymentReminderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20021 /* PaymentReminderView.swift */; };
+		A10021 /* Analytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20022 /* Analytics.swift */; };
+		A10022 /* CapacityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20023 /* CapacityView.swift */; };
+		A10023 /* AuditLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20024 /* AuditLogView.swift */; };
+		A10024 /* GiftCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20025 /* GiftCardView.swift */; };
+		A10025 /* PartyBookingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20026 /* PartyBookingView.swift */; };
+		A10026 /* DashboardOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20027 /* DashboardOverviewView.swift */; };
+		A10027 /* EmailLogsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20028 /* EmailLogsView.swift */; };
+		A10028 /* EmailTemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20029 /* EmailTemplatesView.swift */; };
+		A10029 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20030 /* AnalyticsView.swift */; };
+		A10030 /* WebmasterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20031 /* WebmasterView.swift */; };
+		A10031 /* AdminSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20032 /* AdminSettingsView.swift */; };
+		A10032 /* CreateGiftCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20033 /* CreateGiftCardView.swift */; };
+		A10033 /* TimeSlotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20034 /* TimeSlotsView.swift */; };
+		A10034 /* ClosuresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20035 /* ClosuresView.swift */; };
+		A10035 /* GhostBookingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20036 /* GhostBookingView.swift */; };
+		A10036 /* CSVExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20037 /* CSVExporter.swift */; };
+		A10037 /* PPBrand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20038 /* PPBrand.swift */; };
+		A10038 /* GiftCardScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20039 /* GiftCardScannerView.swift */; };
+		A10039 /* GiftCardRedeemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20040 /* GiftCardRedeemView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +60,35 @@
 		A20009 /* BookingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingDetailView.swift; sourceTree = "<group>"; };
 		A20010 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A20011 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A20012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A20013 /* StaffViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaffViewModel.swift; sourceTree = "<group>"; };
+		A20014 /* NewWalkInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewWalkInView.swift; sourceTree = "<group>"; };
+		A20015 /* StaffManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaffManagementView.swift; sourceTree = "<group>"; };
+		A20016 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		A20017 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
+		A20018 /* CameraPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPicker.swift; sourceTree = "<group>"; };
+		A20019 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		A20020 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		A20021 /* PaymentReminderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentReminderView.swift; sourceTree = "<group>"; };
+		A20022 /* Analytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Analytics.swift; sourceTree = "<group>"; };
+		A20023 /* CapacityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapacityView.swift; sourceTree = "<group>"; };
+		A20024 /* AuditLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuditLogView.swift; sourceTree = "<group>"; };
+		A20025 /* GiftCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiftCardView.swift; sourceTree = "<group>"; };
+		A20026 /* PartyBookingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartyBookingView.swift; sourceTree = "<group>"; };
+		A20027 /* DashboardOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardOverviewView.swift; sourceTree = "<group>"; };
+		A20028 /* EmailLogsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailLogsView.swift; sourceTree = "<group>"; };
+		A20029 /* EmailTemplatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailTemplatesView.swift; sourceTree = "<group>"; };
+		A20030 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
+		A20031 /* WebmasterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebmasterView.swift; sourceTree = "<group>"; };
+		A20032 /* AdminSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSettingsView.swift; sourceTree = "<group>"; };
+		A20033 /* CreateGiftCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGiftCardView.swift; sourceTree = "<group>"; };
+		A20034 /* TimeSlotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSlotsView.swift; sourceTree = "<group>"; };
+		A20035 /* ClosuresView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosuresView.swift; sourceTree = "<group>"; };
+		A20036 /* GhostBookingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhostBookingView.swift; sourceTree = "<group>"; };
+		A20037 /* CSVExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVExporter.swift; sourceTree = "<group>"; };
+		A20038 /* PPBrand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PPBrand.swift; sourceTree = "<group>"; };
+		A20039 /* GiftCardScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiftCardScannerView.swift; sourceTree = "<group>"; };
+		A20040 /* GiftCardRedeemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiftCardRedeemView.swift; sourceTree = "<group>"; };
 		A30000 /* PitterPotterAdmin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PitterPotterAdmin.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -53,14 +111,6 @@
 			);
 			sourceTree = "<group>";
 		};
-		A50002 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				A30000 /* PitterPotterAdmin.app */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		A50001 /* PitterPotterAdmin */ = {
 			isa = PBXGroup;
 			children = (
@@ -70,8 +120,18 @@
 				A50005 /* ViewModels */,
 				A50006 /* Views */,
 				A20011 /* Info.plist */,
+				A20012 /* Assets.xcassets */,
+				A50007 /* Utils */,
 			);
 			path = PitterPotterAdmin;
+			sourceTree = "<group>";
+		};
+		A50002 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A30000 /* PitterPotterAdmin.app */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 		A50003 /* Models */ = {
@@ -95,6 +155,7 @@
 			children = (
 				A20004 /* AuthViewModel.swift */,
 				A20005 /* BookingsViewModel.swift */,
+				A20013 /* StaffViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -107,8 +168,42 @@
 				A20008 /* BookingsListView.swift */,
 				A20009 /* BookingDetailView.swift */,
 				A20010 /* SettingsView.swift */,
+				A20014 /* NewWalkInView.swift */,
+				A20015 /* StaffManagementView.swift */,
+				A20016 /* CalendarView.swift */,
+				A20018 /* CameraPicker.swift */,
+				A20019 /* RootView.swift */,
+				A20020 /* EmptyStateView.swift */,
+				A20021 /* PaymentReminderView.swift */,
+				A20023 /* CapacityView.swift */,
+				A20024 /* AuditLogView.swift */,
+				A20025 /* GiftCardView.swift */,
+				A20026 /* PartyBookingView.swift */,
+				A20027 /* DashboardOverviewView.swift */,
+				A20028 /* EmailLogsView.swift */,
+				A20029 /* EmailTemplatesView.swift */,
+				A20030 /* AnalyticsView.swift */,
+				A20031 /* WebmasterView.swift */,
+				A20032 /* AdminSettingsView.swift */,
+				A20033 /* CreateGiftCardView.swift */,
+				A20034 /* TimeSlotsView.swift */,
+				A20035 /* ClosuresView.swift */,
+				A20036 /* GhostBookingView.swift */,
+				A20039 /* GiftCardScannerView.swift */,
+				A20040 /* GiftCardRedeemView.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		A50007 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				A20017 /* Haptics.swift */,
+				A20022 /* Analytics.swift */,
+				A20037 /* CSVExporter.swift */,
+				A20038 /* PPBrand.swift */,
+			);
+			path = Utils;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -116,7 +211,7 @@
 /* Begin PBXNativeTarget section */
 		A60000 /* PitterPotterAdmin */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A70010;
+			buildConfigurationList = A70010 /* Build configuration list for PBXNativeTarget "PitterPotterAdmin" */;
 			buildPhases = (
 				A60001 /* Sources */,
 				A40000 /* Frameworks */,
@@ -141,7 +236,7 @@
 				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 1500;
 			};
-			buildConfigurationList = A70000;
+			buildConfigurationList = A70000 /* Build configuration list for PBXProject "PitterPotterAdmin" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -164,6 +259,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10011 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -184,6 +280,34 @@
 				A10008 /* BookingsListView.swift in Sources */,
 				A10009 /* BookingDetailView.swift in Sources */,
 				A10010 /* SettingsView.swift in Sources */,
+				A10012 /* StaffViewModel.swift in Sources */,
+				A10013 /* NewWalkInView.swift in Sources */,
+				A10014 /* StaffManagementView.swift in Sources */,
+				A10015 /* CalendarView.swift in Sources */,
+				A10016 /* Haptics.swift in Sources */,
+				A10017 /* CameraPicker.swift in Sources */,
+				A10018 /* RootView.swift in Sources */,
+				A10019 /* EmptyStateView.swift in Sources */,
+				A10020 /* PaymentReminderView.swift in Sources */,
+				A10021 /* Analytics.swift in Sources */,
+				A10022 /* CapacityView.swift in Sources */,
+				A10023 /* AuditLogView.swift in Sources */,
+				A10024 /* GiftCardView.swift in Sources */,
+				A10025 /* PartyBookingView.swift in Sources */,
+				A10026 /* DashboardOverviewView.swift in Sources */,
+				A10027 /* EmailLogsView.swift in Sources */,
+				A10028 /* EmailTemplatesView.swift in Sources */,
+				A10029 /* AnalyticsView.swift in Sources */,
+				A10030 /* WebmasterView.swift in Sources */,
+				A10031 /* AdminSettingsView.swift in Sources */,
+				A10032 /* CreateGiftCardView.swift in Sources */,
+				A10033 /* TimeSlotsView.swift in Sources */,
+				A10034 /* ClosuresView.swift in Sources */,
+				A10035 /* GhostBookingView.swift in Sources */,
+				A10036 /* CSVExporter.swift in Sources */,
+				A10037 /* PPBrand.swift in Sources */,
+				A10038 /* GiftCardScannerView.swift in Sources */,
+				A10039 /* GiftCardRedeemView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -232,11 +356,13 @@
 		A70003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CODE_SIGNING_REQUIRED = NO;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A7QCQT8PG5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PitterPotterAdmin/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "PP Admin";
@@ -259,11 +385,13 @@
 		A70004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
-				CODE_SIGNING_REQUIRED = NO;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A7QCQT8PG5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PitterPotterAdmin/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "PP Admin";
@@ -286,7 +414,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A70000 /* Build configuration list for PBXProject */ = {
+		A70000 /* Build configuration list for PBXProject "PitterPotterAdmin" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A70001 /* Debug */,
@@ -295,7 +423,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A70010 /* Build configuration list for PBXNativeTarget */ = {
+		A70010 /* Build configuration list for PBXNativeTarget "PitterPotterAdmin" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A70003 /* Debug */,
@@ -305,7 +433,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = A80000 /* Project object */;
 }
