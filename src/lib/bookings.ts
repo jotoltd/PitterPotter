@@ -34,6 +34,7 @@ export function toBookingInquiry(row: any): BookingInquiry {
     stripePaymentIntentId: row.stripe_payment_intent_id || undefined,
     managementToken: row.management_token || undefined,
     createdAt: row.created_at || undefined,
+    photos: row.photos || undefined,
   };
 }
 
@@ -64,6 +65,7 @@ export function toBookingRow(booking: BookingInquiry): any {
     payment_link_sent_at: booking.paymentLinkSentAt || null,
     payment_status: booking.paymentStatus || null,
     stripe_payment_intent_id: booking.stripePaymentIntentId || null,
+    photos: booking.photos || null,
     management_token: booking.managementToken || null,
   };
 }

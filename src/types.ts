@@ -46,6 +46,7 @@ export interface BookingInquiry {
   stripePaymentIntentId?: string;
   managementToken?: string;
   createdAt?: string;
+  photos?: string[];
 }
 
 export interface GalleryItem {

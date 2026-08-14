@@ -4,12 +4,13 @@ import ConfirmDialog from './ConfirmDialog';
 import FloorPlanView from './FloorPlanView';
 import WimbledonFloorPlan, { findAvailableTable, findMultipleTables } from './WimbledonFloorPlan';
 import PutneyFloorPlan, { findAvailablePutneyTable, findMultiplePutneyTables } from './PutneyFloorPlan';
-import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock, Camera } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO, getDay } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { loadBookings, createBooking, updateBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
+import { compressImage } from '../lib/imageCompression';
 import { getAllSlots, getSlots, setSlots, DEFAULT_SLOTS, SlotSessionType, Studio, TimeSlotsData, getStudioSlots, sortSlots, loadSlotsFromSupabase, saveSlotsToSupabase, DayType } from '../lib/timeSlots';
 import { loadClosuresFromSupabase, saveClosuresToSupabase, getClosureDates, ClosureDates, HolidayRange } from '../lib/closures';
 import { useToast } from './ToastContext';
@@ -174,6 +175,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     variant: 'danger' | 'warning';
     onConfirm: () => void;
   }>({ isOpen: false, title: '', message: '', confirmLabel: 'Confirm', variant: 'danger', onConfirm: () => {} });
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   const showConfirmDialog = (opts: { title: string; message: string; confirmLabel?: string; variant?: 'danger' | 'warning'; onConfirm: () => void }) => {
     setConfirmDialog({ isOpen: true, confirmLabel: 'Confirm', variant: 'danger', ...opts });
@@ -1222,6 +1224,57 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const handleEditBooking = (booking: BookingInquiry) => {
     setEditingBooking(booking);
     setShowEditModal(true);
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !editingBooking) return;
+    e.target.value = '';
+    setPhotoUploading(true);
+    try {
+      const newPhotoUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const dataUrl = await compressImage(file);
+        let imageUrl = dataUrl;
+        if (isSupabaseEnabled() && staff?.sessionToken) {
+          const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ action: 'upload', username: staff.username, sessionToken: staff.sessionToken, key: `booking_${editingBooking.id}_photo_${Date.now()}`, page: 'booking-photos', fileData: dataUrl, fileName: file.name }),
+          });
+          const uploadData = await uploadRes.json();
+          if (!uploadRes.ok || uploadData.error || !uploadData.url) {
+            throw new Error(uploadData.error || 'Upload failed');
+          }
+          imageUrl = uploadData.url;
+        }
+        newPhotoUrls.push(imageUrl);
+      }
+      const updatedBooking = { ...editingBooking, photos: [...(editingBooking.photos || []), ...newPhotoUrls] };
+      setEditingBooking(updatedBooking);
+      await updateBooking(updatedBooking, staff);
+      setInquiries(inquiries.map((i) => i.id === updatedBooking.id ? updatedBooking : i));
+      showToast(`${newPhotoUrls.length} photo${newPhotoUrls.length > 1 ? 's' : ''} added`, 'success');
+    } catch (err) {
+      console.error('Failed to upload photo:', err);
+      showToast('Failed to upload photo', 'error');
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
+
+  const handleDeletePhoto = async (index: number) => {
+    if (!editingBooking || !editingBooking.photos) return;
+    const updatedPhotos = editingBooking.photos.filter((_, i) => i !== index);
+    const updatedBooking = { ...editingBooking, photos: updatedPhotos.length > 0 ? updatedPhotos : undefined };
+    setEditingBooking(updatedBooking);
+    try {
+      await updateBooking(updatedBooking, staff);
+      setInquiries(inquiries.map((i) => i.id === updatedBooking.id ? updatedBooking : i));
+      showToast('Photo removed', 'success');
+    } catch {
+      showToast('Failed to remove photo', 'error');
+    }
   };
 
   const saveBookingEdit = async (updatedBooking: BookingInquiry) => {
@@ -2481,6 +2534,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${SESSION_BADGE[inq.sessionType] ?? 'bg-gray-100 text-gray-600'}`}>
                             {SESSION_LABELS[inq.sessionType] ?? inq.sessionType}
                           </span>
+                          {inq.photos && inq.photos.length > 0 && (
+                            <span className="inline-flex items-center gap-0.5 ml-1 text-[#1B2D3C]/50" title={`${inq.photos.length} photo${inq.photos.length > 1 ? 's' : ''}`}>
+                              <Camera className="w-3 h-3" />
+                              <span className="text-[9px] font-bold">{inq.photos.length}</span>
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-black uppercase tracking-wider rounded-full ${
@@ -2774,6 +2833,27 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   <p className="text-[10px] text-[#1B2D3C]/50 mt-1">Choose any time for private/evening sessions.</p>
                 )}
               </div>
+              {newBooking.date && newBooking.time && (
+                <>
+                  {newBookingConflict ? (
+                    <div className="px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 bg-red-50 text-red-700 border border-red-200">
+                      <XCircle className="w-3.5 h-3.5 shrink-0" />
+                      {newBookingConflict}
+                    </div>
+                  ) : (
+                    <div className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 ${
+                      capacityLoading ? 'bg-[#D6E2E9]/30 text-[#1B2D3C]/60' :
+                      newBookingCapacity !== null && newBookingCapacity <= 0 ? 'bg-red-50 text-red-700 border border-red-200' :
+                      newBookingCapacity !== null && newBookingCapacity <= 5 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                      'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    }`}>
+                      <Users className="w-3.5 h-3.5" />
+                      {capacityLoading ? 'Checking capacity...' :
+                       newBookingCapacity !== null ? `${newBookingCapacity} spots remaining` : 'Unable to check capacity'}
+                    </div>
+                  )}
+                </>
+              )}
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Name *</label>
                 <input
@@ -2851,27 +2931,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 resize-none"
                 />
               </div>
-              {newBooking.date && newBooking.time && (
-                <>
-                  {newBookingConflict ? (
-                    <div className="px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 bg-red-50 text-red-700 border border-red-200">
-                      <XCircle className="w-3.5 h-3.5 shrink-0" />
-                      {newBookingConflict}
-                    </div>
-                  ) : (
-                    <div className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 ${
-                      capacityLoading ? 'bg-[#D6E2E9]/30 text-[#1B2D3C]/60' :
-                      newBookingCapacity !== null && newBookingCapacity <= 0 ? 'bg-red-50 text-red-700 border border-red-200' :
-                      newBookingCapacity !== null && newBookingCapacity <= 5 ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                      'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    }`}>
-                      <Users className="w-3.5 h-3.5" />
-                      {capacityLoading ? 'Checking capacity...' :
-                       newBookingCapacity !== null ? `${newBookingCapacity} spots remaining` : 'Unable to check capacity'}
-                    </div>
-                  )}
-                </>
-              )}
               {['birthday-party', 'baby-shower-hen', 'corporate'].includes(newBooking.sessionType || '') && (
                 <div className="space-y-3 p-3 rounded-lg bg-[#F8FAFA] border border-[#1B2D3C]/10">
                   <div>
@@ -3147,6 +3206,47 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </div>
               )}
             </div>
+
+            {/* Photos Section */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider">Painting Photos</label>
+                <label className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all ${
+                  photoUploading
+                    ? 'bg-[#D6E2E9]/40 text-[#1B2D3C]/50 cursor-wait'
+                    : 'bg-[#DBE7E4] text-[#1B2D3C] hover:bg-[#D6E2E9]'
+                }`}>
+                  <Camera className="w-3.5 h-3.5" />
+                  {photoUploading ? 'Uploading...' : 'Add Photos'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoUpload}
+                    disabled={photoUploading}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              {editingBooking.photos && editingBooking.photos.length > 0 ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {editingBooking.photos.map((url, i) => (
+                    <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20">
+                      <img src={url} alt={`Painting ${i + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => handleDeletePhoto(i)}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[10px] text-[#1B2D3C]/50 font-medium">No photos uploaded yet.</p>
+              )}
+            </div>
+
             <div className="flex gap-2">
               <button
                 onClick={() => setShowEditModal(false)}
@@ -4286,6 +4386,20 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-1">Notes</p>
                   <p className="text-xs text-amber-900">{drawerBooking.notes}</p>
+                </div>
+              )}
+
+              {/* Painting Photos */}
+              {drawerBooking.photos && drawerBooking.photos.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-2">Painting Photos</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {drawerBooking.photos.map((url, i) => (
+                      <a key={i} href={url} target="_blank" rel="noreferrer" className="aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20 hover:opacity-80 transition-opacity">
+                        <img src={url} alt={`Painting ${i + 1}`} className="w-full h-full object-cover" />
+                      </a>
+                    ))}
+                  </div>
                 </div>
               )}
 

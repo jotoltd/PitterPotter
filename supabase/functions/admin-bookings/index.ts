@@ -66,6 +66,7 @@ function toBookingRow(booking: any): any {
     payment_link_sent_at: booking.paymentLinkSentAt || null,
     payment_status: booking.paymentStatus || null,
     stripe_payment_intent_id: booking.stripePaymentIntentId || null,
+    photos: booking.photos || null,
   };
 }
 
