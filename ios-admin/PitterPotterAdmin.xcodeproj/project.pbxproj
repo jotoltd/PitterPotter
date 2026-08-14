@@ -46,9 +46,11 @@
 		A10037 /* PPBrand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20038 /* PPBrand.swift */; };
 		A10038 /* GiftCardScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20039 /* GiftCardScannerView.swift */; };
 		A10039 /* GiftCardRedeemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20040 /* GiftCardRedeemView.swift */; };
+		C7D71A2EA55091BD991D7237 /* ToastManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1883213EE229183A001B1D8A /* ToastManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1883213EE229183A001B1D8A /* ToastManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ToastManager.swift; sourceTree = "<group>"; };
 		A20001 /* PitterPotterAdminApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitterPotterAdminApp.swift; sourceTree = "<group>"; };
 		A20002 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		A20003 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
@@ -202,6 +204,7 @@
 				A20022 /* Analytics.swift */,
 				A20037 /* CSVExporter.swift */,
 				A20038 /* PPBrand.swift */,
+				1883213EE229183A001B1D8A /* ToastManager.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -308,6 +311,7 @@
 				A10037 /* PPBrand.swift in Sources */,
 				A10038 /* GiftCardScannerView.swift in Sources */,
 				A10039 /* GiftCardRedeemView.swift in Sources */,
+				C7D71A2EA55091BD991D7237 /* ToastManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

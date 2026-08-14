@@ -1089,13 +1089,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
-  const openRedeemModal = (code?: string) => {
+  const openRedeemModal = (code?: string, autoScan: boolean = false) => {
     setRedeemCode(code || '');
     setRedeemAmount('');
     setRedeemBalanceResult(null);
     setRedeemResult(null);
     setRedeemError('');
-    setAdminScanning(false);
+    setAdminScanning(autoScan);
     setShowRedeemModal(true);
   };
 
@@ -2126,6 +2126,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </button>
               </>
             )}
+            <button
+              onClick={() => openRedeemModal(undefined, true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#DBE7E4] hover:bg-[#D6E2E9] text-[#1B2D3C] text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px] border border-[#1B2D3C]/10"
+              title="Scan QR code to redeem gift card"
+            >
+              <ScanLine className="w-4 h-4" /> <span className="hidden sm:inline">Redeem Card</span><span className="sm:hidden">Redeem</span>
+            </button>
             <button
               onClick={() => {
                 localStorage.setItem('pp_activate_edit_mode', '1');

@@ -3,6 +3,7 @@ import SwiftUI
 struct BookingsListView: View {
     @EnvironmentObject var authVM: AuthViewModel
     @EnvironmentObject var bookingsVM: BookingsViewModel
+    @EnvironmentObject var toastManager: ToastManager
     @State private var showingFilters = false
     @State private var showingNewWalkIn = false
     @State private var showingGhostBooking = false
@@ -340,7 +341,10 @@ struct BookingsListView: View {
             ) {
                 Button("Delete", role: .destructive) {
                     if let booking = bookingToDelete, let staff = authVM.staff {
-                        Task { await bookingsVM.deleteBooking(booking, staff: staff) }
+                        Task {
+                            await bookingsVM.deleteBooking(booking, staff: staff)
+                            toastManager.success("Booking deleted")
+                        }
                     }
                     bookingToDelete = nil
                 }

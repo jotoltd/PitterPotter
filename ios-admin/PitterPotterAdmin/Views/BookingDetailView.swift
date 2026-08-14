@@ -5,6 +5,7 @@ struct BookingDetailView: View {
     let booking: Booking
     @EnvironmentObject var bookingsVM: BookingsViewModel
     @EnvironmentObject var authVM: AuthViewModel
+    @EnvironmentObject var toastManager: ToastManager
     @Environment(\.dismiss) var dismiss
     @State private var showingEdit = false
     @State private var showingPhotoPicker = false
@@ -25,6 +26,7 @@ struct BookingDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                quickStatusActions
                 statusHeader
                 bookingInfoCard
                 contactCard
@@ -122,6 +124,73 @@ struct BookingDetailView: View {
                     .clipShape(Capsule())
             }
             Spacer()
+        }
+    }
+
+    private var quickStatusActions: some View {
+        HStack(spacing: 8) {
+            if authVM.staff?.canUpdateStatus == true {
+                if currentBooking.status != "confirmed" {
+                    Button {
+                        updateStatus(.confirmed)
+                    } label: {
+                        Label("Confirm", systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.green)
+                    .controlSize(.small)
+                }
+                if currentBooking.status == "confirmed" {
+                    Button {
+                        updateStatus(.seated)
+                    } label: {
+                        Label("Seat", systemImage: "person.2.fill")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.orange)
+                    .controlSize(.small)
+                }
+                if currentBooking.status == "seated" {
+                    Button {
+                        updateStatus(.completed)
+                    } label: {
+                        Label("Complete", systemImage: "checkmark.seal.fill")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(PPBrand.charcoal)
+                    .controlSize(.small)
+                }
+                if currentBooking.status != "cancelled" && currentBooking.status != "completed" {
+                    Button {
+                        updateStatus(.cancelled)
+                    } label: {
+                        Label("Cancel", systemImage: "xmark.circle")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                    .controlSize(.small)
+                }
+            }
+            Spacer()
+        }
+    }
+
+    private func updateStatus(_ status: BookingStatus) {
+        guard let staff = authVM.staff else { return }
+        Task {
+            await bookingsVM.optimisticUpdateStatus(booking: currentBooking, status: status, staff: staff)
+            await MainActor.run {
+                currentBooking = bookingsVM.bookings.first(where: { $0.id == currentBooking.id }) ?? currentBooking
+                toastManager.success("\(status.label)")
+            }
         }
     }
 
@@ -435,7 +504,17 @@ struct EditBookingView: View {
                     Picker("Studio", selection: bindingFor(\.studio)) {
                         ForEach(Studio.allCases, id: \.self) { Text($0.rawValue).tag($0.rawValue) }
                     }
-                    TextField("Date (YYYY-MM-DD)", text: bindingFor(\.date))
+                    DatePicker("Date", selection: Binding(
+                        get: {
+                            ISO8601DateFormatter().date(from: editingBooking.date + "T00:00:00Z") ?? Date()
+                        },
+                        set: { newDate in
+                            let formatter = DateFormatter()
+                            formatter.dateFormat = "yyyy-MM-dd"
+                            formatter.timeZone = TimeZone(identifier: "UTC")
+                            editingBooking.date = formatter.string(from: newDate)
+                        }
+                    ), displayedComponents: .date)
                     TextField("Time", text: bindingFor(\.time))
                     Stepper("Painters: \(editingBooking.paintersCount)", value: bindingForInt(\.paintersCount), in: 1...100)
                     Picker("Session Type", selection: bindingFor(\.sessionType)) {

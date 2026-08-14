@@ -2,6 +2,7 @@ import SwiftUI
 
 struct GiftCardView: View {
     @EnvironmentObject var authVM: AuthViewModel
+    @EnvironmentObject var toastManager: ToastManager
     @State private var giftCards: [GiftCard] = []
     @State private var isLoading = false
     @State private var error: String?
@@ -173,9 +174,13 @@ struct GiftCardView: View {
                         giftCards[idx].status = "redeemed"
                     }
                     Haptics.success()
+                    toastManager.success("Gift card redeemed")
                 }
             } catch {
-                Haptics.error()
+                await MainActor.run {
+                    Haptics.error()
+                    toastManager.error("Failed to redeem card")
+                }
             }
         }
     }
@@ -190,9 +195,13 @@ struct GiftCardView: View {
                         giftCards[idx].status = "cancelled"
                     }
                     Haptics.success()
+                    toastManager.success("Gift card cancelled")
                 }
             } catch {
-                Haptics.error()
+                await MainActor.run {
+                    Haptics.error()
+                    toastManager.error("Failed to cancel card")
+                }
             }
         }
     }
@@ -210,10 +219,12 @@ struct GiftCardView: View {
                 try await APIClient.shared.resendGiftCard(id: card.id, staff: staff)
                 await MainActor.run {
                     Haptics.success()
+                    toastManager.success("Email resent to \(card.recipientEmail ?? "")")
                 }
             } catch {
                 await MainActor.run {
                     Haptics.error()
+                    toastManager.error("Failed to resend email")
                 }
             }
         }
@@ -228,11 +239,13 @@ struct GiftCardView: View {
                     giftCards.removeAll { $0.id == card.id }
                     cardToDelete = nil
                     Haptics.success()
+                    toastManager.success("Gift card deleted")
                 }
             } catch {
                 await MainActor.run {
                     cardToDelete = nil
                     Haptics.error()
+                    toastManager.error("Failed to delete card")
                 }
             }
         }

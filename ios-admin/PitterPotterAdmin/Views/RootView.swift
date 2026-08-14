@@ -75,6 +75,7 @@ struct RootView: View {
     @EnvironmentObject var authVM: AuthViewModel
     @StateObject private var bookingsVM = BookingsViewModel()
     @State private var selectedTab: AppTab? = .dashboard
+    @State private var showingRedeem = false
 
     var body: some View {
         if authVM.isLoggedIn {
@@ -117,6 +118,25 @@ struct RootView: View {
             }
             .navigationTitle("")
             .tint(PPBrand.charcoal)
+            .safeAreaInset(edge: .bottom) {
+                Button {
+                    showingRedeem = true
+                } label: {
+                    HStack {
+                        Image(systemName: "qrcode.viewfinder")
+                        Text("Redeem Gift Card")
+                            .fontWeight(.semibold)
+                        Spacer()
+                    }
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 16)
+                    .background(PPBrand.charcoal)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+            }
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 8) {
@@ -137,6 +157,10 @@ struct RootView: View {
             }
         }
         .tint(PPBrand.charcoal)
+        .sheet(isPresented: $showingRedeem) {
+            GiftCardRedeemView()
+                .environmentObject(authVM)
+        }
         .task {
             bookingsVM.loadFromCache()
             if let staff = authVM.staff {
