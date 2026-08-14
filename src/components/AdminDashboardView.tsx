@@ -1005,8 +1005,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
-  const checkRedeemBalance = async () => {
-    if (!redeemCode.trim()) return;
+  const checkRedeemBalance = async (codeOverride?: string) => {
+    const codeToUse = codeOverride ?? redeemCode;
+    if (!codeToUse.trim()) return;
     setRedeemChecking(true);
     setRedeemError('');
     setRedeemBalanceResult(null);
@@ -1015,7 +1016,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift-cards`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ action: 'balance', username: staff.username, sessionToken: staff.sessionToken, code: redeemCode.trim() }),
+        body: JSON.stringify({ action: 'balance', username: staff.username, sessionToken: staff.sessionToken, code: codeToUse.trim() }),
       });
       const data = await response.json();
       if (!response.ok || data.error) throw new Error(data.error || 'Gift card not found');
@@ -1102,7 +1103,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const handleAdminScan = (scannedCode: string) => {
     setRedeemCode(scannedCode);
     setAdminScanning(false);
-    checkRedeemBalance();
+    checkRedeemBalance(scannedCode);
   };
 
   const loadStaffList = async () => {
@@ -3902,7 +3903,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   </button>
                   <button
                     type="button"
-                    onClick={checkRedeemBalance}
+                    onClick={() => checkRedeemBalance()}
                     disabled={!redeemCode.trim() || redeemChecking}
                     className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] cursor-pointer disabled:opacity-50"
                   >
