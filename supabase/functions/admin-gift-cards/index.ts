@@ -1,10 +1,19 @@
 import { createClient } from 'supabase';
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { isObject, isNonEmptyString, isOneOf, isNumber } from '../_shared/validate.ts';
 import { logAudit } from '../_shared/audit.ts';
 import type { AdminSupabaseClient, StaffRecord } from '../_shared/types.ts';
 import { verifyStaff } from '../_shared/auth.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
+
+// Lazy-load pdf-lib only when needed for voucher generation
+let _pdfLib: typeof import('pdf-lib') | null = null;
+async function getPdfLib() {
+  if (!_pdfLib) {
+    const mod = await import('pdf-lib');
+    _pdfLib = mod;
+  }
+  return _pdfLib;
+}
 
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -42,6 +51,7 @@ interface GiftCardRow {
 }
 
 async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
+  const { PDFDocument, StandardFonts, rgb } = await getPdfLib();
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([600, 400]);
   const { width, height } = page.getSize();
@@ -536,7 +546,7 @@ Deno.serve(async (req) => {
       }
       const pdfBytes = await generateVoucherPDF(giftCard);
       await logAudit(supabase, staff, 'download_voucher', 'gift_card', id, { code: giftCard.code });
-      return new Response(pdfBytes, {
+      return new Response(new Blob([pdfBytes], { type: 'application/pdf' }), {
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/pdf',
@@ -550,8 +560,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    console.error('Admin gift cards error:', err);
-    return new Response(JSON.stringify({ error: 'Failed to process request' }), {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error('Admin gift cards error:', errMsg);
+    return new Response(JSON.stringify({ error: 'Failed to process request', detail: errMsg }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
