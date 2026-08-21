@@ -76,16 +76,32 @@ struct RootView: View {
     @StateObject private var bookingsVM = BookingsViewModel()
     @State private var selectedTab: AppTab? = .dashboard
     @State private var showingRedeem = false
+    @State private var showSplash = true
 
     var body: some View {
-        if authVM.isLoggedIn {
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                ipadLayout
+        ZStack {
+            if showSplash {
+                SplashScreenView()
+                    .transition(.opacity)
+                    .zIndex(1)
             } else {
-                iphoneLayout
+                if authVM.isLoggedIn {
+                    if UIDevice.current.userInterfaceIdiom == .pad {
+                        ipadLayout
+                    } else {
+                        iphoneLayout
+                    }
+                } else {
+                    LoginView()
+                }
             }
-        } else {
-            LoginView()
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                withAnimation(.easeOut(duration: 0.4)) {
+                    showSplash = false
+                }
+            }
         }
     }
 
@@ -104,11 +120,10 @@ struct RootView: View {
                         let pendingCount = bookingsVM.bookings.filter { $0.status == "pending" }.count
                         if pendingCount > 0 {
                             Text("\(pendingCount)")
-                                .font(.caption2)
-                                .fontWeight(.bold)
+                                .font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
                                 .background(Color.orange)
                                 .clipShape(Capsule())
                         }
@@ -122,17 +137,22 @@ struct RootView: View {
                 Button {
                     showingRedeem = true
                 } label: {
-                    HStack {
+                    HStack(spacing: 8) {
                         Image(systemName: "qrcode.viewfinder")
+                            .font(.system(size: 16, weight: .semibold))
                         Text("Redeem Gift Card")
-                            .fontWeight(.semibold)
+                            .font(.system(size: 14, weight: .bold))
                         Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.5))
                     }
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 14)
                     .padding(.horizontal, 16)
                     .background(PPBrand.charcoal)
                     .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .shadow(color: PPBrand.charcoal.opacity(0.2), radius: 4, y: 2)
                 }
                 .padding(.horizontal, 12)
                 .padding(.bottom, 8)

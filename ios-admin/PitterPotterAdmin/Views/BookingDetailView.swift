@@ -25,9 +25,9 @@ struct BookingDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                quickStatusActions
+            VStack(spacing: 16) {
                 statusHeader
+                quickStatusActions
                 bookingInfoCard
                 contactCard
                 if isPartyBooking {
@@ -37,8 +37,9 @@ struct BookingDetailView: View {
                 photosSection
                 metaSection
             }
-            .padding()
+            .padding(20)
         }
+        .background(Color(.systemGroupedBackground))
         .navigationTitle(currentBooking.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -111,20 +112,41 @@ struct BookingDetailView: View {
     }
 
     private var statusHeader: some View {
-        HStack {
-            StatusBadge(status: currentBooking.bookingStatus ?? .pending)
-            if let tableId = currentBooking.tableId {
-                Text(tableId)
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(PPBrand.charcoal.opacity(0.2))
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(currentBooking.name)
+                    .font(.system(size: 22, weight: .heavy))
                     .foregroundStyle(PPBrand.charcoal)
-                    .clipShape(Capsule())
+                HStack(spacing: 6) {
+                    Text(currentBooking.sessionTypeEnum?.label ?? currentBooking.sessionType)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    Text("\u{00B7}")
+                        .font(.system(size: 13))
+                        .foregroundStyle(PPBrand.clay300)
+                    Text(currentBooking.studio)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                }
             }
             Spacer()
+            VStack(alignment: .trailing, spacing: 6) {
+                StatusBadge(status: currentBooking.bookingStatus ?? .pending)
+                if let tableId = currentBooking.tableId {
+                    Text(tableId)
+                        .font(.system(size: 11, weight: .bold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(PPBrand.charcoal.opacity(0.1))
+                        .foregroundStyle(PPBrand.charcoal)
+                        .clipShape(Capsule())
+                }
+            }
         }
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
     }
 
     private var quickStatusActions: some View {
@@ -134,52 +156,71 @@ struct BookingDetailView: View {
                     Button {
                         updateStatus(.confirmed)
                     } label: {
-                        Label("Confirm", systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .fontWeight(.bold)
+                        VStack(spacing: 4) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 18))
+                            Text("Confirm")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(.green.opacity(0.12))
+                        .foregroundStyle(.green)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .buttonStyle(.bordered)
-                    .tint(.green)
-                    .controlSize(.small)
                 }
                 if currentBooking.status == "confirmed" {
                     Button {
                         updateStatus(.seated)
                     } label: {
-                        Label("Seat", systemImage: "person.2.fill")
-                            .font(.caption)
-                            .fontWeight(.bold)
+                        VStack(spacing: 4) {
+                            Image(systemName: "person.2.fill")
+                                .font(.system(size: 18))
+                            Text("Seat")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(.orange.opacity(0.12))
+                        .foregroundStyle(.orange)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .buttonStyle(.bordered)
-                    .tint(.orange)
-                    .controlSize(.small)
                 }
                 if currentBooking.status == "seated" {
                     Button {
                         updateStatus(.completed)
                     } label: {
-                        Label("Complete", systemImage: "checkmark.seal.fill")
-                            .font(.caption)
-                            .fontWeight(.bold)
+                        VStack(spacing: 4) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 18))
+                            Text("Complete")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(PPBrand.charcoal.opacity(0.1))
+                        .foregroundStyle(PPBrand.charcoal)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .buttonStyle(.bordered)
-                    .tint(PPBrand.charcoal)
-                    .controlSize(.small)
                 }
                 if currentBooking.status != "cancelled" && currentBooking.status != "completed" {
                     Button {
                         updateStatus(.cancelled)
                     } label: {
-                        Label("Cancel", systemImage: "xmark.circle")
-                            .font(.caption)
-                            .fontWeight(.bold)
+                        VStack(spacing: 4) {
+                            Image(systemName: "xmark.circle")
+                                .font(.system(size: 18))
+                            Text("Cancel")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(.red.opacity(0.1))
+                        .foregroundStyle(.red)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .buttonStyle(.bordered)
-                    .tint(.red)
-                    .controlSize(.small)
                 }
             }
-            Spacer()
         }
     }
 
@@ -199,9 +240,16 @@ struct BookingDetailView: View {
     }
 
     private var paymentSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Payment")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 6) {
+                Image(systemName: "creditcard.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
+                Text("Payment")
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
+                Spacer()
+            }
 
             if let deposit = currentBooking.depositAmount {
                 InfoRow(icon: "sterlingsign.circle", label: "Deposit", value: "£\(String(format: "%.2f", deposit))")
@@ -219,50 +267,73 @@ struct BookingDetailView: View {
                     InfoRow(icon: "clock", label: "Sent At", value: sentAt.prefix(10).description)
                 }
                 ShareLink(item: URL(string: link) ?? URL(string: "https://pitterpotter.co.uk")!) {
-                    Label("Open Payment Link", systemImage: "arrow.up.right.square")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundStyle(PPBrand.charcoal)
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.up.right.square")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Open Payment Link")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundStyle(PPBrand.charcoal)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(PPBrand.charcoal.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
             } else {
                 Button {
                     reminderFinalSeats = currentBooking.finalSeats ?? currentBooking.paintersCount
                     showingPaymentReminder = true
                 } label: {
-                    Label("Send Final Payment Reminder", systemImage: "envelope.badge")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                    HStack(spacing: 6) {
+                        Image(systemName: "envelope.badge")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Send Final Payment Reminder")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(PPBrand.charcoal)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
-                .buttonStyle(.bordered)
-                .tint(PPBrand.charcoal)
             }
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
     }
 
     private var bookingInfoCard: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 0) {
             InfoRow(icon: "calendar", label: "Date", value: currentBooking.date)
+            Divider().padding(.leading, 40)
             InfoRow(icon: "clock", label: "Time", value: currentBooking.time)
+            Divider().padding(.leading, 40)
             InfoRow(icon: "building.2", label: "Studio", value: currentBooking.studio)
+            Divider().padding(.leading, 40)
             InfoRow(icon: "person.2", label: "Painters", value: "\(currentBooking.paintersCount)")
+            Divider().padding(.leading, 40)
             InfoRow(icon: "paintpalette", label: "Session", value: currentBooking.sessionTypeEnum?.label ?? currentBooking.sessionType)
             if let source = currentBooking.source {
+                Divider().padding(.leading, 40)
                 InfoRow(icon: "arrow.right.circle", label: "Source", value: source)
             }
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
     }
 
     private var contactCard: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 0) {
             if !currentBooking.email.isEmpty {
                 Link(destination: URL(string: "mailto:\(currentBooking.email)") ?? URL(string: "mailto:")!) {
                     ContactRow(icon: "envelope", text: currentBooking.email)
+                }
+                if !currentBooking.phone.isEmpty {
+                    Divider().padding(.leading, 40)
                 }
             }
             if !currentBooking.phone.isEmpty {
@@ -271,58 +342,74 @@ struct BookingDetailView: View {
                 }
             }
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
     }
 
     @ViewBuilder
     private var notesCard: some View {
         if let notes = currentBooking.notes, !notes.isEmpty {
-            VStack(alignment: .leading, spacing: 4) {
-                Label("Notes", systemImage: "note.text")
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "note.text")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.orange)
+                    Text("Notes")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.orange)
+                        .textCase(.uppercase)
+                        .tracking(0.5)
+                }
                 Text(notes)
-                    .font(.subheadline)
+                    .font(.system(size: 15))
+                    .foregroundStyle(PPBrand.charcoal)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(Color.orange.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .padding(20)
+            .background(Color.orange.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.orange.opacity(0.2), lineWidth: 1)
+            )
         }
     }
 
     private var photosSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 6) {
+                Image(systemName: "camera.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
                 Text("Painting Photos")
-                    .font(.headline)
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
                 Spacer()
                 if UIImagePickerController.isSourceTypeAvailable(.camera) {
                     Button {
                         showingCamera = true
                     } label: {
                         Image(systemName: "camera")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(PPBrand.charcoal)
                     }
                     .disabled(isUploading || authVM.staff?.canEditBookings != true)
                 }
                 PhotosPicker(selection: $selectedItems, maxSelectionCount: 10, matching: .images) {
                     Label("Gallery", systemImage: "photo.on.rectangle")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(PPBrand.charcoal)
                 }
                 .disabled(isUploading || authVM.staff?.canEditBookings != true)
             }
 
             if isUploading {
-                HStack {
+                HStack(spacing: 8) {
                     ProgressView()
                     Text("Uploading...")
-                        .font(.subheadline)
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -334,14 +421,20 @@ struct BookingDetailView: View {
                     }
                 }
             } else {
-                Text("No photos uploaded yet.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 14))
+                        .foregroundStyle(PPBrand.clay300)
+                    Text("No photos uploaded yet")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(PPBrand.clay300)
+                }
             }
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
     }
 
     private func photoThumbnail(url: String, index: Int) -> some View {
@@ -371,15 +464,16 @@ struct BookingDetailView: View {
     private var metaSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Booking ID: \(currentBooking.id)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .foregroundStyle(PPBrand.clay300)
             if let createdAt = currentBooking.createdAt {
                 Text("Created: \(createdAt)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(PPBrand.clay300)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 4)
     }
 
     private func uploadPhotos(_ items: [PhotosPickerItem]) async {
@@ -440,18 +534,22 @@ struct InfoRow: View {
     let value: String
 
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
             Image(systemName: icon)
-                .frame(width: 24)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 14, weight: .medium))
+                .frame(width: 28, height: 28)
+                .background(PPBrand.charcoal.opacity(0.06))
+                .foregroundStyle(PPBrand.charcoal)
+                .clipShape(RoundedRectangle(cornerRadius: 7))
             Text(label)
-                .font(.subheadline)
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .font(.subheadline)
-                .fontWeight(.semibold)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(PPBrand.charcoal)
         }
+        .padding(.vertical, 4)
     }
 }
 
@@ -460,18 +558,22 @@ struct ContactRow: View {
     let text: String
 
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
             Image(systemName: icon)
-                .frame(width: 24)
+                .font(.system(size: 14, weight: .medium))
+                .frame(width: 28, height: 28)
+                .background(PPBrand.charcoal.opacity(0.06))
                 .foregroundStyle(PPBrand.charcoal)
+                .clipShape(RoundedRectangle(cornerRadius: 7))
             Text(text)
-                .font(.subheadline)
-                .foregroundStyle(.primary)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(PPBrand.charcoal)
             Spacer()
             Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(PPBrand.clay300)
         }
+        .padding(.vertical, 4)
     }
 }
 

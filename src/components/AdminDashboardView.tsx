@@ -1005,6 +1005,32 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
+  const downloadGiftCardVoucher = async (id: string, code: string) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift-cards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'downloadVoucher', username: staff.username, sessionToken: staff.sessionToken, id }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to download voucher');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = `pitter-potter-gift-voucher-${code}.pdf`;
+      window.document.body.appendChild(a);
+      a.click();
+      window.document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      showToast(`Voucher ${code} downloaded`, 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to download voucher', 'error');
+    }
+  };
+
   const checkRedeemBalance = async (codeOverride?: string) => {
     const codeToUse = codeOverride ?? redeemCode;
     if (!codeToUse.trim()) return;
@@ -2393,6 +2419,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                               className="px-2 py-1 bg-[#D6E2E9]/50 text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded hover:bg-[#D6E2E9] cursor-pointer"
                             >
                               Resend
+                            </button>
+                          )}
+                          {staff.role === 'super_admin' && (
+                            <button
+                              onClick={() => downloadGiftCardVoucher(card.id, card.code)}
+                              className="px-2 py-1 bg-[#DBE7E4] text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded hover:bg-[#D6E2E9] cursor-pointer"
+                            >
+                              Download
                             </button>
                           )}
                           {staff.role === 'super_admin' && (

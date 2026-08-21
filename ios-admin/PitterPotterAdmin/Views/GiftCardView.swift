@@ -10,6 +10,9 @@ struct GiftCardView: View {
     @State private var statusFilter: String? = nil
     @State private var showingCreate = false
     @State private var showingRedeem = false
+    @State private var voucherFileURL: URL?
+    @State private var showingVoucherShare = false
+    @State private var downloadingVoucher: GiftCard?
 
     private let statusOptions = ["active", "redeemed", "expired", "cancelled"]
 
@@ -67,6 +70,12 @@ struct GiftCardView: View {
                                         Label("Cancel", systemImage: "xmark.circle")
                                     }
                                 }
+                                Button {
+                                    downloadVoucher(card)
+                                } label: {
+                                    Label("Download", systemImage: "square.and.arrow.down")
+                                }
+                                .tint(PPBrand.clay300)
                                 Button(role: .destructive) {
                                     deleteCard(card)
                                 } label: {
@@ -82,6 +91,9 @@ struct GiftCardView: View {
                                     Button { resendCard(card) } label: {
                                         Label("Resend Email", systemImage: "envelope.arrow.triangle.branch")
                                     }
+                                }
+                                Button { downloadVoucher(card) } label: {
+                                    Label("Download Voucher", systemImage: "square.and.arrow.down")
                                 }
                                 Button("Delete Card", role: .destructive) { deleteCard(card) }
                             }
@@ -230,6 +242,31 @@ struct GiftCardView: View {
         }
     }
 
+    private func downloadVoucher(_ card: GiftCard) {
+        guard let staff = authVM.staff else { return }
+        downloadingVoucher = card
+        Task {
+            do {
+                let pdfData = try await APIClient.shared.downloadGiftCardVoucher(id: card.id, staff: staff)
+                let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("pitter-potter-gift-voucher-\(card.code).pdf")
+                try pdfData.write(to: tempURL)
+                await MainActor.run {
+                    downloadingVoucher = nil
+                    Haptics.success()
+                    toastManager.success("Voucher downloaded")
+                    voucherFileURL = tempURL
+                    showingVoucherShare = true
+                }
+            } catch {
+                await MainActor.run {
+                    downloadingVoucher = nil
+                    Haptics.error()
+                    toastManager.error("Failed to download voucher")
+                }
+            }
+        }
+    }
+
     private func confirmDelete() {
         guard let staff = authVM.staff, let card = cardToDelete else { return }
         Task {
@@ -256,48 +293,55 @@ struct GiftCardRowView: View {
     let card: GiftCard
 
     var body: some View {
-        HStack {
-            Image(systemName: "giftcard")
-                .font(.title2)
-                .foregroundStyle(statusColor)
+        HStack(spacing: 12) {
+            VStack(spacing: 4) {
+                Image(systemName: "giftcard.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(statusColor)
+            }
+            .frame(width: 44, height: 44)
+            .background(statusColor.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(card.code)
-                    .font(.headline)
-                    .font(.system(.headline, design: .monospaced))
+                    .font(.system(size: 15, weight: .bold, design: .monospaced))
+                    .foregroundStyle(PPBrand.charcoal)
                 if let name = card.recipientName {
                     Text(name)
-                        .font(.subheadline)
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
-                if let email = card.recipientEmail {
+                if let email = card.recipientEmail, !email.isEmpty {
                     Text(email)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(PPBrand.clay300)
                 }
             }
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 2) {
-                Text("£\(String(format: "%.2f", card.amount))")
-                    .font(.headline)
-                if let balance = card.balance {
-                    Text("Bal: £\(String(format: "%.2f", balance))")
-                        .font(.caption)
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("£\(String(format: "%.0f", card.amount))")
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
+                if let balance = card.balance, balance != card.amount {
+                    Text("Bal £\(String(format: "%.0f", balance))")
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.secondary)
                 }
                 Text(card.statusLabel)
-                    .font(.caption2)
-                    .fontWeight(.bold)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(statusColor.opacity(0.2))
+                    .font(.system(size: 9, weight: .bold))
+                    .textCase(.uppercase)
+                    .tracking(0.3)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(statusColor.opacity(0.15))
                     .foregroundStyle(statusColor)
                     .clipShape(Capsule())
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
     }
 
     private var statusColor: Color {

@@ -17,54 +17,70 @@ struct BookingsListView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 // Search bar
-                HStack {
+                HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(PPBrand.clay300)
                     TextField("Search name, email, phone...", text: $bookingsVM.searchText)
                         .textInputAutocapitalization(.never)
+                        .font(.system(size: 15))
+                    if !bookingsVM.searchText.isEmpty {
+                        Button {
+                            bookingsVM.searchText = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(PPBrand.clay300)
+                        }
+                    }
                 }
-                .padding(10)
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .padding(.horizontal)
+                .padding(12)
+                .background(PPBrand.charcoal.opacity(0.06))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 16)
                 .padding(.top, 8)
 
                 // Active filters
                 if hasActiveFilters {
-                    HStack(spacing: 8) {
-                        if bookingsVM.showTodayOnly {
-                            FilterChip(text: "Today") { bookingsVM.showTodayOnly = false }
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            if bookingsVM.showTodayOnly {
+                                FilterChip(text: "Today", icon: "sun.max.fill") { bookingsVM.showTodayOnly = false }
+                            }
+                            if let studio = bookingsVM.selectedStudio {
+                                FilterChip(text: studio.rawValue, icon: "building.2.fill") { bookingsVM.selectedStudio = nil }
+                            }
+                            if let status = bookingsVM.selectedStatus {
+                                FilterChip(text: status.label, icon: "circle.fill") { bookingsVM.selectedStatus = nil }
+                            }
+                            if bookingsVM.dateRangeStart != nil {
+                                FilterChip(text: "From", icon: "calendar") { bookingsVM.dateRangeStart = nil }
+                            }
+                            if bookingsVM.dateRangeEnd != nil {
+                                FilterChip(text: "To", icon: "calendar") { bookingsVM.dateRangeEnd = nil }
+                            }
+                            if bookingsVM.selectedDate != nil {
+                                FilterChip(text: "Date", icon: "calendar.badge.clock") { bookingsVM.selectedDate = nil }
+                            }
                         }
-                        if let studio = bookingsVM.selectedStudio {
-                            FilterChip(text: studio.rawValue) { bookingsVM.selectedStudio = nil }
-                        }
-                        if let status = bookingsVM.selectedStatus {
-                            FilterChip(text: status.label) { bookingsVM.selectedStatus = nil }
-                        }
-                        if bookingsVM.dateRangeStart != nil {
-                            FilterChip(text: "From") { bookingsVM.dateRangeStart = nil }
-                        }
-                        if bookingsVM.dateRangeEnd != nil {
-                            FilterChip(text: "To") { bookingsVM.dateRangeEnd = nil }
-                        }
-                        if bookingsVM.selectedDate != nil {
-                            FilterChip(text: "Date") { bookingsVM.selectedDate = nil }
-                        }
-                        Spacer()
+                        .padding(.horizontal, 16)
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 4)
+                    .padding(.top, 8)
                 }
 
                 // Offline banner
                 if bookingsVM.isOffline {
-                    HStack {
+                    HStack(spacing: 6) {
                         Image(systemName: "wifi.slash")
-                        Text("Offline - showing cached data")
-                            .font(.caption)
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Offline — showing cached data")
+                            .font(.system(size: 13, weight: .semibold))
                     }
                     .foregroundStyle(.orange)
-                    .padding(.horizontal)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 6)
+                    .background(.orange.opacity(0.1))
+                    .clipShape(Capsule())
                     .padding(.top, 4)
                 }
 
@@ -407,37 +423,44 @@ struct BookingRowView: View {
         HStack(spacing: 12) {
             VStack(alignment: .center, spacing: 2) {
                 Text(booking.date.prefix(5).description)
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
                 Text(booking.time.split(separator: "-").first.map { String($0) } ?? booking.time)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(PPBrand.clay300)
             }
             .frame(width: 52)
+            .padding(.vertical, 6)
+            .background(PPBrand.charcoal.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 4) {
-                HStack {
+                HStack(spacing: 4) {
                     Text(booking.name)
-                        .font(.headline)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(PPBrand.charcoal)
                         .lineLimit(1)
                     if let photos = booking.photos, !photos.isEmpty {
                         Image(systemName: "camera.fill")
-                            .font(.caption2)
-                            .foregroundStyle(PPBrand.charcoal)
+                            .font(.system(size: 10))
+                            .foregroundStyle(PPBrand.clay300)
                     }
                 }
-                HStack(spacing: 6) {
+                HStack(spacing: 4) {
                     Image(systemName: "person.2.fill")
-                        .font(.caption2)
+                        .font(.system(size: 10))
                     Text("\(booking.paintersCount)")
-                        .font(.caption)
-                    Text("·")
+                        .font(.system(size: 12, weight: .medium))
+                    Text("\u{00B7}")
+                        .font(.system(size: 12))
+                        .foregroundStyle(PPBrand.clay300)
                     Text(booking.studio)
-                        .font(.caption)
-                    Text("·")
+                        .font(.system(size: 12, weight: .medium))
+                    Text("\u{00B7}")
+                        .font(.system(size: 12))
+                        .foregroundStyle(PPBrand.clay300)
                     Text(booking.sessionTypeEnum?.label ?? booking.sessionType)
-                        .font(.caption)
+                        .font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
                 }
                 .foregroundStyle(.secondary)
@@ -447,7 +470,7 @@ struct BookingRowView: View {
 
             StatusBadge(status: booking.bookingStatus ?? .pending)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
     }
 }
 
@@ -458,11 +481,12 @@ struct StatusBadge: View {
 
     var body: some View {
         Text(status.label)
-            .font(.caption2)
-            .fontWeight(.bold)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(color.opacity(0.2))
+            .font(.system(size: 10, weight: .bold))
+            .textCase(.uppercase)
+            .tracking(0.3)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(color.opacity(0.15))
             .foregroundStyle(color)
             .clipShape(Capsule())
     }
@@ -482,21 +506,26 @@ struct StatusBadge: View {
 
 struct FilterChip: View {
     let text: String
+    var icon: String? = nil
     let onRemove: () -> Void
 
     var body: some View {
         HStack(spacing: 4) {
+            if let icon {
+                Image(systemName: icon)
+                    .font(.system(size: 10, weight: .semibold))
+            }
             Text(text)
-                .font(.caption)
-                .fontWeight(.medium)
+                .font(.system(size: 12, weight: .semibold))
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.caption)
+                    .font(.system(size: 13))
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(Color(.systemGray5))
+        .foregroundStyle(PPBrand.charcoal)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(PPBrand.sage)
         .clipShape(Capsule())
     }
 }

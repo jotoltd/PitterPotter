@@ -46,6 +46,7 @@
 		A10037 /* PPBrand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20038 /* PPBrand.swift */; };
 		A10038 /* GiftCardScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20039 /* GiftCardScannerView.swift */; };
 		A10039 /* GiftCardRedeemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20040 /* GiftCardRedeemView.swift */; };
+		A10040 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20041 /* SplashScreenView.swift */; };
 		C7D71A2EA55091BD991D7237 /* ToastManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1883213EE229183A001B1D8A /* ToastManager.swift */; };
 /* End PBXBuildFile section */
 
@@ -91,6 +92,7 @@
 		A20038 /* PPBrand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PPBrand.swift; sourceTree = "<group>"; };
 		A20039 /* GiftCardScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiftCardScannerView.swift; sourceTree = "<group>"; };
 		A20040 /* GiftCardRedeemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiftCardRedeemView.swift; sourceTree = "<group>"; };
+		A20041 /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
 		A30000 /* PitterPotterAdmin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PitterPotterAdmin.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -193,6 +195,7 @@
 				A20036 /* GhostBookingView.swift */,
 				A20039 /* GiftCardScannerView.swift */,
 				A20040 /* GiftCardRedeemView.swift */,
+				A20041 /* SplashScreenView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -311,6 +314,7 @@
 				A10037 /* PPBrand.swift in Sources */,
 				A10038 /* GiftCardScannerView.swift in Sources */,
 				A10039 /* GiftCardRedeemView.swift in Sources */,
+				A10040 /* SplashScreenView.swift in Sources */,
 				C7D71A2EA55091BD991D7237 /* ToastManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

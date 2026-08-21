@@ -72,34 +72,44 @@ struct AuditLogRowView: View {
     let log: AuditLog
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Image(systemName: iconForAction(log.action))
-                    .foregroundStyle(colorForAction(log.action))
-                Text(log.action.capitalized)
-                    .font(.headline)
-                Text(log.entity)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if let createdAt = log.createdAt {
-                    Text(createdAt.prefix(16))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+        HStack(spacing: 12) {
+            Image(systemName: iconForAction(log.action))
+                .font(.system(size: 16, weight: .semibold))
+                .frame(width: 36, height: 36)
+                .background(colorForAction(log.action).opacity(0.1))
+                .foregroundStyle(colorForAction(log.action))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(log.action.capitalized)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(PPBrand.charcoal)
+                    Text(log.entity)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                if let username = log.username {
+                    Text("by \(username)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                if let entityId = log.entityId {
+                    Text("ID: \(entityId)")
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .foregroundStyle(PPBrand.clay300)
                 }
             }
-            if let username = log.username {
-                Text("by \(username)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            if let entityId = log.entityId {
-                Text("ID: \(entityId)")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+
+            Spacer()
+
+            if let createdAt = log.createdAt {
+                Text(createdAt.prefix(16))
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(PPBrand.clay300)
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
     }
 
     private func iconForAction(_ action: String) -> String {

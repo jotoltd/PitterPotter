@@ -1,4 +1,5 @@
 import { createClient } from 'supabase';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { isObject, isNonEmptyString, isOneOf, isNumber } from '../_shared/validate.ts';
 import { logAudit } from '../_shared/audit.ts';
 import type { AdminSupabaseClient, StaffRecord } from '../_shared/types.ts';
@@ -12,6 +13,153 @@ function generateCode(): string {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
+}
+
+async function generateQRCodeBytes(text: string): Promise<Uint8Array | null> {
+  try {
+    const response = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(text)}&bgcolor=FFFFFF&color=1B2D3C&margin=0`);
+    if (!response.ok) return null;
+    const arrayBuffer = await response.arrayBuffer();
+    return new Uint8Array(arrayBuffer);
+  } catch {
+    return null;
+  }
+}
+
+interface GiftCardRow {
+  id: string;
+  code: string;
+  amount: number;
+  balance: number;
+  recipient_name: string;
+  recipient_email: string;
+  sender_name: string;
+  sender_email: string;
+  message: string;
+  purchase_date: string;
+  expiry_date: string;
+  status: string;
+}
+
+async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([600, 400]);
+  const { width, height } = page.getSize();
+
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontOblique = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+
+  page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(0.96, 0.95, 0.91) });
+
+  const borderWidth = 3;
+  page.drawRectangle({
+    x: borderWidth, y: borderWidth,
+    width: width - borderWidth * 2, height: height - borderWidth * 2,
+    borderColor: rgb(0.106, 0.176, 0.235), borderWidth: 2,
+    color: rgb(0.96, 0.95, 0.91),
+  });
+
+  page.drawRectangle({
+    x: 12, y: 12, width: width - 24, height: height - 24,
+    borderColor: rgb(0.839, 0.906, 0.894), borderWidth: 1, color: rgb(1, 1, 1),
+  });
+
+  page.drawText('Pitter Potter', {
+    x: width / 2 - 65, y: height - 50, size: 24, font: fontBold,
+    color: rgb(0.106, 0.176, 0.235),
+  });
+
+  page.drawText('Pottery Painting Studio', {
+    x: width / 2 - 70, y: height - 68, size: 8, font: fontRegular,
+    color: rgb(0.106, 0.176, 0.235),
+  });
+
+  page.drawRectangle({ x: 60, y: height - 82, width: width - 120, height: 1, color: rgb(0.839, 0.906, 0.894) });
+
+  page.drawText('GIFT VOUCHER', {
+    x: width / 2 - 55, y: height - 110, size: 18, font: fontBold,
+    color: rgb(0.106, 0.176, 0.235),
+  });
+
+  const amountStr = `\u00A3${Number(giftCard.amount).toFixed(2)}`;
+  const amountWidth = fontBold.widthOfTextAtSize(amountStr, 36);
+  page.drawText(amountStr, {
+    x: (width - amountWidth) / 2, y: height - 160, size: 36, font: fontBold,
+    color: rgb(0.106, 0.176, 0.235),
+  });
+
+  const codeY = height - 200;
+  page.drawRectangle({
+    x: 80, y: codeY - 6, width: width - 160, height: 28,
+    color: rgb(0.839, 0.906, 0.894), borderColor: rgb(0.106, 0.176, 0.235), borderWidth: 1,
+  });
+
+  const codeLabel = 'Code:  ';
+  const codeLabelWidth = fontRegular.widthOfTextAtSize(codeLabel, 14);
+  page.drawText(codeLabel, { x: 100, y: codeY, size: 14, font: fontRegular, color: rgb(0.106, 0.176, 0.235) });
+  page.drawText(giftCard.code, { x: 100 + codeLabelWidth + 4, y: codeY, size: 14, font: fontBold, color: rgb(0.106, 0.176, 0.235) });
+
+  let y = height - 240;
+  const labelX = 80;
+  const valueX = 160;
+
+  page.drawText('From:', { x: labelX, y, size: 10, font: fontRegular, color: rgb(0.4, 0.4, 0.4) });
+  page.drawText(giftCard.sender_name || 'Anonymous', { x: valueX, y, size: 11, font: fontBold, color: rgb(0.106, 0.176, 0.235) });
+
+  y -= 18;
+  page.drawText('To:', { x: labelX, y, size: 10, font: fontRegular, color: rgb(0.4, 0.4, 0.4) });
+  page.drawText(giftCard.recipient_name || 'Valued Customer', { x: valueX, y, size: 11, font: fontBold, color: rgb(0.106, 0.176, 0.235) });
+
+  if (giftCard.message) {
+    y -= 28;
+    page.drawText('Message:', { x: labelX, y, size: 10, font: fontRegular, color: rgb(0.4, 0.4, 0.4) });
+    y -= 14;
+    const maxWidth = width - 160;
+    const words = giftCard.message.split(' ');
+    let line = '';
+    for (const word of words) {
+      const testLine = line ? `${line} ${word}` : word;
+      if (fontOblique.widthOfTextAtSize(testLine, 10) > maxWidth) {
+        page.drawText(line, { x: 80, y, size: 10, font: fontOblique, color: rgb(0.3, 0.3, 0.3) });
+        y -= 14;
+        line = word;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line) {
+      page.drawText(line, { x: 80, y, size: 10, font: fontOblique, color: rgb(0.3, 0.3, 0.3) });
+    }
+  }
+
+  y = 40;
+  page.drawText(`Valid for 12 months from purchase (${giftCard.purchase_date || new Date().toLocaleDateString('en-GB')})`, {
+    x: 80, y: y + 10, size: 8, font: fontRegular, color: rgb(0.5, 0.5, 0.5),
+  });
+  page.drawText('Putney: 234 Upper Richmond Road, SW15 6TG  |  020 8788 1635', {
+    x: 80, y: y - 2, size: 7, font: fontRegular, color: rgb(0.5, 0.5, 0.5),
+  });
+  page.drawText('Wimbledon: 52 Wimbledon Hill Road, SW19 7PA  |  020 3770 4499', {
+    x: 80, y: y - 12, size: 7, font: fontRegular, color: rgb(0.5, 0.5, 0.5),
+  });
+  page.drawText('www.pitterpotter.co.uk', {
+    x: width / 2 - 40, y: y - 24, size: 8, font: fontBold, color: rgb(0.106, 0.176, 0.235),
+  });
+
+  const qrBytes = await generateQRCodeBytes(giftCard.code);
+  if (qrBytes) {
+    try {
+      const qrImage = await pdfDoc.embedPng(qrBytes);
+      const qrSize = 60;
+      page.drawImage(qrImage, { x: width - qrSize - 30, y: 30, width: qrSize, height: qrSize });
+      page.drawText('Scan to redeem', { x: width - qrSize - 28, y: 20, size: 6, font: fontRegular, color: rgb(0.5, 0.5, 0.5) });
+    } catch (qrErr) {
+      console.error('Failed to embed QR code:', qrErr);
+    }
+  }
+
+  return await pdfDoc.save();
 }
 
 
@@ -359,6 +507,41 @@ Deno.serve(async (req) => {
       await logAudit(supabase, staff, 'resend_email', 'gift_card', id, { code: card.code, recipient_email: card.recipient_email });
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'downloadVoucher') {
+      if (!isSuperAdmin) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (!isNonEmptyString(id)) {
+        return new Response(JSON.stringify({ error: 'Missing gift card id' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { data: giftCard, error: fetchError } = await supabase
+        .from('gift_cards')
+        .select('*')
+        .eq('id', id)
+        .single() as { data: GiftCardRow | null; error: Error | null };
+      if (fetchError || !giftCard) {
+        return new Response(JSON.stringify({ error: 'Gift card not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const pdfBytes = await generateVoucherPDF(giftCard);
+      await logAudit(supabase, staff, 'download_voucher', 'gift_card', id, { code: giftCard.code });
+      return new Response(pdfBytes, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="pitter-potter-gift-voucher-${giftCard.code}.pdf"`,
+        },
       });
     }
 

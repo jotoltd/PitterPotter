@@ -511,6 +511,28 @@ actor APIClient {
         }
     }
 
+    func downloadGiftCardVoucher(id: String, staff: Staff) async throws -> Data {
+        var request = URLRequest(url: URL(string: APIConfig.giftCardsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "downloadVoucher",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "id": id,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to download voucher")
+        }
+        return data
+    }
+
     // MARK: - Party Deposit Payment
 
     func createPartyDepositPayment(bookingId: String, depositAmount: Double, staff: Staff) async throws -> String? {

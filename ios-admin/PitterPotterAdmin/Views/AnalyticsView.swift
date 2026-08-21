@@ -42,8 +42,9 @@ struct AnalyticsView: View {
                     studioBreakdown
                     giftCardStatus
                 }
-                .padding()
+                .padding(20)
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Analytics")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear { loadGiftCards() }
@@ -54,168 +55,199 @@ struct AnalyticsView: View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
             StatCard(title: "Total Bookings", value: "\(totalBookings)", icon: "list.bullet.clipboard", color: PPBrand.charcoal)
             StatCard(title: "Confirmed", value: "\(confirmedCount)", icon: "checkmark.circle", color: .green)
-            StatCard(title: "Gift Card Revenue", value: String(format: "£%.2f", giftCardRevenue), icon: "giftcard", color: .purple)
+            StatCard(title: "Gift Card Revenue", value: String(format: "£%.0f", giftCardRevenue), icon: "giftcard", color: .purple)
             StatCard(title: "Active Gift Balance", value: "\(activeGiftCards)", icon: "creditcard", color: .orange)
         }
     }
 
     private var bookingTrends: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Bookings by Month")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "chart.bar.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
+                Text("Bookings by Month")
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
+            }
 
             if bookingsByMonth.isEmpty {
                 Text("No data yet")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 14))
+                    .foregroundStyle(PPBrand.clay300)
             } else {
                 let maxCount = max(bookingsByMonth.map { $0.count }.max() ?? 1, 1)
                 ForEach(bookingsByMonth, id: \.month) { item in
                     HStack {
                         Text(item.month)
-                            .font(.caption)
+                            .font(.system(size: 12, weight: .medium))
                             .frame(width: 60, alignment: .leading)
                         GeometryReader { geo in
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(PPBrand.charcoal.opacity(0.6))
+                                .fill(PPBrand.headerGradient)
                                 .frame(width: geo.size.width * CGFloat(item.count) / CGFloat(maxCount))
                         }
-                        .frame(height: 16)
+                        .frame(height: 18)
                         Text("\(item.count)")
-                            .font(.caption)
-                            .fontWeight(.bold)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(PPBrand.charcoal)
                             .frame(width: 30, alignment: .trailing)
                     }
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
     }
 
     private var popularDatesChart: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Popular Dates")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
+                Text("Popular Dates")
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
+            }
 
             if popularDates.isEmpty {
                 Text("No data yet")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 14))
+                    .foregroundStyle(PPBrand.clay300)
             } else {
                 let maxCount = max(popularDates.map { $0.count }.max() ?? 1, 1)
                 ForEach(popularDates, id: \.date) { item in
                     HStack {
                         Text(item.date)
-                            .font(.caption)
+                            .font(.system(size: 12, weight: .medium))
                             .frame(width: 100, alignment: .leading)
                         GeometryReader { geo in
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.orange.opacity(0.6))
+                                .fill(Color.orange.opacity(0.7))
                                 .frame(width: geo.size.width * CGFloat(item.count) / CGFloat(maxCount))
                         }
-                        .frame(height: 16)
+                        .frame(height: 18)
                         Text("\(item.count)")
-                            .font(.caption)
-                            .fontWeight(.bold)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(PPBrand.charcoal)
                             .frame(width: 30, alignment: .trailing)
                     }
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
     }
 
     private var studioBreakdown: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Bookings by Studio")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "building.2.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
+                Text("Bookings by Studio")
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
+            }
 
             if studioCounts.isEmpty {
                 Text("No data yet")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 14))
+                    .foregroundStyle(PPBrand.clay300)
             } else {
                 let maxCount = max(studioCounts.map { $0.count }.max() ?? 1, 1)
                 ForEach(studioCounts, id: \.studio) { item in
                     HStack {
                         Text(item.studio)
-                            .font(.caption)
+                            .font(.system(size: 12, weight: .medium))
                             .frame(width: 80, alignment: .leading)
                         GeometryReader { geo in
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.blue.opacity(0.6))
+                                .fill(Color.blue.opacity(0.7))
                                 .frame(width: geo.size.width * CGFloat(item.count) / CGFloat(maxCount))
                         }
-                        .frame(height: 16)
+                        .frame(height: 18)
                         Text("\(item.count)")
-                            .font(.caption)
-                            .fontWeight(.bold)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(PPBrand.charcoal)
                             .frame(width: 30, alignment: .trailing)
                     }
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
     }
 
     private var giftCardStatus: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Gift Card Status")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "giftcard.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
+                Text("Gift Card Status")
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
+            }
 
             HStack(spacing: 12) {
-                VStack {
+                VStack(spacing: 4) {
                     Text("\(activeGiftCards)")
-                        .font(.title2)
-                        .fontWeight(.bold)
+                        .font(.system(size: 22, weight: .heavy))
                         .foregroundStyle(.green)
                     Text("Active")
-                        .font(.caption2)
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                        .tracking(0.3)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(8)
+                .padding(12)
                 .background(Color.green.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                VStack {
+                VStack(spacing: 4) {
                     Text("\(redeemedGiftCards)")
-                        .font(.title2)
-                        .fontWeight(.bold)
+                        .font(.system(size: 22, weight: .heavy))
                         .foregroundStyle(PPBrand.charcoal)
                     Text("Redeemed")
-                        .font(.caption2)
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                        .tracking(0.3)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(8)
-                .background(PPBrand.charcoal.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .padding(12)
+                .background(PPBrand.charcoal.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                VStack {
+                VStack(spacing: 4) {
                     Text("\(expiredGiftCards)")
-                        .font(.title2)
-                        .fontWeight(.bold)
+                        .font(.system(size: 22, weight: .heavy))
                         .foregroundStyle(.red)
                     Text("Expired")
-                        .font(.caption2)
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                        .tracking(0.3)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(8)
+                .padding(12)
                 .background(Color.red.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
     }
 
     private func loadGiftCards() {

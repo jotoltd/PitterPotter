@@ -17,16 +17,19 @@ struct CreateGiftCardView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("Amount")) {
+                Section(header: Text("Amount").font(.system(size: 13, weight: .bold)).foregroundStyle(PPBrand.charcoal)) {
                     HStack {
                         Text("£")
-                            .font(.headline)
+                            .font(.system(size: 20, weight: .heavy))
+                            .foregroundStyle(PPBrand.charcoal)
                         TextField("Amount", text: $amount)
                             .keyboardType(.decimalPad)
+                            .font(.system(size: 20, weight: .heavy))
+                            .foregroundStyle(PPBrand.charcoal)
                     }
                 }
 
-                Section(header: Text("Recipient")) {
+                Section(header: Text("Recipient").font(.system(size: 13, weight: .bold)).foregroundStyle(PPBrand.charcoal)) {
                     TextField("Name", text: $recipientName)
                     TextField("Email", text: $recipientEmail)
                         .keyboardType(.emailAddress)
@@ -34,12 +37,12 @@ struct CreateGiftCardView: View {
                         .disabled(isPhysical)
                     if isPhysical {
                         Text("Email skipped for physical cards")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(PPBrand.clay300)
                     }
                 }
 
-                Section(header: Text("Sender")) {
+                Section(header: Text("Sender").font(.system(size: 13, weight: .bold)).foregroundStyle(PPBrand.charcoal)) {
                     TextField("Sender Name", text: $senderName)
                     TextField("Message", text: $message, axis: .vertical)
                         .lineLimit(2...4)
@@ -57,45 +60,61 @@ struct CreateGiftCardView: View {
                         HStack {
                             if isCreating { ProgressView() }
                             Text(isCreating ? "Creating..." : "Create Gift Card")
+                                .font(.system(size: 16, weight: .bold))
                         }
+                        .frame(maxWidth: .infinity)
+                        .foregroundColor(PPBrand.charcoal)
                     }
                     .disabled(isCreating || amount.isEmpty)
                 }
 
                 if let card = createdCard {
-                    Section(header: Text("Created Gift Card")) {
-                        VStack(spacing: 12) {
+                    Section(header: Text("Created Gift Card").font(.system(size: 13, weight: .bold)).foregroundStyle(PPBrand.charcoal)) {
+                        VStack(spacing: 16) {
                             if let qrImage = generateQRCode(from: card.code) {
                                 Image(uiImage: qrImage)
                                     .interpolation(.none)
                                     .resizable()
                                     .scaledToFit()
-                                    .frame(width: 160, height: 160)
+                                    .frame(width: 180, height: 180)
+                                    .padding(8)
+                                    .background(PPBrand.sage.opacity(0.3))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
 
                             Text(card.code)
                                 .font(.system(.headline, design: .monospaced))
                                 .fontWeight(.bold)
+                                .foregroundStyle(PPBrand.charcoal)
 
                             Text("£\(String(format: "%.2f", card.amount))")
-                                .font(.title2)
-                                .fontWeight(.bold)
+                                .font(.system(size: 28, weight: .heavy))
                                 .foregroundStyle(PPBrand.charcoal)
 
                             if isPhysical {
                                 Text("Print this QR code for the physical card")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(PPBrand.clay300)
+                            }
+
+                            Button {
+                                shareQRCode(card: card)
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .font(.system(size: 14, weight: .semibold))
+                                    Text("Share / Print")
+                                        .font(.system(size: 14, weight: .bold))
+                                }
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 12)
+                                .background(PPBrand.charcoal)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-
-                        Button {
-                            shareQRCode(card: card)
-                        } label: {
-                            Label("Share / Print", systemImage: "square.and.arrow.up")
-                        }
+                        .padding(.vertical, 12)
                     }
                 }
             }

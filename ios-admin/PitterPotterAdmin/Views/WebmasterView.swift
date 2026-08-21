@@ -27,8 +27,9 @@ struct WebmasterView: View {
                     dbBackupSection
                     sampleDataSection
                 }
-                .padding()
+                .padding(20)
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Webmaster")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
@@ -45,13 +46,18 @@ struct WebmasterView: View {
     }
 
     private var dbHealthSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "heart.text.square.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
                 Text("Database Health")
-                    .font(.headline)
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
                 Spacer()
                 Button("Refresh") { loadDbHealth() }
-                    .font(.caption)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(PPBrand.charcoal)
             }
 
             if dbHealthLoading {
@@ -97,19 +103,25 @@ struct WebmasterView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
     }
 
     private var dbBackupSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "externaldrive.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
                 Text("Database Backups")
-                    .font(.headline)
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
                 Spacer()
                 Button("Create") { showCreateBackup = true }
-                    .font(.caption)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(PPBrand.charcoal)
             }
 
             if dbBackupLoading {
@@ -143,9 +155,10 @@ struct WebmasterView: View {
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
         .confirmationDialog("Select tables to backup", isPresented: $showCreateBackup) {
             Button("Backup All") {
                 createBackup(Array(Set(backupTableOptions.map { $0.value })))
@@ -155,13 +168,18 @@ struct WebmasterView: View {
     }
 
     private var sampleDataSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "flask.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
                 Text("Sample Data")
-                    .font(.headline)
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
                 Spacer()
                 Button("Refresh") { loadSampleData() }
-                    .font(.caption)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(PPBrand.charcoal)
             }
 
             if sampleDataLoading {
@@ -196,9 +214,10 @@ struct WebmasterView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
     }
 
     private func loadDbHealth() {

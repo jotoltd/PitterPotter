@@ -53,7 +53,9 @@ struct DashboardOverviewView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(spacing: 20) {
+                    heroHeader
+
                     statsGrid
 
                     quickActionsRow
@@ -64,9 +66,21 @@ struct DashboardOverviewView: View {
 
                     recentSection
                 }
-                .padding()
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
             }
-            .navigationTitle("Dashboard")
+            .background(Color(.systemGroupedBackground))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 8) {
+                        Image("BrandLogo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 24)
+                    }
+                }
+            }
             .refreshable {
                 if let staff = authVM.staff {
                     await bookingsVM.loadBookings(staff: staff)
@@ -88,12 +102,53 @@ struct DashboardOverviewView: View {
         }
     }
 
+    private var heroHeader: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(formatDate(Date()))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .textCase(.uppercase)
+                    .tracking(1.5)
+                Text("Welcome back")
+                    .font(.system(size: 26, weight: .heavy))
+                    .foregroundStyle(.white)
+                Text(authVM.staff?.name ?? "")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(PPBrand.sage)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(todayBookings.count)")
+                    .font(.system(size: 40, weight: .heavy))
+                    .foregroundStyle(.white)
+                Text("Bookings Today")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .textCase(.uppercase)
+                    .tracking(1)
+            }
+        }
+        .padding(24)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(PPBrand.headerGradient)
+                .shadow(color: PPBrand.charcoal.opacity(0.3), radius: 8, y: 4)
+        )
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, d MMM"
+        return formatter.string(from: date)
+    }
+
     private var statsGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-            StatCard(title: "Today", value: "\(todayBookings.count)", icon: "calendar", color: PPBrand.charcoal)
-            StatCard(title: "Painters", value: "\(todayPainters)", icon: "person.2.fill", color: PPBrand.deepSlate)
-            StatCard(title: "Pending", value: "\(pendingCount)", icon: "clock", color: .orange)
-            StatCard(title: "Seated", value: "\(seatedCount)", icon: "person.3.fill", color: .blue)
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            StatCard(title: "Today", value: "\(todayBookings.count)", icon: "calendar", color: PPBrand.charcoal, subtitle: "\(todayPainters) painters")
+            StatCard(title: "Pending", value: "\(pendingCount)", icon: "clock.fill", color: .orange, subtitle: "Needs action")
+            StatCard(title: "Confirmed", value: "\(confirmedCount)", icon: "checkmark.circle.fill", color: .green, subtitle: "Ready to go")
+            StatCard(title: "Seated", value: "\(seatedCount)", icon: "person.3.fill", color: .blue, subtitle: "In studio")
         }
     }
 
@@ -103,35 +158,35 @@ struct DashboardOverviewView: View {
                 Button {
                     showingNewWalkIn = true
                 } label: {
-                    VStack(spacing: 6) {
+                    VStack(spacing: 8) {
                         Image(systemName: "person.walk")
-                            .font(.title3)
+                            .font(.title2)
                         Text("Walk-in")
-                            .font(.caption)
-                            .fontWeight(.medium)
+                            .font(.system(size: 12, weight: .bold))
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 16)
                     .background(PPBrand.charcoal)
                     .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .shadow(color: PPBrand.charcoal.opacity(0.2), radius: 4, y: 2)
                 }
             }
             Button {
                 showingGiftCardRedeem = true
             } label: {
-                VStack(spacing: 6) {
+                VStack(spacing: 8) {
                     Image(systemName: "qrcode.viewfinder")
-                        .font(.title3)
+                        .font(.title2)
                     Text("Redeem")
-                        .font(.caption)
-                        .fontWeight(.medium)
+                        .font(.system(size: 12, weight: .bold))
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, 16)
                 .background(PPBrand.sage)
                 .foregroundStyle(PPBrand.charcoal)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .shadow(color: PPBrand.sage.opacity(0.4), radius: 4, y: 2)
             }
             NavigationLink {
                 BookingsListView()
@@ -139,83 +194,115 @@ struct DashboardOverviewView: View {
                     .environmentObject(authVM)
                     .environmentObject(toastManager)
             } label: {
-                VStack(spacing: 6) {
+                VStack(spacing: 8) {
                     Image(systemName: "list.bullet.clipboard")
-                        .font(.title3)
-                    Text("All Bookings")
-                        .font(.caption)
-                        .fontWeight(.medium)
+                        .font(.title2)
+                    Text("Bookings")
+                        .font(.system(size: 12, weight: .bold))
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, 16)
                 .background(PPBrand.clay100)
                 .foregroundStyle(PPBrand.charcoal)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .shadow(color: PPBrand.clay200.opacity(0.4), radius: 4, y: 2)
             }
         }
     }
 
     private var todayScheduleSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
+                Image(systemName: "calendar.day.left")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
                 Text("Today's Schedule")
-                    .font(.headline)
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
                 Spacer()
                 Text("\(todayBookings.count) booking\(todayBookings.count != 1 ? "s" : "")")
-                    .font(.caption)
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(PPBrand.charcoal.opacity(0.08))
+                    .clipShape(Capsule())
             }
 
             if todayBookings.isEmpty {
-                EmptyStateView(icon: "calendar", title: "No bookings today", subtitle: "Enjoy the quiet!")
+                VStack(spacing: 8) {
+                    Image(systemName: "sun.max.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(PPBrand.clay300)
+                    Text("No bookings today")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    Text("Enjoy the quiet!")
+                        .font(.system(size: 13))
+                        .foregroundStyle(PPBrand.clay300)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
             } else {
-                ForEach(todayBookings) { booking in
-                    NavigationLink(value: booking) {
-                        ScheduleRow(booking: booking)
+                VStack(spacing: 0) {
+                    ForEach(Array(todayBookings.enumerated()), id: \.element.id) { index, booking in
+                        NavigationLink(value: booking) {
+                            ScheduleRow(booking: booking, isLast: index == todayBookings.count - 1)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
-        .padding()
-        .background(PPBrand.secondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
     }
 
     private var giftCardStatsSection: some View {
-        HStack(spacing: 16) {
-            VStack(spacing: 4) {
-                Image(systemName: "giftcard")
-                    .font(.title2)
-                    .foregroundStyle(PPBrand.charcoal)
+        HStack(spacing: 0) {
+            VStack(spacing: 6) {
+                Image(systemName: "giftcard.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(.white.opacity(0.8))
                 Text("\(activeGiftCards)")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.system(size: 24, weight: .heavy))
+                    .foregroundStyle(.white)
                 Text("Active Cards")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .textCase(.uppercase)
+                    .tracking(0.5)
             }
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
 
-            Divider()
-                .frame(height: 50)
+            Rectangle()
+                .fill(.white.opacity(0.15))
+                .frame(width: 1, height: 60)
 
-            VStack(spacing: 4) {
-                Image(systemName: "sterlingsign.circle")
-                    .font(.title2)
-                    .foregroundStyle(PPBrand.charcoal)
+            VStack(spacing: 6) {
+                Image(systemName: "sterlingsign.circle.fill")
+                    .font(.system(size: 22))
+                    .foregroundStyle(.white.opacity(0.8))
                 Text("£\(String(format: "%.0f", giftCardValue))")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.system(size: 24, weight: .heavy))
+                    .foregroundStyle(.white)
                 Text("Total Value")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.6))
+                    .textCase(.uppercase)
+                    .tracking(0.5)
             }
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 20)
         }
-        .padding()
-        .background(PPBrand.secondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(PPBrand.cardGradient)
+                .shadow(color: PPBrand.charcoal.opacity(0.2), radius: 6, y: 3)
+        )
     }
 
     private func loadGiftCards() async {
@@ -227,9 +314,16 @@ struct DashboardOverviewView: View {
     }
 
     private var recentSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Recently Added")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
+                Text("Recently Added")
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
+                Spacer()
+            }
 
             ForEach(recentBookings) { booking in
                 NavigationLink(value: booking) {
@@ -238,9 +332,10 @@ struct DashboardOverviewView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding()
-        .background(PPBrand.secondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(20)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
     }
 }
 
@@ -249,23 +344,37 @@ struct StatCard: View {
     let value: String
     let icon: String
     let color: Color
+    var subtitle: String? = nil
 
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(color)
-            Text(value)
-                .font(.title)
-                .fontWeight(.bold)
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        HStack(spacing: 14) {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(color)
+                    .frame(width: 40, height: 40)
+                    .background(color.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 24, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(PPBrand.clay300)
+                }
+            }
+            Spacer()
         }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(PPBrand.secondaryBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(16)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: Color.black.opacity(0.04), radius: 4, y: 2)
     }
 }
 
@@ -273,26 +382,36 @@ struct BookingRowCompact: View {
     let booking: Booking
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 12) {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(statusColor)
+                .frame(width: 3, height: 36)
+            VStack(alignment: .leading, spacing: 3) {
                 Text(booking.name)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                Text("\(booking.studio) · \(booking.date) at \(booking.time)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(PPBrand.charcoal)
+                HStack(spacing: 4) {
+                    Text(booking.studio)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Text("\u{00B7}")
+                        .font(.system(size: 12))
+                        .foregroundStyle(PPBrand.clay300)
+                    Text(booking.date)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
             }
             Spacer()
             Text(booking.status.capitalized)
-                .font(.caption2)
-                .fontWeight(.bold)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 2)
-                .background(statusColor.opacity(0.2))
+                .font(.system(size: 10, weight: .bold))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(statusColor.opacity(0.15))
                 .foregroundStyle(statusColor)
                 .clipShape(Capsule())
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
     }
 
     private var statusColor: Color {
@@ -309,37 +428,37 @@ struct BookingRowCompact: View {
 
 struct ScheduleRow: View {
     let booking: Booking
+    var isLast: Bool = false
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
             VStack(alignment: .center, spacing: 2) {
                 Text(booking.time.split(separator: "-").first.map { String($0) } ?? booking.time)
-                    .font(.subheadline)
-                    .fontWeight(.bold)
+                    .font(.system(size: 15, weight: .heavy))
                     .foregroundStyle(PPBrand.charcoal)
                 Text(booking.studio.prefix(3).description)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(PPBrand.clay300)
             }
             .frame(width: 56)
 
-            Rectangle()
+            RoundedRectangle(cornerRadius: 2)
                 .fill(statusColor)
-                .frame(width: 3)
-                .clipShape(Capsule())
+                .frame(width: 3, height: 40)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(booking.name)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(PPBrand.charcoal)
                 HStack(spacing: 4) {
                     Image(systemName: "person.2.fill")
-                        .font(.caption2)
+                        .font(.system(size: 10))
                     Text("\(booking.paintersCount)")
-                        .font(.caption)
+                        .font(.system(size: 12, weight: .medium))
                     Text("\u{00B7}")
+                        .font(.system(size: 12))
                     Text(booking.sessionTypeEnum?.label ?? booking.sessionType)
-                        .font(.caption)
+                        .font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
                 }
                 .foregroundStyle(.secondary)
@@ -349,7 +468,15 @@ struct ScheduleRow: View {
 
             StatusBadge(status: booking.bookingStatus ?? .pending)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 10)
+        .overlay(alignment: .bottom) {
+            if !isLast {
+                Rectangle()
+                    .fill(PPBrand.charcoal.opacity(0.06))
+                    .frame(height: 0.5)
+                    .padding(.leading, 70)
+            }
+        }
     }
 
     private var statusColor: Color {

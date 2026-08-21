@@ -21,7 +21,11 @@
     <key>UILaunchScreen</key>
     <dict>
         <key>UIColorName</key>
-        <string></string>
+        <string>LaunchBackgroundColor</string>
+        <key>UIImageName</key>
+        <string>BrandLogo</string>
+        <key>UIImageRespectsSafeAreaInsets</key>
+        <true/>
     </dict>
     <key>UISupportedInterfaceOrientations</key>
     <array>
