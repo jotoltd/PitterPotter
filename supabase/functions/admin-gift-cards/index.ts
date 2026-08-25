@@ -9,8 +9,7 @@ import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors
 let _pdfLib: typeof import('pdf-lib') | null = null;
 async function getPdfLib() {
   if (!_pdfLib) {
-    const mod = await import('pdf-lib');
-    _pdfLib = mod;
+    _pdfLib = await import('pdf-lib');
   }
   return _pdfLib;
 }
@@ -50,42 +49,15 @@ interface GiftCardRow {
   status: string;
 }
 
-async function fetchFont(url: string): Promise<Uint8Array | null> {
-  try {
-    const resp = await fetch(url);
-    if (!resp.ok) return null;
-    return new Uint8Array(await resp.arrayBuffer());
-  } catch {
-    return null;
-  }
-}
-
 async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb } = await getPdfLib();
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([600, 400]);
   const { width, height } = page.getSize();
 
-  // Fetch brand fonts as TTF (pdf-lib requires TTF/OTF, not woff2)
-  // Using jsDelivr CDN serving fontsource static TTF files
-  const montserratBoldBytes = await fetchFont('https://cdn.jsdelivr.net/npm/@fontsource/montserrat@5.0.18/files/montserrat-latin-700-normal.ttf');
-  const montserratRegularBytes = await fetchFont('https://cdn.jsdelivr.net/npm/@fontsource/montserrat@5.0.18/files/montserrat-latin-400-normal.ttf');
-  const dmSansBoldBytes = await fetchFont('https://cdn.jsdelivr.net/npm/@fontsource/dm-sans@5.0.18/files/dm-sans-latin-700-normal.ttf');
-  const dmSansRegularBytes = await fetchFont('https://cdn.jsdelivr.net/npm/@fontsource/dm-sans@5.0.18/files/dm-sans-latin-400-normal.ttf');
-
-  // Embed fonts — fall back to StandardFonts if Google Fonts fetch fails
-  let fontHeadingBold: any, fontHeadingRegular: any, fontBodyBold: any, fontBodyRegular: any;
-  try {
-    fontHeadingBold = montserratBoldBytes ? await pdfDoc.embedFont(montserratBoldBytes, { subset: true }) : await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    fontHeadingRegular = montserratRegularBytes ? await pdfDoc.embedFont(montserratRegularBytes, { subset: true }) : await pdfDoc.embedFont(StandardFonts.Helvetica);
-    fontBodyBold = dmSansBoldBytes ? await pdfDoc.embedFont(dmSansBoldBytes, { subset: true }) : await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    fontBodyRegular = dmSansRegularBytes ? await pdfDoc.embedFont(dmSansRegularBytes, { subset: true }) : await pdfDoc.embedFont(StandardFonts.Helvetica);
-  } catch {
-    fontHeadingBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    fontHeadingRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    fontBodyBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    fontBodyRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  }
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontOblique = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
 
   // Brand colors
   const charcoal = rgb(0.106, 0.176, 0.235);    // #1B2D3C
@@ -135,16 +107,16 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
     });
   } else {
     const logoText = 'Pitter Potter';
-    const logoW = fontHeadingBold.widthOfTextAtSize(logoText, 22);
+    const logoW = fontBold.widthOfTextAtSize(logoText, 22);
     page.drawText(logoText, {
-      x: (width - logoW) / 2, y: height - 48, size: 22, font: fontHeadingBold, color: charcoal,
+      x: (width - logoW) / 2, y: height - 48, size: 22, font: fontBold, color: charcoal,
     });
   }
 
   const subText = 'Pottery Painting Studio';
-  const subW = fontBodyRegular.widthOfTextAtSize(subText, 8);
+  const subW = fontRegular.widthOfTextAtSize(subText, 8);
   page.drawText(subText, {
-    x: (width - subW) / 2, y: height - 70, size: 8, font: fontBodyRegular, color: charcoal,
+    x: (width - subW) / 2, y: height - 70, size: 8, font: fontRegular, color: charcoal,
   });
 
   // Decorative line
@@ -152,14 +124,14 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
 
   // GIFT VOUCHER title
   const voucherText = 'GIFT VOUCHER';
-  const voucherW = fontHeadingBold.widthOfTextAtSize(voucherText, 18);
+  const voucherW = fontBold.widthOfTextAtSize(voucherText, 18);
   page.drawText(voucherText, {
-    x: (width - voucherW) / 2, y: height - 108, size: 18, font: fontHeadingBold, color: charcoal,
+    x: (width - voucherW) / 2, y: height - 108, size: 18, font: fontBold, color: charcoal,
   });
 
   // Amount — on a sage panel
   const amountStr = `\u00A3${Number(giftCard.amount).toFixed(2)}`;
-  const amountWidth = fontHeadingBold.widthOfTextAtSize(amountStr, 36);
+  const amountWidth = fontBold.widthOfTextAtSize(amountStr, 36);
   const amountPanelW = amountWidth + 60;
   page.drawRectangle({
     x: (width - amountPanelW) / 2, y: height - 168,
@@ -167,7 +139,7 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
     color: sage, borderColor: sageDeep, borderWidth: 1,
   });
   page.drawText(amountStr, {
-    x: (width - amountWidth) / 2, y: height - 158, size: 36, font: fontHeadingBold, color: charcoal,
+    x: (width - amountWidth) / 2, y: height - 158, size: 36, font: fontBold, color: charcoal,
   });
 
   // Code box — charcoal background
@@ -177,25 +149,25 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
     color: charcoal,
   });
   const codeLabel = 'Code:  ';
-  const codeLabelWidth = fontBodyRegular.widthOfTextAtSize(codeLabel, 14);
-  page.drawText(codeLabel, { x: 100, y: codeY, size: 14, font: fontBodyRegular, color: sage });
-  page.drawText(giftCard.code, { x: 100 + codeLabelWidth + 4, y: codeY, size: 14, font: fontBodyBold, color: white });
+  const codeLabelWidth = fontRegular.widthOfTextAtSize(codeLabel, 14);
+  page.drawText(codeLabel, { x: 100, y: codeY, size: 14, font: fontRegular, color: sage });
+  page.drawText(giftCard.code, { x: 100 + codeLabelWidth + 4, y: codeY, size: 14, font: fontBold, color: white });
 
   // From / To / Date
   let y = height - 240;
   const labelX = 80;
   const valueX = 160;
 
-  page.drawText('From:', { x: labelX, y, size: 10, font: fontBodyRegular, color: grey });
-  page.drawText(giftCard.sender_name || 'Anonymous', { x: valueX, y, size: 11, font: fontBodyBold, color: charcoal });
+  page.drawText('From:', { x: labelX, y, size: 10, font: fontRegular, color: grey });
+  page.drawText(giftCard.sender_name || 'Anonymous', { x: valueX, y, size: 11, font: fontBold, color: charcoal });
 
   y -= 18;
-  page.drawText('To:', { x: labelX, y, size: 10, font: fontBodyRegular, color: grey });
-  page.drawText(giftCard.recipient_name || 'Valued Customer', { x: valueX, y, size: 11, font: fontBodyBold, color: charcoal });
+  page.drawText('To:', { x: labelX, y, size: 10, font: fontRegular, color: grey });
+  page.drawText(giftCard.recipient_name || 'Valued Customer', { x: valueX, y, size: 11, font: fontBold, color: charcoal });
 
   // Date
   y -= 18;
-  page.drawText('Date:', { x: labelX, y, size: 10, font: fontBodyRegular, color: grey });
+  page.drawText('Date:', { x: labelX, y, size: 10, font: fontRegular, color: grey });
   let dateStr = '';
   if (giftCard.purchase_date) {
     try {
@@ -206,20 +178,20 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
   } else {
     dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   }
-  page.drawText(dateStr, { x: valueX, y, size: 11, font: fontBodyBold, color: charcoal });
+  page.drawText(dateStr, { x: valueX, y, size: 11, font: fontBold, color: charcoal });
 
   // Personal message
   if (giftCard.message) {
     y -= 28;
-    page.drawText('Message:', { x: labelX, y, size: 10, font: fontBodyRegular, color: grey });
+    page.drawText('Message:', { x: labelX, y, size: 10, font: fontRegular, color: grey });
     y -= 14;
     const maxWidth = width - 160;
     const words = giftCard.message.split(' ');
     let line = '';
     for (const word of words) {
       const testLine = line ? `${line} ${word}` : word;
-      if (fontBodyRegular.widthOfTextAtSize(testLine, 10) > maxWidth) {
-        page.drawText(line, { x: 80, y, size: 10, font: fontBodyRegular, color: rgb(0.3, 0.3, 0.3) });
+      if (fontRegular.widthOfTextAtSize(testLine, 10) > maxWidth) {
+        page.drawText(line, { x: 80, y, size: 10, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
         y -= 14;
         line = word;
       } else {
@@ -227,7 +199,7 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
       }
     }
     if (line) {
-      page.drawText(line, { x: 80, y, size: 10, font: fontBodyRegular, color: rgb(0.3, 0.3, 0.3) });
+      page.drawText(line, { x: 80, y, size: 10, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
     }
   }
 
@@ -236,18 +208,18 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
   page.drawRectangle({ x: 16, y: 64, width: width - 32, height: 2, color: sageDeep });
 
   page.drawText('Valid for 12 months from purchase', {
-    x: 80, y: 52, size: 8, font: fontBodyRegular, color: charcoal,
+    x: 80, y: 52, size: 8, font: fontRegular, color: charcoal,
   });
   page.drawText('Putney: 234 Upper Richmond Road, SW15 6TG  |  020 8788 1635', {
-    x: 80, y: 40, size: 7, font: fontBodyRegular, color: charcoal,
+    x: 80, y: 40, size: 7, font: fontRegular, color: charcoal,
   });
   page.drawText('Wimbledon: 52 Wimbledon Hill Road, SW19 7PA  |  020 3770 4499', {
-    x: 80, y: 28, size: 7, font: fontBodyRegular, color: charcoal,
+    x: 80, y: 28, size: 7, font: fontRegular, color: charcoal,
   });
   const urlText = 'www.pitterpotter.co.uk';
-  const urlW = fontHeadingBold.widthOfTextAtSize(urlText, 8);
+  const urlW = fontBold.widthOfTextAtSize(urlText, 8);
   page.drawText(urlText, {
-    x: (width - urlW) / 2, y: 20, size: 8, font: fontHeadingBold, color: charcoal,
+    x: (width - urlW) / 2, y: 20, size: 8, font: fontBold, color: charcoal,
   });
 
   // QR code
@@ -257,7 +229,7 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
       const qrImage = await pdfDoc.embedPng(qrBytes);
       const qrSize = 55;
       page.drawImage(qrImage, { x: width - qrSize - 30, y: 22, width: qrSize, height: qrSize });
-      page.drawText('Scan to redeem', { x: width - qrSize - 28, y: 14, size: 6, font: fontBodyRegular, color: charcoal });
+      page.drawText('Scan to redeem', { x: width - qrSize - 28, y: 14, size: 6, font: fontRegular, color: charcoal });
     } catch (qrErr) {
       console.error('Failed to embed QR code:', qrErr);
     }
