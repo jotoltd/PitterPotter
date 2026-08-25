@@ -69,7 +69,7 @@ export interface GiftCard {
   message?: string;
   purchaseDate: string;
   expiryDate?: string;
-  status: 'active' | 'redeemed' | 'expired';
+  status: 'active' | 'redeemed' | 'expired' | 'cancelled' | 'disabled';
 }
 
 export interface Staff {
@@ -112,7 +112,7 @@ export interface GiftCardApiRow {
   message?: string;
   purchase_date?: string;
   expiry_date?: string;
-  status: 'active' | 'redeemed' | 'expired';
+  status: 'active' | 'redeemed' | 'expired' | 'cancelled' | 'disabled';
 }
 
 export interface StaffApiRow {

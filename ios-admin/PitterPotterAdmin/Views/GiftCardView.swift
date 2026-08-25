@@ -14,7 +14,7 @@ struct GiftCardView: View {
     @State private var showingVoucherShare = false
     @State private var downloadingVoucher: GiftCard?
 
-    private let statusOptions = ["active", "redeemed", "expired", "cancelled"]
+    private let statusOptions = ["active", "redeemed", "expired", "cancelled", "disabled"]
 
     private var filteredCards: [GiftCard] {
         giftCards.filter { card in
@@ -69,6 +69,20 @@ struct GiftCardView: View {
                                     } label: {
                                         Label("Cancel", systemImage: "xmark.circle")
                                     }
+                                    Button {
+                                        disableCard(card)
+                                    } label: {
+                                        Label("Disable", systemImage: "nosign")
+                                    }
+                                    .tint(.orange)
+                                }
+                                if card.status == "disabled" {
+                                    Button {
+                                        enableCard(card)
+                                    } label: {
+                                        Label("Enable", systemImage: "checkmark.circle")
+                                    }
+                                    .tint(.green)
                                 }
                                 Button {
                                     downloadVoucher(card)
@@ -86,6 +100,14 @@ struct GiftCardView: View {
                                 if card.status == "active" {
                                     Button("Mark Redeemed") { redeemCard(card) }
                                     Button("Cancel Card", role: .destructive) { cancelCard(card) }
+                                    Button { disableCard(card) } label: {
+                                        Label("Disable Card", systemImage: "nosign")
+                                    }
+                                }
+                                if card.status == "disabled" {
+                                    Button { enableCard(card) } label: {
+                                        Label("Enable Card", systemImage: "checkmark.circle")
+                                    }
                                 }
                                 if let email = card.recipientEmail, !email.isEmpty {
                                     Button { resendCard(card) } label: {
@@ -213,6 +235,48 @@ struct GiftCardView: View {
                 await MainActor.run {
                     Haptics.error()
                     toastManager.error("Failed to cancel card")
+                }
+            }
+        }
+    }
+
+    private func disableCard(_ card: GiftCard) {
+        guard let staff = authVM.staff else { return }
+        Task {
+            do {
+                try await APIClient.shared.updateGiftCardStatus(id: card.id, status: "disabled", staff: staff)
+                await MainActor.run {
+                    if let idx = giftCards.firstIndex(where: { $0.id == card.id }) {
+                        giftCards[idx].status = "disabled"
+                    }
+                    Haptics.success()
+                    toastManager.success("Gift card disabled")
+                }
+            } catch {
+                await MainActor.run {
+                    Haptics.error()
+                    toastManager.error("Failed to disable card")
+                }
+            }
+        }
+    }
+
+    private func enableCard(_ card: GiftCard) {
+        guard let staff = authVM.staff else { return }
+        Task {
+            do {
+                try await APIClient.shared.updateGiftCardStatus(id: card.id, status: "active", staff: staff)
+                await MainActor.run {
+                    if let idx = giftCards.firstIndex(where: { $0.id == card.id }) {
+                        giftCards[idx].status = "active"
+                    }
+                    Haptics.success()
+                    toastManager.success("Gift card enabled")
+                }
+            } catch {
+                await MainActor.run {
+                    Haptics.error()
+                    toastManager.error("Failed to enable card")
                 }
             }
         }
@@ -350,6 +414,7 @@ struct GiftCardRowView: View {
         case "redeemed": return PPBrand.charcoal
         case "expired": return .orange
         case "cancelled": return .red
+        case "disabled": return .orange
         default: return .gray
         }
     }

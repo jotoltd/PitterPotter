@@ -426,7 +426,7 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (!isNonEmptyString(id) || !isOneOf(status, ['active', 'redeemed', 'expired', 'cancelled'] as const)) {
+      if (!isNonEmptyString(id) || !isOneOf(status, ['active', 'redeemed', 'expired', 'cancelled', 'disabled'] as const)) {
         return new Response(JSON.stringify({ error: 'Invalid id or status' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

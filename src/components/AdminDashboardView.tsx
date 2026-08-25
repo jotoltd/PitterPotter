@@ -923,7 +923,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
-  const updateGiftCardStatus = async (id: string, status: 'active' | 'redeemed' | 'expired') => {
+  const updateGiftCardStatus = async (id: string, status: 'active' | 'redeemed' | 'expired' | 'cancelled' | 'disabled') => {
     if (!isSupabaseEnabled() || !staff?.sessionToken) {
       showToast('Gift card update unavailable', 'error');
       return;
@@ -2379,7 +2379,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       <td className="py-2">{card.senderName}</td>
                       <td className="py-2">
                         <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
-                          card.status === 'active' ? 'bg-emerald-100 text-emerald-700' : card.status === 'expired' ? 'bg-red-100 text-red-700' : 'bg-stone-100 text-stone-500'
+                          card.status === 'active' ? 'bg-emerald-100 text-emerald-700' : card.status === 'expired' ? 'bg-red-100 text-red-700' : card.status === 'disabled' ? 'bg-orange-100 text-orange-700' : 'bg-stone-100 text-stone-500'
                         }`}>
                           {card.status}
                         </span>
@@ -2403,6 +2403,22 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                               className="px-2 py-1 bg-[#1B2D3C] text-white text-[10px] font-bold uppercase tracking-wider rounded hover:bg-[#243B53] cursor-pointer"
                             >
                               Redeem
+                            </button>
+                          )}
+                          {staff.role === 'super_admin' && card.status === 'active' && (
+                            <button
+                              onClick={() => updateGiftCardStatus(card.id, 'disabled')}
+                              className="px-2 py-1 bg-orange-50 text-orange-700 text-[10px] font-bold uppercase tracking-wider rounded hover:bg-orange-100 cursor-pointer"
+                            >
+                              Disable
+                            </button>
+                          )}
+                          {staff.role === 'super_admin' && card.status === 'disabled' && (
+                            <button
+                              onClick={() => updateGiftCardStatus(card.id, 'active')}
+                              className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded hover:bg-emerald-100 cursor-pointer"
+                            >
+                              Enable
                             </button>
                           )}
                           {staff.role === 'super_admin' && card.status === 'active' && (
