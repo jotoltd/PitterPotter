@@ -50,37 +50,69 @@ interface GiftCardRow {
   status: string;
 }
 
+async function fetchFont(url: string): Promise<Uint8Array | null> {
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) return null;
+    return new Uint8Array(await resp.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
 async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
   const { PDFDocument, StandardFonts, rgb } = await getPdfLib();
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([600, 400]);
   const { width, height } = page.getSize();
 
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontOblique = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+  // Fetch brand fonts as TTF (pdf-lib requires TTF/OTF, not woff2)
+  // Using jsDelivr CDN serving fontsource static TTF files
+  const montserratBoldBytes = await fetchFont('https://cdn.jsdelivr.net/npm/@fontsource/montserrat@5.0.18/files/montserrat-latin-700-normal.ttf');
+  const montserratRegularBytes = await fetchFont('https://cdn.jsdelivr.net/npm/@fontsource/montserrat@5.0.18/files/montserrat-latin-400-normal.ttf');
+  const dmSansBoldBytes = await fetchFont('https://cdn.jsdelivr.net/npm/@fontsource/dm-sans@5.0.18/files/dm-sans-latin-700-normal.ttf');
+  const dmSansRegularBytes = await fetchFont('https://cdn.jsdelivr.net/npm/@fontsource/dm-sans@5.0.18/files/dm-sans-latin-400-normal.ttf');
+
+  // Embed fonts — fall back to StandardFonts if Google Fonts fetch fails
+  let fontHeadingBold: any, fontHeadingRegular: any, fontBodyBold: any, fontBodyRegular: any;
+  try {
+    fontHeadingBold = montserratBoldBytes ? await pdfDoc.embedFont(montserratBoldBytes, { subset: true }) : await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    fontHeadingRegular = montserratRegularBytes ? await pdfDoc.embedFont(montserratRegularBytes, { subset: true }) : await pdfDoc.embedFont(StandardFonts.Helvetica);
+    fontBodyBold = dmSansBoldBytes ? await pdfDoc.embedFont(dmSansBoldBytes, { subset: true }) : await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    fontBodyRegular = dmSansRegularBytes ? await pdfDoc.embedFont(dmSansRegularBytes, { subset: true }) : await pdfDoc.embedFont(StandardFonts.Helvetica);
+  } catch {
+    fontHeadingBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    fontHeadingRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    fontBodyBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    fontBodyRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  }
 
   // Brand colors
   const charcoal = rgb(0.106, 0.176, 0.235);    // #1B2D3C
   const sage = rgb(0.839, 0.906, 0.894);        // #D6E2E9
+  const sageDeep = rgb(0.65, 0.78, 0.75);       // deeper sage
   const cream = rgb(0.96, 0.95, 0.91);          // #F5F2E8
+  const white = rgb(0.98, 0.97, 0.94);          // warm off-white
   const grey = rgb(0.4, 0.4, 0.4);
-  const lightGrey = rgb(0.5, 0.5, 0.5);
+  const lightGrey = rgb(0.55, 0.55, 0.55);
 
-  // Background
-  page.drawRectangle({ x: 0, y: 0, width, height, color: cream });
+  // Background — charcoal
+  page.drawRectangle({ x: 0, y: 0, width, height, color: charcoal });
 
-  // Outer border — charcoal
+  // Inner panel — sage
   page.drawRectangle({
-    x: 3, y: 3, width: width - 6, height: height - 6,
-    borderColor: charcoal, borderWidth: 2, color: cream,
+    x: 8, y: 8, width: width - 16, height: height - 16,
+    color: sage, borderColor: charcoal, borderWidth: 1,
   });
 
-  // Inner accent border — sage
+  // Content card — warm off-white
   page.drawRectangle({
-    x: 12, y: 12, width: width - 24, height: height - 24,
-    borderColor: sage, borderWidth: 1, color: rgb(1, 1, 1),
+    x: 16, y: 16, width: width - 32, height: height - 32,
+    color: white, borderColor: sageDeep, borderWidth: 1,
   });
+
+  // Top accent bar — charcoal
+  page.drawRectangle({ x: 16, y: height - 16, width: width - 32, height: 6, color: charcoal });
 
   // Embed logo from website
   let logoImg: any = null;
@@ -95,63 +127,75 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
   }
 
   if (logoImg) {
-    const logoH = 40;
+    const logoH = 38;
     const logoW = logoImg.width / logoImg.height * logoH;
     page.drawImage(logoImg, {
-      x: (width - logoW) / 2, y: height - 55,
+      x: (width - logoW) / 2, y: height - 58,
       width: logoW, height: logoH,
     });
   } else {
-    page.drawText('Pitter Potter', {
-      x: width / 2 - 65, y: height - 45, size: 22, font: fontBold, color: charcoal,
+    const logoText = 'Pitter Potter';
+    const logoW = fontHeadingBold.widthOfTextAtSize(logoText, 22);
+    page.drawText(logoText, {
+      x: (width - logoW) / 2, y: height - 48, size: 22, font: fontHeadingBold, color: charcoal,
     });
   }
 
-  page.drawText('Pottery Painting Studio', {
-    x: width / 2 - 70, y: height - 68, size: 8, font: fontRegular, color: charcoal,
+  const subText = 'Pottery Painting Studio';
+  const subW = fontBodyRegular.widthOfTextAtSize(subText, 8);
+  page.drawText(subText, {
+    x: (width - subW) / 2, y: height - 70, size: 8, font: fontBodyRegular, color: charcoal,
   });
 
   // Decorative line
-  page.drawRectangle({ x: 60, y: height - 82, width: width - 120, height: 1, color: sage });
+  page.drawRectangle({ x: 80, y: height - 82, width: width - 160, height: 1, color: sageDeep });
 
   // GIFT VOUCHER title
-  page.drawText('GIFT VOUCHER', {
-    x: width / 2 - 55, y: height - 110, size: 18, font: fontBold, color: charcoal,
+  const voucherText = 'GIFT VOUCHER';
+  const voucherW = fontHeadingBold.widthOfTextAtSize(voucherText, 18);
+  page.drawText(voucherText, {
+    x: (width - voucherW) / 2, y: height - 108, size: 18, font: fontHeadingBold, color: charcoal,
   });
 
-  // Amount
+  // Amount — on a sage panel
   const amountStr = `\u00A3${Number(giftCard.amount).toFixed(2)}`;
-  const amountWidth = fontBold.widthOfTextAtSize(amountStr, 36);
+  const amountWidth = fontHeadingBold.widthOfTextAtSize(amountStr, 36);
+  const amountPanelW = amountWidth + 60;
+  page.drawRectangle({
+    x: (width - amountPanelW) / 2, y: height - 168,
+    width: amountPanelW, height: 44,
+    color: sage, borderColor: sageDeep, borderWidth: 1,
+  });
   page.drawText(amountStr, {
-    x: (width - amountWidth) / 2, y: height - 160, size: 36, font: fontBold, color: charcoal,
+    x: (width - amountWidth) / 2, y: height - 158, size: 36, font: fontHeadingBold, color: charcoal,
   });
 
-  // Code box
+  // Code box — charcoal background
   const codeY = height - 200;
   page.drawRectangle({
     x: 80, y: codeY - 6, width: width - 160, height: 28,
-    color: sage, borderColor: charcoal, borderWidth: 1,
+    color: charcoal,
   });
   const codeLabel = 'Code:  ';
-  const codeLabelWidth = fontRegular.widthOfTextAtSize(codeLabel, 14);
-  page.drawText(codeLabel, { x: 100, y: codeY, size: 14, font: fontRegular, color: charcoal });
-  page.drawText(giftCard.code, { x: 100 + codeLabelWidth + 4, y: codeY, size: 14, font: fontBold, color: charcoal });
+  const codeLabelWidth = fontBodyRegular.widthOfTextAtSize(codeLabel, 14);
+  page.drawText(codeLabel, { x: 100, y: codeY, size: 14, font: fontBodyRegular, color: sage });
+  page.drawText(giftCard.code, { x: 100 + codeLabelWidth + 4, y: codeY, size: 14, font: fontBodyBold, color: white });
 
-  // From / To
+  // From / To / Date
   let y = height - 240;
   const labelX = 80;
   const valueX = 160;
 
-  page.drawText('From:', { x: labelX, y, size: 10, font: fontRegular, color: grey });
-  page.drawText(giftCard.sender_name || 'Anonymous', { x: valueX, y, size: 11, font: fontBold, color: charcoal });
+  page.drawText('From:', { x: labelX, y, size: 10, font: fontBodyRegular, color: grey });
+  page.drawText(giftCard.sender_name || 'Anonymous', { x: valueX, y, size: 11, font: fontBodyBold, color: charcoal });
 
   y -= 18;
-  page.drawText('To:', { x: labelX, y, size: 10, font: fontRegular, color: grey });
-  page.drawText(giftCard.recipient_name || 'Valued Customer', { x: valueX, y, size: 11, font: fontBold, color: charcoal });
+  page.drawText('To:', { x: labelX, y, size: 10, font: fontBodyRegular, color: grey });
+  page.drawText(giftCard.recipient_name || 'Valued Customer', { x: valueX, y, size: 11, font: fontBodyBold, color: charcoal });
 
   // Date
   y -= 18;
-  page.drawText('Date:', { x: labelX, y, size: 10, font: fontRegular, color: grey });
+  page.drawText('Date:', { x: labelX, y, size: 10, font: fontBodyRegular, color: grey });
   let dateStr = '';
   if (giftCard.purchase_date) {
     try {
@@ -162,20 +206,20 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
   } else {
     dateStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   }
-  page.drawText(dateStr, { x: valueX, y, size: 11, font: fontBold, color: charcoal });
+  page.drawText(dateStr, { x: valueX, y, size: 11, font: fontBodyBold, color: charcoal });
 
   // Personal message
   if (giftCard.message) {
     y -= 28;
-    page.drawText('Message:', { x: labelX, y, size: 10, font: fontRegular, color: grey });
+    page.drawText('Message:', { x: labelX, y, size: 10, font: fontBodyRegular, color: grey });
     y -= 14;
     const maxWidth = width - 160;
     const words = giftCard.message.split(' ');
     let line = '';
     for (const word of words) {
       const testLine = line ? `${line} ${word}` : word;
-      if (fontOblique.widthOfTextAtSize(testLine, 10) > maxWidth) {
-        page.drawText(line, { x: 80, y, size: 10, font: fontOblique, color: rgb(0.3, 0.3, 0.3) });
+      if (fontBodyRegular.widthOfTextAtSize(testLine, 10) > maxWidth) {
+        page.drawText(line, { x: 80, y, size: 10, font: fontBodyRegular, color: rgb(0.3, 0.3, 0.3) });
         y -= 14;
         line = word;
       } else {
@@ -183,23 +227,27 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
       }
     }
     if (line) {
-      page.drawText(line, { x: 80, y, size: 10, font: fontOblique, color: rgb(0.3, 0.3, 0.3) });
+      page.drawText(line, { x: 80, y, size: 10, font: fontBodyRegular, color: rgb(0.3, 0.3, 0.3) });
     }
   }
 
-  // Footer
-  y = 40;
+  // Footer area — sage band
+  page.drawRectangle({ x: 16, y: 16, width: width - 32, height: 50, color: sage });
+  page.drawRectangle({ x: 16, y: 64, width: width - 32, height: 2, color: sageDeep });
+
   page.drawText('Valid for 12 months from purchase', {
-    x: 80, y: y + 10, size: 8, font: fontRegular, color: lightGrey,
+    x: 80, y: 52, size: 8, font: fontBodyRegular, color: charcoal,
   });
   page.drawText('Putney: 234 Upper Richmond Road, SW15 6TG  |  020 8788 1635', {
-    x: 80, y: y - 2, size: 7, font: fontRegular, color: lightGrey,
+    x: 80, y: 40, size: 7, font: fontBodyRegular, color: charcoal,
   });
   page.drawText('Wimbledon: 52 Wimbledon Hill Road, SW19 7PA  |  020 3770 4499', {
-    x: 80, y: y - 12, size: 7, font: fontRegular, color: lightGrey,
+    x: 80, y: 28, size: 7, font: fontBodyRegular, color: charcoal,
   });
-  page.drawText('www.pitterpotter.co.uk', {
-    x: width / 2 - 40, y: y - 24, size: 8, font: fontBold, color: charcoal,
+  const urlText = 'www.pitterpotter.co.uk';
+  const urlW = fontHeadingBold.widthOfTextAtSize(urlText, 8);
+  page.drawText(urlText, {
+    x: (width - urlW) / 2, y: 20, size: 8, font: fontHeadingBold, color: charcoal,
   });
 
   // QR code
@@ -207,9 +255,9 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
   if (qrBytes) {
     try {
       const qrImage = await pdfDoc.embedPng(qrBytes);
-      const qrSize = 60;
-      page.drawImage(qrImage, { x: width - qrSize - 30, y: 30, width: qrSize, height: qrSize });
-      page.drawText('Scan to redeem', { x: width - qrSize - 28, y: 20, size: 6, font: fontRegular, color: lightGrey });
+      const qrSize = 55;
+      page.drawImage(qrImage, { x: width - qrSize - 30, y: 22, width: qrSize, height: qrSize });
+      page.drawText('Scan to redeem', { x: width - qrSize - 28, y: 14, size: 6, font: fontBodyRegular, color: charcoal });
     } catch (qrErr) {
       console.error('Failed to embed QR code:', qrErr);
     }
