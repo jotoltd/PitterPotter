@@ -105,6 +105,24 @@ Deno.serve(async (req) => {
     }).select().single();
 
     if (error) {
+      // Race condition: webhook may have already created the card
+      if (error.code === '23505') {
+        const { data: existingCard } = await supabase
+          .from('gift_cards')
+          .select('*')
+          .eq('stripe_session_id', paymentIntentId)
+          .maybeSingle();
+        if (existingCard) {
+          return new Response(JSON.stringify({
+            code: existingCard.code,
+            amount: existingCard.amount,
+            balance: existingCard.balance,
+            status: existingCard.status,
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
       console.error('Gift card insert error:', error);
       return new Response(JSON.stringify({ error: 'Failed to create gift card' }), {
         status: 500,

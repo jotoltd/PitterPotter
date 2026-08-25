@@ -114,7 +114,14 @@ Deno.serve(async (req) => {
             expiry_date: expiryDate.toISOString(),
             stripe_session_id: paymentIntentId,
           });
-          if (insertError) throw insertError;
+          if (insertError) {
+            // Race condition: confirm-gift-card-payment may have already created the card
+            if (insertError.code === '23505') {
+              console.log('Gift card already exists for paymentIntent:', paymentIntentId);
+            } else {
+              throw insertError;
+            }
+          }
 
           // Send gift card emails (recipient gets voucher PDF, sender gets confirmation)
           try {
