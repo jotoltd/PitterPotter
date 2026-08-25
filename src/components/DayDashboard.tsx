@@ -62,12 +62,14 @@ function BookingCard({
   column,
   canUpdate,
   onMove,
+  onNoShow,
   onClick,
 }: {
   booking: BookingInquiry;
-  column: 'bookings' | 'seated' | 'complete';
+  column: 'bookings' | 'seated' | 'complete' | 'noshow';
   canUpdate: boolean;
   onMove: (id: string, direction: 'forward' | 'back') => void;
+  onNoShow?: (id: string) => void;
   onClick: (booking: BookingInquiry) => void;
 }) {
   return (
@@ -78,6 +80,8 @@ function BookingCard({
           ? 'bg-rose-50/40 border-rose-200/60'
           : column === 'seated'
           ? 'bg-amber-50/40 border-amber-200/60'
+          : column === 'noshow'
+          ? 'bg-stone-50/40 border-stone-300/60'
           : 'bg-emerald-50/40 border-emerald-200/60'
       }`}
     >
@@ -106,7 +110,15 @@ function BookingCard({
               <ChevronLeft className="w-3 h-3" /> Back
             </button>
           )}
-          {column !== 'complete' && (
+          {column === 'bookings' && onNoShow && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onNoShow(booking.id); }}
+              className="flex items-center gap-0.5 px-2 py-1 bg-stone-200 hover:bg-stone-300 text-stone-700 text-[9px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="w-3 h-3" /> No-Show
+            </button>
+          )}
+          {column !== 'complete' && column !== 'noshow' && (
             <button
               onClick={(e) => { e.stopPropagation(); onMove(booking.id, 'forward'); }}
               className={`flex items-center gap-0.5 px-2 py-1 text-white text-[9px] font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ml-auto ${
@@ -243,8 +255,10 @@ export default function DayDashboard({
   const bookingsColumn = sortedDayBookings.filter(b => b.status === 'pending' || b.status === 'confirmed');
   const seatedColumn = sortedDayBookings.filter(b => b.status === 'seated');
   const completeColumn = sortedDayBookings.filter(b => b.status === 'completed');
+  const noshowColumn = sortedDayBookings.filter(b => b.status === 'no_show');
 
-  const totalSeats = dayBookings.reduce((s, b) => s + b.paintersCount, 0);
+  const activeDayBookings = dayBookings.filter(b => b.status !== 'no_show');
+  const totalSeats = activeDayBookings.reduce((s, b) => s + b.paintersCount, 0);
 
   const handleMove = (id: string, direction: 'forward' | 'back') => {
     const booking = bookings.find(b => b.id === id);
@@ -260,8 +274,14 @@ export default function DayDashboard({
         onUpdateStatus(id, 'confirmed');
       } else if (booking.status === 'completed') {
         onUpdateStatus(id, 'seated');
+      } else if (booking.status === 'no_show') {
+        onUpdateStatus(id, 'confirmed');
       }
     }
+  };
+
+  const handleNoShow = (id: string) => {
+    onUpdateStatus(id, 'no_show');
   };
 
   const handleEdit = (booking: BookingInquiry) => {
@@ -317,15 +337,16 @@ export default function DayDashboard({
       )}
 
       {/* Stat bubbles */}
-      <div className="grid grid-cols-4 gap-3">
-        <StatBubble label="Bookings" value={dayBookings.length} colour="slate" />
+      <div className="grid grid-cols-5 gap-3">
+        <StatBubble label="Bookings" value={activeDayBookings.length} colour="slate" />
         <StatBubble label="Seats" value={totalSeats} colour="slate" />
         <StatBubble label="Seated" value={seatedColumn.length} colour="amber" />
         <StatBubble label="Complete" value={completeColumn.length} colour="green" />
+        <StatBubble label="No-Show" value={noshowColumn.length} colour="red" />
       </div>
 
-      {/* 3-column kanban */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* 4-column kanban */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Bookings column (left) — light red */}
         <div className="bg-rose-50/50 border border-rose-200/60 rounded-xl p-4 space-y-3 min-h-[300px]">
           <div className="flex items-center justify-between">
@@ -342,6 +363,7 @@ export default function DayDashboard({
                 column="bookings"
                 canUpdate={canUpdateStatus}
                 onMove={handleMove}
+                onNoShow={handleNoShow}
                 onClick={setSelectedBooking}
               />
             ))
@@ -384,6 +406,28 @@ export default function DayDashboard({
                 key={b.id}
                 booking={b}
                 column="complete"
+                canUpdate={canUpdateStatus}
+                onMove={handleMove}
+                onClick={setSelectedBooking}
+              />
+            ))
+          )}
+        </div>
+
+        {/* No-Show column (far right) — light stone */}
+        <div className="bg-stone-50/50 border border-stone-300/60 rounded-xl p-4 space-y-3 min-h-[300px]">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-black text-stone-700 uppercase tracking-wider">No-Show</h3>
+            <span className="px-2 py-0.5 bg-stone-300/60 text-stone-700 text-[10px] font-black rounded-full">{noshowColumn.length}</span>
+          </div>
+          {noshowColumn.length === 0 ? (
+            <p className="text-xs text-stone-400/60 font-semibold text-center py-8">No no-shows</p>
+          ) : (
+            noshowColumn.map(b => (
+              <BookingCard
+                key={b.id}
+                booking={b}
+                column="noshow"
                 canUpdate={canUpdateStatus}
                 onMove={handleMove}
                 onClick={setSelectedBooking}

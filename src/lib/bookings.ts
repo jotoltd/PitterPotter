@@ -209,7 +209,7 @@ export async function updateBooking(booking: BookingInquiry, staff?: Staff | nul
   }
 }
 
-export async function updateBookingStatus(id: string, status: 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled', staff?: Staff | null): Promise<void> {
+export async function updateBookingStatus(id: string, status: 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show', staff?: Staff | null): Promise<void> {
   if (!isSupabaseEnabled()) return;
   if (!staff) throw new Error('Staff required');
 

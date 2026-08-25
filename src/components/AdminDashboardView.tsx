@@ -1270,7 +1270,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
-  const updateStatus = async (id: string, status: 'confirmed' | 'pending' | 'seated' | 'completed' | 'cancelled') => {
+  const updateStatus = async (id: string, status: 'confirmed' | 'pending' | 'seated' | 'completed' | 'cancelled' | 'no_show') => {
     setConfirmingIds(prev => new Set(prev).add(id));
     try {
       if (status === 'confirmed') {
@@ -1286,7 +1286,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       }
       await updateBookingStatus(id, status, staff);
       setInquiries(prev => prev.map((i) => (i.id === id ? { ...i, status } : i)));
-      showToast(status === 'confirmed' ? 'Booking confirmed' : status === 'cancelled' ? 'Booking cancelled' : status === 'seated' ? 'Marked as seated' : status === 'completed' ? 'Marked as complete' : 'Booking marked as awaiting', 'success');
+      showToast(status === 'confirmed' ? 'Booking confirmed' : status === 'cancelled' ? 'Booking cancelled' : status === 'seated' ? 'Marked as seated' : status === 'completed' ? 'Marked as complete' : status === 'no_show' ? 'Marked as no-show' : 'Booking marked as awaiting', 'success');
     } catch {
       showToast('Failed to update status', 'error');
     } finally {
