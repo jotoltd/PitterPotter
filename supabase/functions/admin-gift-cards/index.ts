@@ -157,13 +157,17 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
   let y = height - 240;
   const labelX = 80;
   const valueX = 160;
+  const sanitize = (s: string | null, fallback: string) => {
+    if (!s) return fallback;
+    return s.replace(/[^\x00-\xFF]/g, '').trim() || s.replace(/[^\x20-\x7E]/g, '').trim() || fallback;
+  };
 
   page.drawText('From:', { x: labelX, y, size: 10, font: fontRegular, color: grey });
-  page.drawText(giftCard.sender_name || 'Anonymous', { x: valueX, y, size: 11, font: fontBold, color: charcoal });
+  page.drawText(sanitize(giftCard.sender_name, 'Anonymous'), { x: valueX, y, size: 11, font: fontBold, color: charcoal });
 
   y -= 18;
   page.drawText('To:', { x: labelX, y, size: 10, font: fontRegular, color: grey });
-  page.drawText(giftCard.recipient_name || 'Valued Customer', { x: valueX, y, size: 11, font: fontBold, color: charcoal });
+  page.drawText(sanitize(giftCard.recipient_name, 'Valued Customer'), { x: valueX, y, size: 11, font: fontBold, color: charcoal });
 
   // Date
   y -= 18;
@@ -186,7 +190,11 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
     page.drawText('Message:', { x: labelX, y, size: 10, font: fontRegular, color: grey });
     y -= 14;
     const maxWidth = width - 160;
-    const words = giftCard.message.split(' ');
+    const safeMessage = sanitize(giftCard.message, '');
+    if (!safeMessage) {
+      // skip message section if nothing left after sanitizing
+    } else {
+    const words = safeMessage.split(' ');
     let line = '';
     for (const word of words) {
       const testLine = line ? `${line} ${word}` : word;
@@ -200,6 +208,7 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
     }
     if (line) {
       page.drawText(line, { x: 80, y, size: 10, font: fontRegular, color: rgb(0.3, 0.3, 0.3) });
+    }
     }
   }
 
