@@ -1406,12 +1406,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || !editingBooking) return;
+    if (!files || files.length === 0 || !editingBooking) return;
+    const fileArr = Array.from(files);
     e.target.value = '';
     setPhotoUploading(true);
     try {
       const newPhotoUrls: string[] = [];
-      for (const file of Array.from(files)) {
+      for (const file of fileArr) {
         const dataUrl = await compressImage(file);
         let imageUrl = dataUrl;
         if (isSupabaseEnabled() && staff?.sessionToken) {
@@ -1457,12 +1458,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const handleDrawerPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || !drawerBooking) return;
+    if (!files || files.length === 0 || !drawerBooking) return;
+    const fileArr = Array.from(files);
     e.target.value = '';
     setPhotoUploading(true);
     try {
       const newPhotoUrls: string[] = [];
-      for (const file of Array.from(files)) {
+      for (const file of fileArr) {
         const dataUrl = await compressImage(file);
         let imageUrl = dataUrl;
         if (isSupabaseEnabled() && staff?.sessionToken) {
