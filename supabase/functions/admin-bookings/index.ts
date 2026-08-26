@@ -35,6 +35,9 @@ function toBookingInquiry(row: any): any {
     paymentStatus: row.payment_status || undefined,
     stripePaymentIntentId: row.stripe_payment_intent_id || undefined,
     createdAt: row.created_at || undefined,
+    photos: row.photos || undefined,
+    collectionStatus: row.collection_status || undefined,
+    collectedAt: row.collected_at || undefined,
   };
 }
 
@@ -67,6 +70,8 @@ function toBookingRow(booking: any): any {
     payment_status: booking.paymentStatus || null,
     stripe_payment_intent_id: booking.stripePaymentIntentId || null,
     photos: booking.photos || null,
+    collection_status: booking.collectionStatus || null,
+    collected_at: booking.collectedAt || null,
   };
 }
 

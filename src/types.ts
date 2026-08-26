@@ -47,6 +47,8 @@ export interface BookingInquiry {
   managementToken?: string;
   createdAt?: string;
   photos?: string[];
+  collectionStatus?: 'painted' | 'ready' | 'collected';
+  collectedAt?: string;
 }
 
 export interface GalleryItem {

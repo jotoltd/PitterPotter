@@ -22,6 +22,7 @@ import AuditLogsTab from './admin/AuditLogsTab';
 import EmailLogsTab from './admin/EmailLogsTab';
 import EmailTemplatesTab from './admin/EmailTemplatesTab';
 import WebmasterTab from './admin/WebmasterTab';
+import CollectionsTab, { CollectionStage } from './admin/CollectionsTab';
 import { SESSION_LABELS as SESSION_LABELS_UTIL, SESSION_BADGE as SESSION_BADGE_UTIL, ROLE_LABEL, AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL, AUDIT_ACTION_COLOR, formatAuditDetails as formatAuditDetailsUtil, getBookingAnalytics as getBookingAnalyticsUtil, getGiftCardAnalytics as getGiftCardAnalyticsUtil, exportBookingsCSV as exportBookingsCSVUtil, exportGiftCardsCSV as exportGiftCardsCSVUtil, BACKUP_TABLE_OPTIONS } from './admin/adminUtils';
 import 'react-day-picker/dist/style.css';
 
@@ -74,7 +75,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'collections' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates'>('dashboard');
+  const [collectionUploadingId, setCollectionUploadingId] = useState<string | null>(null);
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
   const [maintenanceSaving, setMaintenanceSaving] = useState(false);
@@ -1508,6 +1510,61 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
+  const handleSetCollectionStage = async (booking: BookingInquiry, stage: CollectionStage) => {
+    const updatedBooking: BookingInquiry = {
+      ...booking,
+      collectionStatus: stage,
+      collectedAt: stage === 'collected' ? new Date().toISOString() : undefined,
+    };
+    setInquiries(prev => prev.map(i => i.id === updatedBooking.id ? updatedBooking : i));
+    try {
+      await updateBooking(updatedBooking, staff);
+      showToast(
+        stage === 'collected' ? 'Marked as collected'
+        : stage === 'ready' ? 'Marked ready to collect'
+        : 'Moved back to painted',
+        'success',
+      );
+    } catch {
+      setInquiries(prev => prev.map(i => i.id === booking.id ? booking : i));
+      showToast('Failed to update collection status', 'error');
+    }
+  };
+
+  const handleCollectionPhotoUpload = async (booking: BookingInquiry, files: File[]) => {
+    if (files.length === 0) return;
+    setCollectionUploadingId(booking.id);
+    try {
+      const newPhotoUrls: string[] = [];
+      for (const file of files) {
+        const dataUrl = await compressImage(file);
+        let imageUrl = dataUrl;
+        if (isSupabaseEnabled() && staff?.sessionToken) {
+          const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ action: 'upload', username: staff.username, sessionToken: staff.sessionToken, key: `booking_${booking.id}_photo_${Date.now()}`, page: 'booking-photos', fileData: dataUrl, fileName: file.name }),
+          });
+          const uploadData = await uploadRes.json();
+          if (!uploadRes.ok || uploadData.error || !uploadData.url) {
+            throw new Error(uploadData.error || 'Upload failed');
+          }
+          imageUrl = uploadData.url;
+        }
+        newPhotoUrls.push(imageUrl);
+      }
+      const updatedBooking = { ...booking, photos: [...(booking.photos || []), ...newPhotoUrls] };
+      setInquiries(prev => prev.map(i => i.id === updatedBooking.id ? updatedBooking : i));
+      await updateBooking(updatedBooking, staff);
+      showToast(`${newPhotoUrls.length} photo${newPhotoUrls.length > 1 ? 's' : ''} added`, 'success');
+    } catch (err) {
+      console.error('Failed to upload photo:', err);
+      showToast('Failed to upload photo', 'error');
+    } finally {
+      setCollectionUploadingId(null);
+    }
+  };
+
   const saveBookingEdit = async (updatedBooking: BookingInquiry) => {
     const oldBooking = inquiries.find((i) => i.id === updatedBooking.id);
     const remaining = await getRemainingCapacity(updatedBooking.studio, updatedBooking.date, updatedBooking.time);
@@ -2238,6 +2295,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {[
               { value: 'dashboard', label: 'Dashboard', badge: stats.pending > 0 ? stats.pending : null },
+              { value: 'collections', label: 'Collections', badge: null },
               ...(isSuperAdmin ? [{ value: 'gift-cards', label: 'Gift Vouchers', badge: null }] : []),
               ...(canManageStaff ? [{ value: 'audit-logs', label: 'Audit Log', badge: null }] : []),
               ...(canManageStaff ? [{ value: 'email-logs', label: 'Emails', badge: null }] : []),
@@ -4679,6 +4737,18 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           </div>
 
         </div>
+      )}
+
+      {activeTab === 'collections' && (
+        <CollectionsTab
+          bookings={inquiries}
+          loading={loading}
+          canUpdate={canEdit}
+          onSetStage={handleSetCollectionStage}
+          onOpenBooking={(booking) => setDrawerBooking(booking)}
+          onUploadPhotos={handleCollectionPhotoUpload}
+          uploadingId={collectionUploadingId}
+        />
       )}
 
       {activeTab === 'analytics' && canManageStaff && (

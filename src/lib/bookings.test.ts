@@ -91,6 +91,9 @@ describe('toBookingRow', () => {
       stripe_payment_intent_id: null,
       table_id: null,
       management_token: null,
+      photos: null,
+      collection_status: null,
+      collected_at: null,
     });
   });
 });
