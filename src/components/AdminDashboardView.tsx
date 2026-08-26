@@ -1455,6 +1455,57 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
+  const handleDrawerPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !drawerBooking) return;
+    e.target.value = '';
+    setPhotoUploading(true);
+    try {
+      const newPhotoUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const dataUrl = await compressImage(file);
+        let imageUrl = dataUrl;
+        if (isSupabaseEnabled() && staff?.sessionToken) {
+          const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ action: 'upload', username: staff.username, sessionToken: staff.sessionToken, key: `booking_${drawerBooking.id}_photo_${Date.now()}`, page: 'booking-photos', fileData: dataUrl, fileName: file.name }),
+          });
+          const uploadData = await uploadRes.json();
+          if (!uploadRes.ok || uploadData.error || !uploadData.url) {
+            throw new Error(uploadData.error || 'Upload failed');
+          }
+          imageUrl = uploadData.url;
+        }
+        newPhotoUrls.push(imageUrl);
+      }
+      const updatedBooking = { ...drawerBooking, photos: [...(drawerBooking.photos || []), ...newPhotoUrls] };
+      setDrawerBooking(updatedBooking);
+      setInquiries(inquiries.map((i) => i.id === updatedBooking.id ? updatedBooking : i));
+      await updateBooking(updatedBooking, staff);
+      showToast(`${newPhotoUrls.length} photo${newPhotoUrls.length > 1 ? 's' : ''} added`, 'success');
+    } catch (err) {
+      console.error('Failed to upload photo:', err);
+      showToast('Failed to upload photo', 'error');
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
+
+  const handleDrawerDeletePhoto = async (index: number) => {
+    if (!drawerBooking || !drawerBooking.photos) return;
+    const updatedPhotos = drawerBooking.photos.filter((_, i) => i !== index);
+    const updatedBooking = { ...drawerBooking, photos: updatedPhotos.length > 0 ? updatedPhotos : undefined };
+    setDrawerBooking(updatedBooking);
+    try {
+      await updateBooking(updatedBooking, staff);
+      setInquiries(inquiries.map((i) => i.id === updatedBooking.id ? updatedBooking : i));
+      showToast('Photo removed', 'success');
+    } catch {
+      showToast('Failed to remove photo', 'error');
+    }
+  };
+
   const saveBookingEdit = async (updatedBooking: BookingInquiry) => {
     const oldBooking = inquiries.find((i) => i.id === updatedBooking.id);
     const remaining = await getRemainingCapacity(updatedBooking.studio, updatedBooking.date, updatedBooking.time);
@@ -4773,18 +4824,50 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               )}
 
               {/* Painting Photos */}
-              {drawerBooking.photos && drawerBooking.photos.length > 0 && (
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-2">Painting Photos</p>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">Painting Photos</p>
+                  {canEdit && (
+                    <label className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all ${
+                      photoUploading
+                        ? 'bg-[#D6E2E9]/40 text-[#1B2D3C]/50 cursor-wait'
+                        : 'bg-[#DBE7E4] text-[#1B2D3C] hover:bg-[#D6E2E9]'
+                    }`}>
+                      <Camera className="w-3.5 h-3.5" />
+                      {photoUploading ? 'Uploading...' : 'Add Photos'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleDrawerPhotoUpload}
+                        disabled={photoUploading}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+                {drawerBooking.photos && drawerBooking.photos.length > 0 ? (
                   <div className="grid grid-cols-3 gap-2">
                     {drawerBooking.photos.map((url, i) => (
-                      <a key={i} href={url} target="_blank" rel="noreferrer" className="aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20 hover:opacity-80 transition-opacity">
-                        <img src={url} alt={`Painting ${i + 1}`} className="w-full h-full object-cover" />
-                      </a>
+                      <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20">
+                        <a href={url} target="_blank" rel="noreferrer" className="block w-full h-full hover:opacity-80 transition-opacity">
+                          <img src={url} alt={`Painting ${i + 1}`} className="w-full h-full object-cover" />
+                        </a>
+                        {canEdit && (
+                          <button
+                            onClick={() => handleDrawerDeletePhoto(i)}
+                            className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="text-[10px] text-[#1B2D3C]/50 font-medium">No photos uploaded yet.</p>
+                )}
+              </div>
 
               {/* Meta */}
               <div className="text-[10px] text-[#1B2D3C]/40 space-y-1 border-t border-[#1B2D3C]/10 pt-3">
