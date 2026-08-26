@@ -4672,11 +4672,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             {/* Header */}
             <div className="px-5 py-4 bg-[#DBE7E4] text-[#1B2D3C] flex items-start justify-between">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Booking</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#1B2D3C]/50 mb-0.5">Booking</p>
                 <p className="font-heading font-black text-lg leading-tight">{drawerBooking.name}</p>
-                <p className="text-xs text-white/60 mt-0.5">{drawerBooking.id}</p>
+                <p className="text-xs text-[#1B2D3C]/60 mt-0.5">{drawerBooking.id}</p>
               </div>
-              <button onClick={() => setDrawerBooking(null)} className="text-white/50 hover:text-white text-2xl leading-none cursor-pointer mt-1">✕</button>
+              <button onClick={() => setDrawerBooking(null)} className="text-[#1B2D3C]/50 hover:text-[#1B2D3C] text-2xl leading-none cursor-pointer mt-1">✕</button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
