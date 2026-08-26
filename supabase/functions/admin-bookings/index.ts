@@ -196,9 +196,26 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+      const { data: prevRow } = await supabase.from('bookings').select('collection_status, email').eq('booking_id', booking.id).single();
       const { error } = await supabase.from('bookings').update(toBookingRow(booking as Record<string, unknown>)).eq('booking_id', booking.id);
       if (error) throw error;
       await logAudit(supabase, staff, 'update', 'booking', booking.id as string, { studio: booking.studio, date: booking.date, time: booking.time });
+
+      // Send "ready to collect" email when collection_status changes to 'ready'
+      const prevStatus = prevRow?.collection_status ?? null;
+      const newStatus = (booking as Record<string, unknown>).collectionStatus ?? null;
+      if (newStatus === 'ready' && prevStatus !== 'ready' && booking.email) {
+        try {
+          await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-collection-ready`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': req.headers.get('Authorization') || '' },
+            body: JSON.stringify({ bookingId: booking.id }),
+          });
+        } catch (emailErr) {
+          console.error('Failed to send collection-ready email:', emailErr);
+        }
+      }
+
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
