@@ -134,6 +134,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [modalImages, setModalImages] = useState<string[] | null>(null);
   const [modalIndex, setModalIndex] = useState(0);
+  const [drawerTagMode, setDrawerTagMode] = useState(false);
   const [pageSettings, setPageSettings] = useState<{ page_key: string; enabled: boolean }[]>([]);
   const [pageSettingsLoading, setPageSettingsLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled'>('all');
@@ -4973,7 +4974,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       {/* Booking detail drawer */}
       {drawerBooking && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setDrawerBooking(null)} />
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => { setDrawerBooking(null); setDrawerTagMode(false); }} />
           <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white shadow-2xl z-50 flex flex-col overflow-hidden">
             {/* Header */}
             <div className="px-5 py-4 bg-[#DBE7E4] text-[#1B2D3C] flex items-start justify-between">
@@ -4982,7 +4983,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <p className="font-heading font-black text-lg leading-tight">{drawerBooking.name}</p>
                 <p className="text-xs text-[#1B2D3C]/60 mt-0.5">{drawerBooking.id}</p>
               </div>
-              <button onClick={() => setDrawerBooking(null)} className="text-[#1B2D3C]/50 hover:text-[#1B2D3C] text-2xl leading-none cursor-pointer mt-1">✕</button>
+              <button onClick={() => { setDrawerBooking(null); setDrawerTagMode(false); }} className="text-[#1B2D3C]/50 hover:text-[#1B2D3C] text-2xl leading-none cursor-pointer mt-1">✕</button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
@@ -5082,7 +5083,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">Painting Photos</p>
-                  {canEdit && canManageBooking(drawerBooking) && (
+                  <div className="flex items-center gap-2">
+                    {canEdit && canManageBooking(drawerBooking) && (
+                      <button
+                        onClick={() => setDrawerTagMode(!drawerTagMode)}
+                        className={`text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-full transition-colors cursor-pointer ${drawerTagMode ? 'bg-[#1B2D3C] text-white' : 'bg-[#D6E2E9] text-[#1B2D3C]'}`}
+                      >
+                        {drawerTagMode ? '✓ Tag Mode' : 'Tag Mode'}
+                      </button>
+                    )}
+                    {canEdit && canManageBooking(drawerBooking) && (
                     <label className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all ${
                       photoUploading
                         ? 'bg-[#D6E2E9]/40 text-[#1B2D3C]/50 cursor-wait'
@@ -5099,7 +5109,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         className="hidden"
                       />
                     </label>
-                  )}
+                    )}
+                  </div>
                 </div>
                 {drawerBooking.photos && drawerBooking.photos.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2">
@@ -5124,7 +5135,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           key={i}
                           className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20"
                           onClick={(e) => {
-                            if (canEdit && canManageBooking(drawerBooking)) {
+                            if (canEdit && canManageBooking(drawerBooking) && drawerTagMode) {
                               const rect = e.currentTarget.getBoundingClientRect();
                               const x = ((e.clientX - rect.left) / rect.width) * 100;
                               const y = ((e.clientY - rect.top) / rect.height) * 100;
@@ -5169,9 +5180,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                               >
                                 ✕
                               </button>
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                <span className="px-2 py-1 bg-black/50 text-white text-[8px] font-bold rounded-full">Click to tag</span>
-                              </div>
+                              {drawerTagMode && (
+                                <div className="absolute inset-0 ring-2 ring-[#1B2D3C] ring-inset rounded-lg pointer-events-none" />
+                              )}
                             </>
                           )}
                         </div>

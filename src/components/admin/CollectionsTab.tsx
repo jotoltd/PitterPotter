@@ -65,6 +65,7 @@ function BookingCard({
 }) {
   const photos = booking.photos ?? [];
   const photoTags = booking.photoTags ?? {};
+  const [tagMode, setTagMode] = useState(false);
   const tagColors: Record<string, string> = {
     painted: 'bg-blue-100 text-blue-700',
     glazing: 'bg-purple-100 text-purple-700',
@@ -144,6 +145,14 @@ function BookingCard({
 
       {photos.length > 0 && (
         <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+          {canUpdate && onAddPhotoTag && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setTagMode(!tagMode); }}
+              className={`text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded-full transition-colors cursor-pointer ${tagMode ? 'bg-[#1B2D3C] text-white' : 'bg-[#D6E2E9] text-[#1B2D3C]'}`}
+            >
+              {tagMode ? '✓ Tag Mode ON — tap photo to tag' : 'Tag Mode'}
+            </button>
+          )}
           <div className="grid grid-cols-3 gap-2">
             {photos.map((url, i) => {
               const tags = photoTags[i] || [];
@@ -152,7 +161,7 @@ function BookingCard({
                   key={i}
                   className="relative aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/15 group cursor-pointer"
                   onClick={(e) => {
-                    if (canUpdate && onAddPhotoTag) {
+                    if (canUpdate && onAddPhotoTag && tagMode) {
                       const rect = e.currentTarget.getBoundingClientRect();
                       const x = ((e.clientX - rect.left) / rect.width) * 100;
                       const y = ((e.clientY - rect.top) / rect.height) * 100;
@@ -190,10 +199,8 @@ function BookingCard({
                       </span>
                     </div>
                   ))}
-                  {canUpdate && onAddPhotoTag && (
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                      <span className="px-2 py-1 bg-black/50 text-white text-[8px] font-bold rounded-full">Click to tag</span>
-                    </div>
+                  {canUpdate && onAddPhotoTag && tagMode && (
+                    <div className="absolute inset-0 ring-2 ring-[#1B2D3C] ring-inset rounded-lg pointer-events-none" />
                   )}
                 </div>
               );
