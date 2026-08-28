@@ -98,7 +98,7 @@ export default function DashboardSummary({
 
   const studioLabel = staffAllowedStudios && staffAllowedStudios.length > 0
     ? staffAllowedStudios.join(' + ')
-    : 'All Studios';
+    : (isSuperAdmin ? 'All Studios' : 'All Studios (no assignment)');
 
   const todayBookings = useMemo(() => {
     return scopedBookings
