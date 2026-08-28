@@ -134,12 +134,6 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (staff.role !== 'super_admin') {
-        return new Response(JSON.stringify({ error: 'Forbidden' }), {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
 
       // Ensure the public content bucket exists so uploaded images are viewable.
       try {
