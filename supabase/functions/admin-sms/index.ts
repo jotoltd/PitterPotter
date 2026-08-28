@@ -1,23 +1,12 @@
 import { createClient } from 'supabase';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
+import { verifyStaff } from '../_shared/auth.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
 
 interface StaffPayload {
   username: string;
   sessionToken: string;
   role: string;
-}
-
-async function verifyStaff(supabase: ReturnType<typeof createClient>, username: string, sessionToken: string): Promise<{ role: string } | null> {
-  const { data, error } = await supabase
-    .from('staff')
-    .select('role, session_token, session_expires_at')
-    .eq('username', username)
-    .single();
-  if (error || !data) return null;
-  if (data.session_token !== sessionToken) return null;
-  if (data.session_expires_at && new Date(data.session_expires_at) < new Date()) return null;
-  return { role: data.role };
 }
 
 async function getTwilioBalance(): Promise<{ balance: string; currency: string } | { error: string }> {
@@ -163,7 +152,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const staff = await verifyStaff(supabase, staffData.username, staffData.sessionToken);
+    const staff = await verifyStaff(supabase as any, staffData.username, staffData.sessionToken);
     if (!staff) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
