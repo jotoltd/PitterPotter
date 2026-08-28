@@ -4,7 +4,7 @@ import ConfirmDialog from './ConfirmDialog';
 import FloorPlanView from './FloorPlanView';
 import WimbledonFloorPlan, { findAvailableTable, findMultipleTables } from './WimbledonFloorPlan';
 import PutneyFloorPlan, { findAvailablePutneyTable, findMultiplePutneyTables } from './PutneyFloorPlan';
-import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock, Camera, ScanLine } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock, Camera, ScanLine, AlertCircle } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO, getDay } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow } from '../types';
@@ -25,7 +25,7 @@ import WebmasterTab from './admin/WebmasterTab';
 import CollectionsTab, { CollectionStage } from './admin/CollectionsTab';
 import DashboardSummary from './admin/DashboardSummary';
 import SMSAdminTab from './admin/SMSAdminTab';
-import { SESSION_LABELS as SESSION_LABELS_UTIL, SESSION_BADGE as SESSION_BADGE_UTIL, ROLE_LABEL, AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL, AUDIT_ACTION_COLOR, formatAuditDetails as formatAuditDetailsUtil, getBookingAnalytics as getBookingAnalyticsUtil, getGiftCardAnalytics as getGiftCardAnalyticsUtil, exportBookingsCSV as exportBookingsCSVUtil, exportGiftCardsCSV as exportGiftCardsCSVUtil, BACKUP_TABLE_OPTIONS } from './admin/adminUtils';
+import { SESSION_LABELS as SESSION_LABELS_UTIL, SESSION_BADGE as SESSION_BADGE_UTIL, ROLE_LABEL, AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL, AUDIT_ACTION_COLOR, formatAuditDetails as formatAuditDetailsUtil, getBookingAnalytics as getBookingAnalyticsUtil, getGiftCardAnalytics as getGiftCardAnalyticsUtil, exportBookingsCSV as exportBookingsCSVUtil, exportGiftCardsCSV as exportGiftCardsCSVUtil, exportCollectionStatsCSV as exportCollectionStatsCSVUtil, BACKUP_TABLE_OPTIONS } from './admin/adminUtils';
 import 'react-day-picker/dist/style.css';
 
 interface AdminDashboardProps {
@@ -128,6 +128,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [auditLogsLoading, setAuditLogsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pageSettings, setPageSettings] = useState<{ page_key: string; enabled: boolean }[]>([]);
   const [pageSettingsLoading, setPageSettingsLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled'>('all');
@@ -357,6 +358,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     return () => {
       isMounted = false;
       supabase.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
@@ -890,6 +902,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const exportBookingsCSV = () => exportBookingsCSVUtil(inquiries);
 
   const exportGiftCardsCSV = () => exportGiftCardsCSVUtil(giftCards);
+
+  const exportCollectionStats = () => exportCollectionStatsCSVUtil(inquiries);
 
   const createGiftCardCheckout = async () => {
     if (!newGiftCard.amount || newGiftCard.amount <= 0) {
@@ -2296,6 +2310,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
       </div>
 
+      {!isOnline && (
+        <div className="bg-red-600 text-white text-center py-2 px-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2">
+          <AlertCircle className="w-4 h-4" /> You are offline — changes may not save until connection is restored
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
         {/* Admin Tabs */}
         <div className="sticky top-[56px] z-20 bg-white border-b border-[#1B2D3C]/10 mb-6">
@@ -2682,6 +2702,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <button onClick={exportToCSV}
             className="ml-auto px-3 py-2 border border-[#1B2D3C]/20 text-[10px] font-bold text-[#1B2D3C] rounded-lg hover:bg-[#DBE7E4] transition-all cursor-pointer">
             Export CSV
+          </button>
+          <button onClick={exportCollectionStats}
+            className="px-3 py-2 border border-[#1B2D3C]/20 text-[10px] font-bold text-[#1B2D3C] rounded-lg hover:bg-[#DBE7E4] transition-all cursor-pointer">
+            Collection Stats CSV
           </button>
         </div>
 

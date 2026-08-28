@@ -183,6 +183,26 @@ export function exportGiftCardsCSV(giftCards: GiftCard[]) {
   URL.revokeObjectURL(url);
 }
 
+export function exportCollectionStatsCSV(inquiries: BookingInquiry[]) {
+  const completed = inquiries.filter(b => b.status === 'completed');
+  const headers = ['Reference', 'Name', 'Studio', 'Date', 'Time', 'Painters', 'Collection Status', 'Photos', 'Collected At', 'Phone', 'Email'];
+  const rows = completed.map((b) => [
+    b.id, b.name, b.studio, b.date, b.time, b.paintersCount,
+    b.collectionStatus ?? 'painted',
+    b.photos?.length ?? 0,
+    b.collectedAt ? format(parseISO(b.collectedAt), 'dd/MM/yyyy HH:mm') : '',
+    b.phone ?? '', b.email ?? '',
+  ]);
+  const csv = [headers, ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `collection_stats_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export const BACKUP_TABLE_OPTIONS = [
   { label: 'Staff', value: 'staff' },
   { label: 'Staff Sessions', value: 'staff_sessions' },

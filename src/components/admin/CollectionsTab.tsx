@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Search, Camera, Users, Clock, MapPin, Check, Package, Phone, X, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { Search, Camera, Users, Clock, MapPin, Check, Package, Phone, X, ChevronLeft, ChevronRight, AlertCircle, CheckSquare, Square } from 'lucide-react';
 import { BookingInquiry } from '../../types';
 import Skeleton from '../Skeleton';
 
@@ -38,6 +38,8 @@ function BookingCard({
   onOpenBooking,
   onUploadPhotos,
   uploading,
+  selected,
+  onSelect,
 }: {
   booking: BookingInquiry;
   stage: CollectionStage;
@@ -46,21 +48,58 @@ function BookingCard({
   onOpenBooking: (booking: BookingInquiry) => void;
   onUploadPhotos: (booking: BookingInquiry, files: File[]) => void;
   uploading: boolean;
+  selected: boolean;
+  onSelect: (booking: BookingInquiry) => void;
 }) {
   const photos = booking.photos ?? [];
+  const isOverdue = stage !== 'collected' && (() => {
+    const ref = booking.collectedAt || booking.date;
+    try {
+      const d = parseISO(ref);
+      return Date.now() - d.getTime() > 30 * 24 * 60 * 60 * 1000;
+    } catch { return false; }
+  })();
 
   return (
     <div
       onClick={() => onOpenBooking(booking)}
-      className="bg-white border border-[#1B2D3C]/15 rounded-xl p-3 space-y-2.5 cursor-pointer transition-all hover:shadow-md"
+      className={`bg-white border rounded-xl p-3 space-y-2.5 cursor-pointer transition-all hover:shadow-md ${
+        isOverdue ? 'border-amber-300' : selected ? 'border-[#1B2D3C] ring-1 ring-[#1B2D3C]/20' : 'border-[#1B2D3C]/15'
+      }`}
     >
-      <div>
-        <p className="text-sm font-black text-[#1B2D3C] truncate">{booking.name}</p>
-        <div className="flex items-center gap-2 mt-1 text-[10px] font-semibold text-[#1B2D3C]/60 flex-wrap">
-          <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" />{booking.time}</span>
-          <span className="flex items-center gap-0.5"><Users className="w-3 h-3" />{booking.paintersCount}</span>
-          <span className="flex items-center gap-0.5"><MapPin className="w-3 h-3" />{booking.studio}</span>
-          {booking.phone && <span className="flex items-center gap-0.5"><Phone className="w-3 h-3" />{booking.phone}</span>}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            {canUpdate && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onSelect(booking); }}
+                className="shrink-0 cursor-pointer"
+              >
+                {selected
+                  ? <CheckSquare className="w-3.5 h-3.5 text-[#1B2D3C]" />
+                  : <Square className="w-3.5 h-3.5 text-[#1B2D3C]/30 hover:text-[#1B2D3C]/60" />}
+              </button>
+            )}
+            <p className="text-sm font-black text-[#1B2D3C] truncate">{booking.name}</p>
+          </div>
+          <div className="flex items-center gap-2 mt-1 text-[10px] font-semibold text-[#1B2D3C]/60 flex-wrap">
+            <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" />{booking.time}</span>
+            <span className="flex items-center gap-0.5"><Users className="w-3 h-3" />{booking.paintersCount}</span>
+            <span className="flex items-center gap-0.5"><MapPin className="w-3 h-3" />{booking.studio}</span>
+            {booking.phone && <span className="flex items-center gap-0.5"><Phone className="w-3 h-3" />{booking.phone}</span>}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {photos.length > 0 && (
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#DBE7E4] text-[#1B2D3C] text-[9px] font-black rounded-full">
+              <Camera className="w-2.5 h-2.5" />{photos.length}
+            </span>
+          )}
+          {isOverdue && (
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[9px] font-black rounded-full" title="Over 30 days">
+              <AlertCircle className="w-2.5 h-2.5" />30d+
+            </span>
+          )}
         </div>
       </div>
 
@@ -157,6 +196,7 @@ export default function CollectionsTab({
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
   const [needsPhotoOnly, setNeedsPhotoOnly] = useState(false);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const eligible = useMemo(
     () => bookings.filter(b => b.status === 'completed'),
@@ -299,7 +339,80 @@ export default function CollectionsTab({
       <div className="flex items-center gap-2">
         <span className={`px-2.5 py-1 ${info.badge} text-[10px] font-black rounded-full uppercase tracking-wider`}>{info.label}</span>
         <span className="text-xs font-bold text-[#1B2D3C]/50">{filtered.length} booking{filtered.length !== 1 ? 's' : ''}</span>
+        {canUpdate && filtered.length > 0 && (
+          <button
+            onClick={() => {
+              if (selectedIds.size === filtered.length) {
+                setSelectedIds(new Set());
+              } else {
+                setSelectedIds(new Set(filtered.map(b => b.id)));
+              }
+            }}
+            className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 hover:text-[#1B2D3C] cursor-pointer ml-auto"
+          >
+            {selectedIds.size === filtered.length ? 'Deselect all' : 'Select all'}
+          </button>
+        )}
       </div>
+
+      {/* Bulk action bar */}
+      {canUpdate && selectedIds.size > 0 && (
+        <div className="sticky top-[104px] z-20 bg-[#1B2D3C] text-white rounded-xl p-3 flex items-center gap-3 flex-wrap">
+          <span className="text-xs font-black">{selectedIds.size} selected</span>
+          <div className="flex items-center gap-1.5 ml-auto">
+            {fixedStage === 'painted' && (
+              <button
+                onClick={() => {
+                  for (const b of filtered) if (selectedIds.has(b.id)) onSetStage(b, 'ready');
+                  setSelectedIds(new Set());
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg cursor-pointer transition-colors"
+              >
+                <Package className="w-3 h-3" /> Mark Ready
+              </button>
+            )}
+            {fixedStage === 'ready' && (
+              <>
+                <button
+                  onClick={() => {
+                    for (const b of filtered) if (selectedIds.has(b.id)) onSetStage(b, 'painted');
+                    setSelectedIds(new Set());
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg cursor-pointer transition-colors"
+                >
+                  <ChevronLeft className="w-3 h-3" /> Back to Painted
+                </button>
+                <button
+                  onClick={() => {
+                    for (const b of filtered) if (selectedIds.has(b.id)) onSetStage(b, 'collected');
+                    setSelectedIds(new Set());
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg cursor-pointer transition-colors"
+                >
+                  <Check className="w-3 h-3" /> Mark Collected
+                </button>
+              </>
+            )}
+            {fixedStage === 'collected' && (
+              <button
+                onClick={() => {
+                  for (const b of filtered) if (selectedIds.has(b.id)) onSetStage(b, 'ready');
+                  setSelectedIds(new Set());
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg cursor-pointer transition-colors"
+              >
+                <ChevronLeft className="w-3 h-3" /> Back to Ready
+              </button>
+            )}
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg cursor-pointer transition-colors"
+            >
+              <X className="w-3 h-3" /> Clear
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-3">
@@ -336,6 +449,15 @@ export default function CollectionsTab({
                     onOpenBooking={onOpenBooking}
                     onUploadPhotos={onUploadPhotos}
                     uploading={uploadingId === b.id}
+                    selected={selectedIds.has(b.id)}
+                    onSelect={(booking) => {
+                      setSelectedIds(prev => {
+                        const next = new Set(prev);
+                        if (next.has(booking.id)) next.delete(booking.id);
+                        else next.add(booking.id);
+                        return next;
+                      });
+                    }}
                   />
                 ))}
               </div>

@@ -196,8 +196,12 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const { data: prevRow } = await supabase.from('bookings').select('collection_status, email').eq('booking_id', booking.id).single();
-      const { error } = await supabase.from('bookings').update(toBookingRow(booking as Record<string, unknown>)).eq('booking_id', booking.id);
+      const { data: prevRow } = await supabase.from('bookings').select('collection_status, email, status').eq('booking_id', booking.id).single();
+      const bookingRow = toBookingRow(booking as Record<string, unknown>);
+      if (bookingRow.status === 'completed' && !prevRow?.collection_status && !bookingRow.collection_status) {
+        bookingRow.collection_status = 'painted';
+      }
+      const { error } = await supabase.from('bookings').update(bookingRow).eq('booking_id', booking.id);
       if (error) throw error;
       await logAudit(supabase, staff, 'update', 'booking', booking.id as string, { studio: booking.studio, date: booking.date, time: booking.time });
 
@@ -243,7 +247,14 @@ Deno.serve(async (req) => {
           });
         }
       }
-      const { error } = await supabase.from('bookings').update({ status }).eq('booking_id', id);
+      const updateData: Record<string, any> = { status };
+      if (status === 'completed') {
+        const { data: prevRow } = await supabase.from('bookings').select('collection_status').eq('booking_id', id).single();
+        if (!prevRow?.collection_status) {
+          updateData.collection_status = 'painted';
+        }
+      }
+      const { error } = await supabase.from('bookings').update(updateData).eq('booking_id', id);
       if (error) throw error;
       await logAudit(supabase, staff, 'update_status', 'booking', id, { status });
 

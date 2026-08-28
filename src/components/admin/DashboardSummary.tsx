@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
-import { format, parseISO, isToday, isFuture } from 'date-fns';
-import { Calendar, Users, Clock, Package, Check, Camera, Gift, TrendingUp, ChevronRight, MapPin } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { format, parseISO, isToday, isFuture, isPast, differenceInCalendarDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { Calendar, Users, Clock, Package, Check, Camera, Gift, TrendingUp, ChevronRight, MapPin, DollarSign } from 'lucide-react';
 import { BookingInquiry, GiftCard } from '../../types';
 import { resolveStage, CollectionStage } from './CollectionsTab';
 
@@ -39,10 +39,18 @@ export default function DashboardSummary({
   onNavigateToCollected,
   onNavigateToAddBooking,
 }: DashboardSummaryProps) {
+  const [studioToggle, setStudioToggle] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
+
   const scopedBookings = useMemo(() => {
-    if (!staffAllowedStudios || staffAllowedStudios.length === 0) return bookings;
-    return bookings.filter(b => staffAllowedStudios.includes(b.studio as 'Putney' | 'Wimbledon'));
-  }, [bookings, staffAllowedStudios]);
+    let result = bookings;
+    if (staffAllowedStudios && staffAllowedStudios.length > 0) {
+      result = result.filter(b => staffAllowedStudios.includes(b.studio as 'Putney' | 'Wimbledon'));
+    }
+    if (studioToggle !== 'all') {
+      result = result.filter(b => b.studio === studioToggle);
+    }
+    return result;
+  }, [bookings, staffAllowedStudios, studioToggle]);
 
   const scopedGiftCards = useMemo(() => {
     if (isSuperAdmin) return giftCards;
@@ -73,6 +81,38 @@ export default function DashboardSummary({
     const totalPainters = active.reduce((sum, b) => sum + b.paintersCount, 0);
     const todayPainters = todayBookings.reduce((sum, b) => sum + b.paintersCount, 0);
 
+    const getBookingRevenue = (b: BookingInquiry) => b.finalPrice ?? b.estimatedPrice ?? 0;
+
+    const now = new Date();
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+
+    const revenueToday = todayBookings.reduce((sum, b) => sum + getBookingRevenue(b), 0);
+    const revenueThisWeek = active.filter(b => {
+      try { return isWithinInterval(parseISO(b.date), { start: weekStart, end: weekEnd }); } catch { return false; }
+    }).reduce((sum, b) => sum + getBookingRevenue(b), 0);
+    const revenueThisMonth = active.filter(b => {
+      try { return isWithinInterval(parseISO(b.date), { start: monthStart, end: monthEnd }); } catch { return false; }
+    }).reduce((sum, b) => sum + getBookingRevenue(b), 0);
+
+    const forecastDates = active.filter(b => {
+      try { return isFuture(parseISO(b.date)) || isToday(parseISO(b.date)); } catch { return false; }
+    }).sort((a, b) => a.date.localeCompare(b.date));
+
+    const forecastByDate = new Map<string, { date: string; painters: number; bookings: number }>();
+    for (const b of forecastDates) {
+      const existing = forecastByDate.get(b.date);
+      if (existing) {
+        existing.painters += b.paintersCount;
+        existing.bookings += 1;
+      } else {
+        forecastByDate.set(b.date, { date: b.date, painters: b.paintersCount, bookings: 1 });
+      }
+    }
+    const forecast = [...forecastByDate.values()].slice(0, 7);
+
     return {
       total: active.length,
       today: todayBookings.length,
@@ -83,6 +123,10 @@ export default function DashboardSummary({
       totalPainters,
       collection: collectionCounts,
       noPhotoAlerts,
+      revenueToday,
+      revenueThisWeek,
+      revenueThisMonth,
+      forecast,
     };
   }, [scopedBookings]);
 
@@ -122,15 +166,34 @@ export default function DashboardSummary({
         <div>
           <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Dashboard Summary</h2>
           <p className="text-xs text-[#1B2D3C]/60 mt-1 flex items-center gap-1">
-            <MapPin className="w-3 h-3" /> {studioLabel}
+            <MapPin className="w-3 h-3" /> {studioToggle === 'all' ? studioLabel : studioToggle}
           </p>
         </div>
-        <button
-          onClick={onNavigateToAddBooking}
-          className="flex items-center gap-1.5 px-3 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-all cursor-pointer"
-        >
-          + Add Booking
-        </button>
+        <div className="flex items-center gap-2">
+          {(isSuperAdmin || (staffAllowedStudios && staffAllowedStudios.length > 1)) && (
+            <div className="flex rounded-lg border border-[#1B2D3C]/15 overflow-hidden">
+              {(['all', 'Putney', 'Wimbledon'] as const)
+                .filter(s => s === 'all' || isSuperAdmin || (staffAllowedStudios?.includes(s as 'Putney' | 'Wimbledon')))
+                .map(s => (
+                  <button
+                    key={s}
+                    onClick={() => setStudioToggle(s)}
+                    className={`px-2.5 py-1.5 text-[10px] font-bold transition-all cursor-pointer ${
+                      studioToggle === s ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'
+                    }`}
+                  >
+                    {s === 'all' ? 'All' : s}
+                  </button>
+                ))}
+            </div>
+          )}
+          <button
+            onClick={onNavigateToAddBooking}
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-all cursor-pointer"
+          >
+            + Add Booking
+          </button>
+        </div>
       </div>
 
       {/* Stat cards */}
@@ -140,6 +203,65 @@ export default function DashboardSummary({
         <StatCard label="Awaiting" value={stats.pending} sub="needs confirmation" icon={<Users className="w-4 h-4" />} onClick={onNavigateToBookings} highlight={stats.pending > 0} />
         <StatCard label="Confirmed" value={stats.confirmed} sub="ready to go" icon={<Check className="w-4 h-4" />} onClick={onNavigateToBookings} />
       </div>
+
+      {/* Revenue summary */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-4">
+          <div className="flex items-center gap-1.5 mb-1">
+            <DollarSign className="w-3.5 h-3.5 text-[#1B2D3C]/40" />
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">Today</span>
+          </div>
+          <p className="text-xl font-black text-[#1B2D3C]">£{stats.revenueToday.toFixed(0)}</p>
+        </div>
+        <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-4">
+          <div className="flex items-center gap-1.5 mb-1">
+            <DollarSign className="w-3.5 h-3.5 text-[#1B2D3C]/40" />
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">This Week</span>
+          </div>
+          <p className="text-xl font-black text-[#1B2D3C]">£{stats.revenueThisWeek.toFixed(0)}</p>
+        </div>
+        <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-4">
+          <div className="flex items-center gap-1.5 mb-1">
+            <DollarSign className="w-3.5 h-3.5 text-[#1B2D3C]/40" />
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">This Month</span>
+          </div>
+          <p className="text-xl font-black text-[#1B2D3C]">£{stats.revenueThisMonth.toFixed(0)}</p>
+        </div>
+      </div>
+
+      {/* Painter forecast */}
+      {stats.forecast.length > 0 && (
+        <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-4">
+          <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <Users className="w-4 h-4" /> Painter Forecast (Next 7 Days)
+          </h3>
+          <div className="space-y-2">
+            {stats.forecast.map(f => {
+              try {
+                const d = parseISO(f.date);
+                const isTodayDate = isToday(d);
+                return (
+                  <div key={f.date} className={`flex items-center gap-3 py-1.5 px-2 rounded-lg ${isTodayDate ? 'bg-[#DBE7E4]/50' : ''}`}>
+                    <span className="text-xs font-black text-[#1B2D3C] w-20 shrink-0">
+                      {format(d, 'EEE d MMM')}
+                    </span>
+                    <div className="flex-1 flex items-center gap-2">
+                      <div className="flex-1 bg-[#1B2D3C]/10 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-[#1B2D3C] h-full rounded-full"
+                          style={{ width: `${Math.min(100, (f.painters / 40) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-black text-[#1B2D3C] shrink-0">{f.painters} painters</span>
+                      <span className="text-[10px] font-semibold text-[#1B2D3C]/40 shrink-0">{f.bookings} booking{f.bookings !== 1 ? 's' : ''}</span>
+                    </div>
+                  </div>
+                );
+              } catch { return null; }
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Photo alerts */}
       {stats.noPhotoAlerts.length > 0 && (
