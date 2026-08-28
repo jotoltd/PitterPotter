@@ -1578,10 +1578,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
-  const handleAddPhotoTag = async (booking: BookingInquiry, photoIndex: number, label: string, status: string) => {
+  const handleAddPhotoTag = async (booking: BookingInquiry, photoIndex: number, label: string, status: string, x: number, y: number) => {
     const updatedTags = { ...(booking.photoTags || {}) };
     const existing = updatedTags[photoIndex] || [];
-    updatedTags[photoIndex] = [...existing, { label: label.trim() || undefined, status }];
+    updatedTags[photoIndex] = [...existing, { label: label.trim() || undefined, status, x, y }];
     const updatedBooking = { ...booking, photoTags: updatedTags };
     if (drawerBooking?.id === booking.id) setDrawerBooking(updatedBooking);
     setInquiries(prev => prev.map(i => i.id === updatedBooking.id ? updatedBooking : i));
@@ -5107,50 +5107,58 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         needs_touchup: 'Touch-up',
                       };
                       return (
-                        <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20 cursor-pointer" onClick={() => { setModalImages(drawerBooking.photos!); setModalIndex(i); }}>
-                          <div className="block w-full h-full hover:opacity-80 transition-opacity">
+                        <div
+                          key={i}
+                          className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20"
+                          onClick={(e) => {
+                            if (canEdit) {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              const x = ((e.clientX - rect.left) / rect.width) * 100;
+                              const y = ((e.clientY - rect.top) / rect.height) * 100;
+                              const label = prompt('Label (optional, e.g. person name):', '') || '';
+                              const status = prompt('Status: painted, glazing, firing, ready, needs_touchup', 'ready') || 'ready';
+                              handleAddPhotoTag(drawerBooking, i, label, status, x, y);
+                            } else {
+                              setModalImages(drawerBooking.photos!); setModalIndex(i);
+                            }
+                          }}
+                        >
+                          <div className="block w-full h-full hover:opacity-80 transition-opacity cursor-pointer">
                             <img src={url} alt={`Painting ${i + 1}`} className="w-full h-full object-cover" />
                           </div>
-                          {tags.length > 0 && (
-                            <div className="absolute bottom-0 left-0 right-0 flex flex-wrap gap-0.5 p-0.5 bg-black/30">
-                              {tags.map((t, ti) => (
-                                <span
-                                  key={ti}
-                                  className={`px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full flex items-center gap-0.5 ${tagColors[t.status] || 'bg-stone-100 text-stone-600'}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {t.label ? `${tagLabels[t.status] || t.status} - ${t.label}` : (tagLabels[t.status] || t.status)}
-                                  {canEdit && (
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); handleRemovePhotoTag(drawerBooking, i, ti); }}
-                                      className="hover:text-red-600 cursor-pointer"
-                                    >
-                                      <XIcon className="w-2 h-2" />
-                                    </button>
-                                  )}
-                                </span>
-                              ))}
+                          {tags.map((t, ti) => (
+                            <div
+                              key={ti}
+                              className="absolute z-10 flex items-center gap-0.5"
+                              style={{ left: `${t.x}%`, top: `${t.y}%`, transform: 'translate(-50%, -50%)' }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span
+                                className={`px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full flex items-center gap-0.5 whitespace-nowrap shadow-md ${tagColors[t.status] || 'bg-stone-100 text-stone-600'}`}
+                              >
+                                {t.label ? `${tagLabels[t.status] || t.status} - ${t.label}` : (tagLabels[t.status] || t.status)}
+                                {canEdit && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleRemovePhotoTag(drawerBooking, i, ti); }}
+                                    className="hover:text-red-600 cursor-pointer"
+                                  >
+                                    <XIcon className="w-2 h-2" />
+                                  </button>
+                                )}
+                              </span>
                             </div>
-                          )}
+                          ))}
                           {canEdit && (
                             <>
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleDrawerDeletePhoto(i); }}
-                                className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center"
+                                className="absolute top-1 right-1 z-20 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center"
                               >
                                 ✕
                               </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const label = prompt('Label (optional, e.g. person name):', '') || '';
-                                  const status = prompt('Status: painted, glazing, firing, ready, needs_touchup', 'ready') || 'ready';
-                                  handleAddPhotoTag(drawerBooking, i, label, status);
-                                }}
-                                className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 bg-white border border-[#1B2D3C]/20 rounded-full flex items-center justify-center cursor-pointer text-[#1B2D3C] text-xs font-black"
-                              >
-                                +
-                              </button>
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                <span className="px-2 py-1 bg-black/50 text-white text-[8px] font-bold rounded-full">Click to tag</span>
+                              </div>
                             </>
                           )}
                         </div>

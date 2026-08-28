@@ -18,7 +18,7 @@ interface CollectionsTabProps {
   onUploadPhotos: (booking: BookingInquiry, files: File[]) => void;
   uploadingId: string | null;
   onSetPhotoTag?: (booking: BookingInquiry, photoIndex: number, tag: string) => void;
-  onAddPhotoTag?: (booking: BookingInquiry, photoIndex: number, label: string, status: string) => void;
+  onAddPhotoTag?: (booking: BookingInquiry, photoIndex: number, label: string, status: string, x: number, y: number) => void;
   onRemovePhotoTag?: (booking: BookingInquiry, photoIndex: number, tagIndex: number) => void;
 }
 
@@ -59,7 +59,7 @@ function BookingCard({
   selected: boolean;
   onSelect: (booking: BookingInquiry) => void;
   onSetPhotoTag?: (booking: BookingInquiry, photoIndex: number, tag: string) => void;
-  onAddPhotoTag?: (booking: BookingInquiry, photoIndex: number, label: string, status: string) => void;
+  onAddPhotoTag?: (booking: BookingInquiry, photoIndex: number, label: string, status: string, x: number, y: number) => void;
   onRemovePhotoTag?: (booking: BookingInquiry, photoIndex: number, tagIndex: number) => void;
   onOpenImage?: (images: string[], index: number) => void;
 }) {
@@ -148,43 +148,52 @@ function BookingCard({
             {photos.map((url, i) => {
               const tags = photoTags[i] || [];
               return (
-                <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/15 group cursor-pointer" onClick={() => onOpenImage?.(photos, i)}>
+                <div
+                  key={i}
+                  className="relative aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/15 group cursor-pointer"
+                  onClick={(e) => {
+                    if (canUpdate && onAddPhotoTag) {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = ((e.clientX - rect.left) / rect.width) * 100;
+                      const y = ((e.clientY - rect.top) / rect.height) * 100;
+                      e.stopPropagation();
+                      const label = prompt('Label (optional, e.g. person name):', '') || '';
+                      const status = prompt('Status: painted, glazing, firing, ready, needs_touchup', 'ready') || 'ready';
+                      onAddPhotoTag(booking, i, label, status, x, y);
+                    } else {
+                      onOpenImage?.(photos, i);
+                    }
+                  }}
+                >
                   <div className="block w-full h-full hover:opacity-80 transition-opacity">
                     <img src={url} alt={`${booking.name} painting ${i + 1}`} className="w-full h-full object-cover" />
                   </div>
-                  {tags.length > 0 && (
-                    <div className="absolute bottom-0 left-0 right-0 flex flex-wrap gap-0.5 p-0.5 bg-black/30">
-                      {tags.map((t, ti) => (
-                        <span
-                          key={ti}
-                          className={`px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full flex items-center gap-0.5 ${tagColors[t.status] || 'bg-stone-100 text-stone-600'}`}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {t.label ? `${tagLabels[t.status] || t.status} - ${t.label}` : (tagLabels[t.status] || t.status)}
-                          {canUpdate && onRemovePhotoTag && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onRemovePhotoTag(booking, i, ti); }}
-                              className="hover:text-red-600 cursor-pointer"
-                            >
-                              <X className="w-2 h-2" />
-                            </button>
-                          )}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  {canUpdate && onAddPhotoTag && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const label = prompt('Label (optional, e.g. person name):', '') || '';
-                        const status = prompt('Status: painted, glazing, firing, ready, needs_touchup', 'ready') || 'ready';
-                        onAddPhotoTag(booking, i, label, status);
-                      }}
-                      className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 bg-white border border-[#1B2D3C]/20 rounded-full flex items-center justify-center cursor-pointer text-[#1B2D3C] text-xs font-black"
+                  {tags.map((t, ti) => (
+                    <div
+                      key={ti}
+                      className="absolute z-10 flex items-center gap-0.5"
+                      style={{ left: `${t.x}%`, top: `${t.y}%`, transform: 'translate(-50%, -50%)' }}
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      +
-                    </button>
+                      <span
+                        className={`px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full flex items-center gap-0.5 whitespace-nowrap shadow-md ${tagColors[t.status] || 'bg-stone-100 text-stone-600'}`}
+                      >
+                        {t.label ? `${tagLabels[t.status] || t.status} - ${t.label}` : (tagLabels[t.status] || t.status)}
+                        {canUpdate && onRemovePhotoTag && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onRemovePhotoTag(booking, i, ti); }}
+                            className="hover:text-red-600 cursor-pointer"
+                          >
+                            <X className="w-2 h-2" />
+                          </button>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                  {canUpdate && onAddPhotoTag && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <span className="px-2 py-1 bg-black/50 text-white text-[8px] font-bold rounded-full">Click to tag</span>
+                    </div>
                   )}
                 </div>
               );
