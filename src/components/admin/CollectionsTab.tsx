@@ -3,6 +3,7 @@ import { format, parseISO } from 'date-fns';
 import { Search, Camera, Users, Clock, MapPin, Check, Package, Phone, X, ChevronLeft, ChevronRight, AlertCircle, CheckSquare, Square } from 'lucide-react';
 import { BookingInquiry } from '../../types';
 import Skeleton from '../Skeleton';
+import ImageModal from '../ImageModal';
 
 export type CollectionStage = 'painted' | 'ready' | 'collected';
 export type CollectionStageOrNull = CollectionStage | null;
@@ -42,6 +43,7 @@ function BookingCard({
   selected,
   onSelect,
   onSetPhotoTag,
+  onOpenImage,
 }: {
   booking: BookingInquiry;
   stage: CollectionStage;
@@ -53,6 +55,7 @@ function BookingCard({
   selected: boolean;
   onSelect: (booking: BookingInquiry) => void;
   onSetPhotoTag?: (booking: BookingInquiry, photoIndex: number, tag: string) => void;
+  onOpenImage?: (images: string[], index: number) => void;
 }) {
   const photos = booking.photos ?? [];
   const photoTags = booking.photoTags ?? {};
@@ -135,15 +138,10 @@ function BookingCard({
             {photos.map((url, i) => {
               const tag = photoTags[i];
               return (
-                <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/15 group">
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block w-full h-full hover:opacity-80 transition-opacity"
-                  >
+                <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/15 group cursor-pointer" onClick={() => onOpenImage?.(photos, i)}>
+                  <div className="block w-full h-full hover:opacity-80 transition-opacity">
                     <img src={url} alt={`${booking.name} painting ${i + 1}`} className="w-full h-full object-cover" />
-                  </a>
+                  </div>
                   {tag && (
                     <span className={`absolute bottom-0.5 left-0.5 px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full ${tagColors[tag] || 'bg-stone-100 text-stone-600'}`}>
                       {tagLabels[tag] || tag}
@@ -254,6 +252,8 @@ export default function CollectionsTab({
   const [nameQuery, setNameQuery] = useState('');
   const [phoneQuery, setPhoneQuery] = useState('');
   const [dateQuery, setDateQuery] = useState('');
+  const [modalImages, setModalImages] = useState<string[] | null>(null);
+  const [modalIndex, setModalIndex] = useState(0);
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
   const [needsPhotoOnly, setNeedsPhotoOnly] = useState(false);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
@@ -520,12 +520,21 @@ export default function CollectionsTab({
                       });
                     }}
                     onSetPhotoTag={onSetPhotoTag}
+                    onOpenImage={(images, index) => { setModalImages(images); setModalIndex(index); }}
                   />
                 ))}
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {modalImages && (
+        <ImageModal
+          images={modalImages}
+          initialIndex={modalIndex}
+          onClose={() => setModalImages(null)}
+        />
       )}
     </div>
   );

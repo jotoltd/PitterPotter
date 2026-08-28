@@ -25,6 +25,7 @@ import WebmasterTab from './admin/WebmasterTab';
 import CollectionsTab, { CollectionStage } from './admin/CollectionsTab';
 import DashboardSummary from './admin/DashboardSummary';
 import SMSAdminTab from './admin/SMSAdminTab';
+import ImageModal from './ImageModal';
 import { SESSION_LABELS as SESSION_LABELS_UTIL, SESSION_BADGE as SESSION_BADGE_UTIL, ROLE_LABEL, AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL, AUDIT_ACTION_COLOR, formatAuditDetails as formatAuditDetailsUtil, getBookingAnalytics as getBookingAnalyticsUtil, getGiftCardAnalytics as getGiftCardAnalyticsUtil, exportBookingsCSV as exportBookingsCSVUtil, exportGiftCardsCSV as exportGiftCardsCSVUtil, exportCollectionStatsCSV as exportCollectionStatsCSVUtil, BACKUP_TABLE_OPTIONS } from './admin/adminUtils';
 import 'react-day-picker/dist/style.css';
 
@@ -131,6 +132,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [modalImages, setModalImages] = useState<string[] | null>(null);
+  const [modalIndex, setModalIndex] = useState(0);
   const [pageSettings, setPageSettings] = useState<{ page_key: string; enabled: boolean }[]>([]);
   const [pageSettingsLoading, setPageSettingsLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled'>('all');
@@ -3688,10 +3691,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               {editingBooking.photos && editingBooking.photos.length > 0 ? (
                 <div className="grid grid-cols-3 gap-2">
                   {editingBooking.photos.map((url, i) => (
-                    <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20">
+                    <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20 cursor-pointer" onClick={() => { setModalImages(editingBooking.photos!); setModalIndex(i); }}>
                       <img src={url} alt={`Painting ${i + 1}`} className="w-full h-full object-cover" />
                       <button
-                        onClick={() => handleDeletePhoto(i)}
+                        onClick={(e) => { e.stopPropagation(); handleDeletePhoto(i); }}
                         className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -4931,6 +4934,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         onCancel={closeConfirmDialog}
       />
 
+      {modalImages && (
+        <ImageModal
+          images={modalImages}
+          initialIndex={modalIndex}
+          onClose={() => setModalImages(null)}
+        />
+      )}
+
       {/* Booking detail drawer */}
       {drawerBooking && (
         <>
@@ -5081,10 +5092,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         needs_touchup: 'Needs touch-up',
                       };
                       return (
-                        <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20">
-                          <a href={url} target="_blank" rel="noreferrer" className="block w-full h-full hover:opacity-80 transition-opacity">
+                        <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20 cursor-pointer" onClick={() => { setModalImages(drawerBooking.photos!); setModalIndex(i); }}>
+                          <div className="block w-full h-full hover:opacity-80 transition-opacity">
                             <img src={url} alt={`Painting ${i + 1}`} className="w-full h-full object-cover" />
-                          </a>
+                          </div>
                           {tag && (
                             <span className={`absolute bottom-1 left-1 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-full ${tagColors[tag] || 'bg-stone-100 text-stone-600'}`}>
                               {tagLabels[tag] || tag}
@@ -5093,7 +5104,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           {canEdit && (
                             <>
                               <button
-                                onClick={() => handleDrawerDeletePhoto(i)}
+                                onClick={(e) => { e.stopPropagation(); handleDrawerDeletePhoto(i); }}
                                 className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center"
                               >
                                 ✕
