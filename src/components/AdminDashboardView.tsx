@@ -24,6 +24,7 @@ import EmailTemplatesTab from './admin/EmailTemplatesTab';
 import WebmasterTab from './admin/WebmasterTab';
 import CollectionsTab, { CollectionStage } from './admin/CollectionsTab';
 import DashboardSummary from './admin/DashboardSummary';
+import SMSAdminTab from './admin/SMSAdminTab';
 import { SESSION_LABELS as SESSION_LABELS_UTIL, SESSION_BADGE as SESSION_BADGE_UTIL, ROLE_LABEL, AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL, AUDIT_ACTION_COLOR, formatAuditDetails as formatAuditDetailsUtil, getBookingAnalytics as getBookingAnalyticsUtil, getGiftCardAnalytics as getGiftCardAnalyticsUtil, exportBookingsCSV as exportBookingsCSVUtil, exportGiftCardsCSV as exportGiftCardsCSVUtil, BACKUP_TABLE_OPTIONS } from './admin/adminUtils';
 import 'react-day-picker/dist/style.css';
 
@@ -76,7 +77,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates' | 'sms'>('dashboard');
   const [collectionUploadingId, setCollectionUploadingId] = useState<string | null>(null);
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
@@ -2306,6 +2307,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               { value: 'ready', label: 'Ready to Collect', badge: null },
               { value: 'collected', label: 'Collected', badge: null },
               ...(isSuperAdmin ? [{ value: 'gift-cards', label: 'Gift Vouchers', badge: null }] : []),
+              ...(isSuperAdmin ? [{ value: 'sms', label: 'SMS', badge: null }] : []),
               ...(canManageStaff ? [{ value: 'audit-logs', label: 'Audit Log', badge: null }] : []),
               ...(canManageStaff ? [{ value: 'email-logs', label: 'Emails', badge: null }] : []),
               ...(canManageStaff ? [{ value: 'email-templates', label: 'Templates', badge: null }] : []),
@@ -4808,6 +4810,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
       {activeTab === 'email-logs' && canManageStaff && (
         <EmailLogsTab emailLogs={emailLogs} emailLogsLoading={emailLogsLoading} onRefresh={loadEmailLogs} />
+      )}
+
+      {activeTab === 'sms' && isSuperAdmin && (
+        <SMSAdminTab staff={staff} />
       )}
 
       {activeTab === 'email-templates' && canManageStaff && (
