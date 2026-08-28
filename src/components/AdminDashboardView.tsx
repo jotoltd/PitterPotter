@@ -1578,20 +1578,32 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
-  const handleSetPhotoTag = async (booking: BookingInquiry, photoIndex: number, tag: string) => {
+  const handleAddPhotoTag = async (booking: BookingInquiry, photoIndex: number, label: string, status: string) => {
     const updatedTags = { ...(booking.photoTags || {}) };
-    if (tag === 'none') {
-      delete updatedTags[photoIndex];
-    } else {
-      updatedTags[photoIndex] = tag;
+    const existing = updatedTags[photoIndex] || [];
+    updatedTags[photoIndex] = [...existing, { label: label.trim() || undefined, status }];
+    const updatedBooking = { ...booking, photoTags: updatedTags };
+    if (drawerBooking?.id === booking.id) setDrawerBooking(updatedBooking);
+    setInquiries(prev => prev.map(i => i.id === updatedBooking.id ? updatedBooking : i));
+    try {
+      await updateBooking(updatedBooking, staff);
+    } catch {
+      showToast('Failed to add photo tag', 'error');
     }
+  };
+
+  const handleRemovePhotoTag = async (booking: BookingInquiry, photoIndex: number, tagIndex: number) => {
+    const updatedTags = { ...(booking.photoTags || {}) };
+    const existing = updatedTags[photoIndex] || [];
+    updatedTags[photoIndex] = existing.filter((_, i) => i !== tagIndex);
+    if (updatedTags[photoIndex].length === 0) delete updatedTags[photoIndex];
     const updatedBooking = { ...booking, photoTags: Object.keys(updatedTags).length > 0 ? updatedTags : undefined };
     if (drawerBooking?.id === booking.id) setDrawerBooking(updatedBooking);
     setInquiries(prev => prev.map(i => i.id === updatedBooking.id ? updatedBooking : i));
     try {
       await updateBooking(updatedBooking, staff);
     } catch {
-      showToast('Failed to update photo tag', 'error');
+      showToast('Failed to remove photo tag', 'error');
     }
   };
 
@@ -4859,7 +4871,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           onOpenBooking={(booking) => setDrawerBooking(booking)}
           onUploadPhotos={handleCollectionPhotoUpload}
           uploadingId={collectionUploadingId}
-          onSetPhotoTag={handleSetPhotoTag}
+          onAddPhotoTag={handleAddPhotoTag}
+          onRemovePhotoTag={handleRemovePhotoTag}
         />
       )}
 
@@ -4873,7 +4886,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           onOpenBooking={(booking) => setDrawerBooking(booking)}
           onUploadPhotos={handleCollectionPhotoUpload}
           uploadingId={collectionUploadingId}
-          onSetPhotoTag={handleSetPhotoTag}
+          onAddPhotoTag={handleAddPhotoTag}
+          onRemovePhotoTag={handleRemovePhotoTag}
         />
       )}
 
@@ -4887,7 +4901,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           onOpenBooking={(booking) => setDrawerBooking(booking)}
           onUploadPhotos={handleCollectionPhotoUpload}
           uploadingId={collectionUploadingId}
-          onSetPhotoTag={handleSetPhotoTag}
+          onAddPhotoTag={handleAddPhotoTag}
+          onRemovePhotoTag={handleRemovePhotoTag}
         />
       )}
 
@@ -5076,7 +5091,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 {drawerBooking.photos && drawerBooking.photos.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2">
                     {drawerBooking.photos.map((url, i) => {
-                      const tag = drawerBooking.photoTags?.[i];
+                      const tags = drawerBooking.photoTags?.[i] || [];
                       const tagColors: Record<string, string> = {
                         painted: 'bg-blue-100 text-blue-700',
                         glazing: 'bg-purple-100 text-purple-700',
@@ -5089,17 +5104,33 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                         glazing: 'Glazing',
                         firing: 'Firing',
                         ready: 'Ready',
-                        needs_touchup: 'Needs touch-up',
+                        needs_touchup: 'Touch-up',
                       };
                       return (
                         <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20 cursor-pointer" onClick={() => { setModalImages(drawerBooking.photos!); setModalIndex(i); }}>
                           <div className="block w-full h-full hover:opacity-80 transition-opacity">
                             <img src={url} alt={`Painting ${i + 1}`} className="w-full h-full object-cover" />
                           </div>
-                          {tag && (
-                            <span className={`absolute bottom-1 left-1 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-full ${tagColors[tag] || 'bg-stone-100 text-stone-600'}`}>
-                              {tagLabels[tag] || tag}
-                            </span>
+                          {tags.length > 0 && (
+                            <div className="absolute bottom-0 left-0 right-0 flex flex-wrap gap-0.5 p-0.5 bg-black/30">
+                              {tags.map((t, ti) => (
+                                <span
+                                  key={ti}
+                                  className={`px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full flex items-center gap-0.5 ${tagColors[t.status] || 'bg-stone-100 text-stone-600'}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {t.label ? `${tagLabels[t.status] || t.status} - ${t.label}` : (tagLabels[t.status] || t.status)}
+                                  {canEdit && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleRemovePhotoTag(drawerBooking, i, ti); }}
+                                      className="hover:text-red-600 cursor-pointer"
+                                    >
+                                      <XIcon className="w-2 h-2" />
+                                    </button>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
                           )}
                           {canEdit && (
                             <>
@@ -5109,19 +5140,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                               >
                                 ✕
                               </button>
-                              <select
-                                value={tag || 'none'}
-                                onChange={(e) => handleSetPhotoTag(drawerBooking, i, e.target.value)}
-                                onClick={(e) => e.stopPropagation()}
-                                className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity text-[8px] font-bold rounded px-1 py-0.5 bg-white border border-[#1B2D3C]/20 cursor-pointer"
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const label = prompt('Label (optional, e.g. person name):', '') || '';
+                                  const status = prompt('Status: painted, glazing, firing, ready, needs_touchup', 'ready') || 'ready';
+                                  handleAddPhotoTag(drawerBooking, i, label, status);
+                                }}
+                                className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 bg-white border border-[#1B2D3C]/20 rounded-full flex items-center justify-center cursor-pointer text-[#1B2D3C] text-xs font-black"
                               >
-                                <option value="none">No tag</option>
-                                <option value="painted">Painted</option>
-                                <option value="glazing">Glazing</option>
-                                <option value="firing">Firing</option>
-                                <option value="ready">Ready</option>
-                                <option value="needs_touchup">Needs touch-up</option>
-                              </select>
+                                +
+                              </button>
                             </>
                           )}
                         </div>

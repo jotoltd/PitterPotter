@@ -47,7 +47,7 @@ export interface BookingInquiry {
   managementToken?: string;
   createdAt?: string;
   photos?: string[];
-  photoTags?: Record<number, string>;
+  photoTags?: Record<number, { label?: string; status: string }[]>;
   collectionStatus?: 'painted' | 'ready' | 'collected';
   collectedAt?: string;
 }

@@ -18,6 +18,8 @@ interface CollectionsTabProps {
   onUploadPhotos: (booking: BookingInquiry, files: File[]) => void;
   uploadingId: string | null;
   onSetPhotoTag?: (booking: BookingInquiry, photoIndex: number, tag: string) => void;
+  onAddPhotoTag?: (booking: BookingInquiry, photoIndex: number, label: string, status: string) => void;
+  onRemovePhotoTag?: (booking: BookingInquiry, photoIndex: number, tagIndex: number) => void;
 }
 
 const STAGE_INFO: Record<CollectionStage, { label: string; empty: string; accent: string; badge: string }> = {
@@ -43,6 +45,8 @@ function BookingCard({
   selected,
   onSelect,
   onSetPhotoTag,
+  onAddPhotoTag,
+  onRemovePhotoTag,
   onOpenImage,
 }: {
   booking: BookingInquiry;
@@ -55,6 +59,8 @@ function BookingCard({
   selected: boolean;
   onSelect: (booking: BookingInquiry) => void;
   onSetPhotoTag?: (booking: BookingInquiry, photoIndex: number, tag: string) => void;
+  onAddPhotoTag?: (booking: BookingInquiry, photoIndex: number, label: string, status: string) => void;
+  onRemovePhotoTag?: (booking: BookingInquiry, photoIndex: number, tagIndex: number) => void;
   onOpenImage?: (images: string[], index: number) => void;
 }) {
   const photos = booking.photos ?? [];
@@ -76,8 +82,12 @@ function BookingCard({
   const tagSummary = photos.length > 0 ? (() => {
     const counts: Record<string, number> = {};
     for (let i = 0; i < photos.length; i++) {
-      const t = photoTags[i] || 'painted';
-      counts[t] = (counts[t] || 0) + 1;
+      const tags = photoTags[i];
+      if (tags && tags.length > 0) {
+        for (const t of tags) counts[t.status] = (counts[t.status] || 0) + 1;
+      } else {
+        counts['painted'] = (counts['painted'] || 0) + 1;
+      }
     }
     return Object.entries(counts).sort((a, b) => b[1] - a[1]);
   })() : [];
@@ -136,30 +146,45 @@ function BookingCard({
         <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
           <div className="grid grid-cols-3 gap-2">
             {photos.map((url, i) => {
-              const tag = photoTags[i];
+              const tags = photoTags[i] || [];
               return (
                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/15 group cursor-pointer" onClick={() => onOpenImage?.(photos, i)}>
                   <div className="block w-full h-full hover:opacity-80 transition-opacity">
                     <img src={url} alt={`${booking.name} painting ${i + 1}`} className="w-full h-full object-cover" />
                   </div>
-                  {tag && (
-                    <span className={`absolute bottom-0.5 left-0.5 px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full ${tagColors[tag] || 'bg-stone-100 text-stone-600'}`}>
-                      {tagLabels[tag] || tag}
-                    </span>
+                  {tags.length > 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 flex flex-wrap gap-0.5 p-0.5 bg-black/30">
+                      {tags.map((t, ti) => (
+                        <span
+                          key={ti}
+                          className={`px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full flex items-center gap-0.5 ${tagColors[t.status] || 'bg-stone-100 text-stone-600'}`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {t.label ? `${tagLabels[t.status] || t.status} - ${t.label}` : (tagLabels[t.status] || t.status)}
+                          {canUpdate && onRemovePhotoTag && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onRemovePhotoTag(booking, i, ti); }}
+                              className="hover:text-red-600 cursor-pointer"
+                            >
+                              <X className="w-2 h-2" />
+                            </button>
+                          )}
+                        </span>
+                      ))}
+                    </div>
                   )}
-                  {canUpdate && onSetPhotoTag && (
-                    <select
-                      value={tag || 'none'}
-                      onChange={(e) => onSetPhotoTag(booking, i, e.target.value)}
-                      className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-[7px] font-bold rounded px-0.5 py-0.5 bg-white border border-[#1B2D3C]/20 cursor-pointer"
+                  {canUpdate && onAddPhotoTag && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const label = prompt('Label (optional, e.g. person name):', '') || '';
+                        const status = prompt('Status: painted, glazing, firing, ready, needs_touchup', 'ready') || 'ready';
+                        onAddPhotoTag(booking, i, label, status);
+                      }}
+                      className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 bg-white border border-[#1B2D3C]/20 rounded-full flex items-center justify-center cursor-pointer text-[#1B2D3C] text-xs font-black"
                     >
-                      <option value="none">No tag</option>
-                      <option value="painted">Painted</option>
-                      <option value="glazing">Glazing</option>
-                      <option value="firing">Firing</option>
-                      <option value="ready">Ready</option>
-                      <option value="needs_touchup">Touch-up</option>
-                    </select>
+                      +
+                    </button>
                   )}
                 </div>
               );
@@ -248,6 +273,8 @@ export default function CollectionsTab({
   onUploadPhotos,
   uploadingId,
   onSetPhotoTag,
+  onAddPhotoTag,
+  onRemovePhotoTag,
 }: CollectionsTabProps) {
   const [nameQuery, setNameQuery] = useState('');
   const [phoneQuery, setPhoneQuery] = useState('');
@@ -520,6 +547,8 @@ export default function CollectionsTab({
                       });
                     }}
                     onSetPhotoTag={onSetPhotoTag}
+                    onAddPhotoTag={onAddPhotoTag}
+                    onRemovePhotoTag={onRemovePhotoTag}
                     onOpenImage={(images, index) => { setModalImages(images); setModalIndex(index); }}
                   />
                 ))}
