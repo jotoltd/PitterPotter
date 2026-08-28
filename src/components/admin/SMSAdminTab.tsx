@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Send, DollarSign, BarChart3, Phone, RefreshCw, Check, X, AlertCircle, MessageSquare } from 'lucide-react';
+import { Send, DollarSign, BarChart3, Phone, RefreshCw, Check, X, AlertCircle, MessageSquare, FileText, Save, Pencil } from 'lucide-react';
 import { Staff } from '../../types';
 import { isSupabaseEnabled } from '../../lib/supabase';
 import Skeleton from '../Skeleton';
@@ -29,6 +29,28 @@ interface UsageData {
   }[];
 }
 
+interface SMSTemplate {
+  id: string;
+  template_key: string;
+  name: string;
+  body: string;
+  available_variables: string[];
+  updated_at: string;
+}
+
+interface SMSLog {
+  id: string;
+  email_type: string;
+  recipient: string;
+  subject: string | null;
+  resend_id: string | null;
+  status: string;
+  booking_id: string | null;
+  error_code: number | null;
+  error_message: string | null;
+  created_at: string;
+}
+
 export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
   const [balance, setBalance] = useState<BalanceData | null>(null);
   const [balanceError, setBalanceError] = useState<string | null>(null);
@@ -43,6 +65,65 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
   const [testMessage, setTestMessage] = useState('Test from Pitter Potter admin — your SMS is working!');
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const [templates, setTemplates] = useState<SMSTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [editingTemplate, setEditingTemplate] = useState<SMSTemplate | null>(null);
+  const [templateBody, setTemplateBody] = useState('');
+  const [templateSaving, setTemplateSaving] = useState(false);
+
+  const [smsLogs, setSmsLogs] = useState<SMSLog[]>([]);
+  const [smsLogsLoading, setSmsLogsLoading] = useState(true);
+
+  const fetchTemplates = useCallback(async () => {
+    setTemplatesLoading(true);
+    try {
+      if (!isSupabaseEnabled() || !staff.sessionToken) return;
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'listTemplates', staff: { username: staff.username, sessionToken: staff.sessionToken } }),
+      });
+      const data = await res.json();
+      if (data.templates) setTemplates(data.templates);
+    } catch { /* ignore */ } finally { setTemplatesLoading(false); }
+  }, [staff]);
+
+  const fetchSmsLogs = useCallback(async () => {
+    setSmsLogsLoading(true);
+    try {
+      if (!isSupabaseEnabled() || !staff.sessionToken) return;
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'smsLogs', staff: { username: staff.username, sessionToken: staff.sessionToken } }),
+      });
+      const data = await res.json();
+      if (data.logs) setSmsLogs(data.logs);
+    } catch { /* ignore */ } finally { setSmsLogsLoading(false); }
+  }, [staff]);
+
+  const handleSaveTemplate = async () => {
+    if (!editingTemplate) return;
+    setTemplateSaving(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({
+          action: 'updateTemplate',
+          templateKey: editingTemplate.template_key,
+          body: templateBody,
+          staff: { username: staff.username, sessionToken: staff.sessionToken },
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEditingTemplate(null);
+        fetchTemplates();
+      }
+    } catch { /* ignore */ } finally { setTemplateSaving(false); }
+  };
 
   const fetchBalance = useCallback(async () => {
     setBalanceLoading(true);
@@ -99,7 +180,9 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
   useEffect(() => {
     fetchBalance();
     fetchUsage(usageDays);
-  }, [fetchBalance, fetchUsage, usageDays]);
+    fetchTemplates();
+    fetchSmsLogs();
+  }, [fetchBalance, fetchUsage, fetchTemplates, fetchSmsLogs, usageDays]);
 
   const handleSendTest = async () => {
     if (!testPhone.trim() || !testMessage.trim()) return;
@@ -218,6 +301,142 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
             {sending ? 'Sending…' : 'Send SMS'}
           </button>
         </div>
+      </div>
+
+      {/* SMS Templates */}
+      <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-5">
+        <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5 mb-3">
+          <FileText className="w-4 h-4" /> SMS Templates
+        </h3>
+        {templatesLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-16" />
+            <Skeleton className="h-16" />
+          </div>
+        ) : editingTemplate ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-black text-[#1B2D3C]">{editingTemplate.name}</p>
+                <p className="text-[10px] font-semibold text-[#1B2D3C]/40">Key: {editingTemplate.template_key}</p>
+              </div>
+              <button
+                onClick={() => setEditingTemplate(null)}
+                className="p-1.5 rounded-lg hover:bg-[#D6E2E9] cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5 text-[#1B2D3C]/50" />
+              </button>
+            </div>
+            {editingTemplate.available_variables.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {editingTemplate.available_variables.map(v => (
+                  <span key={v} className="px-1.5 py-0.5 bg-[#DBE7E4] text-[#1B2D3C] text-[9px] font-bold rounded-full">{`{{${v}}}`}</span>
+                ))}
+              </div>
+            )}
+            <textarea
+              value={templateBody}
+              onChange={(e) => setTemplateBody(e.target.value)}
+              rows={4}
+              className="w-full px-3 py-2 text-xs font-semibold text-[#1B2D3C] bg-white border border-[#1B2D3C]/15 rounded-lg focus:outline-none focus:border-[#1B2D3C]/40 resize-none"
+            />
+            <p className="text-[10px] text-[#1B2D3C]/40">{templateBody.length} characters {templateBody.length > 160 && '(will be split into multiple SMS segments)'}</p>
+            <button
+              onClick={handleSaveTemplate}
+              disabled={templateSaving}
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#1B2D3C] text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#243B53] transition-all cursor-pointer disabled:opacity-40"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {templateSaving ? 'Saving…' : 'Save Template'}
+            </button>
+          </div>
+        ) : templates.length === 0 ? (
+          <p className="text-xs text-[#1B2D3C]/40 font-semibold py-4 text-center">No SMS templates found</p>
+        ) : (
+          <div className="space-y-2">
+            {templates.map(tpl => (
+              <div key={tpl.id} className="border border-[#1B2D3C]/10 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-black text-[#1B2D3C]">{tpl.name}</p>
+                  <button
+                    onClick={() => {
+                      setEditingTemplate(tpl);
+                      setTemplateBody(tpl.body);
+                    }}
+                    className="p-1 rounded hover:bg-[#D6E2E9] cursor-pointer"
+                  >
+                    <Pencil className="w-3 h-3 text-[#1B2D3C]/50" />
+                  </button>
+                </div>
+                <p className="text-[11px] text-[#1B2D3C]/60 line-clamp-2">{tpl.body}</p>
+                {tpl.available_variables.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {tpl.available_variables.map(v => (
+                      <span key={v} className="px-1 py-0.5 bg-[#D6E2E9]/40 text-[#1B2D3C]/50 text-[8px] font-bold rounded">{`{{${v}}}`}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Delivery Logs */}
+      <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5">
+            <Check className="w-4 h-4" /> Delivery Logs
+          </h3>
+          <button
+            onClick={fetchSmsLogs}
+            className="p-1.5 rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
+            disabled={smsLogsLoading}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[#1B2D3C]/50 ${smsLogsLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+        {smsLogsLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-12" />
+            <Skeleton className="h-12" />
+            <Skeleton className="h-12" />
+          </div>
+        ) : smsLogs.length === 0 ? (
+          <p className="text-xs text-[#1B2D3C]/40 font-semibold py-4 text-center">No SMS logs yet</p>
+        ) : (
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {smsLogs.map(log => (
+              <div key={log.id} className="border border-[#1B2D3C]/10 rounded-lg p-3 space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-3 h-3 text-[#1B2D3C]/40" />
+                    <span className="text-xs font-bold text-[#1B2D3C]">{log.recipient}</span>
+                  </div>
+                  <span className={`px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full ${
+                    log.status === 'delivered' ? 'bg-emerald-100 text-emerald-800'
+                    : log.status === 'sent' ? 'bg-blue-100 text-blue-800'
+                    : log.status === 'queued' ? 'bg-amber-100 text-amber-800'
+                    : log.status === 'failed' || log.status === 'undelivered' ? 'bg-red-100 text-red-700'
+                    : 'bg-stone-100 text-stone-600'
+                  }`}>
+                    {log.status}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-[10px] text-[#1B2D3C]/40 font-semibold">
+                  <span>{log.email_type.replace(/_/g, ' ')}</span>
+                  <span>{new Date(log.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                  {log.booking_id && <span>Ref: {log.booking_id}</span>}
+                </div>
+                {log.error_message && (
+                  <p className="text-[10px] text-red-600 font-semibold flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> {log.error_message}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Usage */}

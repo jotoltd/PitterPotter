@@ -1,6 +1,7 @@
 import { createClient } from 'supabase';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts';
+import { loadSMSTemplate } from '../_shared/sms-template.ts';
 import { getStudioInfo } from '../_shared/studio-info.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
 
@@ -30,7 +31,24 @@ async function sendReadySMS(
 
   const studioInfo = getStudioInfo(booking.studio);
   const studioName = `Pitter Potter ${booking.studio}`;
-  const message = `Hi ${booking.name}, your pottery from ${studioName} is ready to collect! Please bring your booking ref ${booking.booking_id}. Our address: ${studioInfo.address}. Call us: ${studioInfo.phone}. Thanks!`;
+
+  let message: string;
+  const smsTemplate = await loadSMSTemplate('collection_ready');
+  if (smsTemplate) {
+    message = renderTemplate(smsTemplate.body, {
+      name: booking.name,
+      studio: booking.studio,
+      bookingId: booking.booking_id,
+      studioAddress: studioInfo.address,
+      studioPhone: studioInfo.phone,
+    });
+  } else {
+    message = `Hi ${booking.name}, your pottery from ${studioName} is ready to collect! Please bring your booking ref ${booking.booking_id}. Our address: ${studioInfo.address}. Call us: ${studioInfo.phone}. Thanks!`;
+  }
+
+  if (message.length > 160) {
+    console.warn(`SMS message is ${message.length} chars, will be split into multiple segments`);
+  }
 
   try {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;

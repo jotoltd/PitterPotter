@@ -1,5 +1,5 @@
 import { createClient } from 'supabase';
-import { isObject, isNonEmptyString } from '../_shared/validate.ts';
+import { isObject, isNonEmptyString, isString } from '../_shared/validate.ts';
 import { verifyStaff } from '../_shared/auth.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
 
@@ -98,6 +98,10 @@ async function sendTestSMS(to: string, body: string): Promise<{ success: boolean
     params.append('From', fromNumber);
     params.append('To', to);
     params.append('Body', body);
+    const projectUrl = Deno.env.get('SUPABASE_URL');
+    if (projectUrl) {
+      params.append('StatusCallback', `${projectUrl}/functions/v1/twilio-webhook`);
+    }
 
     const response = await fetch(url, {
       method: 'POST',
@@ -206,6 +210,63 @@ Deno.serve(async (req) => {
       }
 
       return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'listTemplates') {
+      const { data, error } = await supabase
+        .from('sms_templates')
+        .select('*')
+        .order('name', { ascending: true });
+      if (error) {
+        return new Response(JSON.stringify({ error: 'Failed to load templates' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ templates: data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'updateTemplate') {
+      const { templateKey, body: templateBody } = body as { templateKey: string; body: string };
+      if (!isNonEmptyString(templateKey) || !isString(templateBody)) {
+        return new Response(JSON.stringify({ error: 'Missing template key or body' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { error } = await supabase
+        .from('sms_templates')
+        .update({ body: templateBody, updated_at: new Date().toISOString() })
+        .eq('template_key', templateKey);
+      if (error) {
+        return new Response(JSON.stringify({ error: 'Failed to update template' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'smsLogs') {
+      const { data, error } = await supabase
+        .from('email_logs')
+        .select('*')
+        .or('email_type.like.%sms%')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) {
+        return new Response(JSON.stringify({ error: 'Failed to load SMS logs' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ logs: data }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
