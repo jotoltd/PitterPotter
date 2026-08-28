@@ -78,7 +78,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates' | 'sms'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates' | 'sms'>(staff.role === 'super_admin' ? 'dashboard' : 'bookings');
   const [collectionUploadingId, setCollectionUploadingId] = useState<string | null>(null);
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
@@ -318,9 +318,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   // Auto-refresh bookings and gift cards every 60s while dashboard is active
   useEffect(() => {
-    if (activeTab !== 'dashboard' && activeTab !== 'gift-cards') return;
+    if (activeTab !== 'dashboard' && activeTab !== 'bookings' && activeTab !== 'gift-cards') return;
     const refresh = async () => {
-      if (activeTab === 'dashboard') await loadInquiries();
+      if (activeTab === 'dashboard' || activeTab === 'bookings') await loadInquiries();
       if (activeTab === 'gift-cards') await loadGiftCards();
       setLastUpdated(new Date());
     };
@@ -2397,8 +2397,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         <div className="sticky top-[56px] z-20 bg-white border-b border-[#1B2D3C]/10 mb-6">
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {[
-              { value: 'dashboard', label: 'Dashboard', badge: stats.pending > 0 ? stats.pending : null },
-              { value: 'bookings', label: 'Bookings', badge: null },
+              ...(isSuperAdmin ? [{ value: 'dashboard', label: 'Dashboard', badge: stats.pending > 0 ? stats.pending : null }] : []),
+              { value: 'bookings', label: isSuperAdmin ? 'Bookings' : 'Dashboard', badge: isSuperAdmin ? null : (stats.pending > 0 ? stats.pending : null) },
               { value: 'painted', label: 'Painted', badge: stats.paintedNoPhoto > 0 ? stats.paintedNoPhoto : null },
               { value: 'ready', label: 'Ready to Collect', badge: null },
               { value: 'collected', label: 'Collected', badge: null },
