@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Search, Camera, Users, Clock, MapPin, Check, Package, Phone, X, ChevronLeft, ChevronRight, AlertCircle, CheckSquare, Square } from 'lucide-react';
+import { Search, Camera, Users, Clock, MapPin, Check, Package, Phone, X, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle, CheckSquare, Square } from 'lucide-react';
 import { BookingInquiry } from '../../types';
 import Skeleton from '../Skeleton';
 import ImageModal from '../ImageModal';
@@ -301,6 +301,7 @@ export default function CollectionsTab({
   const [needsPhotoOnly, setNeedsPhotoOnly] = useState(false);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
 
   const eligible = useMemo(
     () => bookings.filter(b => b.status === 'completed'),
@@ -531,46 +532,66 @@ export default function CollectionsTab({
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {grouped.map(([date, items]) => (
-            <div key={date} className="space-y-2">
-              <div className="flex items-center gap-2 sticky top-[104px] bg-white py-1 z-10">
-                <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">
-                  {format(parseISO(date), 'EEE d MMM yyyy')}
-                </h3>
-                <span className="px-2 py-0.5 bg-[#1B2D3C]/10 text-[#1B2D3C]/60 text-[10px] font-black rounded-full">
-                  {items.length}
-                </span>
+        <div className="space-y-3">
+          {grouped.map(([date, items]) => {
+            const isExpanded = expandedDates.has(date);
+            const photoCount = items.reduce((sum, b) => sum + (b.photos?.length ?? 0), 0);
+            return (
+              <div key={date} className="border border-[#1B2D3C]/10 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setExpandedDates(prev => {
+                    const next = new Set(prev);
+                    if (next.has(date)) next.delete(date);
+                    else next.add(date);
+                    return next;
+                  })}
+                  className="w-full flex items-center gap-2 px-4 py-3 bg-[#F8FAFA] hover:bg-[#DBE7E4]/40 transition-colors cursor-pointer"
+                >
+                  {isExpanded ? <ChevronUp className="w-4 h-4 text-[#1B2D3C]/60" /> : <ChevronDown className="w-4 h-4 text-[#1B2D3C]/60" />}
+                  <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">
+                    {format(parseISO(date), 'EEE d MMM yyyy')}
+                  </h3>
+                  <span className="px-2 py-0.5 bg-[#1B2D3C]/10 text-[#1B2D3C]/60 text-[10px] font-black rounded-full">
+                    {items.length} booking{items.length !== 1 ? 's' : ''}
+                  </span>
+                  {photoCount > 0 && (
+                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-full">
+                      {photoCount} photo{photoCount !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </button>
+                {isExpanded && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
+                    {items.map(b => (
+                      <BookingCard
+                        key={b.id}
+                        booking={b}
+                        stage={fixedStage}
+                        canUpdate={canUpdate}
+                        onSetStage={onSetStage}
+                        onOpenBooking={onOpenBooking}
+                        onUploadPhotos={onUploadPhotos}
+                        uploading={uploadingId === b.id}
+                        selected={selectedIds.has(b.id)}
+                        onSelect={(booking) => {
+                          setSelectedIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(booking.id)) next.delete(booking.id);
+                            else next.add(booking.id);
+                            return next;
+                          });
+                        }}
+                        onSetPhotoTag={onSetPhotoTag}
+                        onAddPhotoTag={onAddPhotoTag}
+                        onRemovePhotoTag={onRemovePhotoTag}
+                        onOpenImage={(images, index) => { setModalImages(images); setModalIndex(index); }}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {items.map(b => (
-                  <BookingCard
-                    key={b.id}
-                    booking={b}
-                    stage={fixedStage}
-                    canUpdate={canUpdate}
-                    onSetStage={onSetStage}
-                    onOpenBooking={onOpenBooking}
-                    onUploadPhotos={onUploadPhotos}
-                    uploading={uploadingId === b.id}
-                    selected={selectedIds.has(b.id)}
-                    onSelect={(booking) => {
-                      setSelectedIds(prev => {
-                        const next = new Set(prev);
-                        if (next.has(booking.id)) next.delete(booking.id);
-                        else next.add(booking.id);
-                        return next;
-                      });
-                    }}
-                    onSetPhotoTag={onSetPhotoTag}
-                    onAddPhotoTag={onAddPhotoTag}
-                    onRemovePhotoTag={onRemovePhotoTag}
-                    onOpenImage={(images, index) => { setModalImages(images); setModalIndex(index); }}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
