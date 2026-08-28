@@ -10,17 +10,18 @@ interface CollectionsTabProps {
   bookings: BookingInquiry[];
   loading: boolean;
   canUpdate: boolean;
+  fixedStage: CollectionStage;
   onSetStage: (booking: BookingInquiry, stage: CollectionStage) => void;
   onOpenBooking: (booking: BookingInquiry) => void;
   onUploadPhotos: (booking: BookingInquiry, files: File[]) => void;
   uploadingId: string | null;
 }
 
-const STAGES: { value: CollectionStage; label: string; empty: string; colClass: string; badgeClass: string }[] = [
-  { value: 'painted', label: 'Painted', empty: 'Nothing painted yet', colClass: 'bg-amber-50/50 border-amber-200/60', badgeClass: 'bg-amber-300/60 text-amber-800' },
-  { value: 'ready', label: 'Ready to Collect', empty: 'Nothing ready to collect', colClass: 'bg-blue-50/50 border-blue-200/60', badgeClass: 'bg-blue-300/60 text-blue-800' },
-  { value: 'collected', label: 'Collected', empty: 'Nothing collected yet', colClass: 'bg-emerald-50/50 border-emerald-200/60', badgeClass: 'bg-emerald-300/60 text-emerald-800' },
-];
+const STAGE_INFO: Record<CollectionStage, { label: string; empty: string; accent: string; badge: string }> = {
+  painted: { label: 'Painted', empty: 'Nothing painted yet', accent: 'text-amber-800', badge: 'bg-amber-100 text-amber-800' },
+  ready: { label: 'Ready to Collect', empty: 'Nothing ready to collect', accent: 'text-blue-800', badge: 'bg-blue-100 text-blue-800' },
+  collected: { label: 'Collected', empty: 'Nothing collected yet', accent: 'text-emerald-800', badge: 'bg-emerald-100 text-emerald-800' },
+};
 
 export function resolveStage(booking: BookingInquiry): CollectionStage {
   if (booking.collectionStatus) return booking.collectionStatus;
@@ -142,6 +143,7 @@ export default function CollectionsTab({
   bookings,
   loading,
   canUpdate,
+  fixedStage,
   onSetStage,
   onOpenBooking,
   onUploadPhotos,
@@ -162,18 +164,23 @@ export default function CollectionsTab({
     const name = nameQuery.trim().toLowerCase();
     const phone = phoneQuery.replace(/\D/g, '');
     return eligible.filter(b => {
+      if (resolveStage(b) !== fixedStage) return false;
       if (name && !b.name.toLowerCase().includes(name)) return false;
       if (phone && !(b.phone ?? '').replace(/\D/g, '').includes(phone)) return false;
       if (dateQuery && b.date !== dateQuery) return false;
       return true;
     });
-  }, [eligible, nameQuery, phoneQuery, dateQuery]);
+  }, [eligible, fixedStage, nameQuery, phoneQuery, dateQuery]);
 
-  const columns = useMemo(() => {
-    const acc: Record<CollectionStage, BookingInquiry[]> = { painted: [], ready: [], collected: [] };
-    for (const b of filtered) acc[resolveStage(b)].push(b);
-    for (const list of Object.values(acc)) list.sort((a, b) => b.date.localeCompare(a.date) || a.time.localeCompare(b.time));
-    return acc;
+  const grouped = useMemo(() => {
+    const map = new Map<string, BookingInquiry[]>();
+    for (const b of filtered) {
+      const list = map.get(b.date) ?? [];
+      list.push(b);
+      map.set(b.date, list);
+    }
+    for (const list of map.values()) list.sort((a, b) => a.time.localeCompare(b.time));
+    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
   }, [filtered]);
 
   const clearFilters = () => {
@@ -182,15 +189,10 @@ export default function CollectionsTab({
     setDateQuery('');
   };
 
+  const info = STAGE_INFO[fixedStage];
+
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Collections</h2>
-        <p className="text-xs text-[#1B2D3C]/70 mt-1">
-          Track pottery from painted through to collected. Click a card for full booking details.
-        </p>
-      </div>
-
       {/* Search bar */}
       <div className="bg-[#F8FAFA] border border-[#1B2D3C]/10 rounded-xl p-3">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -231,42 +233,49 @@ export default function CollectionsTab({
         )}
       </div>
 
+      <div className="flex items-center gap-2">
+        <span className={`px-2.5 py-1 ${info.badge} text-[10px] font-black rounded-full uppercase tracking-wider`}>{info.label}</span>
+        <span className="text-xs font-bold text-[#1B2D3C]/50">{filtered.length} booking{filtered.length !== 1 ? 's' : ''}</span>
+      </div>
+
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[0, 1, 2].map(i => (
-            <div key={i} className="space-y-3">
-              <Skeleton className="h-8" />
-              <Skeleton className="h-24" />
-              <Skeleton className="h-24" />
-            </div>
-          ))}
+        <div className="space-y-3">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+      ) : grouped.length === 0 ? (
+        <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-12 text-center">
+          <p className="text-sm text-[#1B2D3C]/60 font-semibold">
+            {hasFilters ? 'No bookings match your search' : info.empty}
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {STAGES.map(s => (
-            <div key={s.value} className={`${s.colClass} border rounded-xl p-4 space-y-3 min-h-[300px]`}>
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">{s.label}</h3>
-                <span className={`px-2 py-0.5 ${s.badgeClass} text-[10px] font-black rounded-full`}>{columns[s.value].length}</span>
+        <div className="space-y-6">
+          {grouped.map(([date, items]) => (
+            <div key={date} className="space-y-2">
+              <div className="flex items-center gap-2 sticky top-[104px] bg-white py-1 z-10">
+                <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">
+                  {format(parseISO(date), 'EEE d MMM yyyy')}
+                </h3>
+                <span className="px-2 py-0.5 bg-[#1B2D3C]/10 text-[#1B2D3C]/60 text-[10px] font-black rounded-full">
+                  {items.length}
+                </span>
               </div>
-              {columns[s.value].length === 0 ? (
-                <p className="text-xs text-[#1B2D3C]/40 font-semibold text-center py-8">
-                  {hasFilters ? 'No matches' : s.empty}
-                </p>
-              ) : (
-                columns[s.value].map(b => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {items.map(b => (
                   <BookingCard
                     key={b.id}
                     booking={b}
-                    stage={s.value}
+                    stage={fixedStage}
                     canUpdate={canUpdate}
                     onSetStage={onSetStage}
                     onOpenBooking={onOpenBooking}
                     onUploadPhotos={onUploadPhotos}
                     uploading={uploadingId === b.id}
                   />
-                ))
-              )}
+                ))}
+              </div>
             </div>
           ))}
         </div>

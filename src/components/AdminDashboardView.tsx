@@ -75,7 +75,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'collections' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates'>('dashboard');
   const [collectionUploadingId, setCollectionUploadingId] = useState<string | null>(null);
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
@@ -2295,7 +2295,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {[
               { value: 'dashboard', label: 'Dashboard', badge: stats.pending > 0 ? stats.pending : null },
-              { value: 'collections', label: 'Collections', badge: null },
+              { value: 'bookings', label: 'Bookings', badge: null },
+              { value: 'painted', label: 'Painted', badge: null },
+              { value: 'ready', label: 'Ready to Collect', badge: null },
+              { value: 'collected', label: 'Collected', badge: null },
               ...(isSuperAdmin ? [{ value: 'gift-cards', label: 'Gift Vouchers', badge: null }] : []),
               ...(canManageStaff ? [{ value: 'audit-logs', label: 'Audit Log', badge: null }] : []),
               ...(canManageStaff ? [{ value: 'email-logs', label: 'Emails', badge: null }] : []),
@@ -2396,6 +2399,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             }}
             onNavigateToBookings={(date) => {
               if (date) setDateRange({ start: date, end: date });
+              setActiveTab('bookings');
             }}
             onNavigateToAddBooking={(opts) => {
               setNewBooking(prev => ({
@@ -2581,7 +2585,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
         )}
 
-        {activeTab === 'dashboard' && (
+        {activeTab === 'bookings' && (
           <>
         {/* Booking type tabs */}
         <div className="flex gap-2 mb-5 mt-8">
@@ -4739,11 +4743,38 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
       )}
 
-      {activeTab === 'collections' && (
+      {activeTab === 'painted' && (
         <CollectionsTab
           bookings={inquiries}
           loading={loading}
           canUpdate={canEdit}
+          fixedStage="painted"
+          onSetStage={handleSetCollectionStage}
+          onOpenBooking={(booking) => setDrawerBooking(booking)}
+          onUploadPhotos={handleCollectionPhotoUpload}
+          uploadingId={collectionUploadingId}
+        />
+      )}
+
+      {activeTab === 'ready' && (
+        <CollectionsTab
+          bookings={inquiries}
+          loading={loading}
+          canUpdate={canEdit}
+          fixedStage="ready"
+          onSetStage={handleSetCollectionStage}
+          onOpenBooking={(booking) => setDrawerBooking(booking)}
+          onUploadPhotos={handleCollectionPhotoUpload}
+          uploadingId={collectionUploadingId}
+        />
+      )}
+
+      {activeTab === 'collected' && (
+        <CollectionsTab
+          bookings={inquiries}
+          loading={loading}
+          canUpdate={canEdit}
+          fixedStage="collected"
           onSetStage={handleSetCollectionStage}
           onOpenBooking={(booking) => setDrawerBooking(booking)}
           onUploadPhotos={handleCollectionPhotoUpload}
