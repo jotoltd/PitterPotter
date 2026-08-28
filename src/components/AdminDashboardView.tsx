@@ -3689,7 +3689,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </label>
               </div>
               {editingBooking.photos && editingBooking.photos.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {editingBooking.photos.map((url, i) => (
                     <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20 cursor-pointer" onClick={() => { setModalImages(editingBooking.photos!); setModalIndex(i); }}>
                       <img src={url} alt={`Painting ${i + 1}`} className="w-full h-full object-cover" />
@@ -5074,7 +5074,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   )}
                 </div>
                 {drawerBooking.photos && drawerBooking.photos.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     {drawerBooking.photos.map((url, i) => {
                       const tag = drawerBooking.photoTags?.[i];
                       const tagColors: Record<string, string> = {

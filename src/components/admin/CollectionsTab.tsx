@@ -134,7 +134,7 @@ function BookingCard({
 
       {photos.length > 0 && (
         <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-3 gap-2">
             {photos.map((url, i) => {
               const tag = photoTags[i];
               return (
