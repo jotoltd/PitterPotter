@@ -125,6 +125,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [emailTemplatesLoading, setEmailTemplatesLoading] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
   const [templateSaving, setTemplateSaving] = useState(false);
+  const [smsTemplates, setSmsTemplates] = useState<any[]>([]);
+  const [smsTemplatesLoading, setSmsTemplatesLoading] = useState(false);
   const [auditLogsLoading, setAuditLogsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [realtimeConnected, setRealtimeConnected] = useState(false);
@@ -275,6 +277,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
     if (activeTab === 'email-templates' && canManageStaff) {
       loadEmailTemplates();
+      loadSmsTemplates();
     }
     return () => { isMounted = false; };
   }, [activeTab, staff.role]);
@@ -843,6 +846,47 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       showToast('Failed to save template', 'error');
     } finally {
       setTemplateSaving(false);
+    }
+  };
+
+  const loadSmsTemplates = async () => {
+    if (!canManageStaff || !staff?.sessionToken) return;
+    setSmsTemplatesLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'listTemplates', staff: { username: staff.username, sessionToken: staff.sessionToken } }),
+      });
+      const data = await res.json();
+      if (res.status === 401) { handleUnauthorized(); return; }
+      if (data.templates) setSmsTemplates(data.templates);
+    } catch (err) {
+      console.error('Failed to load SMS templates:', err);
+    } finally {
+      setSmsTemplatesLoading(false);
+    }
+  };
+
+  const saveSmsTemplate = async (templateKey: string, body: string) => {
+    if (!staff?.sessionToken) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'updateTemplate', templateKey, body, staff: { username: staff.username, sessionToken: staff.sessionToken } }),
+      });
+      const data = await res.json();
+      if (res.status === 401) { handleUnauthorized(); return; }
+      if (!res.ok || data.error) {
+        showToast(data.error || 'Failed to save SMS template', 'error');
+        return;
+      }
+      showToast('SMS template saved', 'success');
+      loadSmsTemplates();
+    } catch (err) {
+      console.error('Failed to save SMS template:', err);
+      showToast('Failed to save SMS template', 'error');
     }
   };
 
@@ -4866,11 +4910,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           emailTemplatesLoading={emailTemplatesLoading}
           templateSaving={templateSaving}
           editingTemplate={editingTemplate}
-          onRefresh={loadEmailTemplates}
+          onRefresh={() => { loadEmailTemplates(); loadSmsTemplates(); }}
           onEditTemplate={(tpl) => setEditingTemplate(tpl)}
           onCancelEdit={() => setEditingTemplate(null)}
           onUpdateEditingTemplate={(tpl) => setEditingTemplate(tpl)}
           onSaveTemplate={saveEmailTemplate}
+          smsTemplates={smsTemplates}
+          smsTemplatesLoading={smsTemplatesLoading}
+          onSaveSMSTemplate={saveSmsTemplate}
         />
       )}
 

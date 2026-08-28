@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Mail, MessageSquare, Save, Pencil, X } from 'lucide-react';
 import Skeleton from '../Skeleton';
 import WysiwygEditor from '../WysiwygEditor';
 
@@ -13,6 +15,15 @@ interface EmailTemplate {
   _editHtml?: string;
 }
 
+interface SMSTemplate {
+  id: string;
+  template_key: string;
+  name: string;
+  body: string;
+  available_variables: string[];
+  updated_at: string;
+}
+
 interface EmailTemplatesTabProps {
   emailTemplates: EmailTemplate[];
   emailTemplatesLoading: boolean;
@@ -23,6 +34,9 @@ interface EmailTemplatesTabProps {
   onCancelEdit: () => void;
   onUpdateEditingTemplate: (tpl: EmailTemplate) => void;
   onSaveTemplate: (templateKey: string, subject: string, htmlContent: string) => void;
+  smsTemplates?: SMSTemplate[];
+  smsTemplatesLoading?: boolean;
+  onSaveSMSTemplate?: (templateKey: string, body: string) => void;
 }
 
 export default function EmailTemplatesTab({
@@ -35,13 +49,28 @@ export default function EmailTemplatesTab({
   onCancelEdit,
   onUpdateEditingTemplate,
   onSaveTemplate,
+  smsTemplates = [],
+  smsTemplatesLoading = false,
+  onSaveSMSTemplate,
 }: EmailTemplatesTabProps) {
+  const [editingSms, setEditingSms] = useState<SMSTemplate | null>(null);
+  const [smsBody, setSmsBody] = useState('');
+  const [smsSaving, setSmsSaving] = useState(false);
+
+  const handleSaveSms = async () => {
+    if (!editingSms || !onSaveSMSTemplate) return;
+    setSmsSaving(true);
+    await onSaveSMSTemplate(editingSms.template_key, smsBody);
+    setSmsSaving(false);
+    setEditingSms(null);
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Email Templates</h2>
-          <p className="text-xs text-[#1B2D3C]/70 mt-1">Edit the subject and content of all system emails. Use {'{{variables}}'} for dynamic data.</p>
+          <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Templates</h2>
+          <p className="text-xs text-[#1B2D3C]/70 mt-1">Edit email and SMS templates. Use {'{{variables}}'} for dynamic data.</p>
         </div>
         <button
           onClick={onRefresh}
@@ -51,6 +80,7 @@ export default function EmailTemplatesTab({
         </button>
       </div>
 
+      {/* Email Templates Section */}
       {emailTemplatesLoading ? (
         <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-4 space-y-3">
           <Skeleton className="h-16" />
@@ -61,7 +91,9 @@ export default function EmailTemplatesTab({
         <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-heading text-lg font-black text-[#1B2D3C]">{editingTemplate.name}</h3>
+              <h3 className="font-heading text-lg font-black text-[#1B2D3C] flex items-center gap-2">
+                <Mail className="w-4 h-4" /> {editingTemplate.name}
+              </h3>
               <p className="text-xs text-[#1B2D3C]/60 mt-1">Use these variables: {editingTemplate.available_variables?.map((v: string) => `{{${v}}}`).join(', ')}</p>
             </div>
             <button
@@ -108,42 +140,141 @@ export default function EmailTemplatesTab({
             </button>
           </div>
         </div>
-      ) : emailTemplates.length === 0 ? (
-        <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-12 text-center">
-          <p className="text-sm text-stone-500 font-semibold">No email templates found</p>
-          <p className="text-xs text-stone-400 mt-1">Templates will appear here after the migration is applied</p>
-        </div>
       ) : (
-        <div className="space-y-3">
-          {emailTemplates.map((tpl) => (
-            <div key={tpl.id} className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-5">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-heading text-sm font-black text-[#1B2D3C]">{tpl.name}</h3>
-                  <p className="text-xs text-[#1B2D3C]/60 mt-1">
-                    <span className="font-bold">Subject:</span> {tpl.subject}
-                  </p>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {tpl.available_variables?.map((v: string) => (
-                      <span key={v} className="inline-block px-1.5 py-0.5 bg-[#DBE7E4] text-[#1B2D3C] text-[10px] font-mono rounded">
-                        {`{{${v}}}`}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-[10px] text-[#1B2D3C]/40 mt-2">
-                    Last updated: {new Date(tpl.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-                <button
-                  onClick={() => onEditTemplate({ ...tpl, _editSubject: tpl.subject, _editHtml: tpl.html_content })}
-                  className="shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-[#DBE7E4] transition-all cursor-pointer"
-                >
-                  Edit
-                </button>
+        <>
+          {/* Email Templates List */}
+          <div>
+            <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5 mb-3">
+              <Mail className="w-4 h-4" /> Email Templates
+            </h3>
+            {emailTemplates.length === 0 ? (
+              <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-12 text-center">
+                <p className="text-sm text-stone-500 font-semibold">No email templates found</p>
+                <p className="text-xs text-stone-400 mt-1">Templates will appear here after the migration is applied</p>
               </div>
+            ) : (
+              <div className="space-y-3">
+                {emailTemplates.map((tpl) => (
+                  <div key={tpl.id} className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-5">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-heading text-sm font-black text-[#1B2D3C]">{tpl.name}</h3>
+                        <p className="text-xs text-[#1B2D3C]/60 mt-1">
+                          <span className="font-bold">Subject:</span> {tpl.subject}
+                        </p>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {tpl.available_variables?.map((v: string) => (
+                            <span key={v} className="inline-block px-1.5 py-0.5 bg-[#DBE7E4] text-[#1B2D3C] text-[10px] font-mono rounded">
+                              {`{{${v}}}`}
+                            </span>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-[#1B2D3C]/40 mt-2">
+                          Last updated: {new Date(tpl.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => onEditTemplate({ ...tpl, _editSubject: tpl.subject, _editHtml: tpl.html_content })}
+                        className="shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-[#DBE7E4] transition-all cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* SMS Templates List */}
+          {onSaveSMSTemplate && smsTemplates.length > 0 && (
+            <div>
+              <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                <MessageSquare className="w-4 h-4" /> SMS Templates
+              </h3>
+              {smsTemplatesLoading ? (
+                <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-4 space-y-3">
+                  <Skeleton className="h-16" />
+                  <Skeleton className="h-16" />
+                </div>
+              ) : editingSms ? (
+                <div className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-heading text-lg font-black text-[#1B2D3C] flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4" /> {editingSms.name}
+                      </h3>
+                      <p className="text-xs text-[#1B2D3C]/60 mt-1">
+                        Variables: {editingSms.available_variables.map(v => `{{${v}}}`).join(', ')}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setEditingSms(null)}
+                      className="p-1.5 rounded-lg hover:bg-[#D6E2E9] cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5 text-[#1B2D3C]/50" />
+                    </button>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-[#1B2D3C] mb-1">SMS Message</label>
+                    <textarea
+                      value={smsBody}
+                      onChange={(e) => setSmsBody(e.target.value)}
+                      rows={4}
+                      className="w-full px-3 py-2 text-xs font-semibold text-[#1B2D3C] bg-white border border-[#1B2D3C]/15 rounded-lg focus:outline-none focus:border-[#1B2D3C]/40 resize-none font-mono"
+                    />
+                    <p className="text-[10px] text-[#1B2D3C]/40 mt-1">{smsBody.length} characters {smsBody.length > 160 && '(will be split into multiple SMS segments)'}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleSaveSms}
+                      disabled={smsSaving}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#1B2D3C]/90 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      {smsSaving ? 'Saving...' : 'Save Template'}
+                    </button>
+                    <button
+                      onClick={() => setEditingSms(null)}
+                      className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-stone-50 transition-all cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {smsTemplates.map((tpl) => (
+                    <div key={tpl.id} className="bg-white border border-[#1B2D3C]/20 shadow-sm rounded-xl p-5">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-heading text-sm font-black text-[#1B2D3C]">{tpl.name}</h3>
+                          <p className="text-xs text-[#1B2D3C]/60 mt-2 line-clamp-2">{tpl.body}</p>
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {tpl.available_variables.map((v) => (
+                              <span key={v} className="inline-block px-1.5 py-0.5 bg-[#D6E2E9]/40 text-[#1B2D3C]/60 text-[10px] font-mono rounded">
+                                {`{{${v}}}`}
+                              </span>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-[#1B2D3C]/40 mt-2">
+                            Last updated: {new Date(tpl.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => { setEditingSms(tpl); setSmsBody(tpl.body); }}
+                          className="shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-[#DBE7E4] transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          <Pencil className="w-3 h-3" /> Edit
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
