@@ -1441,6 +1441,12 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const canAddWalkIn = isSuperAdmin || staff.canAddWalkIns;
   const canManageStaff = isSuperAdmin;
 
+  const canManageBooking = (booking: BookingInquiry) => {
+    if (isSuperAdmin) return true;
+    if (!staffAllowedStudios) return true;
+    return staffAllowedStudios.includes(booking.studio as 'Putney' | 'Wimbledon');
+  };
+
   const exportToCSV = () => {
     const headers = ['ID', 'Name', 'Email', 'Phone', 'Studio', 'Date', 'Time', 'Seats', 'Session Type', 'Status', 'Request Date'];
     const csvContent = [
@@ -1514,6 +1520,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const handleDeletePhoto = async (index: number) => {
     if (!editingBooking || !editingBooking.photos) return;
+    if (!canManageBooking(editingBooking)) { showToast('You can only manage bookings for your assigned studio', 'error'); return; }
     const updatedPhotos = editingBooking.photos.filter((_, i) => i !== index);
     const updatedBooking = { ...editingBooking, photos: updatedPhotos.length > 0 ? updatedPhotos : undefined };
     setEditingBooking(updatedBooking);
@@ -1529,6 +1536,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const handleDrawerPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !drawerBooking) return;
+    if (!canManageBooking(drawerBooking)) { showToast('You can only manage bookings for your assigned studio', 'error'); return; }
     const fileArr = Array.from(files);
     e.target.value = '';
     setPhotoUploading(true);
@@ -1566,6 +1574,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const handleDrawerDeletePhoto = async (index: number) => {
     if (!drawerBooking || !drawerBooking.photos) return;
+    if (!canManageBooking(drawerBooking)) { showToast('You can only manage bookings for your assigned studio', 'error'); return; }
     const updatedPhotos = drawerBooking.photos.filter((_, i) => i !== index);
     const updatedBooking = { ...drawerBooking, photos: updatedPhotos.length > 0 ? updatedPhotos : undefined };
     setDrawerBooking(updatedBooking);
@@ -1579,6 +1588,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const handleAddPhotoTag = async (booking: BookingInquiry, photoIndex: number, label: string, status: string, x: number, y: number) => {
+    if (!canManageBooking(booking)) { showToast('You can only manage bookings for your assigned studio', 'error'); return; }
     const updatedTags = { ...(booking.photoTags || {}) };
     const existing = updatedTags[photoIndex] || [];
     updatedTags[photoIndex] = [...existing, { label: label.trim() || undefined, status, x, y }];
@@ -1593,6 +1603,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const handleRemovePhotoTag = async (booking: BookingInquiry, photoIndex: number, tagIndex: number) => {
+    if (!canManageBooking(booking)) { showToast('You can only manage bookings for your assigned studio', 'error'); return; }
     const updatedTags = { ...(booking.photoTags || {}) };
     const existing = updatedTags[photoIndex] || [];
     updatedTags[photoIndex] = existing.filter((_, i) => i !== tagIndex);
@@ -1608,6 +1619,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   };
 
   const handleSetCollectionStage = async (booking: BookingInquiry, stage: CollectionStage) => {
+    if (!canManageBooking(booking)) { showToast('You can only manage bookings for your assigned studio', 'error'); return; }
     const updatedBooking: BookingInquiry = {
       ...booking,
       collectionStatus: stage,
@@ -1630,6 +1642,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const handleCollectionPhotoUpload = async (booking: BookingInquiry, files: File[]) => {
     if (files.length === 0) return;
+    if (!canManageBooking(booking)) { showToast('You can only manage bookings for your assigned studio', 'error'); return; }
     setCollectionUploadingId(booking.id);
     try {
       const newPhotoUrls: string[] = [];
@@ -5069,7 +5082,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">Painting Photos</p>
-                  {canEdit && (
+                  {canEdit && canManageBooking(drawerBooking) && (
                     <label className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all ${
                       photoUploading
                         ? 'bg-[#D6E2E9]/40 text-[#1B2D3C]/50 cursor-wait'
@@ -5111,7 +5124,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           key={i}
                           className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20"
                           onClick={(e) => {
-                            if (canEdit) {
+                            if (canEdit && canManageBooking(drawerBooking)) {
                               const rect = e.currentTarget.getBoundingClientRect();
                               const x = ((e.clientX - rect.left) / rect.width) * 100;
                               const y = ((e.clientY - rect.top) / rect.height) * 100;
@@ -5137,7 +5150,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                                 className={`px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full flex items-center gap-0.5 whitespace-nowrap shadow-md ${tagColors[t.status] || 'bg-stone-100 text-stone-600'}`}
                               >
                                 {t.label ? `${tagLabels[t.status] || t.status} - ${t.label}` : (tagLabels[t.status] || t.status)}
-                                {canEdit && (
+                                {canEdit && canManageBooking(drawerBooking) && (
                                   <button
                                     onClick={(e) => { e.stopPropagation(); handleRemovePhotoTag(drawerBooking, i, ti); }}
                                     className="hover:text-red-600 cursor-pointer"
@@ -5148,7 +5161,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                               </span>
                             </div>
                           ))}
-                          {canEdit && (
+                          {canEdit && canManageBooking(drawerBooking) && (
                             <>
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleDrawerDeletePhoto(i); }}
