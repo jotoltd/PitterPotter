@@ -31,6 +31,7 @@ async function sendReadySMS(
 
   const studioInfo = getStudioInfo(booking.studio);
   const studioName = `Pitter Potter ${booking.studio}`;
+  const senderId = booking.studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP';
 
   let message: string;
   const smsTemplate = await loadSMSTemplate('collection_ready');
@@ -53,7 +54,7 @@ async function sendReadySMS(
   try {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
     const body = new URLSearchParams();
-    body.append('From', fromNumber);
+    body.append('From', senderId);
     body.append('To', booking.phone);
     body.append('Body', message);
 

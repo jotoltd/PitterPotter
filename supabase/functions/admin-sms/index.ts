@@ -86,16 +86,20 @@ async function getTwilioUsage(days: number = 30): Promise<{ count: number; total
   }
 }
 
-async function sendTestSMS(to: string, body: string): Promise<{ success: boolean; error?: string; sid?: string }> {
+async function sendTestSMS(to: string, body: string, studio?: string): Promise<{ success: boolean; error?: string; sid?: string }> {
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
   const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
   if (!accountSid || !authToken || !fromNumber) return { success: false, error: 'Twilio not configured' };
 
+  const senderId = studio
+    ? (studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP')
+    : fromNumber;
+
   try {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
     const params = new URLSearchParams();
-    params.append('From', fromNumber);
+    params.append('From', senderId);
     params.append('To', to);
     params.append('Body', body);
     const projectUrl = Deno.env.get('SUPABASE_URL');
@@ -187,7 +191,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'send') {
-      const { to, message } = body as { to: string; message: string };
+      const { to, message, studio } = body as { to: string; message: string; studio?: string };
       if (!isNonEmptyString(to) || !isNonEmptyString(message)) {
         return new Response(JSON.stringify({ error: 'Missing phone number or message' }), {
           status: 400,
@@ -195,7 +199,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const result = await sendTestSMS(to, message);
+      const result = await sendTestSMS(to, message, studio);
 
       try {
         await supabase.from('email_logs').insert({
