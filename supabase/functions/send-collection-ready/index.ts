@@ -12,6 +12,75 @@ const SESSION_LABELS: Record<string, string> = {
   'corporate': 'Corporate Event',
 };
 
+async function sendReadySMS(
+  booking: {
+    booking_id: string;
+    name: string;
+    phone: string;
+    studio: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+  const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+  if (!accountSid || !authToken || !fromNumber) {
+    console.warn('Twilio not configured; skipping SMS');
+    return { success: false, error: 'SMS service not configured' };
+  }
+
+  const studioInfo = getStudioInfo(booking.studio);
+  const studioName = `Pitter Potter ${booking.studio}`;
+  const message = `Hi ${booking.name}, your pottery from ${studioName} is ready to collect! Please bring your booking ref ${booking.booking_id}. Our address: ${studioInfo.address}. Call us: ${studioInfo.phone}. Thanks!`;
+
+  try {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+    const body = new URLSearchParams();
+    body.append('From', fromNumber);
+    body.append('To', booking.phone);
+    body.append('Body', message);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: body.toString(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      console.error('Twilio error:', errorData);
+      return { success: false, error: errorData.message || 'Failed to send SMS' };
+    }
+
+    const twilioData = await response.json().catch(() => ({}));
+
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (supabaseUrl && supabaseServiceKey) {
+        const logClient = createClient(supabaseUrl, supabaseServiceKey);
+        await logClient.from('email_logs').insert({
+          email_type: 'collection_ready_sms',
+          recipient: booking.phone,
+          subject: 'Collection Ready SMS',
+          resend_id: twilioData.sid || null,
+          status: 'sent',
+          booking_id: booking.booking_id,
+        });
+      }
+    } catch (logErr) {
+      console.error('Failed to log SMS:', logErr);
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('Send collection-ready SMS error:', err);
+    return { success: false, error: 'Failed to send SMS' };
+  }
+}
+
 async function sendReadyEmail(
   booking: {
     booking_id: string;
@@ -211,26 +280,40 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!booking.email) {
-      return new Response(JSON.stringify({ error: 'Booking has no email address' }), {
-        status: 400,
+    // Send email if available, otherwise SMS if phone available
+    if (booking.email) {
+      const emailResult = await sendReadyEmail({
+        booking_id: booking.booking_id,
+        name: booking.name,
+        email: booking.email,
+        studio: booking.studio,
+        date: booking.date,
+        time: booking.time,
+        painters_count: booking.painters_count,
+        session_type: booking.session_type,
+        management_token: booking.management_token,
+      });
+
+      return new Response(JSON.stringify({ success: true, email: emailResult }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const emailResult = await sendReadyEmail({
-      booking_id: booking.booking_id,
-      name: booking.name,
-      email: booking.email,
-      studio: booking.studio,
-      date: booking.date,
-      time: booking.time,
-      painters_count: booking.painters_count,
-      session_type: booking.session_type,
-      management_token: booking.management_token,
-    });
+    if (booking.phone) {
+      const smsResult = await sendReadySMS({
+        booking_id: booking.booking_id,
+        name: booking.name,
+        phone: booking.phone,
+        studio: booking.studio,
+      });
 
-    return new Response(JSON.stringify({ success: true, email: emailResult }), {
+      return new Response(JSON.stringify({ success: true, sms: smsResult }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: 'Booking has no email or phone number' }), {
+      status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {

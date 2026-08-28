@@ -1527,7 +1527,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       await updateBooking(updatedBooking, staff);
       showToast(
         stage === 'collected' ? 'Marked as collected'
-        : stage === 'ready' ? 'Marked ready to collect — email sent'
+        : stage === 'ready' ? 'Marked ready to collect — notification sent'
         : 'Moved back to painted',
         'success',
       );
