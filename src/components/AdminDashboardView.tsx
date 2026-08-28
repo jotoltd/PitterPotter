@@ -1347,6 +1347,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     total: inquiries.length,
     pending: inquiries.filter((i) => i.status === 'pending').length,
     confirmed: inquiries.filter((i) => i.status === 'confirmed').length,
+    paintedNoPhoto: inquiries.filter(i =>
+      i.status === 'completed' &&
+      (!i.collectionStatus || i.collectionStatus === 'painted') &&
+      (!i.photos || i.photos.length === 0)
+    ).length,
   };
 
   const giftCardStats = {
@@ -2297,7 +2302,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             {[
               { value: 'dashboard', label: 'Dashboard', badge: stats.pending > 0 ? stats.pending : null },
               { value: 'bookings', label: 'Bookings', badge: null },
-              { value: 'painted', label: 'Painted', badge: null },
+              { value: 'painted', label: 'Painted', badge: stats.paintedNoPhoto > 0 ? stats.paintedNoPhoto : null },
               { value: 'ready', label: 'Ready to Collect', badge: null },
               { value: 'collected', label: 'Collected', badge: null },
               ...(isSuperAdmin ? [{ value: 'gift-cards', label: 'Gift Vouchers', badge: null }] : []),

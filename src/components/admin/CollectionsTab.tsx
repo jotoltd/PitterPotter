@@ -5,6 +5,7 @@ import { BookingInquiry } from '../../types';
 import Skeleton from '../Skeleton';
 
 export type CollectionStage = 'painted' | 'ready' | 'collected';
+export type CollectionStageOrNull = CollectionStage | null;
 
 interface CollectionsTabProps {
   bookings: BookingInquiry[];
@@ -23,9 +24,10 @@ const STAGE_INFO: Record<CollectionStage, { label: string; empty: string; accent
   collected: { label: 'Collected', empty: 'Nothing collected yet', accent: 'text-emerald-800', badge: 'bg-emerald-100 text-emerald-800' },
 };
 
-export function resolveStage(booking: BookingInquiry): CollectionStage {
+export function resolveStage(booking: BookingInquiry): CollectionStageOrNull {
   if (booking.collectionStatus) return booking.collectionStatus;
-  return 'painted';
+  if (booking.status === 'completed') return 'painted';
+  return null;
 }
 
 function BookingCard({
@@ -154,7 +156,7 @@ export default function CollectionsTab({
   const [dateQuery, setDateQuery] = useState('');
 
   const eligible = useMemo(
-    () => bookings.filter(b => b.status !== 'cancelled' && b.status !== 'no_show'),
+    () => bookings.filter(b => b.status === 'completed'),
     [bookings],
   );
 

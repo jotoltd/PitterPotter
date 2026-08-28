@@ -61,7 +61,14 @@ export default function DashboardSummary({
     const confirmed = active.filter(b => b.status === 'confirmed');
 
     const collectionCounts = { painted: 0, ready: 0, collected: 0 } as Record<CollectionStage, number>;
-    for (const b of active) collectionCounts[resolveStage(b)]++;
+    const noPhotoAlerts: BookingInquiry[] = [];
+    for (const b of active) {
+      const stage = resolveStage(b);
+      if (stage) collectionCounts[stage]++;
+      if (b.status === 'completed' && (!b.collectionStatus || b.collectionStatus === 'painted') && (!b.photos || b.photos.length === 0)) {
+        noPhotoAlerts.push(b);
+      }
+    }
 
     const totalPainters = active.reduce((sum, b) => sum + b.paintersCount, 0);
     const todayPainters = todayBookings.reduce((sum, b) => sum + b.paintersCount, 0);
@@ -75,6 +82,7 @@ export default function DashboardSummary({
       confirmed: confirmed.length,
       totalPainters,
       collection: collectionCounts,
+      noPhotoAlerts,
     };
   }, [scopedBookings]);
 
@@ -132,6 +140,39 @@ export default function DashboardSummary({
         <StatCard label="Awaiting" value={stats.pending} sub="needs confirmation" icon={<Users className="w-4 h-4" />} onClick={onNavigateToBookings} highlight={stats.pending > 0} />
         <StatCard label="Confirmed" value={stats.confirmed} sub="ready to go" icon={<Check className="w-4 h-4" />} onClick={onNavigateToBookings} />
       </div>
+
+      {/* Photo alerts */}
+      {stats.noPhotoAlerts.length > 0 && (
+        <div className="bg-amber-50 border border-amber-300 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-black text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+              <Camera className="w-4 h-4" /> {stats.noPhotoAlerts.length} completed booking{stats.noPhotoAlerts.length !== 1 ? 's' : ''} need photo{stats.noPhotoAlerts.length !== 1 ? 's' : ''}
+            </h3>
+            <button
+              onClick={onNavigateToPainted}
+              className="text-[10px] font-bold uppercase tracking-wider text-amber-800 hover:text-amber-900 cursor-pointer flex items-center gap-0.5"
+            >
+              Go to Painted <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="space-y-1.5">
+            {stats.noPhotoAlerts.slice(0, 4).map(b => (
+              <div key={b.id} className="flex items-center gap-3 py-1">
+                <span className="text-[10px] font-semibold text-amber-700/70 shrink-0">
+                  {b.date ? format(parseISO(b.date), 'dd MMM') : '—'}
+                </span>
+                <span className="text-xs font-black text-amber-900 truncate flex-1">{b.name}</span>
+                <span className="text-[10px] font-bold text-amber-700/70 shrink-0">{b.studio}</span>
+              </div>
+            ))}
+            {stats.noPhotoAlerts.length > 4 && (
+              <p className="text-[10px] font-semibold text-amber-700/70 pt-1">
+                +{stats.noPhotoAlerts.length - 4} more…
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Collection summary */}
       <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-4">
