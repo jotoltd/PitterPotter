@@ -319,7 +319,7 @@ export default function CollectionsTab({
       if (phone && !(b.phone ?? '').replace(/\D/g, '').includes(phone)) return false;
       if (dateQuery && b.date !== dateQuery) return false;
       if (studioFilter !== 'all' && b.studio !== studioFilter) return false;
-      if (needsPhotoOnly && (!b.photos || b.photos.length === 0)) return false;
+      if (needsPhotoOnly && b.photos && b.photos.length > 0) return false;
       return true;
     });
   }, [eligible, fixedStage, nameQuery, phoneQuery, dateQuery, studioFilter, needsPhotoOnly]);
