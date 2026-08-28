@@ -16,6 +16,7 @@ interface CollectionsTabProps {
   onOpenBooking: (booking: BookingInquiry) => void;
   onUploadPhotos: (booking: BookingInquiry, files: File[]) => void;
   uploadingId: string | null;
+  onSetPhotoTag?: (booking: BookingInquiry, photoIndex: number, tag: string) => void;
 }
 
 const STAGE_INFO: Record<CollectionStage, { label: string; empty: string; accent: string; badge: string }> = {
@@ -40,6 +41,7 @@ function BookingCard({
   uploading,
   selected,
   onSelect,
+  onSetPhotoTag,
 }: {
   booking: BookingInquiry;
   stage: CollectionStage;
@@ -50,8 +52,32 @@ function BookingCard({
   uploading: boolean;
   selected: boolean;
   onSelect: (booking: BookingInquiry) => void;
+  onSetPhotoTag?: (booking: BookingInquiry, photoIndex: number, tag: string) => void;
 }) {
   const photos = booking.photos ?? [];
+  const photoTags = booking.photoTags ?? {};
+  const tagColors: Record<string, string> = {
+    painted: 'bg-blue-100 text-blue-700',
+    glazing: 'bg-purple-100 text-purple-700',
+    firing: 'bg-orange-100 text-orange-700',
+    ready: 'bg-emerald-100 text-emerald-700',
+    needs_touchup: 'bg-red-100 text-red-700',
+  };
+  const tagLabels: Record<string, string> = {
+    painted: 'Painted',
+    glazing: 'Glazing',
+    firing: 'Firing',
+    ready: 'Ready',
+    needs_touchup: 'Touch-up',
+  };
+  const tagSummary = photos.length > 0 ? (() => {
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < photos.length; i++) {
+      const t = photoTags[i] || 'painted';
+      counts[t] = (counts[t] || 0) + 1;
+    }
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  })() : [];
   const isOverdue = stage !== 'collected' && (() => {
     const ref = booking.collectedAt || booking.date;
     try {
@@ -104,18 +130,52 @@ function BookingCard({
       </div>
 
       {photos.length > 0 && (
-        <div className="grid grid-cols-4 gap-1.5" onClick={(e) => e.stopPropagation()}>
-          {photos.map((url, i) => (
-            <a
-              key={i}
-              href={url}
-              target="_blank"
-              rel="noreferrer"
-              className="aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/15 hover:opacity-80 transition-opacity"
-            >
-              <img src={url} alt={`${booking.name} painting ${i + 1}`} className="w-full h-full object-cover" />
-            </a>
-          ))}
+        <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
+          <div className="grid grid-cols-4 gap-1.5">
+            {photos.map((url, i) => {
+              const tag = photoTags[i];
+              return (
+                <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/15 group">
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block w-full h-full hover:opacity-80 transition-opacity"
+                  >
+                    <img src={url} alt={`${booking.name} painting ${i + 1}`} className="w-full h-full object-cover" />
+                  </a>
+                  {tag && (
+                    <span className={`absolute bottom-0.5 left-0.5 px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full ${tagColors[tag] || 'bg-stone-100 text-stone-600'}`}>
+                      {tagLabels[tag] || tag}
+                    </span>
+                  )}
+                  {canUpdate && onSetPhotoTag && (
+                    <select
+                      value={tag || 'none'}
+                      onChange={(e) => onSetPhotoTag(booking, i, e.target.value)}
+                      className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-[7px] font-bold rounded px-0.5 py-0.5 bg-white border border-[#1B2D3C]/20 cursor-pointer"
+                    >
+                      <option value="none">No tag</option>
+                      <option value="painted">Painted</option>
+                      <option value="glazing">Glazing</option>
+                      <option value="firing">Firing</option>
+                      <option value="ready">Ready</option>
+                      <option value="needs_touchup">Touch-up</option>
+                    </select>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {tagSummary.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {tagSummary.map(([tag, count]) => (
+                <span key={tag} className={`px-1.5 py-0.5 text-[8px] font-black rounded-full ${tagColors[tag] || 'bg-stone-100 text-stone-600'}`}>
+                  {count} {tagLabels[tag] || tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -189,6 +249,7 @@ export default function CollectionsTab({
   onOpenBooking,
   onUploadPhotos,
   uploadingId,
+  onSetPhotoTag,
 }: CollectionsTabProps) {
   const [nameQuery, setNameQuery] = useState('');
   const [phoneQuery, setPhoneQuery] = useState('');
@@ -458,6 +519,7 @@ export default function CollectionsTab({
                         return next;
                       });
                     }}
+                    onSetPhotoTag={onSetPhotoTag}
                   />
                 ))}
               </div>

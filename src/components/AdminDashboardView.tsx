@@ -1531,6 +1531,23 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
+  const handleSetPhotoTag = async (booking: BookingInquiry, photoIndex: number, tag: string) => {
+    const updatedTags = { ...(booking.photoTags || {}) };
+    if (tag === 'none') {
+      delete updatedTags[photoIndex];
+    } else {
+      updatedTags[photoIndex] = tag;
+    }
+    const updatedBooking = { ...booking, photoTags: Object.keys(updatedTags).length > 0 ? updatedTags : undefined };
+    if (drawerBooking?.id === booking.id) setDrawerBooking(updatedBooking);
+    setInquiries(prev => prev.map(i => i.id === updatedBooking.id ? updatedBooking : i));
+    try {
+      await updateBooking(updatedBooking, staff);
+    } catch {
+      showToast('Failed to update photo tag', 'error');
+    }
+  };
+
   const handleSetCollectionStage = async (booking: BookingInquiry, stage: CollectionStage) => {
     const updatedBooking: BookingInquiry = {
       ...booking,
@@ -4795,6 +4812,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           onOpenBooking={(booking) => setDrawerBooking(booking)}
           onUploadPhotos={handleCollectionPhotoUpload}
           uploadingId={collectionUploadingId}
+          onSetPhotoTag={handleSetPhotoTag}
         />
       )}
 
@@ -4808,6 +4826,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           onOpenBooking={(booking) => setDrawerBooking(booking)}
           onUploadPhotos={handleCollectionPhotoUpload}
           uploadingId={collectionUploadingId}
+          onSetPhotoTag={handleSetPhotoTag}
         />
       )}
 
@@ -4821,6 +4840,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           onOpenBooking={(booking) => setDrawerBooking(booking)}
           onUploadPhotos={handleCollectionPhotoUpload}
           uploadingId={collectionUploadingId}
+          onSetPhotoTag={handleSetPhotoTag}
         />
       )}
 
@@ -4997,21 +5017,58 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </div>
                 {drawerBooking.photos && drawerBooking.photos.length > 0 ? (
                   <div className="grid grid-cols-3 gap-2">
-                    {drawerBooking.photos.map((url, i) => (
-                      <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20">
-                        <a href={url} target="_blank" rel="noreferrer" className="block w-full h-full hover:opacity-80 transition-opacity">
-                          <img src={url} alt={`Painting ${i + 1}`} className="w-full h-full object-cover" />
-                        </a>
-                        {canEdit && (
-                          <button
-                            onClick={() => handleDrawerDeletePhoto(i)}
-                            className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                    {drawerBooking.photos.map((url, i) => {
+                      const tag = drawerBooking.photoTags?.[i];
+                      const tagColors: Record<string, string> = {
+                        painted: 'bg-blue-100 text-blue-700',
+                        glazing: 'bg-purple-100 text-purple-700',
+                        firing: 'bg-orange-100 text-orange-700',
+                        ready: 'bg-emerald-100 text-emerald-700',
+                        needs_touchup: 'bg-red-100 text-red-700',
+                      };
+                      const tagLabels: Record<string, string> = {
+                        painted: 'Painted',
+                        glazing: 'Glazing',
+                        firing: 'Firing',
+                        ready: 'Ready',
+                        needs_touchup: 'Needs touch-up',
+                      };
+                      return (
+                        <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20">
+                          <a href={url} target="_blank" rel="noreferrer" className="block w-full h-full hover:opacity-80 transition-opacity">
+                            <img src={url} alt={`Painting ${i + 1}`} className="w-full h-full object-cover" />
+                          </a>
+                          {tag && (
+                            <span className={`absolute bottom-1 left-1 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider rounded-full ${tagColors[tag] || 'bg-stone-100 text-stone-600'}`}>
+                              {tagLabels[tag] || tag}
+                            </span>
+                          )}
+                          {canEdit && (
+                            <>
+                              <button
+                                onClick={() => handleDrawerDeletePhoto(i)}
+                                className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center"
+                              >
+                                ✕
+                              </button>
+                              <select
+                                value={tag || 'none'}
+                                onChange={(e) => handleSetPhotoTag(drawerBooking, i, e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity text-[8px] font-bold rounded px-1 py-0.5 bg-white border border-[#1B2D3C]/20 cursor-pointer"
+                              >
+                                <option value="none">No tag</option>
+                                <option value="painted">Painted</option>
+                                <option value="glazing">Glazing</option>
+                                <option value="firing">Firing</option>
+                                <option value="ready">Ready</option>
+                                <option value="needs_touchup">Needs touch-up</option>
+                              </select>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-[10px] text-[#1B2D3C]/50 font-medium">No photos uploaded yet.</p>
