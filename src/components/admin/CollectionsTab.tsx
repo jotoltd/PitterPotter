@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Search, Camera, Users, Clock, MapPin, Check, Package, Phone, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Camera, Users, Clock, MapPin, Check, Package, Phone, X, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { BookingInquiry } from '../../types';
 import Skeleton from '../Skeleton';
 
@@ -154,13 +154,16 @@ export default function CollectionsTab({
   const [nameQuery, setNameQuery] = useState('');
   const [phoneQuery, setPhoneQuery] = useState('');
   const [dateQuery, setDateQuery] = useState('');
+  const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
+  const [needsPhotoOnly, setNeedsPhotoOnly] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   const eligible = useMemo(
     () => bookings.filter(b => b.status === 'completed'),
     [bookings],
   );
 
-  const hasFilters = Boolean(nameQuery || phoneQuery || dateQuery);
+  const hasFilters = Boolean(nameQuery || phoneQuery || dateQuery || studioFilter !== 'all' || needsPhotoOnly);
 
   const filtered = useMemo(() => {
     const name = nameQuery.trim().toLowerCase();
@@ -170,9 +173,11 @@ export default function CollectionsTab({
       if (name && !b.name.toLowerCase().includes(name)) return false;
       if (phone && !(b.phone ?? '').replace(/\D/g, '').includes(phone)) return false;
       if (dateQuery && b.date !== dateQuery) return false;
+      if (studioFilter !== 'all' && b.studio !== studioFilter) return false;
+      if (needsPhotoOnly && (!b.photos || b.photos.length === 0)) return false;
       return true;
     });
-  }, [eligible, fixedStage, nameQuery, phoneQuery, dateQuery]);
+  }, [eligible, fixedStage, nameQuery, phoneQuery, dateQuery, studioFilter, needsPhotoOnly]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, BookingInquiry[]>();
@@ -182,13 +187,17 @@ export default function CollectionsTab({
       map.set(b.date, list);
     }
     for (const list of map.values()) list.sort((a, b) => a.time.localeCompare(b.time));
-    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
-  }, [filtered]);
+    const entries = [...map.entries()];
+    entries.sort((a, b) => sortOrder === 'newest' ? b[0].localeCompare(a[0]) : a[0].localeCompare(b[0]));
+    return entries;
+  }, [filtered, sortOrder]);
 
   const clearFilters = () => {
     setNameQuery('');
     setPhoneQuery('');
     setDateQuery('');
+    setStudioFilter('all');
+    setNeedsPhotoOnly(false);
   };
 
   const info = STAGE_INFO[fixedStage];
@@ -196,7 +205,7 @@ export default function CollectionsTab({
   return (
     <div className="space-y-5">
       {/* Search bar */}
-      <div className="bg-[#F8FAFA] border border-[#1B2D3C]/10 rounded-xl p-3">
+      <div className="bg-[#F8FAFA] border border-[#1B2D3C]/10 rounded-xl p-3 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#1B2D3C]/40" />
@@ -225,10 +234,62 @@ export default function CollectionsTab({
             className="w-full px-3 py-2 text-xs font-semibold text-[#1B2D3C] bg-white border border-[#1B2D3C]/15 rounded-lg focus:outline-none focus:border-[#1B2D3C]/40"
           />
         </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Studio filter */}
+          <div className="flex rounded-lg border border-[#1B2D3C]/15 overflow-hidden">
+            {(['all', 'Putney', 'Wimbledon'] as const).map(s => (
+              <button
+                key={s}
+                onClick={() => setStudioFilter(s)}
+                className={`px-2.5 py-1.5 text-[10px] font-bold transition-all cursor-pointer ${
+                  studioFilter === s ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'
+                }`}
+              >
+                {s === 'all' ? 'All Studios' : s}
+              </button>
+            ))}
+          </div>
+
+          {/* Needs photo toggle (painted only) */}
+          {fixedStage === 'painted' && (
+            <button
+              onClick={() => setNeedsPhotoOnly(v => !v)}
+              className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg border transition-all cursor-pointer ${
+                needsPhotoOnly
+                  ? 'bg-amber-100 text-amber-800 border-amber-300'
+                  : 'bg-white text-[#1B2D3C]/50 border-[#1B2D3C]/15 hover:text-[#1B2D3C]'
+              }`}
+            >
+              <AlertCircle className="w-3 h-3" /> Needs photo
+            </button>
+          )}
+
+          {/* Sort toggle */}
+          <div className="flex rounded-lg border border-[#1B2D3C]/15 overflow-hidden ml-auto">
+            <button
+              onClick={() => setSortOrder('newest')}
+              className={`px-2.5 py-1.5 text-[10px] font-bold transition-all cursor-pointer ${
+                sortOrder === 'newest' ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'
+              }`}
+            >
+              Newest
+            </button>
+            <button
+              onClick={() => setSortOrder('oldest')}
+              className={`px-2.5 py-1.5 text-[10px] font-bold transition-all cursor-pointer ${
+                sortOrder === 'oldest' ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'
+              }`}
+            >
+              Oldest
+            </button>
+          </div>
+        </div>
+
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 hover:text-[#1B2D3C] cursor-pointer"
+            className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 hover:text-[#1B2D3C] cursor-pointer"
           >
             <X className="w-3 h-3" /> Clear filters
           </button>
