@@ -23,6 +23,7 @@ import EmailLogsTab from './admin/EmailLogsTab';
 import EmailTemplatesTab from './admin/EmailTemplatesTab';
 import WebmasterTab from './admin/WebmasterTab';
 import CollectionsTab, { CollectionStage } from './admin/CollectionsTab';
+import DashboardSummary from './admin/DashboardSummary';
 import { SESSION_LABELS as SESSION_LABELS_UTIL, SESSION_BADGE as SESSION_BADGE_UTIL, ROLE_LABEL, AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL, AUDIT_ACTION_COLOR, formatAuditDetails as formatAuditDetailsUtil, getBookingAnalytics as getBookingAnalyticsUtil, getGiftCardAnalytics as getGiftCardAnalyticsUtil, exportBookingsCSV as exportBookingsCSVUtil, exportGiftCardsCSV as exportGiftCardsCSVUtil, BACKUP_TABLE_OPTIONS } from './admin/adminUtils';
 import 'react-day-picker/dist/style.css';
 
@@ -2365,58 +2366,18 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         )}
 
         {!loading && activeTab === 'dashboard' && (
-          <>
-          <DashboardOverview
+          <DashboardSummary
             bookings={inquiries}
-            onAssignTable={(bookingId, tableId) => {
-              const booking = inquiries.find(i => i.id === bookingId);
-              if (!booking) return;
-              const updated = { ...booking, tableId: tableId ?? undefined };
-              updateBooking(updated, staff).then(() => {
-                setInquiries(inquiries.map(i => i.id === bookingId ? updated : i));
-                showToast(tableId ? `Table ${tableId} assigned` : 'Table unassigned', 'success');
-              }).catch(() => showToast('Failed to update table', 'error'));
-            }}
-            onConfirm={(bookingId) => updateStatus(bookingId, 'confirmed')}
-            onBulkConfirm={async (ids) => {
-              let confirmed = 0;
-              let failed = 0;
-              for (const id of ids) {
-                const booking = inquiries.find(i => i.id === id);
-                if (!booking) continue;
-                if (tablePlanEnabled && !booking.tableId) {
-                  const assigned = await autoAssignTable(booking, true);
-                  if (!assigned) { failed++; continue; }
-                }
-                try {
-                  await updateBookingStatus(id, 'confirmed', staff);
-                  setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: 'confirmed' } : i));
-                  confirmed++;
-                } catch { failed++; }
-              }
-              if (confirmed > 0) showToast(`${confirmed} booking${confirmed !== 1 ? 's' : ''} confirmed`, 'success');
-              if (failed > 0) showToast(`${failed} could not be confirmed — studio may be full`, 'error');
-            }}
-            onNavigateToBookings={(date) => {
-              if (date) setDateRange({ start: date, end: date });
-              setActiveTab('bookings');
-            }}
-            onNavigateToAddBooking={(opts) => {
-              setNewBooking(prev => ({
-                ...prev,
-                date: opts?.date ?? prev.date,
-                sessionType: (opts?.sessionType as BookingInquiry['sessionType']) ?? prev.sessionType,
-              }));
-              setLockedSessionType(opts?.sessionType ?? null);
-              setShowAddModal(true);
-            }}
-            onUpdateStatus={(id, status) => updateStatus(id, status)}
-            onEditBooking={(booking) => handleEditBooking(booking)}
-            onAddWalkIn={() => setShowGhostModal(true)}
-            canUpdateStatus={canUpdateStatus}
-            canAddWalkIn={canAddWalkIn}
+            giftCards={giftCards}
+            isSuperAdmin={isSuperAdmin}
+            staffAllowedStudios={staffAllowedStudios}
+            onNavigateToBookings={() => setActiveTab('bookings')}
+            onNavigateToPainted={() => setActiveTab('painted')}
+            onNavigateToReady={() => setActiveTab('ready')}
+            onNavigateToCollected={() => setActiveTab('collected')}
+            onNavigateToAddBooking={() => setShowAddModal(true)}
           />
-          </>)}
+        )}
 
 
         {activeTab === 'gift-cards' && (
@@ -2587,6 +2548,56 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
         {activeTab === 'bookings' && (
           <>
+        <DashboardOverview
+          bookings={inquiries}
+          onAssignTable={(bookingId, tableId) => {
+            const booking = inquiries.find(i => i.id === bookingId);
+            if (!booking) return;
+            const updated = { ...booking, tableId: tableId ?? undefined };
+            updateBooking(updated, staff).then(() => {
+              setInquiries(inquiries.map(i => i.id === bookingId ? updated : i));
+              showToast(tableId ? `Table ${tableId} assigned` : 'Table unassigned', 'success');
+            }).catch(() => showToast('Failed to update table', 'error'));
+          }}
+          onConfirm={(bookingId) => updateStatus(bookingId, 'confirmed')}
+          onBulkConfirm={async (ids) => {
+            let confirmed = 0;
+            let failed = 0;
+            for (const id of ids) {
+              const booking = inquiries.find(i => i.id === id);
+              if (!booking) continue;
+              if (tablePlanEnabled && !booking.tableId) {
+                const assigned = await autoAssignTable(booking, true);
+                if (!assigned) { failed++; continue; }
+              }
+              try {
+                await updateBookingStatus(id, 'confirmed', staff);
+                setInquiries(prev => prev.map(i => i.id === id ? { ...i, status: 'confirmed' } : i));
+                confirmed++;
+              } catch { failed++; }
+            }
+            if (confirmed > 0) showToast(`${confirmed} booking${confirmed !== 1 ? 's' : ''} confirmed`, 'success');
+            if (failed > 0) showToast(`${failed} could not be confirmed — studio may be full`, 'error');
+          }}
+          onNavigateToBookings={(date) => {
+            if (date) setDateRange({ start: date, end: date });
+          }}
+          onNavigateToAddBooking={(opts) => {
+            setNewBooking(prev => ({
+              ...prev,
+              date: opts?.date ?? prev.date,
+              sessionType: (opts?.sessionType as BookingInquiry['sessionType']) ?? prev.sessionType,
+            }));
+            setLockedSessionType(opts?.sessionType ?? null);
+            setShowAddModal(true);
+          }}
+          onUpdateStatus={(id, status) => updateStatus(id, status)}
+          onEditBooking={(booking) => handleEditBooking(booking)}
+          onAddWalkIn={() => setShowGhostModal(true)}
+          canUpdateStatus={canUpdateStatus}
+          canAddWalkIn={canAddWalkIn}
+        />
+
         {/* Booking type tabs */}
         <div className="flex gap-2 mb-5 mt-8">
           {([

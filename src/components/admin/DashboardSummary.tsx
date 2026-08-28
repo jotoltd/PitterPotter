@@ -1,0 +1,291 @@
+import { useMemo } from 'react';
+import { format, parseISO, isToday, isFuture } from 'date-fns';
+import { Calendar, Users, Clock, Package, Check, Camera, Gift, TrendingUp, ChevronRight, MapPin } from 'lucide-react';
+import { BookingInquiry, GiftCard } from '../../types';
+import { resolveStage, CollectionStage } from './CollectionsTab';
+
+interface DashboardSummaryProps {
+  bookings: BookingInquiry[];
+  giftCards: GiftCard[];
+  isSuperAdmin: boolean;
+  staffAllowedStudios: ('Putney' | 'Wimbledon')[] | null;
+  onNavigateToBookings: () => void;
+  onNavigateToPainted: () => void;
+  onNavigateToReady: () => void;
+  onNavigateToCollected: () => void;
+  onNavigateToAddBooking: () => void;
+}
+
+const STAGE_LABEL: Record<CollectionStage, string> = {
+  painted: 'Painted',
+  ready: 'Ready to Collect',
+  collected: 'Collected',
+};
+
+const STAGE_BADGE: Record<CollectionStage, string> = {
+  painted: 'bg-amber-100 text-amber-800',
+  ready: 'bg-blue-100 text-blue-800',
+  collected: 'bg-emerald-100 text-emerald-800',
+};
+
+export default function DashboardSummary({
+  bookings,
+  giftCards,
+  isSuperAdmin,
+  staffAllowedStudios,
+  onNavigateToBookings,
+  onNavigateToPainted,
+  onNavigateToReady,
+  onNavigateToCollected,
+  onNavigateToAddBooking,
+}: DashboardSummaryProps) {
+  const scopedBookings = useMemo(() => {
+    if (!staffAllowedStudios || staffAllowedStudios.length === 0) return bookings;
+    return bookings.filter(b => staffAllowedStudios.includes(b.studio as 'Putney' | 'Wimbledon'));
+  }, [bookings, staffAllowedStudios]);
+
+  const scopedGiftCards = useMemo(() => {
+    if (isSuperAdmin) return giftCards;
+    return [];
+  }, [giftCards, isSuperAdmin]);
+
+  const stats = useMemo(() => {
+    const active = scopedBookings.filter(b => b.status !== 'cancelled' && b.status !== 'no_show');
+    const todayBookings = active.filter(b => {
+      try { return isToday(parseISO(b.date)); } catch { return false; }
+    });
+    const upcoming = active.filter(b => {
+      try { return isFuture(parseISO(b.date)) && !isToday(parseISO(b.date)); } catch { return false; }
+    });
+    const pending = active.filter(b => b.status === 'pending');
+    const confirmed = active.filter(b => b.status === 'confirmed');
+
+    const collectionCounts = { painted: 0, ready: 0, collected: 0 } as Record<CollectionStage, number>;
+    for (const b of active) collectionCounts[resolveStage(b)]++;
+
+    const totalPainters = active.reduce((sum, b) => sum + b.paintersCount, 0);
+    const todayPainters = todayBookings.reduce((sum, b) => sum + b.paintersCount, 0);
+
+    return {
+      total: active.length,
+      today: todayBookings.length,
+      todayPainters,
+      upcoming: upcoming.length,
+      pending: pending.length,
+      confirmed: confirmed.length,
+      totalPainters,
+      collection: collectionCounts,
+    };
+  }, [scopedBookings]);
+
+  const giftCardStats = useMemo(() => {
+    if (!isSuperAdmin) return null;
+    return {
+      total: scopedGiftCards.length,
+      active: scopedGiftCards.filter(c => c.status === 'active').length,
+      totalValue: scopedGiftCards.reduce((sum, c) => sum + c.amount, 0),
+      remainingValue: scopedGiftCards.reduce((sum, c) => sum + c.balance, 0),
+    };
+  }, [scopedGiftCards, isSuperAdmin]);
+
+  const studioLabel = staffAllowedStudios && staffAllowedStudios.length > 0
+    ? staffAllowedStudios.join(' + ')
+    : 'All Studios';
+
+  const todayBookings = useMemo(() => {
+    return scopedBookings
+      .filter(b => b.status !== 'cancelled' && b.status !== 'no_show')
+      .filter(b => { try { return isToday(parseISO(b.date)); } catch { return false; } })
+      .sort((a, b) => a.time.localeCompare(b.time));
+  }, [scopedBookings]);
+
+  const upcomingBookings = useMemo(() => {
+    return scopedBookings
+      .filter(b => b.status !== 'cancelled' && b.status !== 'no_show')
+      .filter(b => { try { return isFuture(parseISO(b.date)) && !isToday(parseISO(b.date)); } catch { return false; } })
+      .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
+      .slice(0, 5);
+  }, [scopedBookings]);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Dashboard Summary</h2>
+          <p className="text-xs text-[#1B2D3C]/60 mt-1 flex items-center gap-1">
+            <MapPin className="w-3 h-3" /> {studioLabel}
+          </p>
+        </div>
+        <button
+          onClick={onNavigateToAddBooking}
+          className="flex items-center gap-1.5 px-3 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] transition-all cursor-pointer"
+        >
+          + Add Booking
+        </button>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <StatCard label="Today" value={stats.today} sub={`${stats.todayPainters} painters`} icon={<Calendar className="w-4 h-4" />} onClick={onNavigateToBookings} />
+        <StatCard label="Upcoming" value={stats.upcoming} sub="future bookings" icon={<Clock className="w-4 h-4" />} onClick={onNavigateToBookings} />
+        <StatCard label="Awaiting" value={stats.pending} sub="needs confirmation" icon={<Users className="w-4 h-4" />} onClick={onNavigateToBookings} highlight={stats.pending > 0} />
+        <StatCard label="Confirmed" value={stats.confirmed} sub="ready to go" icon={<Check className="w-4 h-4" />} onClick={onNavigateToBookings} />
+      </div>
+
+      {/* Collection summary */}
+      <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-4">
+        <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider mb-3">Collections</h3>
+        <div className="grid grid-cols-3 gap-3">
+          <CollectionStat label="Painted" count={stats.collection.painted} badgeClass={STAGE_BADGE.painted} icon={<Camera className="w-4 h-4" />} onClick={onNavigateToPainted} />
+          <CollectionStat label="Ready to Collect" count={stats.collection.ready} badgeClass={STAGE_BADGE.ready} icon={<Package className="w-4 h-4" />} onClick={onNavigateToReady} />
+          <CollectionStat label="Collected" count={stats.collection.collected} badgeClass={STAGE_BADGE.collected} icon={<Check className="w-4 h-4" />} onClick={onNavigateToCollected} />
+        </div>
+      </div>
+
+      {/* Today's bookings */}
+      <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">Today's Bookings</h3>
+          <button onClick={onNavigateToBookings} className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 hover:text-[#1B2D3C] cursor-pointer flex items-center gap-0.5">
+            View all <ChevronRight className="w-3 h-3" />
+          </button>
+        </div>
+        {todayBookings.length === 0 ? (
+          <p className="text-xs text-[#1B2D3C]/40 font-semibold py-4 text-center">No bookings today</p>
+        ) : (
+          <div className="space-y-2">
+            {todayBookings.map(b => (
+              <BookingLine key={b.id} booking={b} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Upcoming bookings */}
+      <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">Upcoming</h3>
+          <button onClick={onNavigateToBookings} className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 hover:text-[#1B2D3C] cursor-pointer flex items-center gap-0.5">
+            View all <ChevronRight className="w-3 h-3" />
+          </button>
+        </div>
+        {upcomingBookings.length === 0 ? (
+          <p className="text-xs text-[#1B2D3C]/40 font-semibold py-4 text-center">No upcoming bookings</p>
+        ) : (
+          <div className="space-y-2">
+            {upcomingBookings.map(b => (
+              <BookingLine key={b.id} booking={b} showDate />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Gift card summary (super admin only) */}
+      {giftCardStats && (
+        <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5">
+              <Gift className="w-4 h-4" /> Gift Vouchers
+            </h3>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">
+              <TrendingUp className="w-3 h-3 inline mr-0.5" />
+              £{giftCardStats.totalValue.toFixed(0)} sold
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <MiniStat label="Total" value={giftCardStats.total} />
+            <MiniStat label="Active" value={giftCardStats.active} />
+            <MiniStat label="Remaining" value={`£${giftCardStats.remainingValue.toFixed(0)}`} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatCard({ label, value, sub, icon, onClick, highlight }: {
+  label: string;
+  value: number | string;
+  sub: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  highlight?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`text-left p-4 rounded-xl border transition-all hover:shadow-md cursor-pointer ${
+        highlight ? 'bg-amber-50 border-amber-200' : 'bg-white border-[#1B2D3C]/15'
+      }`}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/60">{label}</span>
+        <span className="text-[#1B2D3C]/30">{icon}</span>
+      </div>
+      <p className="text-2xl font-black text-[#1B2D3C]">{value}</p>
+      <p className="text-[10px] font-semibold text-[#1B2D3C]/40 mt-0.5">{sub}</p>
+    </button>
+  );
+}
+
+function CollectionStat({ label, count, badgeClass, icon, onClick }: {
+  label: string;
+  count: number;
+  badgeClass: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="text-left p-3 rounded-lg border border-[#1B2D3C]/10 hover:border-[#1B2D3C]/30 transition-all hover:shadow-sm cursor-pointer"
+    >
+      <div className="flex items-center gap-1.5 mb-1">
+        <span className={`px-1.5 py-0.5 ${badgeClass} text-[9px] font-black rounded uppercase tracking-wider`}>{label}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-[#1B2D3C]/30">{icon}</span>
+        <p className="text-xl font-black text-[#1B2D3C]">{count}</p>
+      </div>
+    </button>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="bg-[#D6E2E9]/30 p-2.5 rounded-lg">
+      <p className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C]/60">{label}</p>
+      <p className="text-lg font-black text-[#1B2D3C]">{value}</p>
+    </div>
+  );
+}
+
+function BookingLine({ booking, showDate }: { booking: BookingInquiry; showDate?: boolean }) {
+  return (
+    <div className="flex items-center gap-3 py-1.5">
+      <div className="flex items-center gap-1.5 shrink-0">
+        <Clock className="w-3 h-3 text-[#1B2D3C]/40" />
+        <span className="text-xs font-bold text-[#1B2D3C]">{booking.time}</span>
+      </div>
+      {showDate && (
+        <span className="text-[10px] font-semibold text-[#1B2D3C]/50 shrink-0">
+          {booking.date ? format(parseISO(booking.date), 'dd MMM') : '—'}
+        </span>
+      )}
+      <span className="text-xs font-black text-[#1B2D3C] truncate flex-1">{booking.name}</span>
+      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-[#D6E2E9] text-[#1B2D3C] rounded-full text-[10px] font-black shrink-0">
+        <Users className="w-2.5 h-2.5" />{booking.paintersCount}
+      </span>
+      <span className={`px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full shrink-0 ${
+        booking.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800'
+        : booking.status === 'cancelled' ? 'bg-red-100 text-red-700'
+        : booking.status === 'seated' ? 'bg-amber-100 text-amber-800'
+        : booking.status === 'completed' ? 'bg-teal-100 text-teal-800'
+        : 'bg-amber-100 text-amber-800'
+      }`}>
+        {booking.status === 'confirmed' ? 'Confirmed' : booking.status === 'cancelled' ? 'Cancelled' : booking.status === 'seated' ? 'Seated' : booking.status === 'completed' ? 'Complete' : 'Awaiting'}
+      </span>
+    </div>
+  );
+}
