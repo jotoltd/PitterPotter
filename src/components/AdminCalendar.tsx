@@ -65,8 +65,6 @@ export default function AdminCalendar({
             <span className="flex items-center gap-1 text-[10px] font-bold text-[#1B2D3C]/60"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />Painting</span>
             <span className="flex items-center gap-1 text-[10px] font-bold text-[#1B2D3C]/60"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block" />Baby Prints</span>
             <span className="flex items-center gap-1 text-[10px] font-bold text-[#1B2D3C]/60"><span className="w-2 h-2 rounded-full bg-purple-500 inline-block" />Party</span>
-            <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700"><span className="w-2 h-2 rounded-full bg-amber-200 inline-block" />Busy (15+)</span>
-            <span className="flex items-center gap-1 text-[10px] font-bold text-red-600"><span className="w-2 h-2 rounded-full bg-red-200 inline-block" />Near Full (30+)</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -110,16 +108,13 @@ export default function AdminCalendar({
           const today = isToday(day);
           const dateKey = format(day, 'yyyy-MM-dd');
           const types = bookingsByDate[dateKey];
-          const isNearFull = types && types.painters >= 30;
-          const isBusy = types && types.painters >= 15 && types.painters < 30;
-
           return (
             <button
               key={day.toISOString()}
               onClick={() => onSelectDate(day)}
               className={`
                 min-h-[3.5rem] p-1.5 text-left border-r border-b border-[#1B2D3C]/5 transition-colors relative
-                ${!inMonth ? 'opacity-40 bg-[#F8FAFB]' : isNearFull ? 'bg-red-50' : isBusy ? 'bg-amber-50' : 'bg-white'}
+                ${!inMonth ? 'opacity-40 bg-[#F8FAFB]' : 'bg-white'}
                 ${selected ? 'bg-[#DBE7E4]/60' : ''}
                 ${today && !selected ? 'bg-[#D6E2E9]/20' : ''}
                 hover:bg-[#F8FAFB]
@@ -137,7 +132,7 @@ export default function AdminCalendar({
                   {types.babyPrints && <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />}
                   {types.party && <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
                   {types.painters > 0 && (
-                    <span className={`text-[8px] font-black ml-0.5 ${isNearFull ? 'text-red-600' : isBusy ? 'text-amber-700' : 'text-[#1B2D3C]/40'}`}>
+                    <span className="text-[8px] font-black ml-0.5 text-[#1B2D3C]/40">
                       {types.painters}
                     </span>
                   )}
