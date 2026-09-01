@@ -132,6 +132,9 @@ async function sendReadyEmail(
   const manageUrl = booking.management_token
     ? `${siteUrl}/manage-booking?token=${booking.management_token}`
     : '';
+  const qrCodeUrl = manageUrl
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=8&data=${encodeURIComponent(manageUrl)}`
+    : '';
 
   const subject = `Your pottery is ready to collect — ${studioName}`;
 
@@ -143,6 +146,7 @@ async function sendReadyEmail(
     date: formattedDate,
     sessionType: SESSION_LABELS[booking.session_type] || booking.session_type,
     manageUrl,
+    qrCodeUrl,
   };
 
   const tpl = await loadEmailTemplate('collection_ready');
@@ -175,16 +179,18 @@ async function sendReadyEmail(
       </div>
 
       <div style="background:#FEF3C7;border-radius:12px;padding:20px;margin:0 0 24px;border:1px solid #FDE68A;">
-        <p style="font-size:14px;line-height:1.6;margin:0;color:#92400E;">
-          <strong style="font-size:12px;text-transform:uppercase;letter-spacing:1px;">Please note</strong><br/>
-          Please bring your booking reference <strong>${booking.booking_id}</strong> when collecting. Our opening hours may vary, so please check our website or call ahead before visiting.
+        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#92400E;">
+          <strong style="font-size:12px;text-transform:uppercase;letter-spacing:1px;">Please note</strong>
         </p>
+        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#92400E;">Please collect within <strong>6 WEEKS</strong>, after this period your item(s) may be donated to charity.</p>
+        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#92400E;">Please also bring your own bag if you can.</p>
+        <p style="font-size:14px;line-height:1.6;margin:0;color:#92400E;">Closed on Mondays except school holidays.</p>
       </div>
 
       ${manageUrl ? `
       <div style="background:#FFFFFF;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px;border:1px solid #D6E2E9;">
-        <p style="font-size:14px;color:#1B2D3C;margin:0 0 12px;font-weight:600;">Need to check your booking details?</p>
-        <a href="${manageUrl}" style="display:inline-block;padding:12px 32px;background:#DBE7E4;color:#1B2D3C;text-decoration:none;font-weight:700;border-radius:8px;font-size:14px;font-family:'DM Sans','Outfit','Inter',sans-serif;border:1px solid #1B2D3C;">View your booking</a>
+        <img src="${qrCodeUrl}" alt="Booking QR code" width="160" height="160" style="display:block;margin:0 auto 12px;width:160px;height:160px;border-radius:8px;" />
+        <p style="font-size:12px;color:#1B2D3C;opacity:0.6;margin:0;font-weight:600;">Scan on arrival</p>
       </div>
       ` : ''}
 
