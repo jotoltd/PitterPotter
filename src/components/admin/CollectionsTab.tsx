@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Search, Camera, Users, Clock, MapPin, Check, Package, Phone, X, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle, CheckSquare, Square } from 'lucide-react';
+import { Search, Camera, Users, Clock, MapPin, Check, Package, Phone, X, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle, CheckSquare, Square, Plus } from 'lucide-react';
 import { BookingInquiry } from '../../types';
 import Skeleton from '../Skeleton';
 import ImageModal from '../ImageModal';
+import { compressImage } from '../../lib/imageCompression';
 
 export type CollectionStage = 'painted' | 'ready' | 'collected';
 export type CollectionStageOrNull = CollectionStage | null;
@@ -20,6 +21,7 @@ interface CollectionsTabProps {
   onSetPhotoTag?: (booking: BookingInquiry, photoIndex: number, tag: string) => void;
   onAddPhotoTag?: (booking: BookingInquiry, photoIndex: number, label: string, status: string, x: number, y: number) => void;
   onRemovePhotoTag?: (booking: BookingInquiry, photoIndex: number, tagIndex: number) => void;
+  onCreateProfile?: (data: { name: string; phone: string; date: string; studio: string; photos: string[] }) => Promise<BookingInquiry>;
 }
 
 const STAGE_INFO: Record<CollectionStage, { label: string; empty: string; accent: string; badge: string }> = {
@@ -291,6 +293,7 @@ export default function CollectionsTab({
   onSetPhotoTag,
   onAddPhotoTag,
   onRemovePhotoTag,
+  onCreateProfile,
 }: CollectionsTabProps) {
   const [nameQuery, setNameQuery] = useState('');
   const [phoneQuery, setPhoneQuery] = useState('');
@@ -302,6 +305,13 @@ export default function CollectionsTab({
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
+  const [showAddProfile, setShowAddProfile] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
+  const [profileDate, setProfileDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [profileStudio, setProfileStudio] = useState<'Putney' | 'Wimbledon'>('Putney');
+  const [profilePhotos, setProfilePhotos] = useState<string[]>([]);
+  const [profileSaving, setProfileSaving] = useState(false);
 
   const eligible = useMemo(
     () => bookings.filter(b => b.status === 'completed'),
@@ -409,6 +419,16 @@ export default function CollectionsTab({
               }`}
             >
               <AlertCircle className="w-3 h-3" /> Needs photo
+            </button>
+          )}
+
+          {/* Add Profile button (painted/ready only) */}
+          {canUpdate && onCreateProfile && (fixedStage === 'painted' || fixedStage === 'ready') && (
+            <button
+              onClick={() => setShowAddProfile(true)}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-[#1B2D3C] text-white hover:bg-[#1B2D3C]/90 transition-all cursor-pointer"
+            >
+              <Plus className="w-3 h-3" /> Add Profile
             </button>
           )}
 
@@ -631,6 +651,130 @@ export default function CollectionsTab({
           initialIndex={modalIndex}
           onClose={() => setModalImages(null)}
         />
+      )}
+
+      {showAddProfile && onCreateProfile && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 sm:p-6">
+          <div className="bg-white p-6 border border-[#1B2D3C]/20 max-w-md w-full space-y-4 shadow-lg max-h-[90vh] overflow-y-auto sm:rounded-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-xl font-black text-[#1B2D3C]">Add to {info.label}</h3>
+              <button onClick={() => { setShowAddProfile(false); setProfilePhotos([]); }} className="p-1.5 rounded-full hover:bg-[#D6E2E9] transition-colors cursor-pointer">
+                <X className="w-5 h-5 text-[#1B2D3C]/60" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Name *</label>
+                <input
+                  type="text"
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  placeholder="Customer name"
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={profilePhone}
+                  onChange={(e) => setProfilePhone(e.target.value)}
+                  placeholder="Phone number"
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Date of Painting *</label>
+                  <input
+                    type="date"
+                    value={profileDate}
+                    onChange={(e) => setProfileDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Studio</label>
+                  <select
+                    value={profileStudio}
+                    onChange={(e) => setProfileStudio(e.target.value as 'Putney' | 'Wimbledon')}
+                    className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                  >
+                    <option value="Putney">Putney</option>
+                    <option value="Wimbledon">Wimbledon</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Photos</label>
+                {profilePhotos.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    {profilePhotos.map((url, i) => (
+                      <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/15">
+                        <img src={url} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => setProfilePhotos(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <label className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-[#DBE7E4] text-[#1B2D3C] hover:bg-[#D6E2E9] cursor-pointer transition-colors">
+                  <Camera className="w-3 h-3" /> {profilePhotos.length > 0 ? 'Add More' : 'Upload Photos'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={async (e) => {
+                      const files = e.target.files;
+                      if (!files || files.length === 0) return;
+                      const compressed = await Promise.all(Array.from(files).map(f => compressImage(f)));
+                      setProfilePhotos(prev => [...prev, ...compressed]);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowAddProfile(false); setProfilePhotos([]); setProfileName(''); setProfilePhone(''); }}
+                className="flex-1 px-4 py-2 bg-white text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={!profileName.trim() || profileSaving}
+                onClick={async () => {
+                  if (!profileName.trim()) return;
+                  setProfileSaving(true);
+                  try {
+                    await onCreateProfile({
+                      name: profileName.trim(),
+                      phone: profilePhone.trim(),
+                      date: profileDate,
+                      studio: profileStudio,
+                      photos: profilePhotos,
+                    });
+                    setShowAddProfile(false);
+                    setProfileName('');
+                    setProfilePhone('');
+                    setProfilePhotos([]);
+                  } finally {
+                    setProfileSaving(false);
+                  }
+                }}
+                className="flex-1 px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-wait rounded-lg"
+              >
+                {profileSaving ? 'Saving...' : 'Add Profile'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

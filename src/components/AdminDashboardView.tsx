@@ -1458,6 +1458,54 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     document.body.removeChild(link);
   };
 
+  const handleCreateProfile = async (data: { name: string; phone: string; date: string; studio: string; photos: string[] }, stage: 'painted' | 'ready'): Promise<BookingInquiry> => {
+    const bookingId = crypto.randomUUID();
+    const uploadedPhotos: string[] = [];
+    for (let i = 0; i < data.photos.length; i++) {
+      const dataUrl = data.photos[i];
+      saveToCameraRoll(dataUrl, `profile_${data.name}_${i + 1}.jpg`);
+      if (isSupabaseEnabled() && staff?.sessionToken) {
+        try {
+          const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ action: 'upload', username: staff.username, sessionToken: staff.sessionToken, key: `booking_${bookingId}_photo_${Date.now()}_${i}`, page: 'booking-photos', fileData: dataUrl, fileName: `profile_${data.name}_${i + 1}.jpg` }),
+          });
+          const uploadData = await uploadRes.json();
+          if (uploadRes.ok && uploadData.url) {
+            uploadedPhotos.push(uploadData.url);
+          } else {
+            uploadedPhotos.push(dataUrl);
+          }
+        } catch {
+          uploadedPhotos.push(dataUrl);
+        }
+      } else {
+        uploadedPhotos.push(dataUrl);
+      }
+    }
+    const booking: BookingInquiry = {
+      id: bookingId,
+      studio: data.studio as 'Putney' | 'Wimbledon',
+      name: data.name,
+      email: '',
+      phone: data.phone,
+      date: data.date,
+      time: '10:00',
+      paintersCount: 1,
+      sessionType: 'painting',
+      status: 'completed',
+      collectionStatus: stage,
+      photos: uploadedPhotos,
+      requestDate: new Date().toISOString(),
+      source: 'walk-in',
+    };
+    await createBooking(booking, staff);
+    setInquiries(prev => [booking, ...prev]);
+    showToast(`Profile added to ${stage === 'painted' ? 'Painted' : 'Ready to Collect'}`, 'success');
+    return booking;
+  };
+
   const exportToCSV = () => {
     const headers = ['ID', 'Name', 'Email', 'Phone', 'Studio', 'Date', 'Time', 'Seats', 'Session Type', 'Status', 'Request Date'];
     const csvContent = [
@@ -4925,6 +4973,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           uploadingId={collectionUploadingId}
           onAddPhotoTag={handleAddPhotoTag}
           onRemovePhotoTag={handleRemovePhotoTag}
+          onCreateProfile={(data) => handleCreateProfile(data, 'painted')}
         />
       )}
 
@@ -4940,6 +4989,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           uploadingId={collectionUploadingId}
           onAddPhotoTag={handleAddPhotoTag}
           onRemovePhotoTag={handleRemovePhotoTag}
+          onCreateProfile={(data) => handleCreateProfile(data, 'ready')}
         />
       )}
 
