@@ -1,7 +1,7 @@
 import { BookingInquiry, Staff } from '../types';
 import { supabase, isSupabaseEnabled } from './supabase';
 
-const DEFAULT_MAX_PAINTERS: Record<'Putney' | 'Wimbledon', number> = { Putney: 32, Wimbledon: 65 };
+const DEFAULT_MAX_PAINTERS: Record<'Putney' | 'Wimbledon', number> = { Putney: 32, Wimbledon: 58 };
 
 const functionUrl = (name: string) => `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${name}`;
 

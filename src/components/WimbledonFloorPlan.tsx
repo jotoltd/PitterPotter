@@ -53,7 +53,7 @@ const CHAIR_R = 9;
 const CHAIR_GAP = 5;
 const BLOCKED_STORAGE_KEY = 'pitter_potter_blocked_tables';
 
-const PARTY_CAPACITY = 16;
+const PARTY_CAPACITY = 26;
 
 const STATUS_FILL: Record<TableStatus, string> = {
   free: '#FFFFFF',
@@ -98,6 +98,15 @@ function saveBlockedTables(blocked: BlockedTable[]) {
   localStorage.setItem(BLOCKED_STORAGE_KEY, JSON.stringify(blocked));
 }
 
+function parseTimeToMinutes(time: string): number {
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + (m || 0);
+}
+
+function overlapsTwoHours(timeA: string, timeB: string): boolean {
+  return Math.abs(parseTimeToMinutes(timeA) - parseTimeToMinutes(timeB)) < 120;
+}
+
 export function findAvailableTable(
   bookings: BookingInquiry[],
   blockedTables: BlockedTable[],
@@ -111,7 +120,7 @@ export function findAvailableTable(
     : allTables.filter(t => !t.area?.startsWith('party'));
   const blockedIds = new Set(blockedTables.filter(b => b.date === date).map(b => b.tableId));
   const assignedIds = new Set(
-    bookings.filter(b => b.date === date && b.time === time && b.tableId)
+    bookings.filter(b => b.date === date && b.time && overlapsTwoHours(b.time, time) && b.tableId)
       .flatMap(b => b.tableId!.split(',').map(t => t.trim()))
   );
   for (const t of candidates) {
@@ -135,7 +144,7 @@ export function findMultipleTables(
     : allTables.filter(t => !t.area?.startsWith('party'));
   const blockedIds = new Set(blockedTables.filter(b => b.date === date).map(b => b.tableId));
   const assignedIds = new Set(
-    bookings.filter(b => b.date === date && b.time === time && b.tableId)
+    bookings.filter(b => b.date === date && b.time && overlapsTwoHours(b.time, time) && b.tableId)
       .flatMap(b => b.tableId!.split(',').map(t => t.trim()))
   );
   const available = candidates.filter(t => {
@@ -270,20 +279,24 @@ function TableShape({
 
 const TABLES: PositionedTable[] = [
   // ── LEFT COLUMN ──────────────────────────────────────────────
-  { id: 1, size: 'small', chairs: ['top', 'bottom'], area: 'main', label: 'T1',  x: 40,  y: 60  },
-  { id: 2, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom', 'right'], area: 'main', label: 'T2',  x: 40,  y: 165 },
-  { id: 3, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom', 'right'], area: 'main', label: 'T3',  x: 40,  y: 270 },
-  { id: 4, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom', 'right'], area: 'main', label: 'T4',  x: 40,  y: 370 },
+  // 6 large tables (4/5 people, 4 chairs each)
+  { id: 1, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T1',  x: 40,  y: 60  },
+  { id: 2, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T2',  x: 40,  y: 165 },
+  { id: 3, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T3',  x: 40,  y: 270 },
+  { id: 4, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T4',  x: 40,  y: 375 },
 
   // ── RIGHT COLUMN ─────────────────────────────────────────────
-  { id: 5,  size: 'small', chairs: ['top', 'right', 'bottom'], area: 'main', label: 'T5',  x: 310, y: 60  },
-  { id: 6,  size: 'small', chairs: ['left', 'right'], area: 'main', label: 'T6',  x: 310, y: 155 },
-  { id: 7,  size: 'small', chairs: ['left', 'right'], area: 'main', label: 'T7',  x: 310, y: 240 },
-  { id: 8,  size: 'small', chairs: ['left', 'left', 'right', 'right'], area: 'main', label: 'T8',  x: 310, y: 325 },
-  { id: 9,  size: 'small', chairs: ['left', 'left', 'right', 'right'], area: 'main', label: 'T9',  x: 310, y: 430 },
-  { id: 10, size: 'small', chairs: ['left', 'right', 'bottom'], area: 'main', label: 'T10', x: 310, y: 525 },
+  // 2 more large tables (4 chairs each) = 6 total large
+  { id: 5,  size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T5',  x: 310, y: 60  },
+  { id: 6,  size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T6',  x: 310, y: 165 },
+  // 4 small tables (2/3 people, 2 chairs each)
+  { id: 7,  size: 'small', chairs: ['left', 'right'], area: 'main', label: 'T7',  x: 310, y: 270 },
+  { id: 8,  size: 'small', chairs: ['left', 'right'], area: 'main', label: 'T8',  x: 310, y: 340 },
+  { id: 9,  size: 'small', chairs: ['top', 'bottom'], area: 'main', label: 'T9',  x: 310, y: 410 },
+  { id: 10, size: 'small', chairs: ['top', 'bottom'], area: 'main', label: 'T10', x: 310, y: 480 },
 ];
 
+// Back area: 5 large tables (4 chairs) + 2 small tables (3 chairs) = 26 seats
 const PARTY_1_TABLES: PositionedTable[] = [
   { id: 11, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party1', label: 'T11', x: 40,  y: 680 },
   { id: 12, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party1', label: 'T12', x: 155, y: 680 },
@@ -292,12 +305,12 @@ const PARTY_1_TABLES: PositionedTable[] = [
 const PARTY_2_TABLES: PositionedTable[] = [
   { id: 15, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party2', label: 'T15', x: 40,  y: 900 },
   { id: 16, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party2', label: 'T16', x: 155, y: 900 },
-  { id: 17, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party2', label: 'T17', x: 310, y: 980 },
+  { id: 17, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party2', label: 'T17', x: 270, y: 900 },
 ];
 
 const RIGHT_LOWER_TABLES: PositionedTable[] = [
-  { id: 13, size: 'small', chairs: ['left', 'right'], area: 'right-lower', label: 'T13', x: 310, y: 680 },
-  { id: 14, size: 'small', chairs: ['left', 'right', 'bottom'], area: 'right-lower', label: 'T14', x: 310, y: 775 },
+  { id: 13, size: 'small', chairs: ['left', 'right', 'top'], area: 'right-lower', label: 'T13', x: 370, y: 900 },
+  { id: 14, size: 'small', chairs: ['left', 'right', 'top'], area: 'right-lower', label: 'T14', x: 370, y: 990 },
 ];
 
 export default function WimbledonFloorPlan({
@@ -357,7 +370,7 @@ export default function WimbledonFloorPlan({
     if (blockedIdsForDate.has(tableId)) return 'blocked';
     const list = bookingsByTable.get(tableId) || [];
     if (list.length === 0) return 'free';
-    if (selectedTime && list.some(b => b.time === selectedTime)) return 'full';
+    if (selectedTime && list.some(b => b.time && overlapsTwoHours(b.time, selectedTime))) return 'full';
     return 'partial';
   };
 
@@ -400,7 +413,7 @@ export default function WimbledonFloorPlan({
   const bookingColourMap = useMemo(() => {
     const map = new Map<string, string>();
     const relevantBookings = bookings.filter(
-      b => b.date === selectedDate && b.studio === 'Wimbledon' && (!selectedTime || b.time === selectedTime)
+      b => b.date === selectedDate && b.studio === 'Wimbledon' && (!selectedTime || (b.time && overlapsTwoHours(b.time, selectedTime)))
     );
     relevantBookings.forEach((b, i) => { map.set(b.id, getBookingColour(i)); });
     return map;
@@ -408,7 +421,7 @@ export default function WimbledonFloorPlan({
 
   const bookingLegend = useMemo(() => {
     return bookings
-      .filter(b => b.date === selectedDate && b.studio === 'Wimbledon' && (!selectedTime || b.time === selectedTime))
+      .filter(b => b.date === selectedDate && b.studio === 'Wimbledon' && (!selectedTime || (b.time && overlapsTwoHours(b.time, selectedTime))))
       .map((b, i) => ({ name: b.name, painters: b.paintersCount, colour: getBookingColour(i), time: b.time }));
   }, [bookings, selectedDate, selectedTime]);
 
@@ -421,7 +434,7 @@ export default function WimbledonFloorPlan({
     const chairColours: (string | null)[] = Array(totalSeats).fill(null);
     let seatIdx = 0;
     const relevantBookings = selectedTime
-      ? bookingsForTable.filter(b => b.time === selectedTime)
+      ? bookingsForTable.filter(b => b.time && overlapsTwoHours(b.time, selectedTime))
       : bookingsForTable;
     for (const b of relevantBookings) {
       const colour = bookingColourMap.get(b.id) ?? '#1B2D3C';

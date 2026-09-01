@@ -15,9 +15,11 @@ export const PARTY_SESSION_TYPES = ['birthday-party', 'baby-shower-hen', 'corpor
 
 export type StudioName = 'Putney' | 'Wimbledon';
 
-export const DEFAULT_OPEN_CAPACITY: Record<StudioName, number> = { Putney: 32, Wimbledon: 65 };
-export const DEFAULT_OPEN_RESTRICTED_CAPACITY: Record<StudioName, number> = { Putney: 15, Wimbledon: 21 };
-export const DEFAULT_PARTY_CAPACITY: Record<StudioName, number> = { Putney: 20, Wimbledon: 40 };
+export const DEFAULT_MAX_BOOKINGS: Record<StudioName, number> = { Putney: 99, Wimbledon: 17 };
+export const DEFAULT_RESTRICTED_MAX_BOOKINGS: Record<StudioName, number> = { Putney: 99, Wimbledon: 10 };
+export const DEFAULT_OPEN_CAPACITY: Record<StudioName, number> = { Putney: 32, Wimbledon: 58 };
+export const DEFAULT_OPEN_RESTRICTED_CAPACITY: Record<StudioName, number> = { Putney: 15, Wimbledon: 32 };
+export const DEFAULT_PARTY_CAPACITY: Record<StudioName, number> = { Putney: 20, Wimbledon: 26 };
 
 // deno-lint-ignore no-explicit-any
 type SupabaseClient = any;
@@ -27,6 +29,8 @@ export interface CapacityResult {
   max: number;
   booked: number;
   hasPartyBooking: boolean;
+  remainingBookings: number;
+  maxBookings: number;
   conflict?: 'party_session_exists';
 }
 
@@ -34,6 +38,16 @@ interface BookingRow {
   painters_count?: number;
   session_type?: string;
   booking_id?: string;
+  time?: string;
+}
+
+function parseTimeToMinutes(time: string): number {
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + (m || 0);
+}
+
+function overlapsTwoHours(timeA: string, timeB: string): boolean {
+  return Math.abs(parseTimeToMinutes(timeA) - parseTimeToMinutes(timeB)) < 120;
 }
 
 export async function computeCapacity(
@@ -44,19 +58,20 @@ export async function computeCapacity(
   sessionType: string | undefined,
   excludeBookingId?: string,
 ): Promise<CapacityResult> {
+  // Query all bookings for the date+studio, then filter by 2-hour window overlap
   const { data, error } = await supabase
     .from('bookings')
-    .select('painters_count, session_type, booking_id')
+    .select('painters_count, session_type, booking_id, time')
     .eq('studio', studio)
     .eq('date', date)
-    .eq('time', time)
     .in('status', ['pending', 'confirmed']);
 
   if (error) throw error;
 
-  const rows: BookingRow[] = (data || []).filter(
-    (r: BookingRow) => !excludeBookingId || r.booking_id !== excludeBookingId
-  );
+  const rows: BookingRow[] = (data || [])
+    .filter((r: BookingRow) => !excludeBookingId || r.booking_id !== excludeBookingId)
+    .filter((r: BookingRow) => r.time != null && overlapsTwoHours(r.time, time));
+
   const incomingIsParty = sessionType ? PARTY_SESSION_TYPES.includes(sessionType) : false;
   const partyRows = rows.filter((r) => PARTY_SESSION_TYPES.includes(r.session_type ?? ''));
   const openRows = rows.filter((r) => !PARTY_SESSION_TYPES.includes(r.session_type ?? ''));
@@ -64,7 +79,7 @@ export async function computeCapacity(
 
   // Only one party can use the back area per time slot
   if (incomingIsParty && hasPartyBooking) {
-    return { remaining: 0, max: 0, booked: 0, hasPartyBooking: true, conflict: 'party_session_exists' };
+    return { remaining: 0, max: 0, booked: 0, hasPartyBooking: true, remainingBookings: 0, maxBookings: 0, conflict: 'party_session_exists' };
   }
 
   const { data: capacityRows } = await supabase
@@ -83,11 +98,14 @@ export async function computeCapacity(
 
   if (incomingIsParty) {
     const booked = partyRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
-    return { remaining: partyMax - booked, max: partyMax, booked, hasPartyBooking };
+    return { remaining: partyMax - booked, max: partyMax, booked, hasPartyBooking, remainingBookings: 0, maxBookings: 0 };
   }
 
   // Open/painting bookings: front-only capacity if a party occupies the back area
   const max = hasPartyBooking ? openRestrictedMax : openFullMax;
   const booked = openRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
-  return { remaining: max - booked, max, booked, hasPartyBooking };
+  const maxBookings = hasPartyBooking ? DEFAULT_RESTRICTED_MAX_BOOKINGS[studio] : DEFAULT_MAX_BOOKINGS[studio];
+  const remainingSeats = Math.max(0, max - booked);
+  const remainingBookings = Math.max(0, maxBookings - openRows.length);
+  return { remaining: remainingSeats, max, booked, hasPartyBooking, remainingBookings, maxBookings };
 }

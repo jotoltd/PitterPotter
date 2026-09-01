@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BookingInquiry } from '../types';
 
+function parseTimeToMinutes(time: string): number {
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + (m || 0);
+}
+
+function overlapsTwoHours(timeA: string, timeB: string): boolean {
+  return Math.abs(parseTimeToMinutes(timeA) - parseTimeToMinutes(timeB)) < 120;
+}
+
 type TableSize = 'small' | 'large';
 type ChairSide = 'top' | 'bottom' | 'left' | 'right';
 type TableStatus = 'free' | 'partial' | 'full' | 'blocked' | 'selected';
@@ -85,7 +94,7 @@ export function findAvailablePutneyTable(
   const allTables = [...MAIN_TABLES, ...PARTY_TABLES];
   const blockedIds = new Set(blockedTables.filter(b => b.date === date).map(b => b.tableId));
   const assignedIds = new Set(
-    bookings.filter(b => b.date === date && b.time === time && b.tableId)
+    bookings.filter(b => b.date === date && b.time && overlapsTwoHours(b.time, time) && b.tableId)
       .flatMap(b => b.tableId!.split(',').map(t => t.trim()))
   );
   for (const t of allTables) {
@@ -106,7 +115,7 @@ export function findMultiplePutneyTables(
   const allTables = partyOnly ? PARTY_TABLES : [...MAIN_TABLES, ...PARTY_TABLES];
   const blockedIds = new Set(blockedTables.filter(b => b.date === date).map(b => b.tableId));
   const assignedIds = new Set(
-    bookings.filter(b => b.date === date && b.time === time && b.tableId)
+    bookings.filter(b => b.date === date && b.time && overlapsTwoHours(b.time, time) && b.tableId)
       .flatMap(b => b.tableId!.split(',').map(t => t.trim()))
   );
   const available = allTables.filter(t => {
@@ -272,7 +281,7 @@ export default function PutneyFloorPlan({
     if (blockedIdsForDate.has(tableId)) return 'blocked';
     const list = bookingsByTable.get(tableId) || [];
     if (list.length === 0) return 'free';
-    if (selectedTime && list.some(b => b.time === selectedTime)) return 'full';
+    if (selectedTime && list.some(b => b.time && overlapsTwoHours(b.time, selectedTime))) return 'full';
     return 'partial';
   };
 
@@ -309,14 +318,14 @@ export default function PutneyFloorPlan({
   const bookingColourMap = useMemo(() => {
     const map = new Map<string, string>();
     bookings
-      .filter(b => b.date === selectedDate && b.studio === 'Putney' && (!selectedTime || b.time === selectedTime))
+      .filter(b => b.date === selectedDate && b.studio === 'Putney' && (!selectedTime || (b.time && overlapsTwoHours(b.time, selectedTime))))
       .forEach((b, i) => { map.set(b.id, getBookingColour(i)); });
     return map;
   }, [bookings, selectedDate, selectedTime]);
 
   const bookingLegend = useMemo(() => {
     return bookings
-      .filter(b => b.date === selectedDate && b.studio === 'Putney' && (!selectedTime || b.time === selectedTime))
+      .filter(b => b.date === selectedDate && b.studio === 'Putney' && (!selectedTime || (b.time && overlapsTwoHours(b.time, selectedTime))))
       .map((b, i) => ({ name: b.name, painters: b.paintersCount, colour: getBookingColour(i), time: b.time }));
   }, [bookings, selectedDate, selectedTime]);
 
@@ -329,7 +338,7 @@ export default function PutneyFloorPlan({
     const chairColours: (string | null)[] = Array(totalSeats).fill(null);
     let seatIdx = 0;
     const relevantBookings = selectedTime
-      ? bookingsForTable.filter(b => b.time === selectedTime)
+      ? bookingsForTable.filter(b => b.time && overlapsTwoHours(b.time, selectedTime))
       : bookingsForTable;
     for (const b of relevantBookings) {
       const colour = bookingColourMap.get(b.id) ?? '#1B2D3C';

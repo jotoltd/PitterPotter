@@ -159,6 +159,12 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+      if (capacity.remainingBookings <= 0) {
+        return new Response(JSON.stringify({ error: `Maximum number of bookings (${capacity.maxBookings}) reached for this time slot.` }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       const { error: updateError } = await supabase
         .from('bookings')
