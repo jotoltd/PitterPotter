@@ -153,7 +153,7 @@ function BookingCard({
               {tagMode ? '✓ Tag Mode ON — tap photo to tag' : 'Tag Mode'}
             </button>
           )}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {photos.map((url, i) => {
               const tags = photoTags[i] || [];
               return (
