@@ -122,13 +122,22 @@ Deno.serve(async (req) => {
     const isSuperAdmin = staff.role === 'super_admin';
 
     if (action === 'load') {
-      let query = supabase.from('bookings').select('*').order('created_at', { ascending: false });
-      if (!isSuperAdmin && staff.allowed_studios && staff.allowed_studios.length > 0) {
-        query = query.in('studio', staff.allowed_studios);
+      const allData: Record<string, unknown>[] = [];
+      const PAGE_SIZE = 1000;
+      let offset = 0;
+      while (true) {
+        let query = supabase.from('bookings').select('*').order('created_at', { ascending: false }).range(offset, offset + PAGE_SIZE - 1);
+        if (!isSuperAdmin && staff.allowed_studios && staff.allowed_studios.length > 0) {
+          query = query.in('studio', staff.allowed_studios);
+        }
+        const { data, error } = await query;
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allData.push(...data);
+        if (data.length < PAGE_SIZE) break;
+        offset += PAGE_SIZE;
       }
-      const { data, error } = await query;
-      if (error) throw error;
-      return new Response(JSON.stringify((data || []).map(toBookingInquiry)), {
+      return new Response(JSON.stringify(allData.map(toBookingInquiry)), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
