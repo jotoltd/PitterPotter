@@ -138,7 +138,9 @@ struct GhostBookingView: View {
             stripePaymentIntentId: nil,
             managementToken: nil,
             createdAt: nil,
-            photos: nil
+            photos: nil,
+            collectionStatus: nil,
+            photoTags: nil
         )
 
         let success = await bookingsVM.createWalkIn(booking, staff: staff)

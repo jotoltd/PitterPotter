@@ -156,7 +156,9 @@ class BookingsViewModel: ObservableObject {
                     paymentLinkSentAt: booking.paymentLinkSentAt, paymentStatus: booking.paymentStatus,
                     stripePaymentIntentId: booking.stripePaymentIntentId,
                     managementToken: booking.managementToken, createdAt: booking.createdAt,
-                    photos: booking.photos
+                    photos: booking.photos,
+                    collectionStatus: booking.collectionStatus,
+                    photoTags: booking.photoTags
                 )
             }
             Haptics.light()
@@ -270,6 +272,14 @@ class BookingsViewModel: ObservableObject {
 
     // MARK: - Optimistic Updates
 
+    func updateBookingLocally(_ booking: Booking) {
+        if let idx = bookings.firstIndex(where: { $0.id == booking.id }) {
+            bookings[idx] = booking
+        } else {
+            bookings.insert(booking, at: 0)
+        }
+    }
+
     func optimisticUpdateStatus(booking: Booking, status: BookingStatus, staff: Staff) async {
         guard let idx = bookings.firstIndex(where: { $0.id == booking.id }) else { return }
         let original = bookings[idx]
@@ -287,7 +297,9 @@ class BookingsViewModel: ObservableObject {
             paymentLinkSentAt: booking.paymentLinkSentAt, paymentStatus: booking.paymentStatus,
             stripePaymentIntentId: booking.stripePaymentIntentId,
             managementToken: booking.managementToken, createdAt: booking.createdAt,
-            photos: booking.photos
+            photos: booking.photos,
+            collectionStatus: booking.collectionStatus,
+            photoTags: booking.photoTags
         )
         Haptics.light()
 
@@ -366,7 +378,9 @@ class BookingsViewModel: ObservableObject {
             paymentLinkSentAt: booking.paymentLinkSentAt, paymentStatus: booking.paymentStatus,
             stripePaymentIntentId: booking.stripePaymentIntentId,
             managementToken: booking.managementToken, createdAt: booking.createdAt,
-            photos: photos
+            photos: photos,
+            collectionStatus: booking.collectionStatus,
+            photoTags: booking.photoTags
         )
         await saveBooking(updated, staff: staff)
     }
@@ -389,7 +403,9 @@ class BookingsViewModel: ObservableObject {
             paymentLinkSentAt: booking.paymentLinkSentAt, paymentStatus: booking.paymentStatus,
             stripePaymentIntentId: booking.stripePaymentIntentId,
             managementToken: booking.managementToken, createdAt: booking.createdAt,
-            photos: photos.isEmpty ? nil : photos
+            photos: photos.isEmpty ? nil : photos,
+            collectionStatus: booking.collectionStatus,
+            photoTags: booking.photoTags
         )
         await saveBooking(updated, staff: staff)
     }

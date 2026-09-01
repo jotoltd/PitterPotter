@@ -137,6 +137,8 @@ struct Booking: Codable, Identifiable, Hashable {
     var managementToken: String?
     var createdAt: String?
     var photos: [String]?
+    var collectionStatus: String?
+    var photoTags: [String: [PhotoTag]]?
 
     var bookingStatus: BookingStatus? {
         BookingStatus(rawValue: status)
@@ -148,5 +150,35 @@ struct Booking: Codable, Identifiable, Hashable {
 
     var studioEnum: Studio? {
         Studio(rawValue: studio)
+    }
+}
+
+// MARK: - Photo Tag
+
+struct PhotoTag: Codable, Identifiable, Hashable {
+    var id: String
+    var label: String
+    var status: String
+    var x: Double
+    var y: Double
+
+    enum CodingKeys: String, CodingKey {
+        case id, label, status, x, y
+    }
+}
+
+// MARK: - Collection Stage
+
+enum CollectionStage: String, CaseIterable {
+    case painted
+    case ready
+    case collected
+
+    var label: String {
+        switch self {
+        case .painted: return "Painted"
+        case .ready: return "Ready to Collect"
+        case .collected: return "Collected"
+        }
     }
 }

@@ -1024,6 +1024,136 @@ actor APIClient {
         let result = try JSONDecoder().decode(UploadResponse.self, from: data)
         return result.url
     }
+
+    // MARK: - Collection Status
+
+    func updateCollectionStatus(bookingId: String, status: String, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.bookingsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "update",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "booking": [
+                "id": bookingId,
+                "collectionStatus": status,
+            ],
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+    }
+
+    func sendCollectionReady(bookingId: String, staff: Staff) async throws {
+        let endpoint = "\(APIConfig.supabaseURL)/functions/v1/send-collection-ready"
+        var request = URLRequest(url: URL(string: endpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = ["bookingId": bookingId]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+    }
+
+    // MARK: - SMS Admin
+
+    func loadSmsBalance(staff: Staff) async throws -> (balance: String, currency: String) {
+        let endpoint = "\(APIConfig.supabaseURL)/functions/v1/sms-admin"
+        var request = URLRequest(url: URL(string: endpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "balance",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        let result = try JSONDecoder().decode(SmsBalanceResponse.self, from: data)
+        return (result.balance, result.currency)
+    }
+
+    func loadSmsUsage(staff: Staff) async throws -> SmsUsageData {
+        let endpoint = "\(APIConfig.supabaseURL)/functions/v1/sms-admin"
+        var request = URLRequest(url: URL(string: endpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "usage",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        return try JSONDecoder().decode(SmsUsageData.self, from: data)
+    }
+
+    func loadSmsTemplates(staff: Staff) async throws -> [SmsTemplate] {
+        let endpoint = "\(APIConfig.supabaseURL)/functions/v1/sms-admin"
+        var request = URLRequest(url: URL(string: endpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "templates",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        let result = try JSONDecoder().decode(SmsTemplatesResponse.self, from: data)
+        return result.templates ?? []
+    }
+
+    func updateSmsTemplate(templateKey: String, body text: String, staff: Staff) async throws {
+        let endpoint = "\(APIConfig.supabaseURL)/functions/v1/sms-admin"
+        var request = URLRequest(url: URL(string: endpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "update_template",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "templateKey": templateKey,
+            "body": text,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+    }
 }
 
 // MARK: - Helpers
@@ -1331,6 +1461,53 @@ struct SampleDataStatus: Codable {
         case sampleBookings = "sample_bookings"
         case sampleGiftCards = "sample_gift_cards"
     }
+}
+
+// MARK: - SMS Models
+
+struct SmsBalanceResponse: Codable {
+    let balance: String
+    let currency: String
+}
+
+struct SmsUsageData: Codable {
+    let count: Int
+    let totalCost: String
+    let currency: String
+    let recent: [SmsUsageEntry]?
+}
+
+struct SmsUsageEntry: Codable, Identifiable {
+    var id: String { "\(to)-\(dateSent ?? "")" }
+    let to: String
+    let body: String
+    let status: String
+    let direction: String
+    let dateSent: String?
+    let price: String?
+    let errorCode: Int?
+    let errorMessage: String?
+}
+
+struct SmsTemplate: Codable, Identifiable {
+    let id: String
+    let templateKey: String
+    let name: String
+    let body: String
+    let availableVariables: [String]?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case templateKey = "template_key"
+        case name, body
+        case availableVariables = "available_variables"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct SmsTemplatesResponse: Codable {
+    let templates: [SmsTemplate]?
 }
 
 // MARK: - Errors

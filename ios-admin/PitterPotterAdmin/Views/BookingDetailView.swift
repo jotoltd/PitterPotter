@@ -661,7 +661,9 @@ struct EditBookingView: View {
                                 paymentLinkSentAt: editingBooking.paymentLinkSentAt, paymentStatus: editingBooking.paymentStatus,
                                 stripePaymentIntentId: editingBooking.stripePaymentIntentId,
                                 managementToken: editingBooking.managementToken, createdAt: editingBooking.createdAt,
-                                photos: editingBooking.photos
+                                photos: editingBooking.photos,
+                                collectionStatus: editingBooking.collectionStatus,
+                                photoTags: editingBooking.photoTags
                             )
                         }
                     }

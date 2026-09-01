@@ -181,7 +181,9 @@ struct PartyBookingView: View {
             stripePaymentIntentId: nil,
             managementToken: nil,
             createdAt: ISO8601DateFormatter().string(from: Date()),
-            photos: nil
+            photos: nil,
+            collectionStatus: nil,
+            photoTags: nil
         )
 
         Task {

@@ -19,6 +19,12 @@ struct MainTabView: View {
                 .badge(bookingsVM.bookings.filter { $0.status == "pending" }.count)
                 .environmentObject(bookingsVM)
 
+            CollectionsView()
+                .tabItem {
+                    Label("Collections", systemImage: "tray.full")
+                }
+                .environmentObject(bookingsVM)
+
             CalendarView()
                 .tabItem {
                     Label("Calendar", systemImage: "calendar")
@@ -43,14 +49,29 @@ struct MainTabView: View {
                         Label("Gift Cards", systemImage: "giftcard")
                     }
 
+                SMSAdminView()
+                    .tabItem {
+                        Label("SMS", systemImage: "message")
+                    }
+
                 EmailLogsView()
                     .tabItem {
                         Label("Emails", systemImage: "envelope")
                     }
 
+                EmailTemplatesView()
+                    .tabItem {
+                        Label("Templates", systemImage: "doc.text")
+                    }
+
                 AuditLogView()
                     .tabItem {
                         Label("Audit", systemImage: "doc.text.magnifyingglass")
+                    }
+
+                WebmasterView()
+                    .tabItem {
+                        Label("Webmaster", systemImage: "server.rack")
                     }
 
                 AdminSettingsView()

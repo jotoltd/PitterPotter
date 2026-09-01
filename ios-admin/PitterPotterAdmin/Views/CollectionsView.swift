@@ -1,0 +1,547 @@
+import SwiftUI
+import PhotosUI
+
+struct CollectionsView: View {
+    @EnvironmentObject var authVM: AuthViewModel
+    @EnvironmentObject var bookingsVM: BookingsViewModel
+    @State private var selectedStage: CollectionStage = .painted
+    @State private var searchText = ""
+    @State private var selectedStudio: Studio? = nil
+    @State private var selectedBooking: Booking?
+    @State private var showCamera = false
+    @State private var isUploading = false
+    @State private var showAddProfile = false
+
+    var filteredBookings: [Booking] {
+        bookingsVM.bookings.filter { b in
+            guard b.status == "completed" else { return false }
+            guard b.collectionStatus == selectedStage.rawValue else { return false }
+            if let studio = selectedStudio, b.studio != studio.rawValue { return false }
+            if !searchText.isEmpty {
+                let q = searchText.lowercased()
+                if !b.name.lowercased().contains(q) && !(b.phone ?? "").contains(q) { return false }
+            }
+            return true
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                stagePicker
+                searchBar
+
+                if filteredBookings.isEmpty {
+                    EmptyStateView(
+                        icon: "tray",
+                        title: "Nothing \(selectedStage.label.lowercased()) yet",
+                        subtitle: "Bookings will appear here when moved to this stage"
+                    )
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                            ForEach(filteredBookings) { booking in
+                                CollectionCard(booking: booking, onTap: { selectedBooking = booking })
+                            }
+                        }
+                        .padding(16)
+                    }
+                }
+            }
+            .navigationTitle("Collections")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showAddProfile = true
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundStyle(PPBrand.charcoal)
+                    }
+                }
+            }
+            .sheet(item: $selectedBooking) { booking in
+                CollectionDetailSheet(booking: booking, stage: selectedStage)
+                    .environmentObject(authVM)
+                    .environmentObject(bookingsVM)
+            }
+            .sheet(isPresented: $showCamera) {
+                CameraPicker { imageData in
+                    uploadPhoto(data: imageData, bookingId: selectedBooking?.id ?? "")
+                }
+            }
+            .sheet(isPresented: $showAddProfile) {
+                AddProfileSheet(stage: selectedStage)
+                    .environmentObject(authVM)
+                    .environmentObject(bookingsVM)
+            }
+        }
+    }
+
+    private var stagePicker: some View {
+        HStack(spacing: 0) {
+            ForEach(CollectionStage.allCases, id: \.self) { stage in
+                Button {
+                    selectedStage = stage
+                } label: {
+                    Text(stage.label)
+                        .font(PPBrand.bodyFontSmall.bold())
+                        .foregroundStyle(selectedStage == stage ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.5))
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity)
+                        .background(selectedStage == stage ? PPBrand.sage : Color.clear)
+                }
+            }
+        }
+        .background(PPBrand.clay100.opacity(0.3))
+        .overlay(
+            Rectangle().fill(PPBrand.charcoal.opacity(0.1)).frame(height: 1),
+            alignment: .bottom
+        )
+    }
+
+    private var searchBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+            TextField("Search name or phone", text: $searchText)
+                .font(PPBrand.bodyFontSmall)
+            if !searchText.isEmpty {
+                Button { searchText = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.3))
+                }
+            }
+            Divider().frame(height: 16)
+            Picker("Studio", selection: $selectedStudio) {
+                Text("All").tag(Studio?.none)
+                ForEach(Studio.allCases, id: \.self) { s in
+                    Text(s.rawValue).tag(Studio?.some(s))
+                }
+            }
+            .pickerStyle(.menu)
+            .font(PPBrand.bodyFontCaption)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(PPBrand.clay100.opacity(0.3))
+    }
+
+    private func uploadPhoto(data: Data, bookingId: String) {
+        guard let staff = authVM.staff, !bookingId.isEmpty else { return }
+        isUploading = true
+        Task {
+            do {
+                let url = try await APIClient.shared.uploadPhoto(
+                    imageData: data,
+                    fileName: "photo_\(Int(Date().timeIntervalSince1970)).jpg",
+                    bookingId: bookingId,
+                    staff: staff
+                )
+                var photos = bookingsVM.bookings.first(where: { $0.id == bookingId })?.photos ?? []
+                photos.append(url)
+                var updated = bookingsVM.bookings.first(where: { $0.id == bookingId })!
+                updated.photos = photos
+                try await APIClient.shared.updateBooking(updated, staff: staff)
+                await MainActor.run {
+                    bookingsVM.updateBookingLocally(updated)
+                    isUploading = false
+                }
+            } catch {
+                await MainActor.run { isUploading = false }
+            }
+        }
+    }
+}
+
+// MARK: - Collection Card
+
+struct CollectionCard: View {
+    let booking: Booking
+    let onTap: () -> Void
+
+    var photoCount: Int { booking.photos?.count ?? 0 }
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 8) {
+                if let photos = booking.photos, !photos.isEmpty, let url = URL(string: photos[0]) {
+                    AsyncImage(url: url) { image in
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Rectangle().fill(PPBrand.clay100).overlay(ProgressView())
+                    }
+                    .frame(height: 140)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                } else {
+                    Rectangle()
+                        .fill(PPBrand.clay100.opacity(0.5))
+                        .frame(height: 140)
+                        .overlay(
+                            VStack(spacing: 6) {
+                                Image(systemName: "camera")
+                                    .font(.title2)
+                                    .foregroundStyle(PPBrand.charcoal.opacity(0.3))
+                                Text("No photos")
+                                    .font(PPBrand.bodyFontCaption)
+                                    .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                            }
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(booking.name)
+                        .font(PPBrand.bodyFontSmall.bold())
+                        .foregroundStyle(PPBrand.charcoal)
+                        .lineLimit(1)
+
+                    HStack(spacing: 6) {
+                        Label(booking.time, systemImage: "clock")
+                            .font(PPBrand.bodyFontCaption)
+                        Label("\(booking.paintersCount)", systemImage: "person.2")
+                            .font(PPBrand.bodyFontCaption)
+                        Label(booking.studio, systemImage: "mappin")
+                            .font(PPBrand.bodyFontCaption)
+                    }
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.6))
+
+                    if photoCount > 0 {
+                        HStack(spacing: 4) {
+                            Image(systemName: "camera")
+                                .font(PPBrand.bodyFontCaption)
+                            Text("\(photoCount)")
+                                .font(PPBrand.bodyFontCaption.bold())
+                        }
+                        .foregroundStyle(PPBrand.charcoal)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(PPBrand.sage)
+                        .clipShape(Capsule())
+                    }
+
+                    if !booking.phone.isEmpty {
+                        Label(booking.phone, systemImage: "phone")
+                            .font(PPBrand.bodyFontCaption)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.bottom, 10)
+            }
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(PPBrand.charcoal.opacity(0.1), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Collection Detail Sheet
+
+struct CollectionDetailSheet: View {
+    let booking: Booking
+    let stage: CollectionStage
+    @EnvironmentObject var authVM: AuthViewModel
+    @EnvironmentObject var bookingsVM: BookingsViewModel
+    @Environment(\.dismiss) var dismiss
+    @State private var showCamera = false
+    @State private var isUploading = false
+    @State private var showMoveSheet = false
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    infoCard
+                    photosGrid
+                    actionButtons
+                }
+                .padding(16)
+            }
+            .navigationTitle(booking.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .sheet(isPresented: $showCamera) {
+                CameraPicker { data in
+                    uploadPhoto(data)
+                }
+            }
+            .confirmationDialog("Move to", isPresented: $showMoveSheet) {
+                ForEach(CollectionStage.allCases, id: \.self) { s in
+                    if s != stage {
+                        Button(s.label) { moveBooking(to: s) }
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            }
+        }
+    }
+
+    private var infoCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            infoRow("Studio", booking.studio)
+            infoRow("Date", booking.date)
+            infoRow("Time", booking.time)
+            infoRow("Painters", "\(booking.paintersCount)")
+            if !booking.phone.isEmpty { infoRow("Phone", booking.phone) }
+            if !booking.email.isEmpty { infoRow("Email", booking.email) }
+        }
+        .padding(16)
+        .background(PPBrand.sage.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func infoRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(PPBrand.bodyFontCaption.bold())
+                .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                .frame(width: 70, alignment: .leading)
+            Text(value)
+                .font(PPBrand.bodyFontSmall)
+                .foregroundStyle(PPBrand.charcoal)
+        }
+    }
+
+    private var photosGrid: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Photos")
+                    .font(PPBrand.bodyFontSmall.bold())
+                Spacer()
+                Button {
+                    showCamera = true
+                } label: {
+                    Label("Add", systemImage: "camera")
+                        .font(PPBrand.bodyFontCaption.bold())
+                }
+            }
+
+            if let photos = booking.photos, !photos.isEmpty {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                    ForEach(photos, id: \.self) { urlStr in
+                        if let url = URL(string: urlStr) {
+                            AsyncImage(url: url) { image in
+                                image.resizable().aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                Rectangle().fill(PPBrand.clay100).overlay(ProgressView())
+                            }
+                            .frame(height: 120)
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                }
+            } else {
+                Text("No photos yet")
+                    .font(PPBrand.bodyFontCaption)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+            }
+        }
+    }
+
+    private var actionButtons: some View {
+        VStack(spacing: 8) {
+            Button {
+                showMoveSheet = true
+            } label: {
+                Text("Move to different stage")
+                    .font(PPBrand.bodyFontSmall.bold())
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(PPBrand.clay100)
+                    .foregroundStyle(PPBrand.charcoal)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+
+            if stage == .ready, let staff = authVM.staff {
+                Button {
+                    Task {
+                        try? await APIClient.shared.sendCollectionReady(bookingId: booking.id, staff: staff)
+                    }
+                } label: {
+                    Text("Resend collection ready notification")
+                        .font(PPBrand.bodyFontSmall.bold())
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(PPBrand.sage)
+                        .foregroundStyle(PPBrand.charcoal)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+            }
+        }
+    }
+
+    private func uploadPhoto(_ data: Data) {
+        guard let staff = authVM.staff else { return }
+        isUploading = true
+        Task {
+            do {
+                let url = try await APIClient.shared.uploadPhoto(
+                    imageData: data,
+                    fileName: "photo_\(Int(Date().timeIntervalSince1970)).jpg",
+                    bookingId: booking.id,
+                    staff: staff
+                )
+                var photos = booking.photos ?? []
+                photos.append(url)
+                var updated = booking
+                updated.photos = photos
+                try await APIClient.shared.updateBooking(updated, staff: staff)
+                await MainActor.run {
+                    bookingsVM.updateBookingLocally(updated)
+                    isUploading = false
+                }
+            } catch {
+                await MainActor.run { isUploading = false }
+            }
+        }
+    }
+
+    private func moveBooking(to newStage: CollectionStage) {
+        guard let staff = authVM.staff else { return }
+        Task {
+            var updated = booking
+            updated.collectionStatus = newStage.rawValue
+            try? await APIClient.shared.updateBooking(updated, staff: staff)
+            await MainActor.run {
+                bookingsVM.updateBookingLocally(updated)
+                dismiss()
+            }
+        }
+    }
+}
+
+// MARK: - Add Profile Sheet
+
+struct AddProfileSheet: View {
+    let stage: CollectionStage
+    @EnvironmentObject var authVM: AuthViewModel
+    @EnvironmentObject var bookingsVM: BookingsViewModel
+    @Environment(\.dismiss) var dismiss
+    @State private var name = ""
+    @State private var phone = ""
+    @State private var date = Date()
+    @State private var studio: Studio = .Putney
+    @State private var photos: [String] = []
+    @State private var showCamera = false
+    @State private var isSaving = false
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(header: Text("Customer")) {
+                    TextField("Name *", text: $name)
+                    TextField("Phone", text: $phone)
+                        .keyboardType(.phonePad)
+                }
+                Section(header: Text("Details")) {
+                    DatePicker("Date of Painting", selection: $date, displayedComponents: .date)
+                    Picker("Studio", selection: $studio) {
+                        ForEach(Studio.allCases, id: \.self) { s in
+                            Text(s.rawValue).tag(s)
+                        }
+                    }
+                }
+                Section(header: Text("Photos")) {
+                    Button {
+                        showCamera = true
+                    } label: {
+                        Label("Add Photo", systemImage: "camera")
+                    }
+                    if !photos.isEmpty {
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                            ForEach(photos, id: \.self) { urlStr in
+                                if let url = URL(string: urlStr) {
+                                    AsyncImage(url: url) { image in
+                                        image.resizable().aspectRatio(contentMode: .fill)
+                                    } placeholder: {
+                                        Rectangle().fill(PPBrand.clay100).overlay(ProgressView())
+                                    }
+                                    .frame(height: 80)
+                                    .clipped()
+                                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Add to \(stage.label)")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Save") {
+                        saveProfile()
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                }
+            }
+            .sheet(isPresented: $showCamera) {
+                CameraPicker { data in
+                    uploadPhoto(data)
+                }
+            }
+        }
+    }
+
+    private func uploadPhoto(_ data: Data) {
+        guard let staff = authVM.staff else { return }
+        Task {
+            do {
+                let url = try await APIClient.shared.uploadPhoto(
+                    imageData: data,
+                    fileName: "profile_\(Int(Date().timeIntervalSince1970)).jpg",
+                    bookingId: "temp_\(UUID().uuidString.prefix(8))",
+                    staff: staff
+                )
+                await MainActor.run { photos.append(url) }
+            } catch {}
+        }
+    }
+
+    private func saveProfile() {
+        guard let staff = authVM.staff else { return }
+        isSaving = true
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let dateStr = formatter.string(from: date)
+
+        Task {
+            do {
+                let bookingId = UUID().uuidString
+                let booking = Booking(
+                    id: bookingId,
+                    studio: studio.rawValue,
+                    name: name.trimmingCharacters(in: .whitespaces),
+                    email: "",
+                    phone: phone.trimmingCharacters(in: .whitespaces),
+                    date: dateStr,
+                    time: "10:00",
+                    paintersCount: 1,
+                    sessionType: "painting",
+                    status: "completed",
+                    requestDate: ISO8601DateFormatter().string(from: Date()),
+                    photos: photos.isEmpty ? nil : photos,
+                    collectionStatus: stage.rawValue
+                )
+                try await APIClient.shared.createBooking(booking, staff: staff)
+                await MainActor.run {
+                    bookingsVM.bookings.insert(booking, at: 0)
+                    isSaving = false
+                    dismiss()
+                }
+            } catch {
+                await MainActor.run { isSaving = false }
+            }
+        }
+    }
+}
