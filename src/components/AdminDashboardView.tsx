@@ -152,6 +152,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [lockedSessionType, setLockedSessionType] = useState<string | null>(null);
+  const [newCollectionStage, setNewCollectionStage] = useState<'none' | 'painted' | 'ready' | 'collected'>('none');
   const defaultStudio = (staff.allowedStudios && staff.allowedStudios.length > 0 && staff.role !== 'super_admin')
     ? staff.allowedStudios[0]
     : 'Putney';
@@ -1448,6 +1449,15 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     return staffAllowedStudios.includes(booking.studio as 'Putney' | 'Wimbledon');
   };
 
+  const saveToCameraRoll = (dataUrl: string, fileName: string) => {
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = fileName || `photo_${Date.now()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const exportToCSV = () => {
     const headers = ['ID', 'Name', 'Email', 'Phone', 'Studio', 'Date', 'Time', 'Seats', 'Session Type', 'Status', 'Request Date'];
     const csvContent = [
@@ -1492,6 +1502,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       for (const file of fileArr) {
         const dataUrl = await compressImage(file);
         let imageUrl = dataUrl;
+        saveToCameraRoll(dataUrl, file.name);
         if (isSupabaseEnabled() && staff?.sessionToken) {
           const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
             method: 'POST',
@@ -1546,6 +1557,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       for (const file of fileArr) {
         const dataUrl = await compressImage(file);
         let imageUrl = dataUrl;
+        saveToCameraRoll(dataUrl, file.name);
         if (isSupabaseEnabled() && staff?.sessionToken) {
           const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
             method: 'POST',
@@ -1650,6 +1662,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       for (const file of files) {
         const dataUrl = await compressImage(file);
         let imageUrl = dataUrl;
+        saveToCameraRoll(dataUrl, file.name);
         if (isSupabaseEnabled() && staff?.sessionToken) {
           const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
             method: 'POST',
@@ -1721,11 +1734,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         return;
       }
     }
-    // Validate date is not in the past
+    // Validate date is not in the past (unless back-dating with a collection stage)
     const bookingDate = new Date(newBooking.date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    if (bookingDate < today) {
+    if (bookingDate < today && newCollectionStage === 'none') {
       showToast('Booking date cannot be in the past', 'error');
       return;
     }
@@ -1755,9 +1768,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         notes: newBooking.sessionType === 'clay-imprints'
           ? `Babies: ${newBabiesCount}, Adults: ${newAdultsCount}${newBooking.notes ? ` | ${newBooking.notes}` : ''}`
           : newBooking.notes,
-        status: 'confirmed',
+        status: newCollectionStage !== 'none' ? 'completed' : 'confirmed',
         requestDate: new Date().toISOString(),
         source: 'walk-in',
+        ...(newCollectionStage !== 'none' ? {
+          collectionStatus: newCollectionStage as 'painted' | 'ready' | 'collected',
+          ...(newCollectionStage === 'collected' ? { collectedAt: new Date().toISOString() } : {}),
+        } : {}),
         ...(isParty ? {
           depositAmount: newBookingPaymentMethod === 'paid' ? Math.max(0, Number(newBookingDepositAmount) || 0) : undefined,
           finalSeats: seats,
@@ -1772,6 +1789,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       await createBooking(booking, staff);
       setInquiries([booking, ...inquiries]);
       setShowAddModal(false);
+      setLockedSessionType(null);
+      setNewCollectionStage('none');
       setNewBooking({
         studio: defaultStudio,
         name: '',
@@ -3243,11 +3262,30 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Date *</label>
                 <input
                   type="date"
-                  min={format(new Date(), 'yyyy-MM-dd')}
+                  min={newCollectionStage === 'none' ? format(new Date(), 'yyyy-MM-dd') : undefined}
                   value={newBooking.date}
                   onChange={(e) => setNewBooking({ ...newBooking, date: e.target.value })}
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Collection Stage</label>
+                <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
+                  {(['none', 'painted', 'ready', 'collected'] as const).map((stage) => {
+                    const labels: Record<string, string> = { none: 'New Booking', painted: 'Painted', ready: 'Ready to Collect', collected: 'Collected' };
+                    return (
+                      <button key={stage} type="button"
+                        onClick={() => setNewCollectionStage(stage)}
+                        className={`flex-1 px-2 py-2 text-[9px] font-bold transition-all cursor-pointer ${
+                          newCollectionStage === stage ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
+                        }`}
+                      >{labels[stage]}</button>
+                    );
+                  })}
+                </div>
+                {newCollectionStage !== 'none' && (
+                  <p className="text-[9px] text-amber-700 font-semibold mt-1">Back-dating allowed — booking will be created as completed.</p>
+                )}
               </div>
               {lockedSessionType === 'party-group' ? (
                 <div>
@@ -3489,7 +3527,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => { setShowAddModal(false); setLockedSessionType(null); }}
+                onClick={() => { setShowAddModal(false); setLockedSessionType(null); setNewCollectionStage('none'); }}
                 className="flex-1 px-4 py-2 bg-[#FFFFFF] text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer"
               >
                 Cancel
