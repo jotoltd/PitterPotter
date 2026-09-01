@@ -117,19 +117,21 @@ class BookingsViewModel: ObservableObject {
             isOffline = false
             saveToCache()
         } catch let err as APIError {
+            isOffline = true
             if bookings.isEmpty {
                 loadFromCache()
             }
-            if isOffline {
+            if !bookings.isEmpty {
                 self.error = "You're offline. Showing cached data."
             } else {
                 self.error = err.errorDescription
             }
         } catch let err {
+            isOffline = true
             if bookings.isEmpty {
                 loadFromCache()
             }
-            if isOffline {
+            if !bookings.isEmpty {
                 self.error = "You're offline. Showing cached data."
             } else {
                 self.error = "Failed to load: \(err.localizedDescription)"
