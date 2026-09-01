@@ -3721,7 +3721,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       <img src={url} alt={`Painting ${i + 1}`} className="w-full h-full object-cover" />
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDeletePhoto(i); }}
-                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center transition-opacity cursor-pointer"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -5176,7 +5176,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                             <>
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleDrawerDeletePhoto(i); }}
-                                className="absolute top-1 right-1 z-20 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center"
+                                className="absolute top-1 right-1 z-20 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] font-bold transition-opacity cursor-pointer flex items-center justify-center"
                               >
                                 ✕
                               </button>
