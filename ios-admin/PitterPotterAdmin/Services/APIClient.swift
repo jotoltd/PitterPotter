@@ -83,9 +83,17 @@ actor APIClient {
         }
         guard http.statusCode == 200 else {
             let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
-            throw APIError.serverError(error?.error ?? "Failed to load bookings")
+            throw APIError.serverError(error?.error ?? "Failed to load bookings (status \(http.statusCode))")
         }
-        return try JSONDecoder().decode([Booking].self, from: data)
+        do {
+            return try JSONDecoder().decode([Booking].self, from: data)
+        } catch {
+            print("❌ Booking decode error: \(error)")
+            if let str = String(data: data, encoding: .utf8) {
+                print("❌ Response preview: \(str.prefix(500))")
+            }
+            throw APIError.serverError("Failed to decode bookings: \(error.localizedDescription)")
+        }
     }
 
     func updateBooking(_ booking: Booking, staff: Staff) async throws {
