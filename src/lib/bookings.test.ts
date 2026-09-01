@@ -169,8 +169,9 @@ describe('createPublicBooking', () => {
 
   it('throws when capacity is insufficient', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ remaining: 2 }),
+      ok: false,
+      status: 409,
+      json: async () => ({ error: 'Not enough capacity. Only 2 spots remaining for this slot.' }),
     } as Response);
 
     const booking: BookingInquiry = {
