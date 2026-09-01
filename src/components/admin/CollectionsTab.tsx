@@ -345,6 +345,8 @@ export default function CollectionsTab({
     setNeedsPhotoOnly(false);
   };
 
+  const isSearching = Boolean(nameQuery.trim() || phoneQuery.trim());
+
   const info = STAGE_INFO[fixedStage];
 
   return (
@@ -530,6 +532,34 @@ export default function CollectionsTab({
           <p className="text-sm text-[#1B2D3C]/60 font-semibold">
             {hasFilters ? 'No bookings match your search' : info.empty}
           </p>
+        </div>
+      ) : isSearching ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map(b => (
+            <BookingCard
+              key={b.id}
+              booking={b}
+              stage={fixedStage}
+              canUpdate={canUpdate}
+              onSetStage={onSetStage}
+              onOpenBooking={onOpenBooking}
+              onUploadPhotos={onUploadPhotos}
+              uploading={uploadingId === b.id}
+              selected={selectedIds.has(b.id)}
+              onSelect={(booking) => {
+                setSelectedIds(prev => {
+                  const next = new Set(prev);
+                  if (next.has(booking.id)) next.delete(booking.id);
+                  else next.add(booking.id);
+                  return next;
+                });
+              }}
+              onSetPhotoTag={onSetPhotoTag}
+              onAddPhotoTag={onAddPhotoTag}
+              onRemovePhotoTag={onRemovePhotoTag}
+              onOpenImage={(images, index) => { setModalImages(images); setModalIndex(index); }}
+            />
+          ))}
         </div>
       ) : (
         <div className="space-y-3">
