@@ -103,7 +103,6 @@ class BookingsViewModel: ObservableObject {
         do {
             let data = try Data(contentsOf: cacheURL)
             bookings = try JSONDecoder().decode([Booking].self, from: data)
-            isOffline = true
         } catch {
             print("Failed to load cached bookings: \(error)")
         }
@@ -327,10 +326,11 @@ class BookingsViewModel: ObservableObject {
                 return
             } catch {
                 if attempt == maxAttempts {
+                    isOffline = true
                     if bookings.isEmpty {
                         loadFromCache()
                     }
-                    if isOffline {
+                    if !bookings.isEmpty {
                         self.error = "You're offline. Showing cached data."
                     } else if let err = error as? APIError {
                         self.error = err.errorDescription
