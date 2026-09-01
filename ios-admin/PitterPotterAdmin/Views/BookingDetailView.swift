@@ -328,17 +328,17 @@ struct BookingDetailView: View {
 
     private var contactCard: some View {
         VStack(spacing: 0) {
-            if !currentBooking.email.isEmpty {
-                Link(destination: URL(string: "mailto:\(currentBooking.email)") ?? URL(string: "mailto:")!) {
-                    ContactRow(icon: "envelope", text: currentBooking.email)
+            if let email = currentBooking.email, !email.isEmpty {
+                Link(destination: URL(string: "mailto:\(email)") ?? URL(string: "mailto:")!) {
+                    ContactRow(icon: "envelope", text: email)
                 }
-                if !currentBooking.phone.isEmpty {
+                if let phone = currentBooking.phone, !phone.isEmpty {
                     Divider().padding(.leading, 40)
                 }
             }
-            if !currentBooking.phone.isEmpty {
-                Link(destination: URL(string: "tel:\(currentBooking.phone)") ?? URL(string: "tel:")!) {
-                    ContactRow(icon: "phone", text: currentBooking.phone)
+            if let phone = currentBooking.phone, !phone.isEmpty {
+                Link(destination: URL(string: "tel:\(phone)") ?? URL(string: "tel:")!) {
+                    ContactRow(icon: "phone", text: phone)
                 }
             }
         }
@@ -595,10 +595,10 @@ struct EditBookingView: View {
             Form {
                 Section("Customer") {
                     TextField("Name", text: bindingFor(\.name))
-                    TextField("Email", text: bindingFor(\.email))
+                    TextField("Email", text: bindingForOptional(\.email))
                         .textInputAutocapitalization(.never)
                         .keyboardType(.emailAddress)
-                    TextField("Phone", text: bindingFor(\.phone))
+                    TextField("Phone", text: bindingForOptional(\.phone))
                         .keyboardType(.phonePad)
                 }
 

@@ -220,8 +220,8 @@ struct CollectionCard: View {
                         .clipShape(Capsule())
                     }
 
-                    if !booking.phone.isEmpty {
-                        Label(booking.phone, systemImage: "phone")
+                    if let phone = booking.phone, !phone.isEmpty {
+                        Label(phone, systemImage: "phone")
                             .font(PPBrand.bodyFontCaption)
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
@@ -288,8 +288,8 @@ struct CollectionDetailSheet: View {
             infoRow("Date", booking.date)
             infoRow("Time", booking.time)
             infoRow("Painters", "\(booking.paintersCount)")
-            if !booking.phone.isEmpty { infoRow("Phone", booking.phone) }
-            if !booking.email.isEmpty { infoRow("Email", booking.email) }
+            if let phone = booking.phone, !phone.isEmpty { infoRow("Phone", phone) }
+            if let email = booking.email, !email.isEmpty { infoRow("Email", email) }
         }
         .padding(16)
         .background(PPBrand.sage.opacity(0.5))

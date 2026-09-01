@@ -112,15 +112,15 @@ struct Booking: Codable, Identifiable, Hashable {
     var id: String
     var studio: String
     var name: String
-    var email: String
-    var phone: String
+    var email: String?
+    var phone: String?
     var date: String
     var time: String
     var paintersCount: Int
     var sessionType: String
     var notes: String?
     var status: String
-    var requestDate: String
+    var requestDate: String?
     var estimatedPrice: Double?
     var source: String?
     var giftCardCode: String?

@@ -394,8 +394,8 @@ func bookingShareText(_ booking: Booking) -> String {
     if let phone = booking.phone as String?, !phone.isEmpty {
         lines.append("Phone: \(phone)")
     }
-    if !booking.email.isEmpty {
-        lines.append("Email: \(booking.email)")
+    if let email = booking.email, !email.isEmpty {
+        lines.append("Email: \(email)")
     }
     if let notes = booking.notes, !notes.isEmpty {
         lines.append("Notes: \(notes)")

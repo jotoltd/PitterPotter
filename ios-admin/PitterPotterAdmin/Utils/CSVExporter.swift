@@ -10,8 +10,8 @@ enum CSVExporter {
             let row = [
                 escape(b.id),
                 escape(b.name),
-                escape(b.email),
-                escape(b.phone),
+                escape(b.email ?? ""),
+                escape(b.phone ?? ""),
                 escape(b.studio),
                 escape(b.date),
                 escape(b.time),

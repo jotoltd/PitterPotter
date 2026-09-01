@@ -43,8 +43,8 @@ class BookingsViewModel: ObservableObject {
             if !searchText.isEmpty {
                 let q = searchText.lowercased()
                 if !booking.name.lowercased().contains(q)
-                    && !booking.email.lowercased().contains(q)
-                    && !booking.phone.lowercased().contains(q)
+                    && !(booking.email ?? "").lowercased().contains(q)
+                    && !(booking.phone ?? "").lowercased().contains(q)
                     && !booking.id.lowercased().contains(q) {
                     return false
                 }
