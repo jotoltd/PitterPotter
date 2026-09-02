@@ -14,10 +14,16 @@ struct CachedAsyncImage: View {
         cache.setObject(image, forKey: url as NSURL)
     }
 
+    private var displayImage: UIImage? {
+        if let image { return image }
+        guard let url else { return nil }
+        return Self.cache.object(forKey: url as NSURL)
+    }
+
     var body: some View {
         Group {
-            if let image = image {
-                Image(uiImage: image)
+            if let img = displayImage {
+                Image(uiImage: img)
                     .resizable()
                     .aspectRatio(contentMode: contentMode)
             } else {
