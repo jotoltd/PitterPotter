@@ -208,27 +208,31 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const { data: prevRow } = await supabase.from('bookings').select('collection_status, email, status').eq('booking_id', booking.id).single();
+      const { data: prevRow } = await supabase.from('bookings').select('*').eq('booking_id', booking.id).single();
       const bookingRow = toBookingRow(booking as Record<string, unknown>);
-      if (bookingRow.status === 'completed' && !prevRow?.collection_status && !bookingRow.collection_status) {
+      if (bookingRow.status === 'completed' && !prevRow?.collection_status && !bookingRow.collectionStatus) {
         bookingRow.collection_status = 'painted';
+      }
+      // Remove undefined fields so partial updates don't wipe existing data
+      for (const key of Object.keys(bookingRow)) {
+        if (bookingRow[key] === undefined) delete bookingRow[key];
       }
       const { error } = await supabase.from('bookings').update(bookingRow).eq('booking_id', booking.id);
       if (error) throw error;
       await logAudit(supabase, staff, 'update', 'booking', booking.id as string, { studio: booking.studio, date: booking.date, time: booking.time });
 
-      // Send "ready to collect" email when collection_status changes to 'ready'
+      // Send "ready to collect" notification when collection_status changes to 'ready'
       const prevStatus = prevRow?.collection_status ?? null;
       const newStatus = (booking as Record<string, unknown>).collectionStatus ?? null;
-      if (newStatus === 'ready' && prevStatus !== 'ready' && booking.email) {
+      if (newStatus === 'ready' && prevStatus !== 'ready') {
         try {
           await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-collection-ready`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': req.headers.get('Authorization') || '' },
             body: JSON.stringify({ bookingId: booking.id }),
           });
-        } catch (emailErr) {
-          console.error('Failed to send collection-ready email:', emailErr);
+        } catch (notifyErr) {
+          console.error('Failed to send collection-ready notification:', notifyErr);
         }
       }
 
