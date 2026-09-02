@@ -3,10 +3,12 @@ import SwiftUI
 enum AppTab: String, CaseIterable, Identifiable {
     case dashboard = "Dashboard"
     case bookings = "Bookings"
+    case collections = "Collections"
     case calendar = "Calendar"
     case capacity = "Capacity"
     case staff = "Staff"
     case giftCards = "Gift Cards"
+    case sms = "SMS"
     case audit = "Audit"
     case emailLogs = "Email Logs"
     case emailTemplates = "Templates"
@@ -20,10 +22,12 @@ enum AppTab: String, CaseIterable, Identifiable {
         switch self {
         case .dashboard: return "square.grid.2x2"
         case .bookings: return "list.bullet.clipboard"
+        case .collections: return "tray.full"
         case .calendar: return "calendar"
         case .capacity: return "chart.bar.xaxis"
         case .staff: return "person.2"
         case .giftCards: return "giftcard"
+        case .sms: return "message"
         case .audit: return "doc.text.magnifyingglass"
         case .emailLogs: return "envelope"
         case .emailTemplates: return "envelope.open"
@@ -35,7 +39,7 @@ enum AppTab: String, CaseIterable, Identifiable {
 
     var isSuperAdminOnly: Bool {
         switch self {
-        case .staff, .giftCards, .audit, .emailLogs, .emailTemplates, .analytics, .webmaster: return true
+        case .staff, .giftCards, .sms, .audit, .emailLogs, .emailTemplates, .analytics, .webmaster: return true
         default: return false
         }
     }
@@ -47,6 +51,8 @@ enum AppTab: String, CaseIterable, Identifiable {
             DashboardOverviewView().environmentObject(bookingsVM)
         case .bookings:
             BookingsListView().environmentObject(bookingsVM)
+        case .collections:
+            CollectionsView().environmentObject(bookingsVM)
         case .calendar:
             CalendarView().environmentObject(bookingsVM)
         case .capacity:
@@ -55,6 +61,8 @@ enum AppTab: String, CaseIterable, Identifiable {
             StaffManagementView().environmentObject(bookingsVM)
         case .giftCards:
             GiftCardView()
+        case .sms:
+            SMSAdminView()
         case .audit:
             AuditLogView()
         case .emailLogs:
