@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Search, Camera, Users, Clock, MapPin, Check, Package, Phone, X, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle, CheckSquare, Square, Plus } from 'lucide-react';
+import { Search, Camera, Users, Clock, MapPin, Check, Package, Phone, X, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle, CheckSquare, Square, Plus, QrCode } from 'lucide-react';
 import { BookingInquiry } from '../../types';
 import Skeleton from '../Skeleton';
 import ImageModal from '../ImageModal';
 import { compressImage } from '../../lib/imageCompression';
+import QRScanner from '../QRScanner';
 
 export type CollectionStage = 'painted' | 'ready' | 'collected';
 export type CollectionStageOrNull = CollectionStage | null;
@@ -312,6 +313,8 @@ export default function CollectionsTab({
   const [profileStudio, setProfileStudio] = useState<'Putney' | 'Wimbledon'>('Putney');
   const [profilePhotos, setProfilePhotos] = useState<string[]>([]);
   const [profileSaving, setProfileSaving] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanResult, setScanResult] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
 
   const eligible = useMemo(
     () => bookings.filter(b => b.status === 'completed'),
@@ -353,6 +356,46 @@ export default function CollectionsTab({
     setDateQuery('');
     setStudioFilter('all');
     setNeedsPhotoOnly(false);
+  };
+
+  const handleQRScan = (code: string) => {
+    let token: string | null = null;
+    try {
+      const url = new URL(code);
+      token = url.searchParams.get('token');
+    } catch {
+      if (code.startsWith('token=')) {
+        token = code.substring(6);
+      } else {
+        token = code;
+      }
+    }
+
+    if (!token) {
+      setScanResult({ type: 'error', message: 'Invalid QR code — no token found' });
+      return;
+    }
+
+    const booking = bookings.find(b => b.managementToken === token);
+    if (!booking) {
+      setScanResult({ type: 'error', message: 'No booking found for this QR code' });
+      return;
+    }
+
+    if (booking.status !== 'completed') {
+      setScanResult({ type: 'error', message: `${booking.name} is not completed (status: ${booking.status})` });
+      return;
+    }
+
+    const stage = resolveStage(booking);
+    if (stage === 'ready') {
+      onSetStage(booking, 'collected');
+      setScanResult({ type: 'success', message: `${booking.name} marked as collected!` });
+    } else if (stage === 'collected') {
+      setScanResult({ type: 'warning', message: `${booking.name} is already collected` });
+    } else {
+      setScanResult({ type: 'warning', message: `${booking.name} is at stage: ${stage ?? 'unknown'}. Move to Ready first.` });
+    }
   };
 
   const isSearching = Boolean(nameQuery.trim() || phoneQuery.trim());
@@ -429,6 +472,16 @@ export default function CollectionsTab({
               className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-[#1B2D3C] text-white hover:bg-[#1B2D3C]/90 transition-all cursor-pointer"
             >
               <Plus className="w-3 h-3" /> Add Profile
+            </button>
+          )}
+
+          {/* QR Scanner button */}
+          {canUpdate && (
+            <button
+              onClick={() => { setShowScanner(true); setScanResult(null); }}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-[#DBE7E4] text-[#1B2D3C] hover:bg-[#D6E2E9] transition-all cursor-pointer"
+            >
+              <QrCode className="w-3 h-3" /> Scan QR
             </button>
           )}
 
@@ -775,6 +828,33 @@ export default function CollectionsTab({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Scan result toast */}
+      {scanResult && (
+        <div
+          className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-lg shadow-lg text-xs font-bold uppercase tracking-wider cursor-pointer ${
+            scanResult.type === 'success'
+              ? 'bg-emerald-500 text-white'
+              : scanResult.type === 'warning'
+              ? 'bg-amber-500 text-white'
+              : 'bg-red-500 text-white'
+          }`}
+          onClick={() => setScanResult(null)}
+        >
+          {scanResult.message}
+        </div>
+      )}
+
+      {/* QR Scanner modal */}
+      {showScanner && (
+        <QRScanner
+          onScan={(code) => {
+            setShowScanner(false);
+            handleQRScan(code);
+          }}
+          onClose={() => setShowScanner(false)}
+        />
       )}
     </div>
   );
