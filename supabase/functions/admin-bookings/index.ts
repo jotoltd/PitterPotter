@@ -39,6 +39,7 @@ function toBookingInquiry(row: any): any {
     photoTags: row.photo_tags || undefined,
     collectionStatus: row.collection_status || undefined,
     collectedAt: row.collected_at || undefined,
+    managementToken: row.management_token || undefined,
   };
 }
 

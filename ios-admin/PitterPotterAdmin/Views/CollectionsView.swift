@@ -11,6 +11,10 @@ struct CollectionsView: View {
     @State private var showCamera = false
     @State private var isUploading = false
     @State private var showAddProfile = false
+    @State private var showScanner = false
+    @State private var scannedCode: String?
+    @State private var scanResult: String?
+    @State private var scanError: String?
 
     var filteredBookings: [Booking] {
         bookingsVM.bookings.filter { b in
@@ -97,11 +101,21 @@ struct CollectionsView: View {
             .navigationTitle("Collections")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showAddProfile = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(PPBrand.charcoal)
+                    HStack(spacing: 12) {
+                        Button {
+                            showScanner = true
+                            scanResult = nil
+                            scanError = nil
+                        } label: {
+                            Image(systemName: "qrcode.viewfinder")
+                                .foregroundStyle(PPBrand.charcoal)
+                        }
+                        Button {
+                            showAddProfile = true
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundStyle(PPBrand.charcoal)
+                        }
                     }
                 }
             }
@@ -120,11 +134,68 @@ struct CollectionsView: View {
                     .environmentObject(authVM)
                     .environmentObject(bookingsVM)
             }
+            .sheet(isPresented: $showScanner) {
+                GiftCardScannerView(scannedCode: $scannedCode)
+                    .onDisappear {
+                        if let code = scannedCode {
+                            handleScannedCode(code)
+                        }
+                    }
+            }
+            .alert("Scan Result", isPresented: .constant(scanError != nil)) {
+                Button("OK") { scanError = nil }
+            } message: {
+                Text(scanError ?? "")
+            }
         }
     }
 
     private func countForStage(_ stage: CollectionStage) -> Int {
         bookingsVM.bookings.filter { $0.status == "completed" && $0.collectionStatus == stage.rawValue }.count
+    }
+
+    private func handleScannedCode(_ code: String) {
+        scannedCode = nil
+        var token: String?
+        if let url = URL(string: code), let components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+            token = components.queryItems?.first(where: { $0.name == "token" })?.value
+        } else if code.hasPrefix("token=") {
+            token = String(code.dropFirst(6))
+        } else {
+            token = code
+        }
+
+        guard let token = token, !token.isEmpty else {
+            scanError = "Invalid QR code — no token found"
+            Haptics.error()
+            return
+        }
+
+        guard let booking = bookingsVM.bookings.first(where: { $0.managementToken == token }) else {
+            scanError = "No booking found for this QR code"
+            Haptics.error()
+            return
+        }
+
+        guard booking.status == "completed" else {
+            scanError = "Booking \(booking.name) is not completed (status: \(booking.status))"
+            Haptics.warning()
+            return
+        }
+
+        selectedBooking = booking
+        if booking.collectionStatus == CollectionStage.ready.rawValue {
+            moveToStage(booking, .collected)
+            scanResult = "\(booking.name) marked as collected!"
+            Haptics.success()
+        } else if booking.collectionStatus == CollectionStage.collected.rawValue {
+            scanError = "\(booking.name) is already collected"
+            Haptics.warning()
+        } else {
+            selectedStage = .painted
+            scanError = "\(booking.name) is at stage: \(booking.collectionStatus ?? "unknown"). Move to Ready first."
+            Haptics.warning()
+        }
     }
 
     private var stagePicker: some View {
