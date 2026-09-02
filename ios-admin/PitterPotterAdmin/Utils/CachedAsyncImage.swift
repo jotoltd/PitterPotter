@@ -10,6 +10,10 @@ struct CachedAsyncImage: View {
 
     private static let cache = NSCache<NSURL, UIImage>()
 
+    static func prefetch(url: URL, image: UIImage) {
+        cache.setObject(image, forKey: url as NSURL)
+    }
+
     var body: some View {
         Group {
             if let image = image {

@@ -200,6 +200,9 @@ struct CollectionsView: View {
                     bookingId: bookingId,
                     staff: staff
                 )
+                if let urlObj = URL(string: url), let img = UIImage(data: data) {
+                    CachedAsyncImage.prefetch(url: urlObj, image: img)
+                }
                 var photos = bookingsVM.bookings.first(where: { $0.id == bookingId })?.photos ?? []
                 photos.append(url)
                 var updated = bookingsVM.bookings.first(where: { $0.id == bookingId })!
@@ -442,6 +445,9 @@ struct CollectionDetailSheet: View {
                     bookingId: booking.id,
                     staff: staff
                 )
+                if let urlObj = URL(string: url), let img = UIImage(data: data) {
+                    CachedAsyncImage.prefetch(url: urlObj, image: img)
+                }
                 var photos = booking.photos ?? []
                 photos.append(url)
                 var updated = booking
@@ -553,6 +559,9 @@ struct AddProfileSheet: View {
                     bookingId: "temp_\(UUID().uuidString.prefix(8))",
                     staff: staff
                 )
+                if let urlObj = URL(string: url), let img = UIImage(data: data) {
+                    CachedAsyncImage.prefetch(url: urlObj, image: img)
+                }
                 await MainActor.run { photos.append(url) }
             } catch {}
         }
