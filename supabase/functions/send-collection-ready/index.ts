@@ -29,9 +29,17 @@ async function sendReadySMS(
     return { success: false, error: 'SMS service not configured' };
   }
 
+  let toNumber = booking.phone.trim();
+  if (toNumber.startsWith('07')) {
+    toNumber = '+44' + toNumber.substring(1);
+  } else if (toNumber.startsWith('7') && !toNumber.startsWith('+')) {
+    toNumber = '+44' + toNumber;
+  } else if (!toNumber.startsWith('+')) {
+    toNumber = '+' + toNumber;
+  }
+
   const studioInfo = getStudioInfo(booking.studio);
   const studioName = `Pitter Potter ${booking.studio}`;
-  const senderId = booking.studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP';
 
   let message: string;
   const smsTemplate = await loadSMSTemplate('collection_ready');
@@ -54,8 +62,8 @@ async function sendReadySMS(
   try {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
     const body = new URLSearchParams();
-    body.append('From', senderId);
-    body.append('To', booking.phone);
+    body.append('From', fromNumber);
+    body.append('To', toNumber);
     body.append('Body', message);
 
     const response = await fetch(url, {
@@ -305,9 +313,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Send email if available, otherwise SMS if phone available
+    // Send both email and SMS when available
+    const results: { email?: { success: boolean; error?: string }; sms?: { success: boolean; error?: string } } = {};
+
     if (booking.email) {
-      const emailResult = await sendReadyEmail({
+      results.email = await sendReadyEmail({
         booking_id: booking.booking_id,
         name: booking.name,
         email: booking.email,
@@ -318,27 +328,25 @@ Deno.serve(async (req) => {
         session_type: booking.session_type,
         management_token: booking.management_token,
       });
-
-      return new Response(JSON.stringify({ success: true, email: emailResult }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
     if (booking.phone) {
-      const smsResult = await sendReadySMS({
+      results.sms = await sendReadySMS({
         booking_id: booking.booking_id,
         name: booking.name,
         phone: booking.phone,
         studio: booking.studio,
       });
+    }
 
-      return new Response(JSON.stringify({ success: true, sms: smsResult }), {
+    if (!booking.email && !booking.phone) {
+      return new Response(JSON.stringify({ error: 'Booking has no email or phone number' }), {
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    return new Response(JSON.stringify({ error: 'Booking has no email or phone number' }), {
-      status: 400,
+    return new Response(JSON.stringify({ success: true, ...results }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
