@@ -204,19 +204,17 @@ struct CollectionsView: View {
             return
         }
 
-        selectedBooking = booking
-        if booking.collectionStatus == CollectionStage.ready.rawValue {
-            moveToStage(booking, .collected)
-            scanResult = "\(booking.name) marked as collected!"
-            Haptics.success()
-        } else if booking.collectionStatus == CollectionStage.collected.rawValue {
+        if booking.collectionStatus == CollectionStage.collected.rawValue {
             scanError = "\(booking.name) is already collected"
             Haptics.warning()
-        } else {
-            selectedStage = .painted
-            scanError = "\(booking.name) is at stage: \(booking.collectionStatus ?? "unknown"). Move to Ready first."
-            Haptics.warning()
+            return
         }
+
+        if let stage = CollectionStage(rawValue: booking.collectionStatus ?? "") {
+            selectedStage = stage
+        }
+        selectedBooking = booking
+        Haptics.success()
     }
 
     private var stagePicker: some View {
@@ -513,6 +511,23 @@ struct CollectionDetailSheet: View {
 
     private var actionButtons: some View {
         VStack(spacing: 8) {
+            if stage == .ready, authVM.staff != nil {
+                Button {
+                    moveBooking(to: .collected)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text("Mark as Collected")
+                    }
+                    .font(PPBrand.bodyFont.bold())
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.green)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+            }
+
             Button {
                 showMoveSheet = true
             } label: {

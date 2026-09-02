@@ -388,14 +388,12 @@ export default function CollectionsTab({
     }
 
     const stage = resolveStage(booking);
-    if (stage === 'ready') {
-      onSetStage(booking, 'collected');
-      setScanResult({ type: 'success', message: `${booking.name} marked as collected!` });
-    } else if (stage === 'collected') {
+    if (stage === 'collected') {
       setScanResult({ type: 'warning', message: `${booking.name} is already collected` });
-    } else {
-      setScanResult({ type: 'warning', message: `${booking.name} is at stage: ${stage ?? 'unknown'}. Move to Ready first.` });
+      return;
     }
+    onOpenBooking(booking);
+    setScanResult({ type: 'success', message: `${booking.name} found — verify photos and mark collected` });
   };
 
   const isSearching = Boolean(nameQuery.trim() || phoneQuery.trim());
