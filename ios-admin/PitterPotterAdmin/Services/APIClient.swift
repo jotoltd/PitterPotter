@@ -1077,7 +1077,7 @@ actor APIClient {
     // MARK: - SMS Admin
 
     func loadSmsBalance(staff: Staff) async throws -> (balance: String, currency: String) {
-        let endpoint = "\(APIConfig.supabaseURL)/functions/v1/sms-admin"
+        let endpoint = "\(APIConfig.supabaseURL)/functions/v1/admin-sms"
         var request = URLRequest(url: URL(string: endpoint)!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -1085,8 +1085,7 @@ actor APIClient {
 
         let body: [String: Any] = [
             "action": "balance",
-            "username": staff.username,
-            "sessionToken": staff.sessionToken,
+            "staff": ["username": staff.username, "sessionToken": staff.sessionToken],
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -1099,7 +1098,7 @@ actor APIClient {
     }
 
     func loadSmsUsage(staff: Staff) async throws -> SmsUsageData {
-        let endpoint = "\(APIConfig.supabaseURL)/functions/v1/sms-admin"
+        let endpoint = "\(APIConfig.supabaseURL)/functions/v1/admin-sms"
         var request = URLRequest(url: URL(string: endpoint)!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -1107,8 +1106,8 @@ actor APIClient {
 
         let body: [String: Any] = [
             "action": "usage",
-            "username": staff.username,
-            "sessionToken": staff.sessionToken,
+            "days": 30,
+            "staff": ["username": staff.username, "sessionToken": staff.sessionToken],
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -1120,7 +1119,7 @@ actor APIClient {
     }
 
     func loadSmsTemplates(staff: Staff) async throws -> [SmsTemplate] {
-        let endpoint = "\(APIConfig.supabaseURL)/functions/v1/sms-admin"
+        let endpoint = "\(APIConfig.supabaseURL)/functions/v1/admin-sms"
         var request = URLRequest(url: URL(string: endpoint)!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -1128,8 +1127,7 @@ actor APIClient {
 
         let body: [String: Any] = [
             "action": "templates",
-            "username": staff.username,
-            "sessionToken": staff.sessionToken,
+            "staff": ["username": staff.username, "sessionToken": staff.sessionToken],
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -1142,7 +1140,7 @@ actor APIClient {
     }
 
     func updateSmsTemplate(templateKey: String, body text: String, staff: Staff) async throws {
-        let endpoint = "\(APIConfig.supabaseURL)/functions/v1/sms-admin"
+        let endpoint = "\(APIConfig.supabaseURL)/functions/v1/admin-sms"
         var request = URLRequest(url: URL(string: endpoint)!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -1150,8 +1148,7 @@ actor APIClient {
 
         let body: [String: Any] = [
             "action": "update_template",
-            "username": staff.username,
-            "sessionToken": staff.sessionToken,
+            "staff": ["username": staff.username, "sessionToken": staff.sessionToken],
             "templateKey": templateKey,
             "body": text,
         ]

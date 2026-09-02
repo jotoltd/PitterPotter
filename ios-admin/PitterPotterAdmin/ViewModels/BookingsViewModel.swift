@@ -273,6 +273,12 @@ class BookingsViewModel: ObservableObject {
         }
     }
 
+    func updateBookingLocally(_ bookingId: String, collectionStatus: String) {
+        if let idx = bookings.firstIndex(where: { $0.id == bookingId }) {
+            bookings[idx].collectionStatus = collectionStatus
+        }
+    }
+
     func optimisticUpdateStatus(booking: Booking, status: BookingStatus, staff: Staff) async {
         guard let idx = bookings.firstIndex(where: { $0.id == booking.id }) else { return }
         let original = bookings[idx]

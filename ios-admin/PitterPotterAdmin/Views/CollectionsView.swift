@@ -25,6 +25,21 @@ struct CollectionsView: View {
         }
     }
 
+    private func moveToStage(_ booking: Booking, _ stage: CollectionStage) {
+        guard let staff = authVM.staff else { return }
+        Haptics.light()
+        Task {
+            do {
+                try await APIClient.shared.updateCollectionStatus(
+                    bookingId: booking.id, status: stage.rawValue, staff: staff
+                )
+                bookingsVM.updateBookingLocally(booking.id, collectionStatus: stage.rawValue)
+            } catch {
+                Haptics.error()
+            }
+        }
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -42,9 +57,40 @@ struct CollectionsView: View {
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                             ForEach(filteredBookings) { booking in
                                 CollectionCard(booking: booking, onTap: { selectedBooking = booking })
+                                    .contextMenu {
+                                        if selectedStage == .painted {
+                                            Button {
+                                                moveToStage(booking, .ready)
+                                            } label: {
+                                                Label("Move to Ready", systemImage: "arrow.right.circle.fill")
+                                            }
+                                        } else if selectedStage == .ready {
+                                            Button {
+                                                moveToStage(booking, .collected)
+                                            } label: {
+                                                Label("Mark Collected", systemImage: "checkmark.circle.fill")
+                                            }
+                                            Button {
+                                                moveToStage(booking, .painted)
+                                            } label: {
+                                                Label("Back to Painted", systemImage: "arrow.left.circle")
+                                            }
+                                        } else if selectedStage == .collected {
+                                            Button {
+                                                moveToStage(booking, .ready)
+                                            } label: {
+                                                Label("Back to Ready", systemImage: "arrow.left.circle")
+                                            }
+                                        }
+                                    }
                             }
                         }
                         .padding(16)
+                    }
+                    .refreshable {
+                        if let staff = authVM.staff {
+                            await bookingsVM.loadBookings(staff: staff)
+                        }
                     }
                 }
             }
@@ -77,18 +123,35 @@ struct CollectionsView: View {
         }
     }
 
+    private func countForStage(_ stage: CollectionStage) -> Int {
+        bookingsVM.bookings.filter { $0.status == "completed" && $0.collectionStatus == stage.rawValue }.count
+    }
+
     private var stagePicker: some View {
         HStack(spacing: 0) {
             ForEach(CollectionStage.allCases, id: \.self) { stage in
                 Button {
                     selectedStage = stage
+                    Haptics.light()
                 } label: {
-                    Text(stage.label)
-                        .font(PPBrand.bodyFontSmall.bold())
-                        .foregroundStyle(selectedStage == stage ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.5))
-                        .padding(.vertical, 10)
-                        .frame(maxWidth: .infinity)
-                        .background(selectedStage == stage ? PPBrand.sage : Color.clear)
+                    HStack(spacing: 4) {
+                        Text(stage.label)
+                            .font(PPBrand.bodyFontSmall.bold())
+                        let count = countForStage(stage)
+                        if count > 0 {
+                            Text("\(count)")
+                                .font(PPBrand.bodyFontCaption.bold())
+                                .foregroundStyle(selectedStage == stage ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.4))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(selectedStage == stage ? PPBrand.charcoal.opacity(0.15) : PPBrand.charcoal.opacity(0.08))
+                                .clipShape(Capsule())
+                        }
+                    }
+                    .foregroundStyle(selectedStage == stage ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.5))
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity)
+                    .background(selectedStage == stage ? PPBrand.sage : Color.clear)
                 }
             }
         }
@@ -165,14 +228,10 @@ struct CollectionCard: View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 8) {
                 if let photos = booking.photos, !photos.isEmpty, let url = URL(string: photos[0]) {
-                    AsyncImage(url: url) { image in
-                        image.resizable().aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Rectangle().fill(PPBrand.clay100).overlay(ProgressView())
-                    }
-                    .frame(height: 140)
-                    .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    CachedAsyncImage(url: url)
+                        .frame(height: 140)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 } else {
                     Rectangle()
                         .fill(PPBrand.clay100.opacity(0.5))
@@ -326,14 +385,9 @@ struct CollectionDetailSheet: View {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
                     ForEach(photos, id: \.self) { urlStr in
                         if let url = URL(string: urlStr) {
-                            AsyncImage(url: url) { image in
-                                image.resizable().aspectRatio(contentMode: .fill)
-                            } placeholder: {
-                                Rectangle().fill(PPBrand.clay100).overlay(ProgressView())
-                            }
-                            .frame(height: 120)
-                            .clipped()
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            CachedAsyncImage(url: url)
+                                .frame(height: 120)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                     }
                 }
@@ -458,14 +512,10 @@ struct AddProfileSheet: View {
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
                             ForEach(photos, id: \.self) { urlStr in
                                 if let url = URL(string: urlStr) {
-                                    AsyncImage(url: url) { image in
-                                        image.resizable().aspectRatio(contentMode: .fill)
-                                    } placeholder: {
-                                        Rectangle().fill(PPBrand.clay100).overlay(ProgressView())
-                                    }
-                                    .frame(height: 80)
-                                    .clipped()
-                                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                                    CachedAsyncImage(url: url)
+                                        .frame(height: 80)
+                                        .clipped()
+                                        .clipShape(RoundedRectangle(cornerRadius: 6))
                                 }
                             }
                         }
