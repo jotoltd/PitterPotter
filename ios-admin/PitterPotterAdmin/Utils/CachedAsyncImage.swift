@@ -34,7 +34,7 @@ struct CachedAsyncImage: View {
     private func loadImage() async {
         guard let url = url else { return }
         if let cached = Self.cache.object(forKey: url as NSURL) {
-            image = cached
+            await MainActor.run { image = cached }
             return
         }
         do {

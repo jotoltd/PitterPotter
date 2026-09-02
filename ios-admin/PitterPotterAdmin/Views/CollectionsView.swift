@@ -310,6 +310,8 @@ struct CollectionDetailSheet: View {
     @State private var showCamera = false
     @State private var isUploading = false
     @State private var showMoveSheet = false
+    @State private var notificationStatus: String?
+    @State private var isSendingNotification = false
 
     var body: some View {
         NavigationStack {
@@ -418,17 +420,44 @@ struct CollectionDetailSheet: View {
 
             if stage == .ready, let staff = authVM.staff {
                 Button {
+                    isSendingNotification = true
+                    notificationStatus = nil
                     Task {
-                        try? await APIClient.shared.sendCollectionReady(bookingId: booking.id, staff: staff)
+                        do {
+                            try await APIClient.shared.sendCollectionReady(bookingId: booking.id, staff: staff)
+                            await MainActor.run {
+                                isSendingNotification = false
+                                notificationStatus = "Notification sent!"
+                                Haptics.success()
+                            }
+                        } catch {
+                            await MainActor.run {
+                                isSendingNotification = false
+                                notificationStatus = "Failed: \(error.localizedDescription)"
+                                Haptics.error()
+                            }
+                        }
                     }
                 } label: {
-                    Text("Resend collection ready notification")
-                        .font(PPBrand.bodyFontSmall.bold())
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(PPBrand.sage)
-                        .foregroundStyle(PPBrand.charcoal)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    HStack(spacing: 8) {
+                        if isSendingNotification {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "paperplane.fill")
+                        }
+                        Text("Send collection ready notification")
+                    }
+                    .font(PPBrand.bodyFontSmall.bold())
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(PPBrand.sage)
+                    .foregroundStyle(PPBrand.charcoal)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                if let status = notificationStatus {
+                    Text(status)
+                        .font(PPBrand.bodyFontCaption)
+                        .foregroundStyle(status.hasPrefix("Failed") ? .red : PPBrand.charcoal.opacity(0.6))
                 }
             }
         }
