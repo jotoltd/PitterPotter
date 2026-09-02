@@ -1689,6 +1689,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     setInquiries(prev => prev.map(i => i.id === updatedBooking.id ? updatedBooking : i));
     try {
       await updateBooking(updatedBooking, staff);
+      if (stage === 'ready') {
+        try {
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-collection-ready`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ bookingId: booking.id }),
+          });
+        } catch (notifyErr) {
+          console.error('Failed to send collection-ready notification:', notifyErr);
+        }
+      }
       showToast(
         stage === 'collected' ? 'Marked as collected'
         : stage === 'ready' ? 'Marked ready to collect — notification sent'

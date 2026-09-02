@@ -38,6 +38,9 @@ struct CollectionsView: View {
                     bookingId: booking.id, status: stage.rawValue, staff: staff
                 )
                 bookingsVM.updateBookingLocally(booking.id, collectionStatus: stage.rawValue)
+                if stage == .ready {
+                    try? await APIClient.shared.sendCollectionReady(bookingId: booking.id, staff: staff)
+                }
             } catch {
                 Haptics.error()
             }
@@ -569,6 +572,9 @@ struct CollectionDetailSheet: View {
             var updated = booking
             updated.collectionStatus = newStage.rawValue
             try? await APIClient.shared.updateBooking(updated, staff: staff)
+            if newStage == .ready {
+                try? await APIClient.shared.sendCollectionReady(bookingId: booking.id, staff: staff)
+            }
             await MainActor.run {
                 bookingsVM.updateBookingLocally(updated)
                 dismiss()
