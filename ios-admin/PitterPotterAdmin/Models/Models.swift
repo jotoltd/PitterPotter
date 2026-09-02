@@ -156,8 +156,8 @@ struct Booking: Codable, Identifiable, Hashable {
 // MARK: - Photo Tag
 
 struct PhotoTag: Codable, Identifiable, Hashable {
-    var id: String
-    var label: String
+    var id: String?
+    var label: String?
     var status: String
     var x: Double
     var y: Double
