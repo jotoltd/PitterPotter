@@ -15,6 +15,7 @@ struct CollectionsView: View {
     @State private var scannedCode: String?
     @State private var scanResult: String?
     @State private var scanError: String?
+    @State private var pendingReadyBooking: Booking?
 
     var filteredBookings: [Booking] {
         bookingsVM.bookings.filter { b in
@@ -67,7 +68,7 @@ struct CollectionsView: View {
                                     .contextMenu {
                                         if selectedStage == .painted {
                                             Button {
-                                                moveToStage(booking, .ready)
+                                                pendingReadyBooking = booking
                                             } label: {
                                                 Label("Move to Ready", systemImage: "arrow.right.circle.fill")
                                             }
@@ -144,6 +145,23 @@ struct CollectionsView: View {
                             handleScannedCode(code)
                         }
                     }
+            }
+            .alert("Send notification?", isPresented: .constant(pendingReadyBooking != nil)) {
+                Button("Send & Move") {
+                    if let b = pendingReadyBooking {
+                        moveToStage(b, .ready)
+                    }
+                    pendingReadyBooking = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    pendingReadyBooking = nil
+                }
+            } message: {
+                if let b = pendingReadyBooking {
+                    Text("Move \(b.name) to Ready and send email/SMS notification?")
+                } else {
+                    Text("")
+                }
             }
             .alert("Scan Result", isPresented: .constant(scanError != nil)) {
                 Button("OK") { scanError = nil }
@@ -386,6 +404,7 @@ struct CollectionDetailSheet: View {
     @State private var showMoveSheet = false
     @State private var notificationStatus: String?
     @State private var isSendingNotification = false
+    @State private var pendingReadyMove = false
 
     var body: some View {
         NavigationStack {
@@ -412,10 +431,24 @@ struct CollectionDetailSheet: View {
             .confirmationDialog("Move to", isPresented: $showMoveSheet) {
                 ForEach(CollectionStage.allCases, id: \.self) { s in
                     if s != stage {
-                        Button(s.label) { moveBooking(to: s) }
+                        Button(s.label) {
+                            if s == .ready {
+                                pendingReadyMove = true
+                            } else {
+                                moveBooking(to: s)
+                            }
+                        }
                     }
                 }
                 Button("Cancel", role: .cancel) {}
+            }
+            .alert("Send notification?", isPresented: $pendingReadyMove) {
+                Button("Send & Move") {
+                    moveBooking(to: .ready)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Move \(booking.name) to Ready and send email/SMS notification?")
             }
         }
     }

@@ -1681,6 +1681,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const handleSetCollectionStage = async (booking: BookingInquiry, stage: CollectionStage) => {
     if (!canManageBooking(booking)) { showToast('You can only manage bookings for your assigned studio', 'error'); return; }
+    if (stage === 'ready') {
+      const confirmed = window.confirm(`Move ${booking.name} to Ready and send email/SMS notification?`);
+      if (!confirmed) return;
+    }
     const updatedBooking: BookingInquiry = {
       ...booking,
       collectionStatus: stage,
