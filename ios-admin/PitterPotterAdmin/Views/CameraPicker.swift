@@ -28,10 +28,23 @@ struct CameraPicker: UIViewControllerRepresentable {
 
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
             if let image = info[.originalImage] as? UIImage {
-                let imageData = image.jpegData(compressionQuality: 0.8) ?? Data()
+                let resized = resizeImage(image, maxDimension: 1024)
+                let imageData = resized.jpegData(compressionQuality: 0.7) ?? Data()
                 parent.onImageCaptured(imageData)
             }
             parent.dismiss()
+        }
+
+        private func resizeImage(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+            let size = image.size
+            let maxDim = max(size.width, size.height)
+            if maxDim <= maxDimension { return image }
+            let scale = maxDimension / maxDim
+            let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+            let renderer = UIGraphicsImageRenderer(size: newSize)
+            return renderer.image { _ in
+                image.draw(in: CGRect(origin: .zero, size: newSize))
+            }
         }
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
