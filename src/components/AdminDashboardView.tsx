@@ -1449,21 +1449,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     return staffAllowedStudios.includes(booking.studio as 'Putney' | 'Wimbledon');
   };
 
-  const saveToCameraRoll = (dataUrl: string, fileName: string) => {
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = fileName || `photo_${Date.now()}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const handleCreateProfile = async (data: { name: string; phone: string; date: string; studio: string; photos: string[] }, stage: 'painted' | 'ready'): Promise<BookingInquiry> => {
     const bookingId = crypto.randomUUID();
     const uploadedPhotos: string[] = [];
     for (let i = 0; i < data.photos.length; i++) {
       const dataUrl = data.photos[i];
-      saveToCameraRoll(dataUrl, `profile_${data.name}_${i + 1}.jpg`);
       if (isSupabaseEnabled() && staff?.sessionToken) {
         try {
           const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
@@ -1550,7 +1540,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       for (const file of fileArr) {
         const dataUrl = await compressImage(file);
         let imageUrl = dataUrl;
-        saveToCameraRoll(dataUrl, file.name);
         if (isSupabaseEnabled() && staff?.sessionToken) {
           const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
             method: 'POST',
@@ -1605,7 +1594,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       for (const file of fileArr) {
         const dataUrl = await compressImage(file);
         let imageUrl = dataUrl;
-        saveToCameraRoll(dataUrl, file.name);
         if (isSupabaseEnabled() && staff?.sessionToken) {
           const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
             method: 'POST',
@@ -1725,7 +1713,6 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       for (const file of files) {
         const dataUrl = await compressImage(file);
         let imageUrl = dataUrl;
-        saveToCameraRoll(dataUrl, file.name);
         if (isSupabaseEnabled() && staff?.sessionToken) {
           const uploadRes = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-content`, {
             method: 'POST',
