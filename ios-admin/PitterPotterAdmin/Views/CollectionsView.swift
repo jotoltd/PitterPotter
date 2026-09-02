@@ -10,6 +10,7 @@ struct CollectionsView: View {
     @State private var selectedBooking: Booking?
     @State private var showCamera = false
     @State private var isUploading = false
+    @State private var uploadError: String?
     @State private var showAddProfile = false
     @State private var showScanner = false
     @State private var scannedCode: String?
@@ -145,6 +146,11 @@ struct CollectionsView: View {
                             handleScannedCode(code)
                         }
                     }
+            }
+            .alert("Upload Error", isPresented: .constant(uploadError != nil)) {
+                Button("OK") { uploadError = nil }
+            } message: {
+                Text(uploadError ?? "")
             }
             .alert("Send notification?", isPresented: .constant(pendingReadyBooking != nil)) {
                 Button("Send & Move") {
@@ -303,7 +309,11 @@ struct CollectionsView: View {
                     isUploading = false
                 }
             } catch {
-                await MainActor.run { isUploading = false }
+                await MainActor.run {
+                    isUploading = false
+                    uploadError = "Upload failed: \(error.localizedDescription)"
+                    Haptics.error()
+                }
             }
         }
     }
@@ -399,6 +409,7 @@ struct CollectionDetailSheet: View {
     @Environment(\.dismiss) var dismiss
     @State private var showCamera = false
     @State private var isUploading = false
+    @State private var uploadError: String?
     @State private var showMoveSheet = false
     @State private var notificationStatus: String?
     @State private var isSendingNotification = false
@@ -425,6 +436,11 @@ struct CollectionDetailSheet: View {
                 CameraPicker { data in
                     uploadPhoto(data)
                 }
+            }
+            .alert("Upload Error", isPresented: .constant(uploadError != nil)) {
+                Button("OK") { uploadError = nil }
+            } message: {
+                Text(uploadError ?? "")
             }
             .confirmationDialog("Move to", isPresented: $showMoveSheet) {
                 ForEach(CollectionStage.allCases, id: \.self) { s in
@@ -609,7 +625,11 @@ struct CollectionDetailSheet: View {
                     isUploading = false
                 }
             } catch {
-                await MainActor.run { isUploading = false }
+                await MainActor.run {
+                    isUploading = false
+                    uploadError = "Upload failed: \(error.localizedDescription)"
+                    Haptics.error()
+                }
             }
         }
     }
@@ -717,7 +737,9 @@ struct AddProfileSheet: View {
                     CachedAsyncImage.prefetch(url: urlObj, image: img)
                 }
                 await MainActor.run { photos.append(url) }
-            } catch {}
+            } catch {
+                print("AddProfile photo upload failed: \(error)")
+            }
         }
     }
 
