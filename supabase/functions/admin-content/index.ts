@@ -144,8 +144,8 @@ Deno.serve(async (req) => {
               id: 'content',
               name: 'content',
               public: true,
-              file_size_limit: 5242880,
-              allowed_mime_types: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'],
+              file_size_limit: 10485760,
+              allowed_mime_types: ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/heic', 'image/heif', 'image/HEIC', 'image/HEIF'],
             },
             { onConflict: 'id' }
           );
@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const base64Match = fileData.match(/^data:image\/(png|jpeg|jpg|webp|gif);base64,(.*)$/i);
+      const base64Match = fileData.match(/^data:image\/(png|jpeg|jpg|webp|gif|heic|heif);base64,(.*)$/i);
       if (!base64Match) {
         return new Response(JSON.stringify({ error: 'Invalid base64 image data' }), {
           status: 400,
@@ -174,10 +174,12 @@ Deno.serve(async (req) => {
       const binary = Uint8Array.from(atob(base64Match[2]), (c) => c.charCodeAt(0));
       const filePath = `${page}/${key}-${Date.now()}.${ext}`;
 
+      console.log(`Uploading photo: ${filePath}, size: ${binary.length} bytes, type: ${mimeType}`);
       const { error: uploadError } = await supabase.storage
         .from('content')
         .upload(filePath, binary, { contentType: mimeType, upsert: true });
       if (uploadError) {
+        console.error('Upload error:', JSON.stringify(uploadError));
         return new Response(JSON.stringify({ error: 'Failed to upload image', details: JSON.stringify(uploadError) }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
