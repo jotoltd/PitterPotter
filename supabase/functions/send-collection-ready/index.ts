@@ -68,7 +68,7 @@ async function sendReadySMS(
   try {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
     const body = new URLSearchParams();
-    body.append('From', fromNumber);
+    body.append('From', 'PitterPotte');
     body.append('To', toNumber);
     body.append('Body', message);
 
