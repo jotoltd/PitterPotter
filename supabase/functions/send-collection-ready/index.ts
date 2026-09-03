@@ -19,6 +19,7 @@ async function sendReadySMS(
     name: string;
     phone: string;
     studio: string;
+    management_token: string | null;
   }
 ): Promise<{ success: boolean; error?: string }> {
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
@@ -40,6 +41,10 @@ async function sendReadySMS(
 
   const studioInfo = getStudioInfo(booking.studio);
   const studioName = `Pitter Potter ${booking.studio}`;
+  const siteUrl = (Deno.env.get('SITE_URL') || 'https://www.pitterpotter.co.uk').replace(/\/+$/, '');
+  const manageUrl = booking.management_token
+    ? `${siteUrl}/manage-booking?token=${booking.management_token}`
+    : '';
 
   let message: string;
   const smsTemplate = await loadSMSTemplate('collection_ready');
@@ -50,9 +55,10 @@ async function sendReadySMS(
       bookingId: booking.booking_id,
       studioAddress: studioInfo.address,
       studioPhone: studioInfo.phone,
+      manageUrl,
     });
   } else {
-    message = `Hi ${booking.name}, your pottery from ${studioName} is ready to collect! Please bring your booking ref ${booking.booking_id}. Our address: ${studioInfo.address}. Call us: ${studioInfo.phone}. Thanks!`;
+    message = `Dear ${booking.name}, your pottery from ${studioName} is ready to collect!\n\nClick here to show the QR code for collection: ${manageUrl}\n\nPlease collect within 6 WEEKS, after this period your item(s) may be donated to charity.\n\nPlease also bring your own bag if you can.\n\nClosed on Mondays except school holidays.\n\nAddress: ${studioInfo.address}`;
   }
 
   if (message.length > 160) {
@@ -336,6 +342,7 @@ Deno.serve(async (req) => {
         name: booking.name,
         phone: booking.phone,
         studio: booking.studio,
+        management_token: booking.management_token,
       });
     }
 
