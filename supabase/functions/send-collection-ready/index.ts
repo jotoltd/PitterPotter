@@ -46,8 +46,7 @@ async function sendReadySMS(
 ): Promise<{ success: boolean; error?: string }> {
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
-  if (!accountSid || !authToken || !fromNumber) {
+  if (!accountSid || !authToken) {
     console.warn('Twilio not configured; skipping SMS');
     return { success: false, error: 'SMS service not configured' };
   }
@@ -95,12 +94,19 @@ async function sendReadySMS(
     console.warn(`SMS message is ${message.length} chars, will be split into multiple segments`);
   }
 
+  const senderId = booking.studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP';
+
   try {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
     const body = new URLSearchParams();
-    body.append('From', fromNumber);
+    body.append('From', senderId);
     body.append('To', toNumber);
     body.append('Body', message);
+
+    const projectUrl = Deno.env.get('SUPABASE_URL');
+    if (projectUrl) {
+      body.append('StatusCallback', `${projectUrl}/functions/v1/twilio-webhook`);
+    }
 
     const response = await fetch(url, {
       method: 'POST',
