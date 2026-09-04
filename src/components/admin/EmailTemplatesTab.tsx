@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, MessageSquare, Save, Pencil, X } from 'lucide-react';
+import { Mail, MessageSquare, Save, Pencil, X, RotateCcw } from 'lucide-react';
 import Skeleton from '../Skeleton';
 import WysiwygEditor from '../WysiwygEditor';
 
@@ -34,6 +34,7 @@ interface EmailTemplatesTabProps {
   onCancelEdit: () => void;
   onUpdateEditingTemplate: (tpl: EmailTemplate) => void;
   onSaveTemplate: (templateKey: string, subject: string, htmlContent: string) => void;
+  onResetTemplate: (templateKey: string) => void;
   smsTemplates?: SMSTemplate[];
   smsTemplatesLoading?: boolean;
   onSaveSMSTemplate?: (templateKey: string, body: string) => void;
@@ -49,6 +50,7 @@ export default function EmailTemplatesTab({
   onCancelEdit,
   onUpdateEditingTemplate,
   onSaveTemplate,
+  onResetTemplate,
   smsTemplates = [],
   smsTemplatesLoading = false,
   onSaveSMSTemplate,
@@ -173,12 +175,22 @@ export default function EmailTemplatesTab({
                           Last updated: {new Date(tpl.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
-                      <button
-                        onClick={() => onEditTemplate({ ...tpl, _editSubject: tpl.subject, _editHtml: tpl.html_content })}
-                        className="shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-[#DBE7E4] transition-all cursor-pointer"
-                      >
-                        Edit
-                      </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => onEditTemplate({ ...tpl, _editSubject: tpl.subject, _editHtml: tpl.html_content })}
+                          className="px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-[#DBE7E4] transition-all cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => onResetTemplate(tpl.template_key)}
+                          disabled={templateSaving}
+                          title="Reset to default"
+                          className="px-2.5 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-red-50 hover:text-red-600 transition-all cursor-pointer disabled:opacity-50"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

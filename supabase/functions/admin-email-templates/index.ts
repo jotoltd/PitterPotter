@@ -4,6 +4,7 @@ import type { AdminSupabaseClient, StaffRecord } from '../_shared/types.ts';
 import { verifyStaff } from '../_shared/auth.ts';
 import { logAudit } from '../_shared/audit.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
+import { DEFAULT_EMAIL_TEMPLATES } from '../_shared/default-templates.ts';
 
 
 Deno.serve(async (req) => {
@@ -113,11 +114,37 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Return the default template content (from the migration)
-      // We can't easily re-insert defaults, so we just return the current one
-      // Admin can manually reset by editing
-      return new Response(JSON.stringify({ error: 'Reset not available via API. Edit the template manually.' }), {
-        status: 400,
+      const defaults = DEFAULT_EMAIL_TEMPLATES[templateKey];
+      if (!defaults) {
+        return new Response(JSON.stringify({ error: 'No default template found for this key' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const { error: resetError } = await supabase
+        .from('email_templates')
+        .update({
+          subject: defaults.subject,
+          html_content: defaults.html_content,
+          available_variables: defaults.available_variables,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('template_key', templateKey);
+
+      if (resetError) throw resetError;
+
+      await logAudit(supabase, staff, 'reset', 'email_template', templateKey, {});
+
+      return new Response(JSON.stringify({
+        success: true,
+        template: {
+          template_key: templateKey,
+          subject: defaults.subject,
+          html_content: defaults.html_content,
+          available_variables: defaults.available_variables,
+        },
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

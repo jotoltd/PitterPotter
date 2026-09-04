@@ -856,6 +856,40 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
+  const resetEmailTemplate = async (templateKey: string) => {
+    if (!staff?.sessionToken) return;
+    if (!confirm('Reset this template to its default content? Any custom edits will be lost.')) return;
+    setTemplateSaving(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-email-templates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'reset',
+          username: staff.username,
+          sessionToken: staff.sessionToken,
+          templateKey,
+        }),
+      });
+      const data = await response.json();
+      if (response.status === 401) { handleUnauthorized(); return; }
+      if (!response.ok || data.error) {
+        showToast(data.error || 'Failed to reset template', 'error');
+        return;
+      }
+      showToast('Template reset to default', 'success');
+      loadEmailTemplates();
+    } catch (err) {
+      console.error('Failed to reset email template:', err);
+      showToast('Failed to reset template', 'error');
+    } finally {
+      setTemplateSaving(false);
+    }
+  };
+
   const loadSmsTemplates = async () => {
     if (!canManageStaff || !staff?.sessionToken) return;
     setSmsTemplatesLoading(true);
@@ -5028,6 +5062,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           onCancelEdit={() => setEditingTemplate(null)}
           onUpdateEditingTemplate={(tpl) => setEditingTemplate(tpl)}
           onSaveTemplate={saveEmailTemplate}
+          onResetTemplate={resetEmailTemplate}
           smsTemplates={smsTemplates}
           smsTemplatesLoading={smsTemplatesLoading}
           onSaveSMSTemplate={saveSmsTemplate}
