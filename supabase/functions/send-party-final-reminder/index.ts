@@ -3,6 +3,7 @@ import { isObject, isNonEmptyString, isInteger } from '../_shared/validate.ts';
 import type { StaffRecord } from '../_shared/types.ts';
 import { verifyStaff } from '../_shared/auth.ts';
 import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts';
+import { loadSMSTemplate } from '../_shared/sms-template.ts';
 import { getStudioInfo } from '../_shared/studio-info.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
 
@@ -135,6 +136,121 @@ async function sendReminderEmail(
   }
 }
 
+async function sendReminderSMS(
+  details: {
+    bookingId: string;
+    name: string;
+    phone: string;
+    studio: string;
+    date: string;
+    time: string;
+    finalBalance: number;
+    paymentLinkUrl: string;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+  if (!accountSid || !authToken) {
+    console.warn('Twilio not configured; skipping reminder SMS');
+    return { success: false, error: 'SMS service not configured' };
+  }
+
+  let toNumber = details.phone.trim();
+  if (toNumber.startsWith('07')) {
+    toNumber = '+44' + toNumber.substring(1);
+  } else if (toNumber.startsWith('7') && !toNumber.startsWith('+')) {
+    toNumber = '+44' + toNumber;
+  } else if (!toNumber.startsWith('+')) {
+    toNumber = '+44' + toNumber;
+  }
+
+  const studioName = `Pitter Potter ${details.studio}`;
+  const studioInfo = getStudioInfo(details.studio);
+  const senderId = details.studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP';
+
+  const formatDate = (d: string) => {
+    const parts = d.split('-');
+    return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : d;
+  };
+  const formattedDate = formatDate(details.date);
+
+  const templateVars: Record<string, string | number | undefined> = {
+    name: details.name,
+    studio: studioName,
+    studioAddress: studioInfo.address,
+    studioPhone: studioInfo.phone,
+    date: formattedDate,
+    time: details.time,
+    finalBalance: details.finalBalance.toFixed(2),
+    paymentLinkUrl: details.paymentLinkUrl,
+  };
+
+  const tpl = await loadSMSTemplate('party_final_reminder');
+  let message: string;
+  if (tpl) {
+    message = renderTemplate(tpl, templateVars).replace(/\\n/g, '\n');
+  } else {
+    message = `Hi ${details.name}, your party at ${studioName} is on ${formattedDate} at ${details.time}. Final balance: £${details.finalBalance.toFixed(2)}. Pay here: ${details.paymentLinkUrl}. Questions? Call ${studioInfo.phone}`;
+  }
+
+  if (message.length > 160) {
+    console.warn(`SMS message is ${message.length} chars, will be split into multiple segments`);
+  }
+
+  try {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+    const body = new URLSearchParams();
+    body.append('From', senderId);
+    body.append('To', toNumber);
+    body.append('Body', message);
+
+    const projectUrl = Deno.env.get('SUPABASE_URL');
+    if (projectUrl) {
+      body.append('StatusCallback', `${projectUrl}/functions/v1/twilio-webhook`);
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: body.toString(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      console.error('Twilio SMS error:', errorData);
+      return { success: false, error: errorData.message || 'Failed to send SMS' };
+    }
+
+    const data = await response.json();
+
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (supabaseUrl && supabaseServiceKey) {
+        const logClient = createClient(supabaseUrl, supabaseServiceKey);
+        await logClient.from('email_logs').insert({
+          email_type: 'party_final_reminder_sms',
+          recipient: toNumber,
+          subject: 'Party final reminder SMS',
+          resend_id: data.sid || null,
+          status: 'sent',
+          booking_id: details.bookingId,
+        });
+      }
+    } catch (logErr) {
+      console.error('Failed to log SMS:', logErr);
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('Send reminder SMS error:', err);
+    return { success: false, error: 'Failed to send SMS' };
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return optionsResponse(req, true);
@@ -214,19 +330,43 @@ Deno.serve(async (req) => {
     const siteUrl = Deno.env.get('SITE_URL') || 'https://pitterpotter.co.uk';
     const paymentPageUrl = `${siteUrl}/party-payment?booking=${booking.booking_id}`;
 
-    const emailResult = await sendReminderEmail({
-      bookingId: booking.booking_id,
-      name: booking.name,
-      email: booking.email,
-      studio: booking.studio,
-      date: booking.date,
-      time: booking.time,
-      finalSeats: resolvedFinalSeats,
-      partyPrice,
-      depositAmount,
-      finalBalance,
-      paymentLinkUrl: paymentPageUrl,
-    });
+    const results: { email?: { success: boolean; error?: string }; sms?: { success: boolean; error?: string } } = {};
+
+    if (booking.email) {
+      results.email = await sendReminderEmail({
+        bookingId: booking.booking_id,
+        name: booking.name,
+        email: booking.email,
+        studio: booking.studio,
+        date: booking.date,
+        time: booking.time,
+        finalSeats: resolvedFinalSeats,
+        partyPrice,
+        depositAmount,
+        finalBalance,
+        paymentLinkUrl: paymentPageUrl,
+      });
+    }
+
+    if (booking.phone) {
+      results.sms = await sendReminderSMS({
+        bookingId: booking.booking_id,
+        name: booking.name,
+        phone: booking.phone,
+        studio: booking.studio,
+        date: booking.date,
+        time: booking.time,
+        finalBalance,
+        paymentLinkUrl: paymentPageUrl,
+      });
+    }
+
+    if (!booking.email && !booking.phone) {
+      return new Response(JSON.stringify({ error: 'Booking has no email or phone number' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const { error: updateError } = await supabase.from('bookings').update({
       final_seats: resolvedFinalSeats,
@@ -237,7 +377,7 @@ Deno.serve(async (req) => {
 
     if (updateError) throw updateError;
 
-    return new Response(JSON.stringify({ success: true, email: emailResult, paymentLinkUrl: paymentPageUrl, finalBalance }), {
+    return new Response(JSON.stringify({ success: true, ...results, paymentLinkUrl: paymentPageUrl, finalBalance }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
