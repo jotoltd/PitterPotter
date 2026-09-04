@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Search, Camera, Users, Clock, MapPin, Check, Package, Phone, X, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle, CheckSquare, Square, Plus, QrCode } from 'lucide-react';
+import { Search, Camera, Users, Clock, MapPin, Check, Package, Phone, X, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle, CheckSquare, Square, Plus, QrCode, Tag } from 'lucide-react';
 import { BookingInquiry } from '../../types';
 import Skeleton from '../Skeleton';
 import ImageModal from '../ImageModal';
@@ -23,6 +23,7 @@ interface CollectionsTabProps {
   onSetPhotoTag?: (booking: BookingInquiry, photoIndex: number, tag: string) => void;
   onAddPhotoTag?: (booking: BookingInquiry, photoIndex: number, label: string, status: string, x: number, y: number) => void;
   onRemovePhotoTag?: (booking: BookingInquiry, photoIndex: number, tagIndex: number) => void;
+  onBulkAddPhotoTag?: (bookings: BookingInquiry[], label: string, status: string) => void;
   onCreateProfile?: (data: { name: string; phone: string; date: string; studio: string; photos: string[] }) => Promise<BookingInquiry>;
 }
 
@@ -303,6 +304,7 @@ export default function CollectionsTab({
   onSetPhotoTag,
   onAddPhotoTag,
   onRemovePhotoTag,
+  onBulkAddPhotoTag,
   onCreateProfile,
 }: CollectionsTabProps) {
   const [nameQuery, setNameQuery] = useState('');
@@ -324,6 +326,9 @@ export default function CollectionsTab({
   const [profileSaving, setProfileSaving] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [scanResult, setScanResult] = useState<{ type: 'success' | 'error' | 'warning'; message: string } | null>(null);
+  const [showBulkTag, setShowBulkTag] = useState(false);
+  const [bulkTagStatus, setBulkTagStatus] = useState('painted');
+  const [bulkTagLabel, setBulkTagLabel] = useState('');
 
   const eligible = useMemo(
     () => bookings.filter(b => b.status === 'completed'),
@@ -591,12 +596,77 @@ export default function CollectionsTab({
                 <ChevronLeft className="w-3 h-3" /> Back to Ready
               </button>
             )}
+            {onBulkAddPhotoTag && (
+              <button
+                onClick={() => setShowBulkTag(true)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg cursor-pointer transition-colors"
+              >
+                <Tag className="w-3 h-3" /> Bulk Tag
+              </button>
+            )}
             <button
               onClick={() => setSelectedIds(new Set())}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg cursor-pointer transition-colors"
             >
               <X className="w-3 h-3" /> Clear
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk tag popover */}
+      {canUpdate && showBulkTag && onBulkAddPhotoTag && selectedIds.size > 0 && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white p-5 border border-[#1B2D3C]/20 max-w-sm w-full space-y-4 shadow-lg rounded-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-base font-black text-[#1B2D3C]">Bulk Tag Photos</h3>
+              <button onClick={() => setShowBulkTag(false)} className="p-1.5 rounded-full hover:bg-[#D6E2E9] cursor-pointer">
+                <X className="w-4 h-4 text-[#1B2D3C]/60" />
+              </button>
+            </div>
+            <p className="text-xs text-[#1B2D3C]/60">Apply a tag to all photos in {selectedIds.size} selected booking{selectedIds.size !== 1 ? 's' : ''}.</p>
+            <div>
+              <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Tag Status</label>
+              <select
+                value={bulkTagStatus}
+                onChange={(e) => setBulkTagStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+              >
+                {TAG_STATUSES.map(s => (
+                  <option key={s} value={s}>{TAG_LABELS[s] || s}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Label (optional)</label>
+              <input
+                type="text"
+                value={bulkTagLabel}
+                onChange={(e) => setBulkTagLabel(e.target.value)}
+                placeholder="e.g. Plate, Mug, Bowl"
+                className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowBulkTag(false); setBulkTagLabel(''); }}
+                className="flex-1 px-4 py-2 bg-white text-[#1B2D3C] font-bold text-xs uppercase tracking-wider border border-[#1B2D3C]/20 hover:bg-[#D6E2E9] transition-all cursor-pointer rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const selectedBookings = filtered.filter(b => selectedIds.has(b.id));
+                  onBulkAddPhotoTag(selectedBookings, bulkTagLabel, bulkTagStatus);
+                  setShowBulkTag(false);
+                  setBulkTagLabel('');
+                  setSelectedIds(new Set());
+                }}
+                className="flex-1 px-4 py-2 bg-[#1B2D3C] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#1B2D3C]/90 transition-all cursor-pointer rounded-lg"
+              >
+                Apply Tag
+              </button>
+            </div>
           </div>
         </div>
       )}

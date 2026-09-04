@@ -1703,6 +1703,36 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
+  const handleBulkAddPhotoTag = async (bookings: BookingInquiry[], label: string, status: string) => {
+    let successCount = 0;
+    let failCount = 0;
+    for (const booking of bookings) {
+      if (!canManageBooking(booking)) { failCount++; continue; }
+      const photos = booking.photos ?? [];
+      if (photos.length === 0) continue;
+      const updatedTags = { ...(booking.photoTags || {}) };
+      for (let i = 0; i < photos.length; i++) {
+        const existing = updatedTags[i] || [];
+        if (existing.some(t => t.status === status && (t.label || '') === (label.trim() || ''))) continue;
+        updatedTags[i] = [...existing, { label: label.trim() || undefined, status, x: 50, y: 50 }];
+      }
+      const updatedBooking = { ...booking, photoTags: updatedTags };
+      if (drawerBooking?.id === booking.id) setDrawerBooking(updatedBooking);
+      setInquiries(prev => prev.map(i => i.id === updatedBooking.id ? updatedBooking : i));
+      try {
+        await updateBooking(updatedBooking, staff);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+    if (failCount > 0) {
+      showToast(`Tagged ${successCount} booking(s), ${failCount} failed`, 'error');
+    } else {
+      showToast(`Tagged all photos in ${successCount} booking(s)`, 'success');
+    }
+  };
+
   const handleSetCollectionStage = async (booking: BookingInquiry, stage: CollectionStage) => {
     if (!canManageBooking(booking)) { showToast('You can only manage bookings for your assigned studio', 'error'); return; }
     if (stage === 'ready') {
@@ -5000,6 +5030,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           uploadingId={collectionUploadingId}
           onAddPhotoTag={handleAddPhotoTag}
           onRemovePhotoTag={handleRemovePhotoTag}
+          onBulkAddPhotoTag={handleBulkAddPhotoTag}
           onCreateProfile={(data) => handleCreateProfile(data, 'painted')}
         />
       )}
@@ -5016,6 +5047,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           uploadingId={collectionUploadingId}
           onAddPhotoTag={handleAddPhotoTag}
           onRemovePhotoTag={handleRemovePhotoTag}
+          onBulkAddPhotoTag={handleBulkAddPhotoTag}
           onCreateProfile={(data) => handleCreateProfile(data, 'ready')}
         />
       )}
@@ -5032,6 +5064,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           uploadingId={collectionUploadingId}
           onAddPhotoTag={handleAddPhotoTag}
           onRemovePhotoTag={handleRemovePhotoTag}
+          onBulkAddPhotoTag={handleBulkAddPhotoTag}
         />
       )}
 
