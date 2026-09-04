@@ -61,6 +61,7 @@ enum BookingStatus: String, Codable, CaseIterable {
     case seated
     case completed
     case cancelled
+    case noShow = "no_show"
 
     var label: String {
         switch self {
@@ -69,6 +70,7 @@ enum BookingStatus: String, Codable, CaseIterable {
         case .seated: return "Seated"
         case .completed: return "Completed"
         case .cancelled: return "Cancelled"
+        case .noShow: return "No Show"
         }
     }
 
@@ -79,6 +81,7 @@ enum BookingStatus: String, Codable, CaseIterable {
         case .seated: return "orange"
         case .completed: return "teal"
         case .pending: return "yellow"
+        case .noShow: return "red"
         }
     }
 }
@@ -138,6 +141,7 @@ struct Booking: Codable, Identifiable, Hashable {
     var createdAt: String?
     var photos: [String]?
     var collectionStatus: String?
+    var collectedAt: String?
     var photoTags: [String: [PhotoTag]]?
 
     var bookingStatus: BookingStatus? {

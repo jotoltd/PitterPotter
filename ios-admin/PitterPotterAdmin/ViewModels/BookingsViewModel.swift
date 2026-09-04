@@ -151,6 +151,7 @@ class BookingsViewModel: ObservableObject {
                     managementToken: booking.managementToken, createdAt: booking.createdAt,
                     photos: booking.photos,
                     collectionStatus: booking.collectionStatus,
+                    collectedAt: booking.collectedAt,
                     photoTags: booking.photoTags
                 )
             }
@@ -298,6 +299,7 @@ class BookingsViewModel: ObservableObject {
             managementToken: booking.managementToken, createdAt: booking.createdAt,
             photos: booking.photos,
             collectionStatus: booking.collectionStatus,
+            collectedAt: booking.collectedAt,
             photoTags: booking.photoTags
         )
         Haptics.light()
@@ -380,6 +382,7 @@ class BookingsViewModel: ObservableObject {
             managementToken: booking.managementToken, createdAt: booking.createdAt,
             photos: photos,
             collectionStatus: booking.collectionStatus,
+            collectedAt: booking.collectedAt,
             photoTags: booking.photoTags
         )
         await saveBooking(updated, staff: staff)
@@ -405,6 +408,7 @@ class BookingsViewModel: ObservableObject {
             managementToken: booking.managementToken, createdAt: booking.createdAt,
             photos: photos.isEmpty ? nil : photos,
             collectionStatus: booking.collectionStatus,
+            collectedAt: booking.collectedAt,
             photoTags: booking.photoTags
         )
         await saveBooking(updated, staff: staff)
