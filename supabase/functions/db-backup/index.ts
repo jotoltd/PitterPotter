@@ -6,7 +6,7 @@ import { verifyStaff } from '../_shared/auth.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
 
 
-const BACKUP_TABLES = ['staff', 'staff_sessions', 'bookings', 'gift_cards', 'settings', 'content', 'capacity', 'audit_logs', 'page_settings'];
+const BACKUP_TABLES = ['staff', 'staff_sessions', 'bookings', 'gift_cards', 'settings', 'content', 'capacity', 'audit_logs', 'page_settings', 'email_logs', 'email_templates', 'sms_templates', 'short_urls'];
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {

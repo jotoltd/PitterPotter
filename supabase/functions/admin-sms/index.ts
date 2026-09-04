@@ -54,7 +54,6 @@ async function getTwilioUsage(days: number = 30): Promise<{ count: number; total
 
     const msgParams = new URLSearchParams({
       'PageSize': '20',
-      'From': Deno.env.get('TWILIO_PHONE_NUMBER') || '',
     });
     const msgResponse = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json?${msgParams}`,
@@ -89,12 +88,12 @@ async function getTwilioUsage(days: number = 30): Promise<{ count: number; total
 async function sendTestSMS(to: string, body: string, studio?: string): Promise<{ success: boolean; error?: string; sid?: string }> {
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
-  if (!accountSid || !authToken || !fromNumber) return { success: false, error: 'Twilio not configured' };
+  if (!accountSid || !authToken) return { success: false, error: 'Twilio not configured' };
 
+  const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
   const senderId = studio
     ? (studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP')
-    : fromNumber;
+    : (fromNumber || 'PitterPotP');
 
   try {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;

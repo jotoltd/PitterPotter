@@ -10,6 +10,9 @@ const TABLES = [
   'audit_logs',
   'email_logs',
   'email_templates',
+  'sms_templates',
+  'short_urls',
+  'content',
 ];
 
 function toCSV(rows: any[]): string {
