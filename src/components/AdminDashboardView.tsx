@@ -23,7 +23,7 @@ import EmailLogsTab from './admin/EmailLogsTab';
 import EmailTemplatesTab from './admin/EmailTemplatesTab';
 import WebmasterTab from './admin/WebmasterTab';
 import CollectionsTab, { CollectionStage } from './admin/CollectionsTab';
-import TagPopover, { TAG_COLORS, TAG_LABELS } from './admin/TagPopover';
+import TagPopover, { TAG_COLORS, TAG_LABELS, getTagColor } from './admin/TagPopover';
 import DashboardSummary from './admin/DashboardSummary';
 import SMSAdminTab from './admin/SMSAdminTab';
 import ImageModal from './ImageModal';
@@ -5237,7 +5237,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                               onClick={(e) => e.stopPropagation()}
                             >
                               <span
-                                className={`px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full flex items-center gap-0.5 whitespace-nowrap shadow-md ${tagColors[t.status] || 'bg-stone-100 text-stone-600'}`}
+                                className={`px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full flex items-center gap-0.5 whitespace-nowrap shadow-md ${getTagColor(t.status)}`}
                               >
                                 {t.label ? `${tagLabels[t.status] || t.status} - ${t.label}` : (tagLabels[t.status] || t.status)}
                                 {canEdit && canManageBooking(drawerBooking) && (
@@ -5266,7 +5266,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                                 <TagPopover
                                   x={drawerTagPopover.x}
                                   y={drawerTagPopover.y}
-                                  existingLabels={Array.from(new Set(Object.values(drawerBooking.photoTags || {}).flat().map(t => t.label).filter(Boolean))) as string[]}
+                                  existingTags={Array.from(new Set(Object.values(drawerBooking.photoTags || {}).flat().map(t => t.label || t.status).filter(Boolean))) as string[]}
                                   onAdd={(label, status) => {
                                     handleAddPhotoTag(drawerBooking, i, label, status, drawerTagPopover.x, drawerTagPopover.y);
                                   }}

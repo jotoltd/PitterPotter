@@ -6,7 +6,7 @@ import Skeleton from '../Skeleton';
 import ImageModal from '../ImageModal';
 import { compressImage } from '../../lib/imageCompression';
 import QRScanner from '../QRScanner';
-import TagPopover, { TAG_COLORS, TAG_LABELS, TAG_STATUSES } from './TagPopover';
+import TagPopover, { TAG_COLORS, TAG_LABELS, TAG_STATUSES, getTagColor } from './TagPopover';
 
 export type CollectionStage = 'painted' | 'ready' | 'collected';
 export type CollectionStageOrNull = CollectionStage | null;
@@ -73,14 +73,15 @@ function BookingCard({
   const [activeTagPopover, setActiveTagPopover] = useState<{ photoIndex: number; x: number; y: number } | null>(null);
   const tagColors = TAG_COLORS;
   const tagLabels = TAG_LABELS;
-  const allUsedLabels = useMemo(() => {
-    const labels = new Set<string>();
+  const allUsedTags = useMemo(() => {
+    const tags = new Set<string>();
     for (const key of Object.keys(photoTags)) {
       for (const t of photoTags[parseInt(key)] || []) {
-        if (t.label) labels.add(t.label);
+        const display = t.label || t.status;
+        if (display) tags.add(display);
       }
     }
-    return Array.from(labels);
+    return Array.from(tags);
   }, [photoTags]);
   const tagSummary = photos.length > 0 ? (() => {
     const counts: Record<string, number> = {};
@@ -185,7 +186,7 @@ function BookingCard({
                       onClick={(e) => e.stopPropagation()}
                     >
                       <span
-                        className={`px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full flex items-center gap-0.5 whitespace-nowrap shadow-md ${tagColors[t.status] || 'bg-stone-100 text-stone-600'}`}
+                        className={`px-1 py-0.5 text-[7px] font-black uppercase tracking-wider rounded-full flex items-center gap-0.5 whitespace-nowrap shadow-md ${getTagColor(t.status)}`}
                       >
                         {t.label ? `${tagLabels[t.status] || t.status} - ${t.label}` : (tagLabels[t.status] || t.status)}
                         {canUpdate && onRemovePhotoTag && (
@@ -206,7 +207,7 @@ function BookingCard({
                     <TagPopover
                       x={activeTagPopover.x}
                       y={activeTagPopover.y}
-                      existingLabels={allUsedLabels}
+                      existingTags={allUsedTags}
                       onAdd={(label, status) => {
                         onAddPhotoTag(booking, i, label, status, activeTagPopover.x, activeTagPopover.y);
                       }}

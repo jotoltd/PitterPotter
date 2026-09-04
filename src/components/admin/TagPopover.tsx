@@ -8,6 +8,19 @@ export interface TagInfo {
   y: number;
 }
 
+const COLOR_PALETTE = [
+  'bg-blue-100 text-blue-700',
+  'bg-purple-100 text-purple-700',
+  'bg-orange-100 text-orange-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-red-100 text-red-700',
+  'bg-pink-100 text-pink-700',
+  'bg-cyan-100 text-cyan-700',
+  'bg-amber-100 text-amber-700',
+  'bg-indigo-100 text-indigo-700',
+  'bg-teal-100 text-teal-700',
+];
+
 export const TAG_COLORS: Record<string, string> = {
   painted: 'bg-blue-100 text-blue-700',
   glazing: 'bg-purple-100 text-purple-700',
@@ -26,17 +39,26 @@ export const TAG_LABELS: Record<string, string> = {
 
 export const TAG_STATUSES = ['painted', 'glazing', 'firing', 'ready', 'needs_touchup'];
 
+export function getTagColor(status: string): string {
+  if (TAG_COLORS[status]) return TAG_COLORS[status];
+  let hash = 0;
+  for (let i = 0; i < status.length; i++) {
+    hash = ((hash << 5) - hash) + status.charCodeAt(i);
+    hash |= 0;
+  }
+  return COLOR_PALETTE[Math.abs(hash) % COLOR_PALETTE.length];
+}
+
 interface TagPopoverProps {
   x: number;
   y: number;
-  existingLabels: string[];
+  existingTags: string[];
   onAdd: (label: string, status: string) => void;
   onClose: () => void;
 }
 
-export default function TagPopover({ x, y, existingLabels, onAdd, onClose }: TagPopoverProps) {
-  const [status, setStatus] = useState('ready');
-  const [label, setLabel] = useState('');
+export default function TagPopover({ x, y, existingTags, onAdd, onClose }: TagPopoverProps) {
+  const [tagValue, setTagValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -52,14 +74,24 @@ export default function TagPopover({ x, y, existingLabels, onAdd, onClose }: Tag
     return () => document.removeEventListener('mousedown', handler);
   }, [onClose]);
 
-  const filteredSuggestions = existingLabels
-    .filter(l => l.toLowerCase().includes(label.toLowerCase()) && l !== label)
-    .slice(0, 5);
+  const filteredSuggestions = existingTags
+    .filter(t => t.toLowerCase().includes(tagValue.toLowerCase()) && t !== tagValue)
+    .slice(0, 6);
 
   const handleAdd = () => {
-    onAdd(label.trim(), status);
-    setLabel('');
+    const trimmed = tagValue.trim();
+    if (!trimmed) return;
+    onAdd('', trimmed);
+    setTagValue('');
+    setShowSuggestions(true);
     inputRef.current?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAdd();
+    }
   };
 
   return (
@@ -76,34 +108,25 @@ export default function TagPopover({ x, y, existingLabels, onAdd, onClose }: Tag
         </button>
       </div>
 
-      <select
-        value={status}
-        onChange={(e) => setStatus(e.target.value)}
-        className="w-full px-2 py-1.5 text-[10px] font-bold border border-[#1B2D3C]/20 rounded-md mb-1.5 bg-white text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
-      >
-        {TAG_STATUSES.map(s => (
-          <option key={s} value={s}>{TAG_LABELS[s] || s}</option>
-        ))}
-      </select>
-
       <div className="relative mb-1.5">
         <input
           ref={inputRef}
           type="text"
-          value={label}
-          onChange={(e) => { setLabel(e.target.value); setShowSuggestions(true); }}
+          value={tagValue}
+          onChange={(e) => { setTagValue(e.target.value); setShowSuggestions(true); }}
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-          placeholder="Label (e.g. person name)"
-          className="w-full px-2 py-1.5 text-[10px] border border-[#1B2D3C]/20 rounded-md text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
+          onKeyDown={handleKeyDown}
+          placeholder="Tag (e.g. Kitchen, Face...)"
+          className="w-full px-2 py-1.5 text-[10px] font-bold border border-[#1B2D3C]/20 rounded-md text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]"
         />
         {showSuggestions && filteredSuggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 bg-white border border-[#1B2D3C]/20 rounded-md shadow-lg z-40 max-h-32 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 bg-white border border-[#1B2D3C]/20 rounded-md shadow-lg z-40 max-h-40 overflow-y-auto">
             {filteredSuggestions.map(s => (
               <button
                 key={s}
-                onMouseDown={(e) => { e.preventDefault(); setLabel(s); setShowSuggestions(false); }}
-                className="w-full text-left px-2 py-1 text-[10px] text-[#1B2D3C] hover:bg-[#D6E2E9] cursor-pointer"
+                onMouseDown={(e) => { e.preventDefault(); setTagValue(s); setShowSuggestions(false); inputRef.current?.focus(); }}
+                className="w-full text-left px-2 py-1 text-[10px] font-bold text-[#1B2D3C] hover:bg-[#D6E2E9] cursor-pointer"
               >
                 {s}
               </button>
@@ -115,7 +138,8 @@ export default function TagPopover({ x, y, existingLabels, onAdd, onClose }: Tag
       <div className="flex gap-1">
         <button
           onClick={handleAdd}
-          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-[#1B2D3C] text-white text-[9px] font-bold uppercase tracking-wider rounded-md hover:bg-[#486581] cursor-pointer"
+          disabled={!tagValue.trim()}
+          className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-[#1B2D3C] text-white text-[9px] font-bold uppercase tracking-wider rounded-md hover:bg-[#486581] cursor-pointer disabled:opacity-40"
         >
           <Plus className="w-3 h-3" /> Add Tag
         </button>
