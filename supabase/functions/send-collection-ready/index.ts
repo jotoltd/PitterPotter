@@ -13,6 +13,28 @@ const SESSION_LABELS: Record<string, string> = {
   'corporate': 'Corporate Event',
 };
 
+function generateShortCode(length: number = 5): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let code = '';
+  for (let i = 0; i < length; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+async function createShortUrl(supabase: ReturnType<typeof createClient>, targetUrl: string, bookingId: string, siteUrl: string): Promise<string> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const code = generateShortCode();
+    const { error } = await supabase
+      .from('short_urls')
+      .insert({ short_code: code, target_url: targetUrl, booking_id: bookingId });
+    if (!error) {
+      return `${siteUrl}/${code}`;
+    }
+  }
+  return targetUrl;
+}
+
 async function sendReadySMS(
   booking: {
     booking_id: string;
@@ -42,9 +64,17 @@ async function sendReadySMS(
   const studioInfo = getStudioInfo(booking.studio);
   const studioName = `Pitter Potter ${booking.studio}`;
   const siteUrl = (Deno.env.get('SITE_URL') || 'https://www.pitterpotter.co.uk').replace(/\/+$/, '');
-  const manageUrl = booking.management_token
+  const fullManageUrl = booking.management_token
     ? `${siteUrl}/manage-booking?token=${booking.management_token}`
     : '';
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  let manageUrl = fullManageUrl;
+  if (fullManageUrl && supabaseUrl && supabaseServiceKey) {
+    const shortClient = createClient(supabaseUrl, supabaseServiceKey);
+    manageUrl = await createShortUrl(shortClient, fullManageUrl, booking.booking_id, siteUrl);
+  }
 
   let message: string;
   const smsTemplate = await loadSMSTemplate('collection_ready');

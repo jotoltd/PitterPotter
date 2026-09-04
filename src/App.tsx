@@ -89,6 +89,30 @@ function getPageFromPath(): Page {
   if (legacyPage && legacyPage in PAGE_TO_PATH) return legacyPage;
   return 'not-found';
 }
+
+async function checkShortUrl(): Promise<boolean> {
+  const path = window.location.pathname;
+  const code = path.replace(/^\/+/, '');
+  if (!code || code.length < 3 || code.length > 10 || !/^[a-z0-9]+$/i.test(code)) {
+    return false;
+  }
+  if (code in PATH_TO_PAGE || PATH_TO_PAGE[`/${code}`]) return false;
+  if (!isSupabaseEnabled()) return false;
+  try {
+    const { data, error } = await supabase!
+      .from('short_urls')
+      .select('target_url')
+      .eq('short_code', code)
+      .single();
+    if (data?.target_url) {
+      window.location.replace(data.target_url);
+      return true;
+    }
+  } catch {
+    // Not a short URL, fall through
+  }
+  return false;
+}
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase, isSupabaseEnabled } from './lib/supabase';
 import { loadSlotsFromSupabase } from './lib/timeSlots';
@@ -194,6 +218,8 @@ export default function App() {
 
     const initialPage = getPageFromPath();
     setCurrentPage(initialPage);
+
+    checkShortUrl();
 
     const handlePopState = () => {
       setCurrentPage(getPageFromPath());
