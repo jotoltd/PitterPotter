@@ -27,6 +27,9 @@ interface BookingRow {
   final_price: number | null;
   estimated_price: number | null;
   payment_status: string | null;
+  collection_status: string | null;
+  photos: string[] | null;
+  collected_at: string | null;
 }
 
 Deno.serve(async (req) => {
@@ -111,6 +114,10 @@ Deno.serve(async (req) => {
           finalPrice: booking.final_price ? Number(booking.final_price) : null,
           estimatedPrice: booking.estimated_price ? Number(booking.estimated_price) : null,
           paymentStatus: booking.payment_status || null,
+          collectionStatus: booking.collection_status || null,
+          photos: booking.photos || null,
+          collectedAt: booking.collected_at || null,
+          managementToken: booking.management_token || null,
         },
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

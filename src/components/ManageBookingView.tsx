@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Calendar as CalendarIcon, Clock, MapPin, Users, Loader2, CheckCircle2, XCircle, AlertCircle, ArrowRight } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, Users, Loader2, CheckCircle2, XCircle, AlertCircle, ArrowRight, QrCode, Package, Sparkles } from 'lucide-react';
 import { format, getDay, parseISO, startOfDay, isBefore } from 'date-fns';
 import { getSlots, filterPastSlots, SlotSessionType, DayType, Studio } from '../lib/timeSlots';
 import { getBusyDates } from '../lib/bookings';
@@ -29,6 +29,10 @@ interface BookingData {
   finalPrice?: number | null;
   estimatedPrice?: number | null;
   paymentStatus?: string | null;
+  collectionStatus?: string | null;
+  photos?: string[] | null;
+  collectedAt?: string | null;
+  managementToken?: string | null;
 }
 
 const SESSION_LABELS: Record<string, string> = {
@@ -258,6 +262,70 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
             <p className="text-sm font-semibold text-red-800">{error}</p>
+          </div>
+        )}
+
+        {/* QR Code & Collection Card */}
+        {token && !isCancelled && (
+          <div className="bg-white rounded-2xl border border-[#1B2D3C]/20 p-6 mb-4 text-center shadow-sm">
+            <div
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-4"
+              style={{
+                backgroundColor: booking.collectionStatus === 'ready' ? '#D1FAE5' : booking.collectionStatus === 'collected' ? '#E2E8F0' : '#FEF3C7',
+                color: booking.collectionStatus === 'ready' ? '#065F46' : booking.collectionStatus === 'collected' ? '#334155' : '#92400E'
+              }}
+            >
+              <Package className="w-3.5 h-3.5" />
+              {booking.collectionStatus === 'ready' ? 'Ready for Collection' : booking.collectionStatus === 'collected' ? 'Collected' : booking.status === 'completed' ? 'Pottery Being Glazed & Fired' : 'Booking Check-In'}
+            </div>
+
+            <h2 className="font-heading text-xl font-black text-[#1B2D3C] mb-1">
+              {booking.collectionStatus === 'ready' ? 'Your Pottery is Ready!' : 'Collection QR Code'}
+            </h2>
+            <p className="text-xs text-[#1B2D3C]/70 mb-4 max-w-sm mx-auto">
+              {booking.collectionStatus === 'ready'
+                ? 'Show this QR code to staff at the studio counter to pick up your pottery.'
+                : 'Show this QR code upon arrival at Pitter Potter.'}
+            </p>
+
+            {/* QR Code Image */}
+            <div className="inline-block p-4 bg-white rounded-2xl border-2 border-[#1B2D3C]/15 shadow-inner mb-4">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=8&data=${encodeURIComponent(window.location.origin + '/manage-booking?token=' + token)}`}
+                alt="Collection QR Code"
+                className="w-48 h-48 mx-auto rounded-lg"
+              />
+              <p className="text-[11px] font-mono font-bold text-[#1B2D3C]/60 mt-2">
+                Ref: {booking.bookingId.slice(0, 8).toUpperCase()}
+              </p>
+            </div>
+
+            {/* Photos of pottery if uploaded */}
+            {booking.photos && booking.photos.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-[#1B2D3C]/10 text-left">
+                <p className="text-[10px] font-bold text-[#1B2D3C]/50 uppercase tracking-wider mb-2">
+                  Your Pieces ({booking.photos.length})
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {booking.photos.map((photoUrl, idx) => (
+                    <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/10">
+                      <img src={photoUrl} alt={`Pottery piece ${idx + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Collection Instructions */}
+            <div className="mt-4 p-3.5 bg-[#FFF8F0] rounded-xl text-left space-y-1.5 border border-[#1B2D3C]/10">
+              <p className="text-xs font-bold text-[#1B2D3C]">Collection Information:</p>
+              <ul className="text-xs text-[#1B2D3C]/75 space-y-1 list-disc list-inside">
+                <li>Please collect within <strong>6 weeks</strong> of notification.</li>
+                <li>Please bring your own bag if possible.</li>
+                <li>Studio: <strong>Pitter Potter {booking.studio}</strong> ({booking.studio === 'Putney' ? '234 Upper Richmond Road, SW15 6TG' : '52 Wimbledon Hill Road, SW19 7PA'})</li>
+                <li>Closed on Mondays except during school holidays.</li>
+              </ul>
+            </div>
           </div>
         )}
 

@@ -210,7 +210,7 @@ Deno.serve(async (req) => {
       }
       const { data: prevRow } = await supabase.from('bookings').select('*').eq('booking_id', booking.id).single();
       const bookingRow = toBookingRow(booking as Record<string, unknown>);
-      if (bookingRow.status === 'completed' && !prevRow?.collection_status && !bookingRow.collectionStatus) {
+      if (bookingRow.status === 'completed' && !prevRow?.collection_status && !bookingRow.collection_status) {
         bookingRow.collection_status = 'painted';
       }
       // Remove undefined fields so partial updates don't wipe existing data
@@ -223,7 +223,7 @@ Deno.serve(async (req) => {
 
       // Send "ready to collect" notification when collection_status changes to 'ready'
       const prevStatus = prevRow?.collection_status ?? null;
-      const newStatus = (booking as Record<string, unknown>).collectionStatus ?? null;
+      const newStatus = bookingRow.collection_status ?? null;
       if (newStatus === 'ready' && prevStatus !== 'ready') {
         try {
           await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-collection-ready`, {
