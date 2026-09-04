@@ -319,6 +319,23 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Idempotency guard: prevent duplicate notifications within 30 seconds
+    const thirtySecondsAgo = new Date(Date.now() - 30_000).toISOString();
+    const { data: recentLogs } = await supabase
+      .from('email_logs')
+      .select('id')
+      .eq('booking_id', bookingId)
+      .in('email_type', ['collection_ready', 'collection_ready_sms'])
+      .gte('created_at', thirtySecondsAgo)
+      .limit(1);
+
+    if (recentLogs && recentLogs.length > 0) {
+      console.log(`Duplicate send-collection-ready suppressed for booking ${bookingId}`);
+      return new Response(JSON.stringify({ success: true, message: 'Notification already sent recently' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Send both email and SMS when available
     const results: { email?: { success: boolean; error?: string }; sms?: { success: boolean; error?: string } } = {};
 
