@@ -17,6 +17,7 @@ struct CollectionsView: View {
     @State private var scanResult: String?
     @State private var scanError: String?
     @State private var pendingReadyBooking: Booking?
+    @State private var scannedBooking: Booking?
 
     var filteredBookings: [Booking] {
         bookingsVM.bookings.filter { b in
@@ -144,6 +145,11 @@ struct CollectionsView: View {
                         }
                     }
             }
+            .sheet(item: $scannedBooking) { booking in
+                ScanResultSheet(booking: booking)
+                    .environmentObject(authVM)
+                    .environmentObject(bookingsVM)
+            }
             .alert("Upload Error", isPresented: .constant(uploadError != nil)) {
                 Button("OK") { uploadError = nil }
             } message: {
@@ -216,7 +222,7 @@ struct CollectionsView: View {
         if let stage = CollectionStage(rawValue: booking.collectionStatus ?? "") {
             selectedStage = stage
         }
-        selectedBooking = booking
+        scannedBooking = booking
         Haptics.success()
     }
 
@@ -639,6 +645,139 @@ struct CollectionDetailSheet: View {
             try? await APIClient.shared.updateBooking(updated, staff: staff)
             await MainActor.run {
                 bookingsVM.updateBookingLocally(updated)
+                dismiss()
+            }
+        }
+    }
+}
+
+// MARK: - Scan Result Sheet (focused view after QR scan)
+
+struct ScanResultSheet: View {
+    let booking: Booking
+    @EnvironmentObject var authVM: AuthViewModel
+    @EnvironmentObject var bookingsVM: BookingsViewModel
+    @Environment(\.dismiss) var dismiss
+    @State private var isMarking = false
+    @State private var alreadyCollected = false
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 16) {
+                    infoCard
+                    photosSection
+                    markCollectedButton
+                }
+                .padding(16)
+            }
+            .navigationTitle(booking.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private var infoCard: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Image(systemName: "person.fill")
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                Text(booking.name)
+                    .font(PPBrand.bodyFont.bold())
+            }
+            HStack(spacing: 12) {
+                Label(booking.studio, systemImage: "mappin")
+                Label("\(booking.paintersCount)", systemImage: "person.2")
+                Label(booking.date, systemImage: "calendar")
+            }
+            .font(PPBrand.bodyFontCaption)
+            .foregroundStyle(PPBrand.charcoal.opacity(0.6))
+            if let phone = booking.phone, !phone.isEmpty {
+                Label(phone, systemImage: "phone")
+                    .font(PPBrand.bodyFontCaption)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(PPBrand.sage.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var photosSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Verify Photos")
+                .font(PPBrand.bodyFontSmall.bold())
+                .foregroundStyle(PPBrand.charcoal)
+
+            if let photos = booking.photos, !photos.isEmpty {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                    ForEach(photos, id: \.self) { urlStr in
+                        if let url = URL(string: urlStr) {
+                            CachedAsyncImage(url: url)
+                                .frame(height: 140)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                }
+            } else {
+                Text("No photos on file")
+                    .font(PPBrand.bodyFontCaption)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                    .padding(.vertical, 20)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private var markCollectedButton: some View {
+        VStack(spacing: 8) {
+            if alreadyCollected {
+                Text("Already collected")
+                    .font(PPBrand.bodyFontSmall.bold())
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+            } else {
+                Button {
+                    markCollected()
+                } label: {
+                    HStack(spacing: 8) {
+                        if isMarking {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Image(systemName: "checkmark.circle.fill")
+                        }
+                        Text("Mark as Collected")
+                    }
+                    .font(PPBrand.bodyFont.bold())
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(isMarking ? Color.green.opacity(0.6) : Color.green)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .disabled(isMarking)
+            }
+        }
+        .padding(.top, 8)
+    }
+
+    private func markCollected() {
+        guard let staff = authVM.staff else { return }
+        isMarking = true
+        Haptics.light()
+        Task {
+            var updated = booking
+            updated.collectionStatus = CollectionStage.collected.rawValue
+            try? await APIClient.shared.updateBooking(updated, staff: staff)
+            await MainActor.run {
+                bookingsVM.updateBookingLocally(updated)
+                isMarking = false
+                Haptics.success()
                 dismiss()
             }
         }
