@@ -23,6 +23,7 @@ import EmailLogsTab from './admin/EmailLogsTab';
 import EmailTemplatesTab from './admin/EmailTemplatesTab';
 import WebmasterTab from './admin/WebmasterTab';
 import CollectionsTab, { CollectionStage } from './admin/CollectionsTab';
+import TagPopover, { TAG_COLORS, TAG_LABELS } from './admin/TagPopover';
 import DashboardSummary from './admin/DashboardSummary';
 import SMSAdminTab from './admin/SMSAdminTab';
 import ImageModal from './ImageModal';
@@ -135,6 +136,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [modalImages, setModalImages] = useState<string[] | null>(null);
   const [modalIndex, setModalIndex] = useState(0);
   const [drawerTagMode, setDrawerTagMode] = useState(false);
+  const [drawerTagPopover, setDrawerTagPopover] = useState<{ photoIndex: number; x: number; y: number } | null>(null);
   const [pageSettings, setPageSettings] = useState<{ page_key: string; enabled: boolean }[]>([]);
   const [pageSettingsLoading, setPageSettingsLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled'>('all');
@@ -5218,9 +5220,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                               const rect = e.currentTarget.getBoundingClientRect();
                               const x = ((e.clientX - rect.left) / rect.width) * 100;
                               const y = ((e.clientY - rect.top) / rect.height) * 100;
-                              const label = prompt('Label (optional, e.g. person name):', '') || '';
-                              const status = prompt('Status: painted, glazing, firing, ready, needs_touchup', 'ready') || 'ready';
-                              handleAddPhotoTag(drawerBooking, i, label, status, x, y);
+                              setDrawerTagPopover({ photoIndex: i, x, y });
                             } else {
                               setModalImages(drawerBooking.photos!); setModalIndex(i);
                             }
@@ -5261,6 +5261,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                               </button>
                               {drawerTagMode && (
                                 <div className="absolute inset-0 ring-2 ring-[#1B2D3C] ring-inset rounded-lg pointer-events-none" />
+                              )}
+                              {drawerTagPopover && drawerTagPopover.photoIndex === i && (
+                                <TagPopover
+                                  x={drawerTagPopover.x}
+                                  y={drawerTagPopover.y}
+                                  existingLabels={Array.from(new Set(Object.values(drawerBooking.photoTags || {}).flat().map(t => t.label).filter(Boolean))) as string[]}
+                                  onAdd={(label, status) => {
+                                    handleAddPhotoTag(drawerBooking, i, label, status, drawerTagPopover.x, drawerTagPopover.y);
+                                  }}
+                                  onClose={() => setDrawerTagPopover(null)}
+                                />
                               )}
                             </>
                           )}

@@ -6,6 +6,7 @@ import Skeleton from '../Skeleton';
 import ImageModal from '../ImageModal';
 import { compressImage } from '../../lib/imageCompression';
 import QRScanner from '../QRScanner';
+import TagPopover, { TAG_COLORS, TAG_LABELS, TAG_STATUSES } from './TagPopover';
 
 export type CollectionStage = 'painted' | 'ready' | 'collected';
 export type CollectionStageOrNull = CollectionStage | null;
@@ -69,20 +70,18 @@ function BookingCard({
   const photos = booking.photos ?? [];
   const photoTags = booking.photoTags ?? {};
   const [tagMode, setTagMode] = useState(false);
-  const tagColors: Record<string, string> = {
-    painted: 'bg-blue-100 text-blue-700',
-    glazing: 'bg-purple-100 text-purple-700',
-    firing: 'bg-orange-100 text-orange-700',
-    ready: 'bg-emerald-100 text-emerald-700',
-    needs_touchup: 'bg-red-100 text-red-700',
-  };
-  const tagLabels: Record<string, string> = {
-    painted: 'Painted',
-    glazing: 'Glazing',
-    firing: 'Firing',
-    ready: 'Ready',
-    needs_touchup: 'Touch-up',
-  };
+  const [activeTagPopover, setActiveTagPopover] = useState<{ photoIndex: number; x: number; y: number } | null>(null);
+  const tagColors = TAG_COLORS;
+  const tagLabels = TAG_LABELS;
+  const allUsedLabels = useMemo(() => {
+    const labels = new Set<string>();
+    for (const key of Object.keys(photoTags)) {
+      for (const t of photoTags[parseInt(key)] || []) {
+        if (t.label) labels.add(t.label);
+      }
+    }
+    return Array.from(labels);
+  }, [photoTags]);
   const tagSummary = photos.length > 0 ? (() => {
     const counts: Record<string, number> = {};
     for (let i = 0; i < photos.length; i++) {
@@ -169,9 +168,7 @@ function BookingCard({
                       const x = ((e.clientX - rect.left) / rect.width) * 100;
                       const y = ((e.clientY - rect.top) / rect.height) * 100;
                       e.stopPropagation();
-                      const label = prompt('Label (optional, e.g. person name):', '') || '';
-                      const status = prompt('Status: painted, glazing, firing, ready, needs_touchup', 'ready') || 'ready';
-                      onAddPhotoTag(booking, i, label, status, x, y);
+                      setActiveTagPopover({ photoIndex: i, x, y });
                     } else {
                       onOpenImage?.(photos, i);
                     }
@@ -204,6 +201,17 @@ function BookingCard({
                   ))}
                   {canUpdate && onAddPhotoTag && tagMode && (
                     <div className="absolute inset-0 ring-2 ring-[#1B2D3C] ring-inset rounded-lg pointer-events-none" />
+                  )}
+                  {activeTagPopover && activeTagPopover.photoIndex === i && onAddPhotoTag && (
+                    <TagPopover
+                      x={activeTagPopover.x}
+                      y={activeTagPopover.y}
+                      existingLabels={allUsedLabels}
+                      onAdd={(label, status) => {
+                        onAddPhotoTag(booking, i, label, status, activeTagPopover.x, activeTagPopover.y);
+                      }}
+                      onClose={() => setActiveTagPopover(null)}
+                    />
                   )}
                 </div>
               );
