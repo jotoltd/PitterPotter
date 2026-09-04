@@ -329,7 +329,8 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
           </div>
         )}
 
-        {/* Booking details card */}
+        {/* Booking details card (hidden for completed/collection bookings) */}
+        {booking.status !== 'completed' && (
         <div className="bg-white rounded-2xl border border-[#1B2D3C]/20 p-6 mb-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Booking Details</h2>
@@ -402,9 +403,10 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
           )}
 
         </div>
+        )}
 
         {/* Reschedule form */}
-        {mode === 'reschedule' && !isCancelled && (
+        {mode === 'reschedule' && !isCancelled && booking.status !== 'completed' && (
           <div className="bg-white rounded-2xl border border-[#1B2D3C]/20 p-6 mb-4">
             <h2 className="font-heading text-xl font-black text-[#1B2D3C] mb-4">Reschedule Booking</h2>
             <div className="space-y-4">
@@ -453,7 +455,7 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
         )}
 
         {/* Change guests form */}
-        {mode === 'guests' && !isCancelled && (
+        {mode === 'guests' && !isCancelled && booking.status !== 'completed' && (
           <div className="bg-white rounded-2xl border border-[#1B2D3C]/20 p-6 mb-4">
             <h2 className="font-heading text-xl font-black text-[#1B2D3C] mb-4">Change Number of Guests</h2>
             <p className="text-sm text-[#1B2D3C]/70 mb-4">
@@ -495,7 +497,7 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
         )}
 
         {/* Cancel confirmation */}
-        {mode === 'cancel' && !isCancelled && (
+        {mode === 'cancel' && !isCancelled && booking.status !== 'completed' && (
           <div className="bg-white rounded-2xl border border-red-200 p-6 mb-4">
             <div className="flex items-start gap-3 mb-4">
               <AlertCircle className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
@@ -524,8 +526,8 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
           </div>
         )}
 
-        {/* Action buttons */}
-        {mode === 'view' && !isCancelled && (
+        {/* Action buttons (hidden for completed/collection bookings) */}
+        {mode === 'view' && !isCancelled && booking.status !== 'completed' && (
           <div className="space-y-3">
             <button
               onClick={() => { setMode('reschedule'); setError(''); setSuccessMsg(''); setCalendarMonth(new Date()); }}

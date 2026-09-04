@@ -177,6 +177,27 @@ struct CollectionsView: View {
             } message: {
                 Text(scanError ?? "")
             }
+            .onAppear {
+                restrictStudioIfNeeded()
+            }
+        }
+    }
+
+    private var availableStudios: [Studio] {
+        guard let staff = authVM.staff else { return Studio.allCases }
+        if let allowed = staff.allowedStudios, !allowed.isEmpty {
+            return allowed.compactMap { Studio(rawValue: $0) }
+        }
+        return Studio.allCases
+    }
+
+    private var isSuperAdmin: Bool {
+        authVM.staff?.role == "super_admin"
+    }
+
+    private func restrictStudioIfNeeded() {
+        if !isSuperAdmin && availableStudios.count == 1 {
+            selectedStudio = availableStudios.first
         }
     }
 
@@ -273,15 +294,27 @@ struct CollectionsView: View {
                         .foregroundStyle(PPBrand.charcoal.opacity(0.3))
                 }
             }
-            Divider().frame(height: 16)
-            Picker("Studio", selection: $selectedStudio) {
-                Text("All").tag(Studio?.none)
-                ForEach(Studio.allCases, id: \.self) { s in
-                    Text(s.rawValue).tag(Studio?.some(s))
+            if isSuperAdmin {
+                Divider().frame(height: 16)
+                Picker("Studio", selection: $selectedStudio) {
+                    Text("All").tag(Studio?.none)
+                    ForEach(Studio.allCases, id: \.self) { s in
+                        Text(s.rawValue).tag(Studio?.some(s))
+                    }
                 }
+                .pickerStyle(.menu)
+                .font(PPBrand.bodyFontCaption)
+            } else if availableStudios.count > 1 {
+                Divider().frame(height: 16)
+                Picker("Studio", selection: $selectedStudio) {
+                    Text("All").tag(Studio?.none)
+                    ForEach(availableStudios, id: \.self) { s in
+                        Text(s.rawValue).tag(Studio?.some(s))
+                    }
+                }
+                .pickerStyle(.menu)
+                .font(PPBrand.bodyFontCaption)
             }
-            .pickerStyle(.menu)
-            .font(PPBrand.bodyFontCaption)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -793,11 +826,24 @@ struct AddProfileSheet: View {
     @Environment(\.dismiss) var dismiss
     @State private var name = ""
     @State private var phone = ""
+    @State private var email = ""
     @State private var date = Date()
     @State private var studio: Studio = .Putney
     @State private var photos: [String] = []
     @State private var showCamera = false
     @State private var isSaving = false
+
+    private var isSuperAdmin: Bool {
+        authVM.staff?.role == "super_admin"
+    }
+
+    private var availableStudios: [Studio] {
+        guard let staff = authVM.staff else { return Studio.allCases }
+        if let allowed = staff.allowedStudios, !allowed.isEmpty {
+            return allowed.compactMap { Studio(rawValue: $0) }
+        }
+        return Studio.allCases
+    }
 
     var body: some View {
         NavigationStack {
@@ -806,12 +852,29 @@ struct AddProfileSheet: View {
                     TextField("Name *", text: $name)
                     TextField("Phone", text: $phone)
                         .keyboardType(.phonePad)
+                    TextField("Email", text: $email)
+                        .keyboardType(.emailAddress)
+                        .autocapitalization(.none)
                 }
                 Section(header: Text("Details")) {
                     DatePicker("Date of Painting", selection: $date, displayedComponents: .date)
-                    Picker("Studio", selection: $studio) {
-                        ForEach(Studio.allCases, id: \.self) { s in
-                            Text(s.rawValue).tag(s)
+                    if isSuperAdmin {
+                        Picker("Studio", selection: $studio) {
+                            ForEach(Studio.allCases, id: \.self) { s in
+                                Text(s.rawValue).tag(s)
+                            }
+                        }
+                    } else if availableStudios.count == 1 {
+                        Picker("Studio", selection: $studio) {
+                            ForEach(availableStudios, id: \.self) { s in
+                                Text(s.rawValue).tag(s)
+                            }
+                        }
+                    } else {
+                        Picker("Studio", selection: $studio) {
+                            ForEach(availableStudios, id: \.self) { s in
+                                Text(s.rawValue).tag(s)
+                            }
                         }
                     }
                 }
@@ -846,6 +909,11 @@ struct AddProfileSheet: View {
                         saveProfile()
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+                }
+            }
+            .onAppear {
+                if !isSuperAdmin, let s = availableStudios.first {
+                    studio = s
                 }
             }
             .sheet(isPresented: $showCamera) {
@@ -890,8 +958,8 @@ struct AddProfileSheet: View {
                     id: bookingId,
                     studio: studio.rawValue,
                     name: name.trimmingCharacters(in: .whitespaces),
-                    email: "",
-                    phone: phone.trimmingCharacters(in: .whitespaces),
+                    email: email.trimmingCharacters(in: .whitespaces).isEmpty ? nil : email.trimmingCharacters(in: .whitespaces),
+                    phone: phone.trimmingCharacters(in: .whitespaces).isEmpty ? nil : phone.trimmingCharacters(in: .whitespaces),
                     date: dateStr,
                     time: "10:00",
                     paintersCount: 1,
