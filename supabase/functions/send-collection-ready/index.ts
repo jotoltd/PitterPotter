@@ -56,9 +56,9 @@ async function sendReadySMS(
       studioAddress: studioInfo.address,
       studioPhone: studioInfo.phone,
       manageUrl,
-    });
+    }).replace(/\\n/g, '\n');
   } else {
-    message = `Dear ${booking.name}, your pottery from ${studioName} is ready to collect!\n\nClick here to show the QR code for collection: ${manageUrl}\n\nPlease collect within 6 WEEKS, after this period your item(s) may be donated to charity.\n\nPlease also bring your own bag if you can.\n\nClosed on Mondays except school holidays.\n\nAddress: ${studioInfo.address}`;
+    message = `Dear ${booking.name}, your pottery from ${studioName} is ready to collect!\n\nClick here to show the QR code for collection: ${manageUrl}\n\nPlease collect within 6 WEEKS, after this period your item(s) may be donated to charity.\n\nPlease also bring your own bag if you can.\n\nClosed on Mondays except school holidays.\n\nAddress: ${studioInfo.address}\nPhone: ${studioInfo.phone}`;
   }
 
   if (message.length > 160) {
