@@ -2883,7 +2883,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         />
 
         {/* Booking type tabs */}
-        <div className="flex gap-2 mb-5 mt-8">
+        <div className="flex gap-2 mb-3 mt-6 sticky top-[104px] z-10 bg-[#FFFFFF] py-2">
           {([
             { value: 'all', label: 'All Bookings' },
             { value: 'painting', label: 'Painting' },
@@ -2913,7 +2913,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           })}
         </div>
         {/* Bookings toolbar — all filters in one row */}
-        <div className="flex flex-wrap items-center gap-2 mb-5">
+        <div className="flex flex-wrap items-center gap-2 mb-4 sticky top-[148px] z-10 bg-[#FFFFFF] py-2">
           {/* Search */}
           <div className="relative flex-1 min-w-[180px]">
             <input
@@ -3284,13 +3284,26 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             </div>
           )}
         </div>
-
           </>
         )}
 
         {/* Settings tab — Staff + Capacity + Stripe + Page Visibility + Table Plan */}
         {activeTab === 'settings' && canManageStaff && (
-          <div className="bg-white p-6 border border-[#1B2D3C]/20 shadow-sm mt-8">
+          <>
+          <div className="flex items-center gap-2 flex-wrap mb-4 sticky top-[104px] z-10 bg-[#FFFFFF] py-2">
+            <span className="text-xs font-bold text-[#1B2D3C]/40">Settings</span>
+            <span className="text-xs text-[#1B2D3C]/30">›</span>
+            {['Staff', 'Capacity', 'Time Slots', 'Closures', 'Stripe', 'Pages', 'Table Plan', 'Notifications'].map((section) => (
+              <a
+                key={section}
+                href={`#settings-${section.toLowerCase().replace(/\s+/g, '-')}`}
+                className="px-2.5 py-1 text-[10px] font-bold text-[#1B2D3C]/60 hover:text-[#1B2D3C] hover:bg-[#DBE7E4] rounded transition-all cursor-pointer"
+              >
+                {section}
+              </a>
+            ))}
+          </div>
+          <div id="settings-staff" className="bg-white p-6 border border-[#1B2D3C]/20 shadow-sm scroll-mt-[140px]">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading text-lg font-black text-[#1B2D3C] uppercase tracking-wider">Staff Management</h2>
               <div className="flex items-center gap-2">
@@ -3379,6 +3392,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               <p className="text-xs text-stone-500 font-medium">No staff members loaded.</p>
             )}
           </div>
+          </>
         )}
       </div>
 
@@ -4498,7 +4512,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       {activeTab === 'settings' && canManageStaff && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-8 space-y-6">
           {/* Capacity */}
-          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
+          <div id="settings-capacity" className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 scroll-mt-[140px]">
             <div>
               <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Capacity</h2>
               <p className="text-xs text-[#1B2D3C]/70 mt-1">Maximum seats per studio and session type.</p>
@@ -4551,7 +4565,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           </div>
 
           {/* Time Slots */}
-          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-6">
+          <div id="settings-time-slots" className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-6 scroll-mt-[140px]">
             <div>
               <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Time Slots</h2>
               <p className="text-xs text-[#1B2D3C]/70 mt-1">Configure available booking times per studio, session type, and weekday/weekend. Changes are saved globally and apply to all users.</p>
@@ -4825,7 +4839,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           </div>
 
           {/* Stripe Mode */}
-          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 max-w-xl">
+          <div id="settings-stripe" className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 scroll-mt-[140px] max-w-xl">
             <div>
               <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Stripe Mode</h2>
               <p className="text-xs text-[#1B2D3C]/70 mt-1">Switch between sandbox (test) and live payments.</p>
@@ -4955,7 +4969,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
           {/* Page Visibility */}
           {staff.role === 'super_admin' && (
-            <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4">
+            <div id="settings-pages" className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 scroll-mt-[140px]">
               <div>
                 <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Page Visibility</h2>
                 <p className="text-xs text-[#1B2D3C]/70 mt-1">Enable or disable pages from the public site. Disabled pages will show a maintenance message.</p>
@@ -5034,8 +5048,130 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       {activeTab === 'settings' && canManageStaff && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-8 space-y-6">
 
+          {/* Closures */}
+          <div id="settings-closures" className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-6 scroll-mt-[140px]">
+            <div>
+              <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Closures</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Configure school holidays and closed dates for each studio.</p>
+            </div>
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">School Holiday Periods <span className="text-[#1B2D3C]/40 font-medium normal-case tracking-normal">(Mondays within range open)</span></h3>
+                <div className="flex flex-wrap gap-2">
+                  {closures.schoolHolidays.length === 0 && <p className="text-xs text-[#1B2D3C]/40 italic">No school holiday periods set</p>}
+                  {(closures.schoolHolidays as HolidayRange[]).map((range, idx) => (
+                    <span key={idx} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg">
+                      {range.label && <span className="text-emerald-600">{range.label}:</span>}
+                      {range.from} → {range.to}
+                      <button onClick={() => {
+                        const next: ClosureDates = { ...closures, schoolHolidays: (closures.schoolHolidays as HolidayRange[]).filter((_, i) => i !== idx) };
+                        setClosures(next);
+                        saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
+                      }} className="ml-0.5 hover:text-red-600 cursor-pointer"><XIcon className="w-3 h-3" /></button>
+                    </span>
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Label (e.g. Summer)"
+                    value={newHolidayLabel}
+                    onChange={e => setNewHolidayLabel(e.target.value)}
+                    className="px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
+                  />
+                  <input
+                    type="date"
+                    value={newHolidayFrom}
+                    onChange={e => setNewHolidayFrom(e.target.value)}
+                    className="px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
+                  />
+                  <input
+                    type="date"
+                    value={newHolidayTo}
+                    onChange={e => setNewHolidayTo(e.target.value)}
+                    className="px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
+                  />
+                  <button
+                    onClick={() => {
+                      if (!newHolidayFrom || !newHolidayTo || newHolidayFrom > newHolidayTo) {
+                        showToast('Please set a valid from and to date', 'error');
+                        return;
+                      }
+                      const range: HolidayRange = { from: newHolidayFrom, to: newHolidayTo, ...(newHolidayLabel.trim() ? { label: newHolidayLabel.trim() } : {}) };
+                      const next: ClosureDates = { ...closures, schoolHolidays: [...(closures.schoolHolidays as HolidayRange[]), range].sort((a, b) => a.from.localeCompare(b.from)) };
+                      setClosures(next);
+                      setNewHolidayFrom('');
+                      setNewHolidayTo('');
+                      setNewHolidayLabel('');
+                      saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
+                      showToast('School holiday period added', 'success');
+                    }}
+                    className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Period
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">Closed Dates <span className="text-[#1B2D3C]/40 font-medium normal-case tracking-normal">(no bookings on that day)</span></h3>
+                <div className="flex flex-wrap gap-2">
+                  {closures.closedDates.length === 0 && <p className="text-xs text-[#1B2D3C]/40 italic">No closed dates set</p>}
+                  {closures.closedDates.map((entry, idx) => (
+                    <span key={idx} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-100 text-red-800 text-xs font-bold rounded-lg">
+                      {entry.date}
+                      <span className="px-1.5 py-0.5 bg-red-200 text-red-700 text-[10px] rounded">{entry.studio}</span>
+                      <button onClick={() => {
+                        const next = { ...closures, closedDates: closures.closedDates.filter((_, i) => i !== idx) };
+                        setClosures(next);
+                        saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
+                      }} className="ml-0.5 hover:text-red-600 cursor-pointer"><XIcon className="w-3 h-3" /></button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <input
+                    type="date"
+                    value={newClosedInput}
+                    onChange={e => setNewClosedInput(e.target.value)}
+                    className="flex-1 min-w-[140px] px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50"
+                  />
+                  <select
+                    value={newClosedStudio}
+                    onChange={e => setNewClosedStudio(e.target.value as 'Putney' | 'Wimbledon' | 'Both')}
+                    className="px-3 py-2 border border-[#1B2D3C]/20 text-xs font-bold text-[#1B2D3C] rounded-lg focus:outline-none focus:border-[#1B2D3C]/50 cursor-pointer"
+                  >
+                    <option value="Both">Both Studios</option>
+                    <option value="Putney">Putney Only</option>
+                    <option value="Wimbledon">Wimbledon Only</option>
+                  </select>
+                  <button
+                    onClick={async () => {
+                      const val = newClosedInput.trim();
+                      if (!val) return;
+                      const alreadyExists = closures.closedDates.some(e => e.date === val && e.studio === newClosedStudio);
+                      if (alreadyExists) return;
+                      const existingOnDate = inquiries.filter(b => b.date === val && (newClosedStudio === 'Both' || b.studio === newClosedStudio));
+                      if (existingOnDate.length > 0) {
+                        showToast(`Warning: ${existingOnDate.length} booking(s) already exist on ${val} for ${newClosedStudio}. Date closed anyway — contact customers manually.`, 'error');
+                      }
+                      const next = { ...closures, closedDates: [...closures.closedDates, { date: val, studio: newClosedStudio }].sort((a, b) => a.date.localeCompare(b.date)) };
+                      setClosures(next);
+                      setNewClosedInput('');
+                      saveClosuresToSupabase(next, staff.username, staff.sessionToken ?? '').catch(() => showToast('Failed to save', 'error'));
+                      if (existingOnDate.length === 0) showToast('Closed date added', 'success');
+                    }}
+                    className="px-4 py-2 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#D6E2E9] cursor-pointer flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Table Plan */}
-          <div className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 max-w-xl">
+          <div id="settings-table-plan" className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 scroll-mt-[140px] max-w-xl">
             <div>
               <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Table Plan</h2>
               <p className="text-xs text-[#1B2D3C]/70 mt-1">Show table assignment and floor plan controls in the admin dashboard.</p>
@@ -5060,7 +5196,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
           {/* Notification Settings — super admin only */}
           {isSuperAdmin && (
-            <NotificationSettings staff={staff} />
+            <div id="settings-notifications" className="scroll-mt-[140px]">
+              <NotificationSettings staff={staff} />
+            </div>
           )}
 
         </div>
@@ -5121,11 +5259,23 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       )}
 
       {activeTab === 'audit-logs' && canManageStaff && (
-        <AuditLogsTab auditLogs={auditLogs} auditLogsLoading={auditLogsLoading} />
+        <>
+          {auditLogsLoading && auditLogs.length === 0 ? (
+            <TabSkeleton rows={6} />
+          ) : (
+            <AuditLogsTab auditLogs={auditLogs} auditLogsLoading={auditLogsLoading} />
+          )}
+        </>
       )}
 
       {activeTab === 'email-logs' && canManageStaff && (
-        <EmailLogsTab emailLogs={emailLogs} emailLogsLoading={emailLogsLoading} onRefresh={loadEmailLogs} />
+        <>
+          {emailLogsLoading && emailLogs.length === 0 ? (
+            <TabSkeleton rows={6} />
+          ) : (
+            <EmailLogsTab emailLogs={emailLogs} emailLogsLoading={emailLogsLoading} onRefresh={loadEmailLogs} />
+          )}
+        </>
       )}
 
       {activeTab === 'sms' && isSuperAdmin && (
@@ -5631,4 +5781,17 @@ function AdminDropdown({
     ...(isSuperAdmin ? [{ value: 'webmaster' as TabValue, label: 'Webmaster' }] : []),
   ];
   return <NavDropdown label="Admin" items={items} activeTab={activeTab} setActiveTab={setActiveTab} />;
+}
+
+function TabSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="space-y-3 animate-pulse">
+      <Skeleton className="h-8 w-48" />
+      <div className="bg-white border border-[#1B2D3C]/10 rounded-xl p-6 space-y-3">
+        {Array.from({ length: rows }).map((_, i) => (
+          <Skeleton key={i} className="h-12" />
+        ))}
+      </div>
+    </div>
+  );
 }
