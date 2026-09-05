@@ -1,15 +1,5 @@
 import Skeleton from '../Skeleton';
-
-interface EmailLog {
-  id: string;
-  created_at: string;
-  email_type: string;
-  recipient: string;
-  subject: string;
-  status: string;
-  booking_id: string | null;
-  error: string | null;
-}
+import { EmailLog } from '../../types';
 
 interface EmailLogsTabProps {
   emailLogs: EmailLog[];

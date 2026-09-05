@@ -321,7 +321,8 @@ Deno.serve(async (req) => {
         const depositPaid = bookingRow && Number(bookingRow.deposit_amount) > 0;
         if (!isPartyBooking || depositPaid) {
           try {
-            const projectUrl = Deno.env.get('SUPABASE_URL')!;
+            const projectUrl = Deno.env.get('SUPABASE_URL');
+            if (!projectUrl) throw new Error('SUPABASE_URL not set');
             await fetch(`${projectUrl}/functions/v1/send-booking-confirmation`, {
               method: 'POST',
               headers: {

@@ -46,7 +46,7 @@ function saveToStorage(data: ClosureDates): void {
   try {
     localStorage.setItem(STORAGE_KEY_HOLIDAYS, JSON.stringify(data.schoolHolidays));
     localStorage.setItem(STORAGE_KEY_CLOSED, JSON.stringify(data.closedDates));
-  } catch {}
+  } catch (err) { console.error('Failed to save closures to storage:', err); }
 }
 
 export function getClosureDates(): ClosureDates {
@@ -73,7 +73,7 @@ export async function loadClosuresFromSupabase(): Promise<ClosureDates> {
       saveToStorage(result);
       return result;
     }
-  } catch {}
+  } catch (err) { console.error('Failed to load closures from Supabase:', err); }
   return loadFromStorage();
 }
 

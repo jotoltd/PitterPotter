@@ -67,8 +67,9 @@ export default function EditableButton({
       .maybeSingle()
       .then(({ data }) => {
         if (data?.value) setLabel(data.value);
-        if ((data as any)?.metadata?.href) {
-          const h = (data as any).metadata.href;
+        const metadata = (data as { metadata?: { href?: string } })?.metadata;
+        if (metadata?.href) {
+          const h = metadata.href;
           setHref(h);
           setEditHref(h);
           setLinkType(h.startsWith('http') ? 'external' : 'internal');

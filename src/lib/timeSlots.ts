@@ -106,14 +106,14 @@ function loadAll(): TimeSlotsData {
         return { Putney: JSON.parse(JSON.stringify(merged)), Wimbledon: JSON.parse(JSON.stringify(merged)) };
       }
     }
-  } catch {}
+  } catch (err) { console.error('Failed to load time slots from storage:', err); }
   return JSON.parse(JSON.stringify(DEFAULT_SLOTS));
 }
 
 function saveAllToLocalStorage(all: TimeSlotsData): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-  } catch {}
+  } catch (err) { console.error('Failed to save time slots to storage:', err); }
 }
 
 export function getSlots(type: SlotSessionType, studio: Studio, dayType: DayType = 'weekday'): string[] {
@@ -184,7 +184,7 @@ export async function loadSlotsFromSupabase(): Promise<TimeSlotsData> {
         return migrated;
       }
     }
-  } catch {}
+  } catch (err) { console.error('Failed to load time slots from Supabase:', err); }
   return loadAll();
 }
 

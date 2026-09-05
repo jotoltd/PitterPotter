@@ -434,7 +434,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
     if (navigator.share) {
       try {
         await navigator.share({ title: `${info.title} at Pitter Potter`, text: shareText });
-      } catch {}
+      } catch (err) { console.error('Failed to share invitation:', err); }
     } else {
       await navigator.clipboard.writeText(shareText);
       showToast('Invitation text copied to clipboard!', 'success');

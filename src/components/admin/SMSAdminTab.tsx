@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Send, DollarSign, BarChart3, Phone, RefreshCw, Check, X, AlertCircle, MessageSquare } from 'lucide-react';
-import { Staff } from '../../types';
+import { Staff, SMSTemplate } from '../../types';
 import { isSupabaseEnabled } from '../../lib/supabase';
 import Skeleton from '../Skeleton';
 
@@ -27,15 +27,6 @@ interface UsageData {
     errorCode: number | null;
     errorMessage: string | null;
   }[];
-}
-
-interface SMSTemplate {
-  id: string;
-  template_key: string;
-  name: string;
-  body: string;
-  available_variables: string[];
-  updated_at: string;
 }
 
 interface SMSLog {

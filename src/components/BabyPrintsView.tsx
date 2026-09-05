@@ -58,7 +58,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
       .like('key', 'gallery%')
       .then(({ data }) => {
         const values: Record<string, string> = {};
-        (data || []).forEach((row: any) => {
+        (data || []).forEach((row: { key: string; value: string }) => {
           values[row.key] = row.value;
         });
         const defaultKeys = getDefaultGalleryItems().map((i) => i.key);

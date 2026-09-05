@@ -189,7 +189,7 @@ export default function App() {
       try {
         const { data } = await supabase!.from('settings').select('value').eq('key', 'maintenance_mode').maybeSingle();
         if (data?.value === 'true') setMaintenanceMode(true);
-      } catch {}
+      } catch (err) { console.error('Failed to load maintenance mode:', err); }
     };
     loadMaintenance();
   }, []);

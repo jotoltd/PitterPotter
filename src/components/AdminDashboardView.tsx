@@ -7,7 +7,7 @@ import PutneyFloorPlan, { findAvailablePutneyTable, findMultiplePutneyTables } f
 import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock, Camera, ScanLine, AlertCircle } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO, getDay } from 'date-fns';
-import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow } from '../types';
+import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow, EmailTemplate, SMSTemplate, EmailLog } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
 import { loadBookings, createBooking, updateBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
 import { compressImage } from '../lib/imageCompression';
@@ -123,13 +123,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [redeemError, setRedeemError] = useState('');
   const [adminScanning, setAdminScanning] = useState(false);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [emailLogs, setEmailLogs] = useState<any[]>([]);
+  const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
   const [emailLogsLoading, setEmailLogsLoading] = useState(false);
-  const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [emailTemplatesLoading, setEmailTemplatesLoading] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
   const [templateSaving, setTemplateSaving] = useState(false);
-  const [smsTemplates, setSmsTemplates] = useState<any[]>([]);
+  const [smsTemplates, setSmsTemplates] = useState<SMSTemplate[]>([]);
   const [smsTemplatesLoading, setSmsTemplatesLoading] = useState(false);
   const [auditLogsLoading, setAuditLogsLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -414,7 +414,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       });
       const d2 = await r2.json();
       if (d2.value === 'true') setMaintenanceModeState(true);
-    } catch {}
+    } catch (err) { console.error('Failed to load maintenance mode:', err); }
   };
 
   const toggleMaintenanceMode = async (enabled: boolean) => {
@@ -2478,7 +2478,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   <Users className="w-4 h-4" /> <span className="hidden sm:inline">Walk-in</span>
                 </button>
                 <button
-                  onClick={() => { setActiveTab('dashboard'); setNewBooking(prev => ({ ...prev, sessionType: 'painting' as any })); setLockedSessionType('painting'); setShowAddModal(true); }}
+                  onClick={() => { setActiveTab('dashboard'); setNewBooking(prev => ({ ...prev, sessionType: 'painting' })); setLockedSessionType('painting'); setShowAddModal(true); }}
                   className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
                 >
                   <Plus className="w-4 h-4" /> <span className="hidden sm:inline">New Booking</span><span className="sm:hidden">Booking</span>
@@ -2486,7 +2486,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <button
                   onClick={() => {
                     setActiveTab('dashboard');
-                    setNewBooking(prev => ({ ...prev, sessionType: 'birthday-party' as any }));
+                    setNewBooking(prev => ({ ...prev, sessionType: 'birthday-party' }));
                     setLockedSessionType('party-group');
                     setShowAddModal(true);
                   }}
@@ -2497,7 +2497,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <button
                   onClick={() => {
                     setActiveTab('dashboard');
-                    setNewBooking(prev => ({ ...prev, sessionType: 'clay-imprints' as any }));
+                    setNewBooking(prev => ({ ...prev, sessionType: 'clay-imprints' }));
                     setLockedSessionType('clay-imprints');
                     setShowAddModal(true);
                   }}
@@ -2508,7 +2508,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <button
                   onClick={() => {
                     setActiveTab('dashboard');
-                    setNewBooking(prev => ({ ...prev, sessionType: 'exclusive-hire' as any, time: '' }));
+                    setNewBooking(prev => ({ ...prev, sessionType: 'exclusive-hire', time: '' }));
                     setLockedSessionType(null);
                     setShowAddModal(true);
                   }}
@@ -2937,7 +2937,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           {/* Status filter */}
           <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
             {([['all','All'],['pending','Awaiting'],['confirmed','Confirmed'],['seated','Seated'],['completed','Complete'],['cancelled','Cancelled']] as const).map(([val, label]) => (
-              <button key={val} onClick={() => setFilter(val as any)}
+              <button key={val} onClick={() => setFilter(val)}
                 className={`px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
                   filter === val ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
                 }`}>{label}</button>
@@ -2947,7 +2947,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           {!staffAllowedStudios && (
             <div className="flex rounded-lg border border-[#1B2D3C]/20 overflow-hidden">
               {([['all','All Studios'],['Putney','Putney'],['Wimbledon','Wimbledon']] as const).map(([val, label]) => (
-                <button key={val} onClick={() => setStudioFilter(val as any)}
+                <button key={val} onClick={() => setStudioFilter(val)}
                   className={`px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
                     studioFilter === val ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/60 hover:text-[#1B2D3C]'
                   }`}>{label}</button>

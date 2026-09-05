@@ -2,27 +2,7 @@ import { useState } from 'react';
 import { Mail, MessageSquare, Save, Pencil, X, RotateCcw } from 'lucide-react';
 import Skeleton from '../Skeleton';
 import WysiwygEditor from '../WysiwygEditor';
-
-interface EmailTemplate {
-  id: string;
-  template_key: string;
-  name: string;
-  subject: string;
-  html_content: string;
-  available_variables?: string[];
-  updated_at: string;
-  _editSubject?: string;
-  _editHtml?: string;
-}
-
-interface SMSTemplate {
-  id: string;
-  template_key: string;
-  name: string;
-  body: string;
-  available_variables: string[];
-  updated_at: string;
-}
+import { EmailTemplate, SMSTemplate } from '../../types';
 
 interface EmailTemplatesTabProps {
   emailTemplates: EmailTemplate[];

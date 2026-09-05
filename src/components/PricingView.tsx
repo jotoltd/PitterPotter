@@ -105,7 +105,7 @@ export default function PricingView({ adminMode = false }: PricingViewProps) {
                 if (field === 'party_eligible') {
                   pricingItem.isPartyEligible = item.value === 'true';
                 } else {
-                  (pricingItem as any)[field] = item.value;
+                  (pricingItem as unknown as Record<string, unknown>)[field] = item.value;
                 }
               }
             });

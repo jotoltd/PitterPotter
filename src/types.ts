@@ -162,3 +162,35 @@ export interface NotificationSetting {
   custom_message?: string | null;
   updated_at?: string;
 }
+
+export interface EmailTemplate {
+  id: string;
+  template_key: string;
+  name: string;
+  subject: string;
+  html_content: string;
+  available_variables?: string[];
+  updated_at: string;
+  _editSubject?: string;
+  _editHtml?: string;
+}
+
+export interface SMSTemplate {
+  id: string;
+  template_key: string;
+  name: string;
+  body: string;
+  available_variables: string[];
+  updated_at: string;
+}
+
+export interface EmailLog {
+  id: string;
+  created_at: string;
+  email_type: string;
+  recipient: string;
+  subject: string;
+  status: string;
+  booking_id: string | null;
+  error: string | null;
+}
