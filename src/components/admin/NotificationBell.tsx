@@ -31,6 +31,19 @@ const NOTIFICATION_COLORS: Record<NotificationType, string> = {
   staff_action: 'text-stone-600 bg-stone-50',
 };
 
+function playTone(ctx: AudioContext) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.frequency.setValueAtTime(880, ctx.currentTime);
+  osc.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
+  gain.gain.setValueAtTime(0.3, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.4);
+}
+
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60_000);
@@ -78,6 +91,24 @@ export default function NotificationBell({ staff, onNavigate }: NotificationBell
     return () => clearInterval(interval);
   }, [loadUnreadCount]);
 
+  // Play notification sound
+  const playNotificationSound = useCallback(() => {
+    try {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume().then(() => {
+          playTone(ctx);
+        }).catch(() => {});
+      } else {
+        playTone(ctx);
+      }
+    } catch {
+      // AudioContext not available
+    }
+  }, []);
+
   // Realtime subscription for instant unread count updates
   useEffect(() => {
     if (!isSupabaseEnabled() || !supabase) return;
@@ -86,7 +117,7 @@ export default function NotificationBell({ staff, onNavigate }: NotificationBell
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'notifications' },
-        () => { loadUnreadCount(); if (open) loadNotifications(); }
+        () => { playNotificationSound(); loadUnreadCount(); if (open) loadNotifications(); }
       )
       .on(
         'postgres_changes',
@@ -96,7 +127,7 @@ export default function NotificationBell({ staff, onNavigate }: NotificationBell
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [loadUnreadCount, loadNotifications, open]);
+  }, [loadUnreadCount, loadNotifications, open, playNotificationSound]);
 
   // Close panel on outside click
   useEffect(() => {
@@ -125,7 +156,11 @@ export default function NotificationBell({ staff, onNavigate }: NotificationBell
     }
     setOpen(false);
     if (notif.entity_type === 'booking') {
-      onNavigate('bookings', notif.entity_id);
+      if (notif.type === 'collection_ready') {
+        onNavigate('ready', notif.entity_id);
+      } else {
+        onNavigate('bookings', notif.entity_id);
+      }
     } else if (notif.entity_type === 'gift_card') {
       onNavigate('gift-cards', notif.entity_id);
     }

@@ -1,4 +1,4 @@
-import { AppNotification, NotificationType } from '../types';
+import { AppNotification, NotificationSetting, NotificationType } from '../types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -52,5 +52,74 @@ export async function markAllNotificationsRead(staff: { username: string; sessio
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
     body: JSON.stringify({ action: 'markAllRead', username: staff.username, sessionToken: staff.sessionToken }),
+  });
+}
+
+export async function fetchNotificationSettings(staff: { username: string; sessionToken?: string }): Promise<NotificationSetting[]> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return [];
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-notifications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+    body: JSON.stringify({ action: 'loadSettings', username: staff.username, sessionToken: staff.sessionToken }),
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data.settings || []).map((s: Record<string, unknown>) => ({
+    id: s.id as string,
+    type: s.type as NotificationType,
+    enabled: s.enabled as boolean,
+    studio: s.studio as string,
+    custom_title: s.custom_title as string | null | undefined,
+    custom_message: s.custom_message as string | null | undefined,
+    updated_at: s.updated_at as string | undefined,
+  }));
+}
+
+export async function updateNotificationSetting(
+  staff: { username: string; sessionToken?: string },
+  id: string,
+  updates: { enabled?: boolean; customTitle?: string; customMessage?: string },
+): Promise<void> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+  await fetch(`${SUPABASE_URL}/functions/v1/admin-notifications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+    body: JSON.stringify({
+      action: 'updateSetting',
+      username: staff.username,
+      sessionToken: staff.sessionToken,
+      id,
+      enabled: updates.enabled,
+      customTitle: updates.customTitle,
+      customMessage: updates.customMessage,
+    }),
+  });
+}
+
+export async function addNotificationSetting(
+  staff: { username: string; sessionToken?: string },
+  type: NotificationType,
+  studio: string,
+): Promise<NotificationSetting | null> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-notifications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+    body: JSON.stringify({ action: 'addSetting', username: staff.username, sessionToken: staff.sessionToken, type, studio }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.setting || null;
+}
+
+export async function deleteNotificationSetting(
+  staff: { username: string; sessionToken?: string },
+  id: string,
+): Promise<void> {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+  await fetch(`${SUPABASE_URL}/functions/v1/admin-notifications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
+    body: JSON.stringify({ action: 'deleteSetting', username: staff.username, sessionToken: staff.sessionToken, id }),
   });
 }

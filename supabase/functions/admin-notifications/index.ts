@@ -122,6 +122,110 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'loadSettings') {
+      if (staff.role !== 'super_admin') {
+        return new Response(JSON.stringify({ error: 'Super admin only' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { data, error } = await supabase
+        .from('notification_settings')
+        .select('*')
+        .order('type', { ascending: true })
+        .order('studio', { ascending: true });
+
+      if (error) throw error;
+      return new Response(JSON.stringify({ settings: data || [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'updateSetting') {
+      if (staff.role !== 'super_admin') {
+        return new Response(JSON.stringify({ error: 'Super admin only' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { id, enabled, customTitle, customMessage } = body;
+      if (!isNonEmptyString(id)) {
+        return new Response(JSON.stringify({ error: 'Missing setting id' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (typeof enabled === 'boolean') update.enabled = enabled;
+      if (customTitle !== undefined) update.custom_title = customTitle || null;
+      if (customMessage !== undefined) update.custom_message = customMessage || null;
+
+      const { error } = await supabase
+        .from('notification_settings')
+        .update(update)
+        .eq('id', id);
+
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'addSetting') {
+      if (staff.role !== 'super_admin') {
+        return new Response(JSON.stringify({ error: 'Super admin only' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { type, studio: settingStudio } = body;
+      if (!isNonEmptyString(type) || !isNonEmptyString(settingStudio)) {
+        return new Response(JSON.stringify({ error: 'Missing type or studio' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { data, error } = await supabase
+        .from('notification_settings')
+        .upsert({
+          type,
+          studio: settingStudio,
+          enabled: true,
+        }, { onConflict: 'type,studio' })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return new Response(JSON.stringify({ setting: data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'deleteSetting') {
+      if (staff.role !== 'super_admin') {
+        return new Response(JSON.stringify({ error: 'Super admin only' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { id } = body;
+      if (!isNonEmptyString(id)) {
+        return new Response(JSON.stringify({ error: 'Missing setting id' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { error } = await supabase
+        .from('notification_settings')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     return new Response(JSON.stringify({ error: 'Unknown action' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

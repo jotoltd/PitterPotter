@@ -22,6 +22,24 @@ export async function createNotification(
   },
 ): Promise<void> {
   try {
+    // Check notification settings — look for studio-specific setting first, then 'All'
+    const studio = params.studio || 'All';
+    const { data: settings } = await supabase
+      .from('notification_settings')
+      .select('enabled, custom_title, custom_message')
+      .eq('type', params.type)
+      .in('studio', [studio, 'All'])
+      .order('studio', { ascending: false }) // studio-specific first
+      .limit(1);
+
+    if (settings && settings.length > 0) {
+      const setting = settings[0];
+      if (!setting.enabled) return; // Skip if disabled
+      // Apply custom title/message if set
+      if (setting.custom_title) params.title = setting.custom_title;
+      if (setting.custom_message) params.message = setting.custom_message;
+    }
+
     await supabase.from('notifications').insert({
       type: params.type,
       title: params.title,

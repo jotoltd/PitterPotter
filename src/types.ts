@@ -152,3 +152,13 @@ export interface AppNotification {
   read_at?: string | null;
   created_at: string;
 }
+
+export interface NotificationSetting {
+  id: string;
+  type: NotificationType;
+  enabled: boolean;
+  studio: string;  // 'All', 'Putney', 'Wimbledon'
+  custom_title?: string | null;
+  custom_message?: string | null;
+  updated_at?: string;
+}

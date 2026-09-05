@@ -28,6 +28,7 @@ import DashboardSummary from './admin/DashboardSummary';
 import SMSAdminTab from './admin/SMSAdminTab';
 import ImageModal from './ImageModal';
 import NotificationBell from './admin/NotificationBell';
+import { NotificationSettings } from './admin/NotificationSettings';
 import { SESSION_LABELS as SESSION_LABELS_UTIL, SESSION_BADGE as SESSION_BADGE_UTIL, ROLE_LABEL, AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL, AUDIT_ACTION_COLOR, formatAuditDetails as formatAuditDetailsUtil, getBookingAnalytics as getBookingAnalyticsUtil, getGiftCardAnalytics as getGiftCardAnalyticsUtil, exportBookingsCSV as exportBookingsCSVUtil, exportGiftCardsCSV as exportGiftCardsCSVUtil, exportCollectionStatsCSV as exportCollectionStatsCSVUtil, BACKUP_TABLE_OPTIONS } from './admin/adminUtils';
 import 'react-day-picker/dist/style.css';
 
@@ -146,6 +147,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [giftCardSearchTerm, setGiftCardSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
@@ -1405,7 +1407,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       const searchMatch = debouncedSearchTerm === '' ||
         inq.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         inq.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        inq.phone.includes(debouncedSearchTerm);
+        inq.phone.includes(debouncedSearchTerm) ||
+        inq.id.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
       const dateMatch = (!dateRange.start || inq.date >= dateRange.start) && (!dateRange.end || inq.date <= dateRange.end);
       const typeMatch = bookingTypeTab === 'all' ||
         (bookingTypeTab === 'painting' && inq.sessionType === 'painting') ||
@@ -1461,6 +1464,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     totalValue: giftCards.reduce((sum, c) => sum + c.amount, 0),
     remainingValue: giftCards.reduce((sum, c) => sum + c.balance, 0),
   };
+
+  const filteredGiftCards = useMemo(() => {
+    if (!giftCardSearchTerm) return giftCards;
+    const q = giftCardSearchTerm.toLowerCase();
+    return giftCards.filter((c) =>
+      c.code.toLowerCase().includes(q) ||
+      c.id.toLowerCase().includes(q) ||
+      (c.recipientName || '').toLowerCase().includes(q) ||
+      (c.recipientEmail || '').toLowerCase().includes(q)
+    );
+  }, [giftCards, giftCardSearchTerm]);
 
   const roleLabel = ROLE_LABEL;
 
@@ -2510,6 +2524,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 setActiveTab(tab as typeof activeTab);
                 if (entityId && tab === 'bookings') {
                   setSearchTerm(entityId);
+                } else if (entityId && tab === 'gift-cards') {
+                  setGiftCardSearchTerm(entityId);
+                } else if (entityId && tab === 'ready') {
+                  setSearchTerm(entityId);
                 }
               }}
             />
@@ -2641,6 +2659,18 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-heading text-lg font-black text-[#1B2D3C] uppercase tracking-wider">Gift Cards</h2>
             <div className="flex items-center gap-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search code or recipient…"
+                  value={giftCardSearchTerm}
+                  onChange={(e) => setGiftCardSearchTerm(e.target.value)}
+                  className="w-48 pl-3 pr-8 py-1.5 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-semibold rounded-lg focus:outline-none focus:border-[#1B2D3C]/40 bg-white"
+                />
+                {giftCardSearchTerm && (
+                  <button onClick={() => setGiftCardSearchTerm('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#1B2D3C]/30 hover:text-[#1B2D3C] cursor-pointer">×</button>
+                )}
+              </div>
               <button
                 onClick={() => openRedeemModal()}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1B2D3C] text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-[#243B53] transition-all cursor-pointer"
@@ -2685,6 +2715,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               <p className="text-xl font-black text-[#1B2D3C]">£{giftCardStats.remainingValue.toFixed(2)}</p>
             </div>
           </div>
+          {giftCardSearchTerm && (
+            <div className="mb-3 text-xs font-bold text-[#1B2D3C]/50">
+              Showing {filteredGiftCards.length} of {giftCards.length} gift cards
+            </div>
+          )}
           {giftCards.length > 0 ? (
             <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
               <table className="w-full text-left min-w-[600px]">
@@ -2702,7 +2737,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   </tr>
                 </thead>
                 <tbody className="text-xs font-semibold text-[#1B2D3C]">
-                  {giftCards.map((card) => (
+                  {filteredGiftCards.map((card) => (
                     <tr key={card.id} className="border-b border-[#1B2D3C]/5">
                       <td className="py-2 font-mono">{card.code}</td>
                       <td className="py-2">£{card.amount.toFixed(2)}</td>
@@ -5029,6 +5064,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               </button>
             </div>
           </div>
+
+          {/* Notification Settings — super admin only */}
+          {isSuperAdmin && (
+            <NotificationSettings staff={staff} />
+          )}
 
         </div>
       )}
