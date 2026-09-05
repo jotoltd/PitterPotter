@@ -124,9 +124,17 @@ export default function ContactView({ initialPainters = 1, adminMode = false, se
     }
     setSubmitting(true);
 
-    const remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time);
+    let remaining: number;
+    try {
+      remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time, sessionType);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to check availability. Please try again.');
+      setSubmitting(false);
+      return;
+    }
     if (paintersCount > remaining) {
       setError(`This session only has room for ${remaining} more seat${remaining === 1 ? '' : 's'}. Please choose a different time or reduce the number of people.`);
+      setSubmitting(false);
       return;
     }
 

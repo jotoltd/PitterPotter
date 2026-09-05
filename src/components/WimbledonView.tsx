@@ -85,7 +85,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
     if (!date || !time) return;
 
     const existing = localStorage.getItem('pp_booking_draft');
-    const remaining = await getRemainingCapacity('Wimbledon', format(date, 'yyyy-MM-dd'), time);
+    const remaining = await getRemainingCapacity('Wimbledon', format(date, 'yyyy-MM-dd'), time, 'painting');
     const paintersCount = painters === '' ? 1 : painters;
     if (paintersCount > remaining) {
       showToast(`This session only has room for ${remaining} more seat${remaining === 1 ? "" : "s"}. Please choose a different time or reduce the number of seats.`, 'error');
