@@ -231,7 +231,7 @@ export default function NotificationBell({ staff, onNavigate }: NotificationBell
       {open && (
         <div
           ref={panelRef}
-          className="absolute right-0 top-12 z-50 w-[380px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-[#1B2D3C]/10 overflow-hidden"
+          className="absolute right-0 top-12 z-[60] w-[380px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-[#1B2D3C]/10 overflow-hidden"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#1B2D3C]/10 bg-[#DBE7E4]/50">

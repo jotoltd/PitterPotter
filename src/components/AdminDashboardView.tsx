@@ -2457,7 +2457,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   return (
     <div className="min-h-screen bg-[#FFFFFF]">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-[#DBE7E4] text-[#1B2D3C] py-3 px-4 sm:px-6 shadow-md">
+      <div className="sticky top-0 z-40 bg-[#DBE7E4] text-[#1B2D3C] py-3 px-4 sm:px-6 shadow-md">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
             <div className="w-8 h-8 rounded-lg bg-[#1B2D3C]/10 flex items-center justify-center shrink-0">
