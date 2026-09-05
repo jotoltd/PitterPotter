@@ -49,6 +49,7 @@ Deno.serve(async (req) => {
         const depositAmount = Number(metadata.amount) || 50;
         if (bookingId) {
           const { error: updateError } = await supabase.from('bookings').update({
+            status: 'confirmed',
             payment_status: 'paid',
             deposit_amount: depositAmount,
           }).eq('booking_id', bookingId);
