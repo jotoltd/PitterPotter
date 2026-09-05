@@ -4,7 +4,7 @@ import Calendar from './Calendar';
 import { format, getDay, startOfDay } from 'date-fns';
 import { Clock, Calendar as CalendarIcon, ArrowRight, Users, MapPin, Gift, Heart, Briefcase, Copy, Download, Share2 } from 'lucide-react';
 import { useToast } from './ToastContext';
-import { getRemainingCapacity, createPublicBooking, getBusyDates } from '../lib/bookings';
+import { getRemainingCapacity, getBusyDates } from '../lib/bookings';
 import { getSlots, filterPastSlots, DayType } from '../lib/timeSlots';
 import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange, getClosedDatesForStudio } from '../lib/closures';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
@@ -292,25 +292,19 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
 
     setSubmitting(true);
     try {
-      // Create booking FIRST (before payment) so webhook can find it
-      await createPublicBooking({ ...booking, stripePaymentIntentId: undefined });
-
+      // Do NOT create booking in DB yet — booking is only created after £50 deposit is paid
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-party-deposit-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ bookingId, amount: depositAmount }),
+        body: JSON.stringify({ bookingId, amount: depositAmount, booking }),
       });
       const data = await response.json();
       if (!response.ok || data.error) {
         setError(data.error || 'Failed to set up deposit payment');
         return;
-      }
-      // Update booking with the payment intent ID
-      if (supabase && isSupabaseEnabled()) {
-        await supabase.from('bookings').update({ stripe_payment_intent_id: data.paymentIntentId }).eq('booking_id', bookingId);
       }
       setPendingBooking(booking);
       setClientSecret(data.clientSecret);
@@ -329,7 +323,19 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
     if (!pendingBooking) return;
     setSubmitting(true);
     try {
-      // Booking was already created before payment. Webhook handles payment_status update.
+      // Confirm payment and create booking in DB (only after £50 deposit is paid)
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confirm-party-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ paymentIntentId }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        throw new Error(data.error || 'Payment succeeded but booking failed. Please contact us.');
+      }
       setSubmitted(true);
       setShowPayment(false);
     } catch (err) {

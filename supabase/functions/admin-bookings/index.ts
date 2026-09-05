@@ -135,13 +135,7 @@ Deno.serve(async (req) => {
         const { data, error } = await query;
         if (error) throw error;
         if (!data || data.length === 0) break;
-        // Hide unpaid party bookings from admin — they only appear after the £50 deposit is paid
-        const filtered = (data as Record<string, unknown>[]).filter((row) => {
-          const isParty = ['birthday-party', 'baby-shower-hen', 'corporate'].includes(row.session_type as string);
-          const isUnpaid = row.payment_status === 'pending' || row.payment_status === null;
-          return !(isParty && isUnpaid);
-        });
-        allData.push(...filtered);
+        allData.push(...data);
         if (data.length < PAGE_SIZE) break;
         offset += PAGE_SIZE;
       }

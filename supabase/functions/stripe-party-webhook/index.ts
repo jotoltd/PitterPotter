@@ -44,29 +44,60 @@ Deno.serve(async (req) => {
       const type = metadata.type;
 
       if (type === 'party_deposit') {
-        // Update party booking payment status and deposit amount
+        // Create the booking now that deposit is paid — booking does not exist in DB until this point
         const bookingId = metadata.bookingId;
         const depositAmount = Number(metadata.amount) || 50;
         if (bookingId) {
-          const { error: updateError } = await supabase.from('bookings').update({
-            status: 'confirmed',
-            payment_status: 'paid',
-            deposit_amount: depositAmount,
-          }).eq('booking_id', bookingId);
-          if (updateError) throw updateError;
+          // Check if booking already exists (idempotent — confirm-party-payment may have created it)
+          const { data: existing } = await supabase
+            .from('bookings')
+            .select('booking_id')
+            .eq('stripe_payment_intent_id', obj.id)
+            .maybeSingle();
 
-          // Now that the deposit is paid, send the confirmation email
-          try {
-            const { data: booking } = await supabase.from('bookings').select('management_token').eq('booking_id', bookingId).single();
-            if (booking?.management_token) {
-              await fetch(`${supabaseUrl}/functions/v1/send-booking-confirmation`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ bookingId, managementToken: booking.management_token }),
-              });
+          if (!existing) {
+            const managementToken = crypto.randomUUID();
+
+            const { error: insertError } = await supabase.from('bookings').insert({
+              booking_id: bookingId,
+              studio: metadata.studio,
+              name: metadata.name,
+              email: metadata.email || null,
+              phone: metadata.phone,
+              date: metadata.date,
+              time: metadata.time,
+              painters_count: Number(metadata.paintersCount) || 1,
+              session_type: metadata.sessionType,
+              notes: metadata.notes || null,
+              status: 'confirmed',
+              request_date: metadata.requestDate || new Date().toISOString().split('T')[0],
+              source: metadata.source || 'online',
+              deposit_amount: depositAmount,
+              final_seats: Number(metadata.finalSeats) || null,
+              final_balance: Number(metadata.finalBalance) || null,
+              payment_status: 'paid',
+              stripe_payment_intent_id: obj.id,
+              management_token: managementToken,
+            });
+
+            if (insertError) {
+              if (insertError.code === '23505') {
+                console.log('Booking already exists for paymentIntent:', obj.id);
+              } else {
+                throw insertError;
+              }
+            } else {
+              // Send confirmation email
+              try {
+                await fetch(`${supabaseUrl}/functions/v1/send-booking-confirmation`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ bookingId, managementToken }),
+                });
+              } catch (emailErr) {
+                console.error('Failed to send confirmation email after deposit:', emailErr);
+              }
             }
-          } catch (emailErr) {
-            console.error('Failed to send confirmation email after deposit:', emailErr);
           }
         }
       } else if (type === 'party_final_balance') {
