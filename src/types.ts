@@ -130,3 +130,25 @@ export interface StaffApiRow {
   allowed_studios?: ('Putney' | 'Wimbledon')[];
   created_at: string;
 }
+
+export type NotificationType =
+  | 'booking_new'
+  | 'booking_cancelled'
+  | 'booking_status_changed'
+  | 'booking_walk_in'
+  | 'gift_card_purchased'
+  | 'gift_card_redeemed'
+  | 'collection_ready'
+  | 'staff_action';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  entity_type?: string;
+  entity_id?: string;
+  studio?: string;
+  read_at?: string | null;
+  created_at: string;
+}

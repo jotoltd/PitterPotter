@@ -4,6 +4,7 @@ import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts'
 import { loadSMSTemplate } from '../_shared/sms-template.ts';
 import { getStudioInfo } from '../_shared/studio-info.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
+import { createNotification } from '../_shared/notifications.ts';
 
 const SESSION_LABELS: Record<string, string> = {
   'painting': 'Pottery Painting',
@@ -405,6 +406,16 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Create admin notification for collection ready
+    await createNotification(supabase, {
+      type: 'collection_ready',
+      title: 'Pottery Ready for Collection',
+      message: `${booking.name} — ${booking.studio}, booking ${bookingId}`,
+      entityType: 'booking',
+      entityId: bookingId,
+      studio: booking.studio,
+    });
 
     return new Response(JSON.stringify({ success: true, ...results }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -20,6 +20,7 @@ enum APIConfig {
     static let dbBackupEndpoint = "\(supabaseURL)/functions/v1/db-backup"
     static let sampleDataEndpoint = "\(supabaseURL)/functions/v1/sample-data"
     static let pageSettingsEndpoint = "\(supabaseURL)/functions/v1/page-settings"
+    static let notificationsEndpoint = "\(supabaseURL)/functions/v1/admin-notifications"
 }
 
 // MARK: - API Client
@@ -1151,6 +1152,89 @@ actor APIClient {
             "staff": ["username": staff.username, "sessionToken": staff.sessionToken],
             "templateKey": templateKey,
             "body": text,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+    }
+    // MARK: - Notifications
+
+    func fetchNotifications(staff: Staff, limit: Int = 50) async throws -> [AppNotification] {
+        var request = URLRequest(url: URL(string: APIConfig.notificationsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "list",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "limit": limit,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+        let result = try JSONDecoder().decode(NotificationsResponse.self, from: data)
+        return result.notifications ?? []
+    }
+
+    func fetchUnreadNotificationCount(staff: Staff) async throws -> Int {
+        var request = URLRequest(url: URL(string: APIConfig.notificationsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "unreadCount",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            return 0
+        }
+        let result = try JSONDecoder().decode(UnreadCountResponse.self, from: data)
+        return result.count
+    }
+
+    func markNotificationRead(id: String, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.notificationsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "markRead",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "id": id,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+    }
+
+    func markAllNotificationsRead(staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.notificationsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "markAllRead",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 

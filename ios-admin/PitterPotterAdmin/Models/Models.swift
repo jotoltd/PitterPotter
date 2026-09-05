@@ -186,3 +186,73 @@ enum CollectionStage: String, CaseIterable {
         }
     }
 }
+
+// MARK: - Notification
+
+enum NotificationType: String, Codable {
+    case bookingNew = "booking_new"
+    case bookingCancelled = "booking_cancelled"
+    case bookingStatusChanged = "booking_status_changed"
+    case bookingWalkIn = "booking_walk_in"
+    case giftCardPurchased = "gift_card_purchased"
+    case giftCardRedeemed = "gift_card_redeemed"
+    case collectionReady = "collection_ready"
+    case staffAction = "staff_action"
+
+    var icon: String {
+        switch self {
+        case .bookingNew: return "calendar.badge.plus"
+        case .bookingCancelled: return "calendar.badge.exclamationmark"
+        case .bookingStatusChanged: return "checkmark.circle"
+        case .bookingWalkIn: return "person.2.fill"
+        case .giftCardPurchased: return "giftcard.fill"
+        case .giftCardRedeemed: return "giftcard"
+        case .collectionReady: return "camera.circle.fill"
+        case .staffAction: return "person.badge.shield.checkmark"
+        }
+    }
+
+    var color: String {
+        switch self {
+        case .bookingNew: return "green"
+        case .bookingCancelled: return "red"
+        case .bookingStatusChanged: return "blue"
+        case .bookingWalkIn: return "indigo"
+        case .giftCardPurchased: return "purple"
+        case .giftCardRedeemed: return "orange"
+        case .collectionReady: return "teal"
+        case .staffAction: return "gray"
+        }
+    }
+}
+
+struct AppNotification: Codable, Identifiable {
+    let id: String
+    let type: NotificationType
+    let title: String
+    let message: String
+    let entityType: String?
+    let entityId: String?
+    let studio: String?
+    let readAt: String?
+    let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, type, title, message
+        case entityType = "entity_type"
+        case entityId = "entity_id"
+        case studio
+        case readAt = "read_at"
+        case createdAt = "created_at"
+    }
+
+    var isRead: Bool { readAt != nil }
+}
+
+struct NotificationsResponse: Codable {
+    let notifications: [AppNotification]?
+}
+
+struct UnreadCountResponse: Codable {
+    let count: Int
+}

@@ -4,6 +4,7 @@ import { logAudit } from '../_shared/audit.ts';
 import type { AdminSupabaseClient, StaffRecord } from '../_shared/types.ts';
 import { verifyStaff } from '../_shared/auth.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
+import { createNotification } from '../_shared/notifications.ts';
 
 // Lazy-load pdf-lib only when needed for voucher generation
 let _pdfLib: typeof import('pdf-lib') | null = null;
@@ -348,6 +349,15 @@ Deno.serve(async (req) => {
 
       await logAudit(supabase, staff, 'create', 'gift_card', giftCard.id, { code, amount, isPhysical: !!isPhysical });
 
+      // Create admin notification for gift card creation
+      await createNotification(supabase, {
+        type: 'gift_card_purchased',
+        title: 'Gift Card Created',
+        message: `£${amount} gift card ${code} created by ${staff.name}${isPhysical ? ' (physical)' : ''}`,
+        entityType: 'gift_card',
+        entityId: giftCard.id,
+      });
+
       // Send email if recipient email is provided and not a physical card
       if (!isPhysical && recipientEmail) {
         try {
@@ -481,6 +491,15 @@ Deno.serve(async (req) => {
         amount: redeemAmount,
         discount,
         newBalance,
+      });
+
+      // Create admin notification for gift card redemption
+      await createNotification(supabase, {
+        type: 'gift_card_redeemed',
+        title: 'Gift Card Redeemed',
+        message: `${card.code} redeemed for £${discount} by ${staff.name} (balance: £${newBalance})`,
+        entityType: 'gift_card',
+        entityId: card.id,
       });
 
       return new Response(JSON.stringify({

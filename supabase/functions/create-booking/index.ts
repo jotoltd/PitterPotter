@@ -2,6 +2,7 @@ import { createClient } from 'supabase';
 import { isObject, isNonEmptyString, isInteger } from '../_shared/validate.ts';
 import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 import { computeCapacity, StudioName } from '../_shared/capacity.ts';
+import { createNotification } from '../_shared/notifications.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -143,6 +144,16 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Create admin notification for new online booking
+    await createNotification(supabase, {
+      type: 'booking_new',
+      title: 'New Booking',
+      message: `${booking.name} — ${booking.studio}, ${booking.date} at ${booking.time} (${booking.paintersCount} painters)`,
+      entityType: 'booking',
+      entityId: booking.id,
+      studio: booking.studio,
+    });
 
     // Send confirmation email for non-party bookings only.
     // Party bookings get their confirmation email AFTER the deposit is paid

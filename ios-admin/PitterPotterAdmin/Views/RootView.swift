@@ -82,8 +82,10 @@ enum AppTab: String, CaseIterable, Identifiable {
 struct RootView: View {
     @EnvironmentObject var authVM: AuthViewModel
     @StateObject private var bookingsVM = BookingsViewModel()
+    @StateObject private var notificationsVM = NotificationsViewModel()
     @State private var selectedTab: AppTab? = .dashboard
     @State private var showingRedeem = false
+    @State private var showingNotifications = false
     @State private var showSplash = true
 
     var body: some View {
@@ -174,6 +176,27 @@ struct RootView: View {
                             .frame(height: 28)
                     }
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingNotifications = true
+                    } label: {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "bell")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(PPBrand.charcoal)
+                            if notificationsVM.unreadCount > 0 {
+                                Text(notificationsVM.unreadCount > 99 ? "99+" : "\(notificationsVM.unreadCount)")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 2)
+                                    .background(Color.red)
+                                    .clipShape(Capsule())
+                                    .offset(x: 8, y: -6)
+                            }
+                        }
+                    }
+                }
             }
         } detail: {
             if let tab = selectedTab {
@@ -189,15 +212,22 @@ struct RootView: View {
             GiftCardRedeemView()
                 .environmentObject(authVM)
         }
+        .sheet(isPresented: $showingNotifications) {
+            NotificationsView()
+                .environmentObject(authVM)
+        }
         .task {
             bookingsVM.loadFromCache()
             if let staff = authVM.staff {
                 await bookingsVM.loadBookings(staff: staff)
                 bookingsVM.startRealtime(staff: staff)
+                await notificationsVM.refreshUnreadCount(staff: staff)
+                notificationsVM.startPolling(staff: staff)
             }
         }
         .onDisappear {
             bookingsVM.stopRealtime()
+            notificationsVM.stopPolling()
         }
     }
 

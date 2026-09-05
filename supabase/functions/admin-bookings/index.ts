@@ -5,6 +5,7 @@ import type { AdminSupabaseClient, StaffRecord } from '../_shared/types.ts';
 import { verifyStaff } from '../_shared/auth.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
 import { capacityWarning } from '../_shared/capacity.ts';
+import { createNotification } from '../_shared/notifications.ts';
 
 // deno-lint-ignore no-explicit-any
 function toBookingInquiry(row: any): any {
@@ -173,6 +174,16 @@ Deno.serve(async (req) => {
       }
       await logAudit(supabase, staff, 'create', 'booking', booking.id as string, { studio: booking.studio, date: booking.date, time: booking.time });
 
+      // Create admin notification for walk-in / admin-created booking
+      await createNotification(supabase, {
+        type: 'booking_walk_in',
+        title: 'New Walk-In Booking',
+        message: `${staff.name} added: ${booking.name} — ${booking.studio}, ${booking.date} at ${booking.time}`,
+        entityType: 'booking',
+        entityId: booking.id as string,
+        studio: booking.studio as string,
+      });
+
       // Send confirmation email if the booking has an email address
       // For party bookings, only send if the deposit has been paid (not payment-link)
       const isPartyBooking = ['birthday-party', 'baby-shower-hen', 'corporate'].includes(booking.sessionType as string);
@@ -283,6 +294,25 @@ Deno.serve(async (req) => {
       const { error } = await supabase.from('bookings').update(updateData).eq('booking_id', id);
       if (error) throw error;
       await logAudit(supabase, staff, 'update_status', 'booking', id, { status });
+
+      // Create notification for status changes
+      if (status === 'cancelled') {
+        await createNotification(supabase, {
+          type: 'booking_cancelled',
+          title: 'Booking Cancelled',
+          message: `${staff.name} cancelled booking ${id}`,
+          entityType: 'booking',
+          entityId: id,
+        });
+      } else {
+        await createNotification(supabase, {
+          type: 'booking_status_changed',
+          title: 'Booking Status Updated',
+          message: `${staff.name} marked booking ${id} as ${status}`,
+          entityType: 'booking',
+          entityId: id,
+        });
+      }
 
       if (status === 'confirmed') {
         // For party bookings, only send confirmation if deposit has been paid

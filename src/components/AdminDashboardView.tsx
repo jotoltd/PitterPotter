@@ -27,6 +27,7 @@ import TagPopover, { TAG_COLORS, TAG_LABELS, getTagColor } from './admin/TagPopo
 import DashboardSummary from './admin/DashboardSummary';
 import SMSAdminTab from './admin/SMSAdminTab';
 import ImageModal from './ImageModal';
+import NotificationBell from './admin/NotificationBell';
 import { SESSION_LABELS as SESSION_LABELS_UTIL, SESSION_BADGE as SESSION_BADGE_UTIL, ROLE_LABEL, AUDIT_ACTION_LABEL, AUDIT_ENTITY_LABEL, AUDIT_ACTION_COLOR, formatAuditDetails as formatAuditDetailsUtil, getBookingAnalytics as getBookingAnalyticsUtil, getGiftCardAnalytics as getGiftCardAnalyticsUtil, exportBookingsCSV as exportBookingsCSVUtil, exportGiftCardsCSV as exportGiftCardsCSVUtil, exportCollectionStatsCSV as exportCollectionStatsCSVUtil, BACKUP_TABLE_OPTIONS } from './admin/adminUtils';
 import 'react-day-picker/dist/style.css';
 
@@ -2503,6 +2504,15 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </button>
               </>
             )}
+            <NotificationBell
+              staff={staff}
+              onNavigate={(tab, entityId) => {
+                setActiveTab(tab as typeof activeTab);
+                if (entityId && tab === 'bookings') {
+                  setSearchTerm(entityId);
+                }
+              }}
+            />
             <button
               onClick={() => openRedeemModal(undefined, true)}
               className="flex items-center gap-1.5 px-3 py-2 bg-[#DBE7E4] hover:bg-[#D6E2E9] text-[#1B2D3C] text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px] border border-[#1B2D3C]/10"
