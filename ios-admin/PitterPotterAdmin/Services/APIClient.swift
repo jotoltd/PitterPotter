@@ -1243,6 +1243,94 @@ actor APIClient {
             throw APIError.invalidResponse
         }
     }
+
+    // MARK: - Notification Settings
+
+    func fetchNotificationSettings(staff: Staff) async throws -> [NotificationSetting] {
+        var request = URLRequest(url: URL(string: APIConfig.notificationsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "loadSettings",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            return []
+        }
+        let result = try JSONDecoder().decode(NotificationSettingsResponse.self, from: data)
+        return result.settings ?? []
+    }
+
+    func updateNotificationSetting(id: String, enabled: Bool?, customTitle: String?, customMessage: String?, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.notificationsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        var body: [String: Any] = [
+            "action": "updateSetting",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "id": id,
+        ]
+        if let enabled = enabled { body["enabled"] = enabled }
+        if let customTitle = customTitle { body["customTitle"] = customTitle }
+        if let customMessage = customMessage { body["customMessage"] = customMessage }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+    }
+
+    func addNotificationSetting(type: NotificationType, studio: String, staff: Staff) async throws -> NotificationSetting? {
+        var request = URLRequest(url: URL(string: APIConfig.notificationsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "addSetting",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "type": type.rawValue,
+            "studio": studio,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            return nil
+        }
+        return try JSONDecoder().decode(NotificationSetting.self, from: data)
+    }
+
+    func deleteNotificationSetting(id: String, staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.notificationsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "deleteSetting",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "id": id,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (_, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw APIError.invalidResponse
+        }
+    }
 }
 
 // MARK: - Helpers

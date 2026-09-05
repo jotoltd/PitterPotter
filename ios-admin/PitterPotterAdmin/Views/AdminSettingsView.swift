@@ -35,6 +35,7 @@ struct AdminSettingsView: View {
                     schedulingSection
                     pageVisibilitySection
                     tablePlanSection
+                    notificationSettingsSection
                 } else {
                     staffInfoSection
                 }
@@ -381,6 +382,23 @@ struct AdminSettingsView: View {
                 await MainActor.run { Haptics.success() }
             } catch {
                 await MainActor.run { Haptics.error() }
+            }
+        }
+    }
+
+    // MARK: - Notification Settings
+
+    private var notificationSettingsSection: some View {
+        Section(header: Text("Notifications")) {
+            NavigationLink {
+                NotificationSettingsView()
+                    .environmentObject(authVM)
+            } label: {
+                HStack {
+                    Image(systemName: "bell.fill")
+                        .foregroundStyle(.orange)
+                    Text("Notification Settings")
+                }
             }
         }
     }

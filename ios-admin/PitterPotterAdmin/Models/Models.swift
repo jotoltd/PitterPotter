@@ -256,3 +256,39 @@ struct NotificationsResponse: Codable {
 struct UnreadCountResponse: Codable {
     let count: Int
 }
+
+struct NotificationSetting: Codable, Identifiable {
+    let id: String
+    let type: NotificationType
+    var enabled: Bool
+    var studio: String
+    var customTitle: String?
+    var customMessage: String?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, type, enabled, studio
+        case customTitle = "custom_title"
+        case customMessage = "custom_message"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct NotificationSettingsResponse: Codable {
+    let settings: [NotificationSetting]?
+}
+
+extension NotificationType {
+    var label: String {
+        switch self {
+        case .bookingNew: return "New Booking"
+        case .bookingCancelled: return "Booking Cancelled"
+        case .bookingStatusChanged: return "Booking Status Changed"
+        case .bookingWalkIn: return "Walk-in Booking"
+        case .giftCardPurchased: return "Gift Card Purchased"
+        case .giftCardRedeemed: return "Gift Card Redeemed"
+        case .collectionReady: return "Collection Ready"
+        case .staffAction: return "Staff Action"
+        }
+    }
+}

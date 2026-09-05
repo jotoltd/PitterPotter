@@ -31,17 +31,46 @@ const NOTIFICATION_COLORS: Record<NotificationType, string> = {
   staff_action: 'text-stone-600 bg-stone-50',
 };
 
+// Persistent audio context — unlocked on first user interaction
+let audioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  if (audioCtx && audioCtx.state !== 'closed') return audioCtx;
+  try {
+    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return null;
+    audioCtx = new Ctx();
+    return audioCtx;
+  } catch {
+    return null;
+  }
+}
+
 function playTone(ctx: AudioContext) {
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.frequency.setValueAtTime(880, ctx.currentTime);
-  osc.frequency.setValueAtTime(660, ctx.currentTime + 0.15);
-  gain.gain.setValueAtTime(0.3, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.4);
+  const now = ctx.currentTime;
+  // First tone: 880Hz
+  const osc1 = ctx.createOscillator();
+  const gain1 = ctx.createGain();
+  osc1.connect(gain1);
+  gain1.connect(ctx.destination);
+  osc1.type = 'sine';
+  osc1.frequency.setValueAtTime(880, now);
+  gain1.gain.setValueAtTime(0.3, now);
+  gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+  osc1.start(now);
+  osc1.stop(now + 0.15);
+  // Second tone: 660Hz (ding-dong)
+  const osc2 = ctx.createOscillator();
+  const gain2 = ctx.createGain();
+  osc2.connect(gain2);
+  gain2.connect(ctx.destination);
+  osc2.type = 'sine';
+  osc2.frequency.setValueAtTime(660, now + 0.15);
+  gain2.gain.setValueAtTime(0, now + 0.14);
+  gain2.gain.linearRampToValueAtTime(0.3, now + 0.16);
+  gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+  osc2.start(now + 0.15);
+  osc2.stop(now + 0.4);
 }
 
 function timeAgo(dateStr: string): string {
@@ -91,16 +120,27 @@ export default function NotificationBell({ staff, onNavigate }: NotificationBell
     return () => clearInterval(interval);
   }, [loadUnreadCount]);
 
+  // Unlock audio on first user interaction (browsers require this)
+  useEffect(() => {
+    const unlock = () => {
+      const ctx = getAudioContext();
+      if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+    };
+    window.addEventListener('click', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, []);
+
   // Play notification sound
   const playNotificationSound = useCallback(() => {
     try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
+      const ctx = getAudioContext();
+      if (!ctx) return;
       if (ctx.state === 'suspended') {
-        ctx.resume().then(() => {
-          playTone(ctx);
-        }).catch(() => {});
+        ctx.resume().then(() => playTone(ctx)).catch(() => {});
       } else {
         playTone(ctx);
       }
