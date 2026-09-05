@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import DashboardOverview from './DashboardOverview';
 import ConfirmDialog from './ConfirmDialog';
 import FloorPlanView from './FloorPlanView';
@@ -2564,20 +2564,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
-        {/* Admin Tabs */}
+        {/* Admin Tabs — Grouped Navigation */}
         <div className="sticky top-[56px] z-20 bg-white border-b border-[#1B2D3C]/10 mb-6">
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+            {/* Main tabs */}
             {[
               ...(isSuperAdmin ? [{ value: 'dashboard', label: 'Dashboard', badge: stats.pending > 0 ? stats.pending : null }] : []),
               { value: 'bookings', label: isSuperAdmin ? 'Bookings' : 'Dashboard', badge: isSuperAdmin ? null : (stats.pending > 0 ? stats.pending : null) },
               { value: 'painted', label: 'Painted', badge: stats.paintedNoPhoto > 0 ? stats.paintedNoPhoto : null },
-              { value: 'ready', label: 'Ready to Collect', badge: null },
+              { value: 'ready', label: 'Ready', badge: null },
               { value: 'collected', label: 'Collected', badge: null },
               ...(isSuperAdmin ? [{ value: 'gift-cards', label: 'Gift Vouchers', badge: null }] : []),
-              ...(isSuperAdmin ? [{ value: 'sms', label: 'SMS', badge: null }] : []),
-              ...(canManageStaff ? [{ value: 'audit-logs', label: 'Audit Log', badge: null }] : []),
-              ...(canManageStaff ? [{ value: 'email-logs', label: 'Emails', badge: null }] : []),
-              ...(canManageStaff ? [{ value: 'email-templates', label: 'Templates', badge: null }] : []),
             ].map((tab) => (
               <button
                 key={tab.value}
@@ -2596,27 +2593,23 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 )}
               </button>
             ))}
+
+            {/* Logs dropdown */}
             {canManageStaff && (
-              <>
-                <div className="w-px h-5 bg-[#1B2D3C]/10 mx-1 shrink-0" />
-                {[
-                  { value: 'analytics', label: 'Analytics' },
-                  { value: 'settings', label: 'Settings' },
-                  { value: 'webmaster', label: 'Webmaster' },
-                ].map((tab) => (
-                  <button
-                    key={tab.value}
-                    onClick={() => setActiveTab(tab.value as typeof activeTab)}
-                    className={`relative shrink-0 px-3 py-3 text-xs font-bold tracking-wide border-b-2 transition-all cursor-pointer ${
-                      activeTab === tab.value
-                        ? 'border-[#1B2D3C] text-[#1B2D3C]'
-                        : 'border-transparent text-[#1B2D3C]/40 hover:text-[#1B2D3C]/70'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </>
+              <LogsDropdown
+                activeTab={activeTab}
+                setActiveTab={(t) => setActiveTab(t as typeof activeTab)}
+                isSuperAdmin={isSuperAdmin}
+              />
+            )}
+
+            {/* Admin dropdown */}
+            {canManageStaff && (
+              <AdminDropdown
+                activeTab={activeTab}
+                setActiveTab={(t) => setActiveTab(t as typeof activeTab)}
+                isSuperAdmin={isSuperAdmin}
+              />
             )}
           </div>
         </div>
@@ -5537,4 +5530,105 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       </div>
     </div>
   );
+}
+
+// --- Grouped Navigation Dropdowns ---
+
+type TabValue = 'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates' | 'sms';
+
+function NavDropdown({
+  label,
+  items,
+  activeTab,
+  setActiveTab,
+}: {
+  label: string;
+  items: { value: TabValue; label: string }[];
+  activeTab: TabValue;
+  setActiveTab: (t: TabValue) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const activeItem = items.find((i) => i.value === activeTab);
+
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`relative px-4 py-3 text-xs font-bold tracking-wide border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+          activeItem
+            ? 'border-[#1B2D3C] text-[#1B2D3C]'
+            : 'border-transparent text-[#1B2D3C]/50 hover:text-[#1B2D3C]'
+        }`}
+      >
+        {activeItem ? activeItem.label : label}
+        <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-0 min-w-[180px] bg-white border border-[#1B2D3C]/15 shadow-lg rounded-b-lg overflow-hidden z-50">
+          {items.map((item) => (
+            <button
+              key={item.value}
+              onClick={() => {
+                setActiveTab(item.value);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
+                activeTab === item.value
+                  ? 'bg-[#DBE7E4] text-[#1B2D3C]'
+                  : 'text-[#1B2D3C]/70 hover:bg-[#DBE7E4]/40 hover:text-[#1B2D3C]'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LogsDropdown({
+  activeTab,
+  setActiveTab,
+  isSuperAdmin,
+}: {
+  activeTab: TabValue;
+  setActiveTab: (t: TabValue) => void;
+  isSuperAdmin: boolean;
+}) {
+  const items: { value: TabValue; label: string }[] = [
+    { value: 'audit-logs', label: 'Audit Logs' },
+    { value: 'email-logs', label: 'Email Logs' },
+    { value: 'email-templates', label: 'Email & SMS Templates' },
+    ...(isSuperAdmin ? [{ value: 'sms' as TabValue, label: 'SMS Dashboard' }] : []),
+  ];
+  return <NavDropdown label="Logs" items={items} activeTab={activeTab} setActiveTab={setActiveTab} />;
+}
+
+function AdminDropdown({
+  activeTab,
+  setActiveTab,
+  isSuperAdmin,
+}: {
+  activeTab: TabValue;
+  setActiveTab: (t: TabValue) => void;
+  isSuperAdmin: boolean;
+}) {
+  const items: { value: TabValue; label: string }[] = [
+    { value: 'analytics', label: 'Analytics' },
+    { value: 'settings', label: 'Settings' },
+    ...(isSuperAdmin ? [{ value: 'webmaster' as TabValue, label: 'Webmaster' }] : []),
+  ];
+  return <NavDropdown label="Admin" items={items} activeTab={activeTab} setActiveTab={setActiveTab} />;
 }
