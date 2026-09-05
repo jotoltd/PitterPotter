@@ -20,7 +20,7 @@ struct NotificationsView: View {
                     EmptyStateView(
                         icon: "bell.slash",
                         title: "No Notifications",
-                        message: "You're all caught up!"
+                        subtitle: "You're all caught up!"
                     )
                 } else {
                     List {

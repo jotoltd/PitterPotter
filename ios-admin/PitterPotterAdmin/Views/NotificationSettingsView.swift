@@ -198,13 +198,17 @@ struct NotificationSettingsView: View {
     private func addSetting() {
         guard let staff = authVM.staff else { return }
         Task {
-            if let newSetting = try? await APIClient.shared.addNotificationSetting(
-                type: newType, studio: newStudio, staff: staff
-            ) {
-                await MainActor.run {
-                    if let s = newSetting { settings.append(s) }
-                    showAdd = false
+            do {
+                if let newSetting = try await APIClient.shared.addNotificationSetting(
+                    type: newType, studio: newStudio, staff: staff
+                ) {
+                    await MainActor.run {
+                        settings.append(newSetting)
+                        showAdd = false
+                    }
                 }
+            } catch {
+                // ignore
             }
         }
     }

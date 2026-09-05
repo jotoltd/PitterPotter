@@ -78,8 +78,9 @@ class NotificationsViewModel: ObservableObject {
     func startPolling(staff: Staff) {
         stopPolling()
         pollTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
             Task { @MainActor in
-                await self?.refreshUnreadCount(staff: staff)
+                await self.refreshUnreadCount(staff: staff)
             }
         }
     }

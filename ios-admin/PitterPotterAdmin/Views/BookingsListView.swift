@@ -498,6 +498,7 @@ struct StatusBadge: View {
         case .seated: return .orange
         case .completed: return PPBrand.charcoal
         case .pending: return .yellow
+        case .noShow: return .gray
         }
     }
 }
