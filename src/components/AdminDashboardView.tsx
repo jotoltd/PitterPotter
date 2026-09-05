@@ -1808,11 +1808,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
 
     try {
-      await updateBooking(updatedBooking, staff);
+      const warning = await updateBooking(updatedBooking, staff);
       setInquiries(inquiries.map((i) => i.id === updatedBooking.id ? updatedBooking : i));
       setShowEditModal(false);
       setEditingBooking(null);
-      showToast('Booking updated', 'success');
+      showToast(warning ? `Booking updated — ${warning}` : 'Booking updated', warning ? 'error' : 'success');
     } catch {
       showToast('Failed to update booking', 'error');
     }
@@ -1891,7 +1891,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             : 'pending',
         } : {}),
       };
-      await createBooking(booking, staff);
+      const warning = await createBooking(booking, staff);
       setInquiries([booking, ...inquiries]);
       setShowAddModal(false);
       setLockedSessionType(null);
@@ -1909,7 +1909,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       });
       setNewBabiesCount(1);
       setNewAdultsCount(1);
-      showToast('Booking added successfully', 'success');
+      showToast(warning ? `Booking added — ${warning}` : 'Booking added successfully', warning ? 'error' : 'success');
     } catch (err) {
       console.error('Failed to add booking:', err);
       showToast((err as Error).message || 'Failed to add booking', 'error');
@@ -1956,11 +1956,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         requestDate: now.toISOString(),
         source: 'walk-in',
       };
-      await createBooking(booking, staff);
+      const warning = await createBooking(booking, staff);
       setInquiries([booking, ...inquiries]);
       setShowGhostModal(false);
       setGhostBooking({ seats: 1, studio: defaultStudio });
-      showToast(`${ghostBooking.seats} seat${ghostBooking.seats !== 1 ? 's' : ''} blocked as walk-in`, 'success');
+      showToast(
+        warning
+          ? `Walk-in added — ${warning}`
+          : `${ghostBooking.seats} seat${ghostBooking.seats !== 1 ? 's' : ''} blocked as walk-in`,
+        warning ? 'error' : 'success',
+      );
     } catch (err) {
       console.error('Failed to add ghost booking:', err);
       showToast((err as Error).message || 'Failed to add walk-in', 'error');

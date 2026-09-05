@@ -158,8 +158,8 @@ export async function createPublicBooking(booking: BookingInquiry): Promise<void
   }
 }
 
-export async function createBooking(booking: BookingInquiry, staff?: Staff | null): Promise<void> {
-  if (!isSupabaseEnabled()) return;
+export async function createBooking(booking: BookingInquiry, staff?: Staff | null): Promise<string | null> {
+  if (!isSupabaseEnabled()) return null;
   if (!staff) throw new Error('Staff required');
 
   const remaining = await getRemainingCapacity(booking.studio, booking.date, booking.time, booking.sessionType);
@@ -186,10 +186,11 @@ export async function createBooking(booking: BookingInquiry, staff?: Staff | nul
     console.error('Failed to create booking:', data.error);
     throw new Error(data.error || 'Failed to create booking');
   }
+  return data.warning ?? null;
 }
 
-export async function updateBooking(booking: BookingInquiry, staff?: Staff | null): Promise<void> {
-  if (!isSupabaseEnabled()) return;
+export async function updateBooking(booking: BookingInquiry, staff?: Staff | null): Promise<string | null> {
+  if (!isSupabaseEnabled()) return null;
   if (!staff) throw new Error('Staff required');
 
   const response = await fetch(functionUrl('admin-bookings'), {
@@ -211,6 +212,7 @@ export async function updateBooking(booking: BookingInquiry, staff?: Staff | nul
     console.error('Failed to update booking:', data.error);
     throw new Error(data.error || 'Failed to update booking');
   }
+  return data.warning ?? null;
 }
 
 export async function updateBookingStatus(id: string, status: 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show', staff?: Staff | null): Promise<void> {

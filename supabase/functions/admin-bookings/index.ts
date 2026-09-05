@@ -4,7 +4,7 @@ import { logAudit } from '../_shared/audit.ts';
 import type { AdminSupabaseClient, StaffRecord } from '../_shared/types.ts';
 import { verifyStaff } from '../_shared/auth.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
-
+import { capacityWarning } from '../_shared/capacity.ts';
 
 // deno-lint-ignore no-explicit-any
 function toBookingInquiry(row: any): any {
@@ -162,10 +162,15 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
+      // Checked before the insert so the new booking is not counted against itself
+      const warning = await capacityWarning(supabase, booking as Record<string, unknown>);
       const managementToken = crypto.randomUUID();
       const bookingRow = { ...toBookingRow(booking as Record<string, unknown>), management_token: managementToken };
       const { error } = await supabase.from('bookings').insert(bookingRow);
       if (error) throw error;
+      if (warning) {
+        console.warn(`Overbooking by ${staff.username}: ${warning}`);
+      }
       await logAudit(supabase, staff, 'create', 'booking', booking.id as string, { studio: booking.studio, date: booking.date, time: booking.time });
 
       // Send confirmation email if the booking has an email address
@@ -184,7 +189,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ success: true, warning }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -209,6 +214,11 @@ Deno.serve(async (req) => {
         });
       }
       const { data: prevRow } = await supabase.from('bookings').select('*').eq('booking_id', booking.id).single();
+      // Excludes this booking so its own seats are not double counted
+      const warning = await capacityWarning(supabase, booking as Record<string, unknown>, booking.id as string);
+      if (warning) {
+        console.warn(`Overbooking by ${staff.username}: ${warning}`);
+      }
       const bookingRow = toBookingRow(booking as Record<string, unknown>);
       if (bookingRow.status === 'completed' && !prevRow?.collection_status && !bookingRow.collection_status) {
         bookingRow.collection_status = 'painted';
@@ -236,7 +246,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ success: true, warning }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

@@ -57,6 +57,51 @@ function overlapsTwoHours(timeA: string, timeB: string): boolean {
   return Math.abs(parseTimeToMinutes(timeA) - parseTimeToMinutes(timeB)) < 120;
 }
 
+// Staff are allowed to overbook (walk-ins, squeezing in regulars), so this
+// never blocks a write. It returns a message the admin UI surfaces so that
+// going over capacity is a deliberate choice rather than a silent one.
+export async function capacityWarning(
+  supabase: SupabaseClient,
+  booking: {
+    studio?: unknown;
+    date?: unknown;
+    time?: unknown;
+    sessionType?: unknown;
+    paintersCount?: unknown;
+  },
+  excludeBookingId?: string,
+): Promise<string | null> {
+  const studio = booking.studio;
+  const date = booking.date;
+  const time = booking.time;
+  const sessionType = typeof booking.sessionType === 'string' ? booking.sessionType : undefined;
+  const seats = Number(booking.paintersCount) || 0;
+
+  if (studio !== 'Putney' && studio !== 'Wimbledon') return null;
+  if (typeof date !== 'string' || !date || typeof time !== 'string' || !time) return null;
+
+  try {
+    const capacity = await computeCapacity(supabase, studio, date, time, sessionType, excludeBookingId);
+    const when = `${time} on ${date}`;
+
+    if (capacity.conflict === 'party_session_exists') {
+      const spaces = capacity.maxBookings;
+      return `${studio} already has the maximum of ${spaces} part${spaces === 1 ? 'y' : 'ies'} booked at ${when}.`;
+    }
+    if (seats > capacity.remaining) {
+      const noun = PARTY_SESSION_TYPES.includes(sessionType ?? '') ? 'party seat' : 'seat';
+      return `Over capacity: ${seats} ${noun}${seats === 1 ? '' : 's'} booked but only ${capacity.remaining} of ${capacity.max} remain at ${when}.`;
+    }
+    if (capacity.remainingBookings <= 0) {
+      return `Over capacity: ${studio} already has the maximum of ${capacity.maxBookings} bookings at ${when}.`;
+    }
+    return null;
+  } catch (err) {
+    console.error('Capacity warning check failed:', err);
+    return null;
+  }
+}
+
 export async function computeCapacity(
   supabase: SupabaseClient,
   studio: StudioName,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeCapacity } from './capacity';
+import { computeCapacity, capacityWarning } from './capacity';
 
 interface Row {
   painters_count?: number;
@@ -156,5 +156,73 @@ describe('computeCapacity - open bookings', () => {
     const result = await computeCapacity(supabase, 'Putney', '2026-10-18', '10:00', 'painting', 'PP-1');
 
     expect(result.remaining).toBe(32);
+  });
+});
+
+describe('capacityWarning', () => {
+  const baseBooking = {
+    studio: 'Putney',
+    date: '2026-10-18',
+    time: '10:00',
+    sessionType: 'painting',
+    paintersCount: 4,
+  };
+
+  it('stays silent when the booking fits', async () => {
+    const supabase = mockSupabase([], CAPACITY);
+    expect(await capacityWarning(supabase, baseBooking)).toBeNull();
+  });
+
+  it('warns when seats exceed the remaining capacity', async () => {
+    const supabase = mockSupabase(
+      [{ session_type: 'painting', painters_count: 30, time: '10:00' }],
+      CAPACITY,
+    );
+    const warning = await capacityWarning(supabase, { ...baseBooking, paintersCount: 6 });
+
+    expect(warning).toContain('Over capacity');
+    expect(warning).toContain('only 2 of 32 remain');
+  });
+
+  it('warns when the studio party spaces are already taken', async () => {
+    const supabase = mockSupabase(
+      [{ session_type: 'birthday-party', painters_count: 10, time: '10:00' }],
+      CAPACITY,
+    );
+    const warning = await capacityWarning(supabase, {
+      ...baseBooking,
+      sessionType: 'birthday-party',
+      paintersCount: 8,
+    });
+
+    expect(warning).toContain('maximum of 1 party');
+  });
+
+  it('does not warn about a booking being edited against its own seats', async () => {
+    const supabase = mockSupabase(
+      [{ session_type: 'painting', painters_count: 30, time: '10:00', booking_id: 'PP-1' }],
+      CAPACITY,
+    );
+    const warning = await capacityWarning(supabase, { ...baseBooking, paintersCount: 30 }, 'PP-1');
+
+    expect(warning).toBeNull();
+  });
+
+  it('ignores bookings without a usable studio, date or time', async () => {
+    const supabase = mockSupabase([], CAPACITY);
+
+    expect(await capacityWarning(supabase, { ...baseBooking, studio: 'Elsewhere' })).toBeNull();
+    expect(await capacityWarning(supabase, { ...baseBooking, date: '' })).toBeNull();
+    expect(await capacityWarning(supabase, { ...baseBooking, time: undefined })).toBeNull();
+  });
+
+  it('never throws when the capacity lookup fails', async () => {
+    const failing = {
+      from() {
+        throw new Error('database unavailable');
+      },
+    };
+
+    expect(await capacityWarning(failing, baseBooking)).toBeNull();
   });
 });
