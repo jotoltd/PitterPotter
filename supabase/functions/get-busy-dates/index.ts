@@ -4,10 +4,22 @@ import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-l
 import {
   PARTY_SESSION_TYPES,
   DEFAULT_OPEN_CAPACITY,
+  DEFAULT_OPEN_RESTRICTED_CAPACITY,
   DEFAULT_PARTY_CAPACITY,
+  DEFAULT_MAX_CONCURRENT_PARTIES,
 } from '../_shared/capacity.ts';
 
 const SLOTS = ['10:00', '12:00', '14:00', '16:00'];
+
+function parseTimeToMinutes(time: string): number {
+  const start = time.split('-')[0].trim();
+  const [h, m] = start.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+function overlapsTwoHours(timeA: string, timeB: string): boolean {
+  return Math.abs(parseTimeToMinutes(timeA) - parseTimeToMinutes(timeB)) < 120;
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -69,13 +81,16 @@ Deno.serve(async (req) => {
       .from('capacity')
       .select('session_type, max_painters')
       .eq('studio', studio)
-      .in('session_type', ['open', 'party']);
+      .in('session_type', ['open', 'open_restricted', 'party']);
 
     const openRow = (capacityRows || []).find((r: { session_type: string }) => r.session_type === 'open');
+    const openRestrictedRow = (capacityRows || []).find((r: { session_type: string }) => r.session_type === 'open_restricted');
     const partyRow = (capacityRows || []).find((r: { session_type: string }) => r.session_type === 'party');
 
     const openMax = openRow?.max_painters ?? DEFAULT_OPEN_CAPACITY[studioKey];
+    const openRestrictedMax = openRestrictedRow?.max_painters ?? DEFAULT_OPEN_RESTRICTED_CAPACITY[studioKey];
     const partyMax = partyRow?.max_painters ?? DEFAULT_PARTY_CAPACITY[studioKey];
+    const maxConcurrentParties = DEFAULT_MAX_CONCURRENT_PARTIES[studioKey];
 
     interface BookingRow {
       date: string;
@@ -84,20 +99,32 @@ Deno.serve(async (req) => {
       session_type: string;
     }
 
-    const dateSlotBookings: Record<string, Record<string, BookingRow[]>> = {};
+    const dateSlotBookings: Record<string, BookingRow[]> = {};
     (data || [] as BookingRow[]).forEach((row) => {
-      if (!dateSlotBookings[row.date]) dateSlotBookings[row.date] = {};
-      if (!dateSlotBookings[row.date][row.time]) dateSlotBookings[row.date][row.time] = [];
-      dateSlotBookings[row.date][row.time].push(row);
+      if (!dateSlotBookings[row.date]) dateSlotBookings[row.date] = [];
+      dateSlotBookings[row.date].push(row);
     });
 
     const busyDates = Object.entries(dateSlotBookings)
-      .filter(([_, slotMap]) =>
+      .filter(([_, allRows]) =>
         SLOTS.every((slot) => {
-          const slotRows = slotMap[slot] || [];
-          const hasParty = slotRows.some((r) => PARTY_SESSION_TYPES.includes(r.session_type ?? ''));
-          const max = hasParty ? partyMax : openMax;
-          const booked = slotRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
+          // Find all bookings that overlap this slot's 2-hour window
+          const slotRows = allRows.filter((r) => r.time && overlapsTwoHours(r.time, slot));
+          if (slotRows.length === 0) return false;
+
+          const partyRows = slotRows.filter((r) => PARTY_SESSION_TYPES.includes(r.session_type ?? ''));
+          const openRows = slotRows.filter((r) => !PARTY_SESSION_TYPES.includes(r.session_type ?? ''));
+          const hasParty = partyRows.length > 0;
+
+          // If party spaces are fully used, slot is busy for parties
+          if (partyRows.length >= maxConcurrentParties) {
+            const partyBooked = partyRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
+            if (partyBooked >= partyMax) return true;
+          }
+
+          // For open bookings, use restricted capacity if a party is present
+          const max = hasParty ? openRestrictedMax : openMax;
+          const booked = openRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
           return booked >= max;
         })
       )
