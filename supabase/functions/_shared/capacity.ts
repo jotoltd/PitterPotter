@@ -21,6 +21,10 @@ export const DEFAULT_OPEN_CAPACITY: Record<StudioName, number> = { Putney: 32, W
 export const DEFAULT_OPEN_RESTRICTED_CAPACITY: Record<StudioName, number> = { Putney: 15, Wimbledon: 32 };
 export const DEFAULT_PARTY_CAPACITY: Record<StudioName, number> = { Putney: 20, Wimbledon: 26 };
 
+// How many parties may run at the same time in a studio's back area.
+// Putney has a single party space; Wimbledon's back area seats two.
+export const DEFAULT_MAX_CONCURRENT_PARTIES: Record<StudioName, number> = { Putney: 1, Wimbledon: 2 };
+
 // deno-lint-ignore no-explicit-any
 type SupabaseClient = any;
 
@@ -80,9 +84,18 @@ export async function computeCapacity(
   const openRows = rows.filter((r) => !PARTY_SESSION_TYPES.includes(r.session_type ?? ''));
   const hasPartyBooking = partyRows.length > 0;
 
-  // Only one party can use the back area per time slot
-  if (incomingIsParty && hasPartyBooking) {
-    return { remaining: 0, max: 0, booked: 0, hasPartyBooking: true, remainingBookings: 0, maxBookings: 0, conflict: 'party_session_exists' };
+  // A studio's back area can host a limited number of parties at the same time.
+  const maxConcurrentParties = DEFAULT_MAX_CONCURRENT_PARTIES[studio];
+  if (incomingIsParty && partyRows.length >= maxConcurrentParties) {
+    return {
+      remaining: 0,
+      max: 0,
+      booked: 0,
+      hasPartyBooking: true,
+      remainingBookings: 0,
+      maxBookings: maxConcurrentParties,
+      conflict: 'party_session_exists',
+    };
   }
 
   const { data: capacityRows } = await supabase
@@ -100,17 +113,16 @@ export async function computeCapacity(
   const partyMax = findMax('party', DEFAULT_PARTY_CAPACITY[studio]);
 
   if (incomingIsParty) {
-    // Only one party may occupy the back area per slot; that rule is already
-    // enforced by the party_session_exists conflict above, so at this point the
-    // slot is free for a party booking.
+    // A free party space exists (checked above); seats are shared across any
+    // parties already running in this slot.
     const booked = partyRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
     return {
       remaining: Math.max(0, partyMax - booked),
       max: partyMax,
       booked,
       hasPartyBooking,
-      remainingBookings: 1,
-      maxBookings: 1,
+      remainingBookings: maxConcurrentParties - partyRows.length,
+      maxBookings: maxConcurrentParties,
     };
   }
 
