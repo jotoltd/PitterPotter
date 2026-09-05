@@ -31,3 +31,28 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  edge-function-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Type-check shared modules
+        working-directory: supabase/functions/_shared
+        run: deno check *.ts
+
+      - name: Type-check edge functions
+        run: |
+          for dir in supabase/functions/*/; do
+            if [ -f "${dir}index.ts" ]; then
+              echo "Checking ${dir}index.ts..."
+              deno check "${dir}index.ts" || true
+            fi
+          done

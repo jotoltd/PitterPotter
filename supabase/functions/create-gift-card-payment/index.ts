@@ -1,11 +1,15 @@
 import Stripe from 'stripe';
 import { createClient } from 'supabase';
+import { isObject, isNumber, isNonEmptyString, isValidEmail } from '../_shared/validate.ts';
 import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
+import { logError } from '../_shared/error-log.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const MAX_GIFT_CARD_AMOUNT = 500;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,10 +22,53 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { amount, recipientName, recipientEmail, senderName, senderEmail, message } = await req.json();
+    const body = await req.json();
+    if (!isObject(body)) {
+      return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    if (!amount || amount <= 0) {
+    const { amount, recipientName, recipientEmail, senderName, senderEmail, message } = body;
+
+    if (!isNumber(amount) || amount <= 0) {
       return new Response(JSON.stringify({ error: 'Invalid amount' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (amount > MAX_GIFT_CARD_AMOUNT) {
+      return new Response(JSON.stringify({ error: `Amount cannot exceed £${MAX_GIFT_CARD_AMOUNT}` }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!isNonEmptyString(recipientName)) {
+      return new Response(JSON.stringify({ error: 'Missing recipient name' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!isValidEmail(recipientEmail)) {
+      return new Response(JSON.stringify({ error: 'Invalid recipient email' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!isNonEmptyString(senderName)) {
+      return new Response(JSON.stringify({ error: 'Missing sender name' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!isValidEmail(senderEmail)) {
+      return new Response(JSON.stringify({ error: 'Invalid sender email' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -79,7 +126,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    console.error('Payment intent error:', err);
+    logError(err, { functionName: 'create-gift-card-payment', ip: clientIp });
     return new Response(JSON.stringify({ error: 'Failed to create payment' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
