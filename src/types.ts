@@ -193,4 +193,7 @@ export interface EmailLog {
   status: string;
   booking_id: string | null;
   error: string | null;
+  body?: string | null;
+  error_code?: number | null;
+  error_message?: string | null;
 }

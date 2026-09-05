@@ -114,6 +114,7 @@ async function sendAdminEmail(details: BookingNotification, adminEmail: string):
           email_type: 'admin_booking_notification',
           recipient: adminEmail,
           subject: finalSubject,
+          body: html,
           resend_id: resendData.id || null,
           status: 'sent',
           booking_id: details.bookingId,

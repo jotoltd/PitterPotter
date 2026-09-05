@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Send, DollarSign, BarChart3, Phone, RefreshCw, Check, X, AlertCircle, MessageSquare } from 'lucide-react';
+import { Send, DollarSign, BarChart3, Phone, RefreshCw, Check, X, AlertCircle, MessageSquare, Activity, Bell } from 'lucide-react';
 import { Staff, SMSTemplate } from '../../types';
 import { isSupabaseEnabled } from '../../lib/supabase';
 import Skeleton from '../Skeleton';
@@ -34,6 +34,7 @@ interface SMSLog {
   email_type: string;
   recipient: string;
   subject: string | null;
+  body: string | null;
   resend_id: string | null;
   status: string;
   booking_id: string | null;
@@ -60,6 +61,11 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
 
   const [smsLogs, setSmsLogs] = useState<SMSLog[]>([]);
   const [smsLogsLoading, setSmsLogsLoading] = useState(true);
+  const [resendingSmsId, setResendingSmsId] = useState<string | null>(null);
+  const [smsResendResult, setSmsResendResult] = useState<{ id: string; success: boolean; message: string } | null>(null);
+  const [lowBalanceAlert, setLowBalanceAlert] = useState<string | null>(null);
+  const [webhookHealth, setWebhookHealth] = useState<{ resendLast: string | null; twilioLast: string | null; totalEvents: number; alerts: string[] } | null>(null);
+  const [webhookHealthLoading, setWebhookHealthLoading] = useState(false);
 
   const fetchSmsLogs = useCallback(async () => {
     setSmsLogsLoading(true);
@@ -132,6 +138,51 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
     fetchUsage(usageDays);
     fetchSmsLogs();
   }, [fetchBalance, fetchUsage, fetchSmsLogs, usageDays]);
+
+  useEffect(() => {
+    if (balance && parseFloat(balance.balance) < 10) {
+      setLowBalanceAlert(`Twilio balance is low: ${balance.currency === 'USD' ? '$' : balance.currency + ' '}${balance.balance}`);
+    } else {
+      setLowBalanceAlert(null);
+    }
+  }, [balance]);
+
+  const fetchWebhookHealth = useCallback(async () => {
+    setWebhookHealthLoading(true);
+    try {
+      if (!isSupabaseEnabled() || !staff.sessionToken) return;
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'webhookHealth', hours: 24, staff: { username: staff.username, sessionToken: staff.sessionToken } }),
+      });
+      const data = await res.json();
+      if (!data.error) setWebhookHealth(data);
+    } catch { /* ignore */ } finally { setWebhookHealthLoading(false); }
+  }, [staff]);
+
+  useEffect(() => {
+    fetchWebhookHealth();
+  }, [fetchWebhookHealth]);
+
+  const handleResendSms = async (log: SMSLog) => {
+    setResendingSmsId(log.id);
+    setSmsResendResult(null);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'resendSMS', logId: log.id, staff: { username: staff.username, sessionToken: staff.sessionToken } }),
+      });
+      const data = await res.json();
+      setSmsResendResult({ id: log.id, success: data.success !== false, message: data.success !== false ? 'SMS resent successfully' : (data.error || 'Failed to resend') });
+      if (data.success !== false) { fetchSmsLogs(); fetchBalance(); }
+    } catch {
+      setSmsResendResult({ id: log.id, success: false, message: 'Failed to resend' });
+    } finally {
+      setResendingSmsId(null);
+    }
+  };
 
   const handleSendTest = async () => {
     if (!testPhone.trim() || !testMessage.trim()) return;
@@ -270,6 +321,62 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
         </div>
       </div>
 
+      {/* Low balance alert */}
+      {lowBalanceAlert && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-amber-600" />
+          <p className="text-xs font-bold text-amber-700">{lowBalanceAlert}</p>
+        </div>
+      )}
+
+      {/* Webhook Health */}
+      <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5">
+            <Activity className="w-4 h-4" /> Webhook Health
+          </h3>
+          <button
+            onClick={fetchWebhookHealth}
+            className="p-1.5 rounded-lg hover:bg-[#D6E2E9] transition-colors cursor-pointer"
+            disabled={webhookHealthLoading}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[#1B2D3C]/50 ${webhookHealthLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+        {webhookHealthLoading ? (
+          <Skeleton className="h-16" />
+        ) : webhookHealth ? (
+          <div className="space-y-2">
+            {webhookHealth.alerts.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-1">
+                {webhookHealth.alerts.map((alert, i) => (
+                  <p key={i} className="text-xs font-bold text-red-600 flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5" /> {alert}
+                  </p>
+                ))}
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-stone-50 rounded-lg p-3">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">Resend (Email)</p>
+                <p className="text-xs font-bold text-[#1B2D3C] mt-1">
+                  {webhookHealth.resendLast ? new Date(webhookHealth.resendLast).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Never'}
+                </p>
+              </div>
+              <div className="bg-stone-50 rounded-lg p-3">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">Twilio (SMS)</p>
+                <p className="text-xs font-bold text-[#1B2D3C] mt-1">
+                  {webhookHealth.twilioLast ? new Date(webhookHealth.twilioLast).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Never'}
+                </p>
+              </div>
+            </div>
+            <p className="text-[10px] text-[#1B2D3C]/40 font-semibold">Total webhook events (24h): {webhookHealth.totalEvents}</p>
+          </div>
+        ) : (
+          <p className="text-xs text-[#1B2D3C]/40">Unable to load webhook health</p>
+        )}
+      </div>
+
       {/* Delivery Logs */}
       <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-5">
         <div className="flex items-center justify-between mb-3">
@@ -301,24 +408,48 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
                     <Phone className="w-3 h-3 text-[#1B2D3C]/40" />
                     <span className="text-xs font-bold text-[#1B2D3C]">{log.recipient}</span>
                   </div>
-                  <span className={`px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full ${
-                    log.status === 'delivered' ? 'bg-emerald-100 text-emerald-800'
-                    : log.status === 'sent' ? 'bg-blue-100 text-blue-800'
-                    : log.status === 'queued' ? 'bg-amber-100 text-amber-800'
-                    : log.status === 'failed' || log.status === 'undelivered' ? 'bg-red-100 text-red-700'
-                    : 'bg-stone-100 text-stone-600'
-                  }`}>
-                    {log.status}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full ${
+                      log.status === 'delivered' ? 'bg-emerald-100 text-emerald-800'
+                      : log.status === 'sent' ? 'bg-blue-100 text-blue-800'
+                      : log.status === 'queued' ? 'bg-amber-100 text-amber-800'
+                      : log.status === 'failed' || log.status === 'undelivered' ? 'bg-red-100 text-red-700'
+                      : 'bg-stone-100 text-stone-600'
+                    }`}>
+                      {log.status}
+                    </span>
+                    {(log.status === 'failed' || log.status === 'undelivered') && (
+                      <button
+                        onClick={() => handleResendSms(log)}
+                        disabled={resendingSmsId === log.id}
+                        className="p-1 rounded-lg hover:bg-emerald-50 transition-all cursor-pointer disabled:opacity-40"
+                        title="Resend SMS"
+                      >
+                        {resendingSmsId === log.id ? (
+                          <RefreshCw className="w-3 h-3 text-emerald-600 animate-spin" />
+                        ) : (
+                          <Send className="w-3 h-3 text-emerald-600" />
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-3 text-[10px] text-[#1B2D3C]/40 font-semibold">
                   <span>{log.email_type.replace(/_/g, ' ')}</span>
                   <span>{new Date(log.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                   {log.booking_id && <span>Ref: {log.booking_id}</span>}
                 </div>
+                {log.body && (
+                  <p className="text-[10px] text-[#1B2D3C]/60 font-medium bg-stone-50 rounded p-2 mt-1">{log.body}</p>
+                )}
                 {log.error_message && (
                   <p className="text-[10px] text-red-600 font-semibold flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" /> {log.error_message}
+                  </p>
+                )}
+                {smsResendResult?.id === log.id && (
+                  <p className={`text-[9px] font-bold ${smsResendResult.success ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {smsResendResult.message}
                   </p>
                 )}
               </div>

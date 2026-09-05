@@ -25,14 +25,52 @@ Deno.serve(async (req) => {
     const messageSid = formData.get('MessageSid') as string;
     const messageStatus = formData.get('MessageStatus') as string;
     const to = formData.get('To') as string;
+    const from = formData.get('From') as string;
+    const body = formData.get('Body') as string;
     const errorCode = formData.get('ErrorCode') as string | null;
     const errorMessage = formData.get('ErrorMessage') as string | null;
+
+    // Handle inbound STOP/UNSTOP for SMS compliance
+    if (body && from) {
+      const upperBody = body.trim().toUpperCase();
+      if (upperBody === 'STOP' || upperBody === 'STOPALL' || upperBody === 'CANCEL' || upperBody === 'END' || upperBody === 'QUIT') {
+        try {
+          await supabase.from('sms_opt_outs').upsert({
+            phone: from,
+            opted_out_at: new Date().toISOString(),
+            reason: 'STOP keyword',
+          }, { onConflict: 'phone' });
+          console.log(`SMS opt-out recorded for ${from}`);
+        } catch (e) { console.error('Failed to record opt-out:', e); }
+        return new Response('ok', { headers: corsHeaders });
+      }
+      if (upperBody === 'UNSTOP' || upperBody === 'START' || upperBody === 'YES') {
+        try {
+          await supabase.from('sms_opt_outs').upsert({
+            phone: from,
+            opted_out_at: new Date().toISOString(),
+            opted_in_at: new Date().toISOString(),
+            reason: 'UNSTOP keyword',
+          }, { onConflict: 'phone' });
+          console.log(`SMS opt-in recorded for ${from}`);
+        } catch (e) { console.error('Failed to record opt-in:', e); }
+        return new Response('ok', { headers: corsHeaders });
+      }
+    }
 
     if (!messageSid || !messageStatus) {
       return new Response('ok', { headers: corsHeaders });
     }
 
     console.log(`Twilio webhook: SID=${messageSid}, Status=${messageStatus}, To=${to}, ErrorCode=${errorCode}`);
+
+    // Log webhook health
+    try {
+      await supabase.from('webhook_health').insert({
+        source: 'twilio',
+        event_type: messageStatus,
+      });
+    } catch { /* ignore */ }
 
     const updateData: Record<string, any> = {
       status: messageStatus,

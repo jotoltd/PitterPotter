@@ -475,6 +475,7 @@ Deno.serve(async (req) => {
               email_type: 'gift_card_recipient',
               recipient: giftCard.recipient_email,
               subject: `You've received a \u00A3${Number(giftCard.amount).toFixed(2)} gift card from ${giftCard.sender_name || 'someone'}!`,
+              body: buildRecipientEmail(giftCard),
               resend_id: resendData.id || null,
               status: 'sent',
             });
@@ -519,6 +520,7 @@ Deno.serve(async (req) => {
               email_type: 'gift_card_sender',
               recipient: giftCard.sender_email,
               subject: `Gift card purchase confirmed \u2014 \u00A3${Number(giftCard.amount).toFixed(2)}`,
+              body: buildSenderEmail(giftCard),
               resend_id: resendData.id || null,
               status: 'sent',
             });

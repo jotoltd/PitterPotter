@@ -120,6 +120,7 @@ async function sendReminderEmail(
           email_type: 'party_final_reminder',
           recipient: details.email,
           subject: finalSubject,
+          body: html,
           resend_id: resendData.id || null,
           status: 'sent',
           booking_id: details.bookingId,
@@ -166,6 +167,19 @@ async function sendReminderSMS(
 
   const studioName = `Pitter Potter ${details.studio}`;
   const studioInfo = getStudioInfo(details.studio);
+
+  // Check SMS opt-out
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (supabaseUrl && supabaseServiceKey) {
+    const optOutClient = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: optOut } = await optOutClient.from('sms_opt_outs')
+      .select('phone').eq('phone', toNumber).is('opted_in_at', null).limit(1);
+    if (optOut && optOut.length > 0) {
+      console.log(`SMS to ${toNumber} skipped (opted out)`);
+      return { success: false, error: 'Recipient has opted out of SMS' };
+    }
+  }
   const senderId = details.studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP';
 
   const formatDate = (d: string) => {
@@ -235,6 +249,7 @@ async function sendReminderSMS(
           email_type: 'party_final_reminder_sms',
           recipient: toNumber,
           subject: 'Party final reminder SMS',
+          body: message,
           resend_id: data.sid || null,
           status: 'sent',
           booking_id: details.bookingId,

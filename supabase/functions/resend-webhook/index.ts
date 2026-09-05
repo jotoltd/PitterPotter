@@ -39,6 +39,24 @@ Deno.serve(async (req) => {
 
     const status = statusMap[eventType] || 'sent';
 
+    // Log webhook health
+    try {
+      await supabase.from('webhook_health').insert({
+        source: 'resend',
+        event_type: eventType,
+      });
+    } catch { /* ignore */ }
+
+    // Mark suppressed on bounce/complaint
+    if (status === 'bounced' || status === 'complained') {
+      try {
+        await supabase.from('email_logs')
+          .update({ suppressed: true, suppressed_at: new Date().toISOString() })
+          .eq('recipient', to)
+          .in('status', ['bounced', 'complained']);
+      } catch { /* ignore */ }
+    }
+
     if (resendId) {
       const { error: upsertError } = await supabase
         .from('email_logs')

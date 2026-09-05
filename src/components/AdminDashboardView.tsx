@@ -196,6 +196,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [sendingReminder, setSendingReminder] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [drawerBooking, setDrawerBooking] = useState<BookingInquiry | null>(null);
+  const [drawerCommLogs, setDrawerCommLogs] = useState<EmailLog[]>([]);
+  const [drawerCommLoading, setDrawerCommLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -292,6 +294,27 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
     return () => { isMounted = false; };
   }, [activeTab, staff.role]);
+
+  // Fetch communication logs when drawer opens
+  useEffect(() => {
+    if (!drawerBooking || !staff?.sessionToken) { setDrawerCommLogs([]); return; }
+    setDrawerCommLoading(true);
+    const fetchCommLogs = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ action: 'getEmailLogs', username: staff.username, sessionToken: staff.sessionToken, limit: 500 }),
+        });
+        const data = await res.json();
+        if (data.logs) {
+          const bookingLogs = data.logs.filter((l: EmailLog) => l.booking_id === drawerBooking.id);
+          setDrawerCommLogs(bookingLogs);
+        }
+      } catch { /* ignore */ } finally { setDrawerCommLoading(false); }
+    };
+    fetchCommLogs();
+  }, [drawerBooking, staff]);
 
   // Persist dashboard filters
   useEffect(() => {
@@ -791,6 +814,23 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       console.error('Failed to load email logs:', err);
     } finally {
       setEmailLogsLoading(false);
+    }
+  };
+
+  const resendEmail = async (logId: string): Promise<{ success: boolean; error?: string }> => {
+    if (!staff?.sessionToken) return { success: false, error: 'Not authenticated' };
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'resendEmail', logId, staff: { username: staff.username, sessionToken: staff.sessionToken } }),
+      });
+      const data = await res.json();
+      if (res.status === 401) { handleUnauthorized(); return { success: false, error: 'Unauthorized' }; }
+      if (!res.ok || data.error) return { success: false, error: data.error || 'Failed to resend' };
+      return { success: true };
+    } catch {
+      return { success: false, error: 'Failed to resend' };
     }
   };
 
@@ -5278,7 +5318,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           {emailLogsLoading && emailLogs.length === 0 ? (
             <TabSkeleton rows={6} />
           ) : (
-            <EmailLogsTab emailLogs={emailLogs} emailLogsLoading={emailLogsLoading} onRefresh={loadEmailLogs} />
+            <EmailLogsTab emailLogs={emailLogs} emailLogsLoading={emailLogsLoading} onRefresh={loadEmailLogs} onResendEmail={resendEmail} />
           )}
         </>
       )}
@@ -5582,6 +5622,41 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       <a href={drawerBooking.paymentLinkUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">Payment link</a>
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+
+            {/* Communication History */}
+            <div className="border-t border-[#1B2D3C]/10 pt-4">
+              <h4 className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 mb-3">Communication History</h4>
+              {drawerCommLoading ? (
+                <p className="text-xs text-[#1B2D3C]/40">Loading…</p>
+              ) : drawerCommLogs.length === 0 ? (
+                <p className="text-xs text-[#1B2D3C]/40">No emails or SMS sent for this booking.</p>
+              ) : (
+                <div className="space-y-2">
+                  {drawerCommLogs.map(log => {
+                    const isSMS = log.email_type.includes('sms');
+                    return (
+                      <div key={log.id} className="flex items-start gap-2 text-[10px]">
+                        <span className={`shrink-0 px-1.5 py-0.5 font-black uppercase rounded ${isSMS ? 'bg-[#1B2D3C]/10 text-[#1B2D3C]/60' : 'bg-blue-100 text-blue-700'}`}>
+                          {isSMS ? 'SMS' : 'Email'}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-[#1B2D3C]">{log.email_type.replace(/_/g, ' ')}</p>
+                          <p className="text-[#1B2D3C]/50">{new Date(log.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                        <span className={`shrink-0 px-1.5 py-0.5 text-[9px] font-black uppercase rounded-full ${
+                          log.status === 'delivered' || log.status === 'sent' ? 'bg-emerald-100 text-emerald-700'
+                          : log.status === 'failed' || log.status === 'bounced' || log.status === 'undelivered' ? 'bg-red-100 text-red-700'
+                          : log.status === 'opened' || log.status === 'clicked' ? 'bg-purple-100 text-purple-700'
+                          : 'bg-stone-100 text-stone-600'
+                        }`}>
+                          {log.status}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -77,6 +77,18 @@ async function sendReadySMS(
   }
 
   let message: string;
+
+  // Check SMS opt-out
+  if (supabaseUrl && supabaseServiceKey) {
+    const optOutClient = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: optOut } = await optOutClient.from('sms_opt_outs')
+      .select('phone').eq('phone', toNumber).is('opted_in_at', null).limit(1);
+    if (optOut && optOut.length > 0) {
+      console.log(`SMS to ${toNumber} skipped (opted out)`);
+      return { success: false, error: 'Recipient has opted out of SMS' };
+    }
+  }
+
   const smsTemplate = await loadSMSTemplate('collection_ready');
   if (smsTemplate) {
     message = renderTemplate(smsTemplate.body, {
@@ -135,6 +147,7 @@ async function sendReadySMS(
           email_type: 'collection_ready_sms',
           recipient: booking.phone,
           subject: 'Collection Ready SMS',
+          body: message,
           resend_id: twilioData.sid || null,
           status: 'sent',
           booking_id: booking.booking_id,
@@ -261,6 +274,19 @@ async function sendReadyEmail(
   const html = tpl ? renderTemplate(tpl.html_content, templateVars) : fallbackHtml;
   const finalSubject = tpl ? renderTemplate(tpl.subject, templateVars) : subject;
 
+  // Check if recipient is suppressed (bounced/complained before)
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (supabaseUrl && supabaseServiceKey) {
+    const checkClient = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: suppressed } = await checkClient.from('email_logs')
+      .select('id').eq('recipient', booking.email).eq('suppressed', true).limit(1);
+    if (suppressed && suppressed.length > 0) {
+      console.log(`Email to ${booking.email} suppressed (bounced/complained previously)`);
+      return { success: false, error: 'Recipient is suppressed due to previous bounce/complaint' };
+    }
+  }
+
   try {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -293,6 +319,7 @@ async function sendReadyEmail(
           email_type: 'collection_ready',
           recipient: booking.email,
           subject: finalSubject,
+          body: html,
           resend_id: resendData.id || null,
           status: 'sent',
           booking_id: booking.booking_id,

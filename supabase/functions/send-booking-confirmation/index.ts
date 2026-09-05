@@ -197,6 +197,19 @@ async function sendEmail(
   const html = tpl ? renderTemplate(tpl.html_content, templateVars) : fallbackHtml;
   const finalSubject = tpl ? renderTemplate(tpl.subject, templateVars) : subject;
 
+  // Check if recipient is suppressed (bounced/complained before)
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (supabaseUrl && supabaseServiceKey) {
+    const checkClient = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: suppressed } = await checkClient.from('email_logs')
+      .select('id').eq('recipient', booking.email).eq('suppressed', true).limit(1);
+    if (suppressed && suppressed.length > 0) {
+      console.log(`Email to ${booking.email} suppressed (bounced/complained previously)`);
+      return { success: false, error: 'Recipient is suppressed due to previous bounce/complaint' };
+    }
+  }
+
   try {
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -230,6 +243,7 @@ async function sendEmail(
           email_type: 'booking_confirmation',
           recipient: booking.email,
           subject: finalSubject,
+          body: html,
           resend_id: resendData.id || null,
           status: 'sent',
           booking_id: booking.booking_id,
