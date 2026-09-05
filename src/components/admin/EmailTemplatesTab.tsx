@@ -1,8 +1,39 @@
 import { useState } from 'react';
-import { Mail, MessageSquare, Save, Pencil, X, RotateCcw } from 'lucide-react';
+import { Mail, MessageSquare, Save, Pencil, X, RotateCcw, Eye } from 'lucide-react';
 import Skeleton from '../Skeleton';
 import WysiwygEditor from '../WysiwygEditor';
 import { EmailTemplate, SMSTemplate } from '../../types';
+
+const SAMPLE_DATA: Record<string, string | number> = {
+  bookingId: 'PP-2026-0123',
+  name: 'Sarah Johnson',
+  email: 'sarah@example.com',
+  phone: '+44 7700 900123',
+  studio: 'Putney',
+  studioAddress: '154 Putney High St, London SW15 1BT',
+  studioPhone: '020 8789 1234',
+  date: 'Saturday 15th March 2026',
+  time: '14:00',
+  paintersCount: 12,
+  sessionType: 'Birthday Party',
+  manageUrl: 'https://pitterpotter.co.uk/manage/PP-2026-0123',
+  qrCodeUrl: 'https://pitterpotter.co.uk/qr/PP-2026-0123',
+  depositAmount: 50,
+  finalSeats: 12,
+  finalBalance: 94,
+  partyPrice: 12,
+  totalAmount: 144,
+  estimatedPrice: 144,
+  paymentLinkUrl: 'https://pitterpotter.co.uk/pay/PP-2026-0123',
+  notes: 'Please can we have the unicorn theme',
+};
+
+function renderTemplate(template: string, variables: Record<string, string | number>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => {
+    const value = variables[key];
+    return value !== undefined && value !== null ? String(value) : `{{${key}}}`;
+  });
+}
 
 interface EmailTemplatesTabProps {
   emailTemplates: EmailTemplate[];
@@ -38,6 +69,8 @@ export default function EmailTemplatesTab({
   const [editingSms, setEditingSms] = useState<SMSTemplate | null>(null);
   const [smsBody, setSmsBody] = useState('');
   const [smsSaving, setSmsSaving] = useState(false);
+  const [previewEmail, setPreviewEmail] = useState<{ subject: string; html: string; name: string } | null>(null);
+  const [previewSms, setPreviewSms] = useState<{ body: string; name: string } | null>(null);
 
   const handleSaveSms = async () => {
     if (!editingSms || !onSaveSMSTemplate) return;
@@ -108,6 +141,12 @@ export default function EmailTemplatesTab({
 
           <div className="flex items-center gap-3">
             <button
+              onClick={() => setPreviewEmail({ subject: renderTemplate(editingTemplate._editSubject || '', SAMPLE_DATA), html: renderTemplate(editingTemplate._editHtml || '', SAMPLE_DATA), name: editingTemplate.name })}
+              className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-[#DBE7E4] transition-all cursor-pointer flex items-center gap-1"
+            >
+              <Eye className="w-3.5 h-3.5" /> Preview
+            </button>
+            <button
               onClick={() => onSaveTemplate(editingTemplate.template_key, editingTemplate._editSubject || '', editingTemplate._editHtml || '')}
               disabled={templateSaving}
               className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#1B2D3C]/90 transition-all cursor-pointer disabled:opacity-50"
@@ -156,6 +195,12 @@ export default function EmailTemplatesTab({
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => setPreviewEmail({ subject: renderTemplate(tpl.subject, SAMPLE_DATA), html: renderTemplate(tpl.html_content, SAMPLE_DATA), name: tpl.name })}
+                          className="px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-[#DBE7E4] transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          <Eye className="w-3 h-3" /> Preview
+                        </button>
                         <button
                           onClick={() => onEditTemplate({ ...tpl, _editSubject: tpl.subject, _editHtml: tpl.html_content })}
                           className="px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-[#DBE7E4] transition-all cursor-pointer"
@@ -253,12 +298,20 @@ export default function EmailTemplatesTab({
                             Last updated: {new Date(tpl.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
-                        <button
-                          onClick={() => { setEditingSms(tpl); setSmsBody(tpl.body); }}
-                          className="shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-[#DBE7E4] transition-all cursor-pointer flex items-center gap-1"
-                        >
-                          <Pencil className="w-3 h-3" /> Edit
-                        </button>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => setPreviewSms({ body: renderTemplate(tpl.body, SAMPLE_DATA), name: tpl.name })}
+                            className="px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-[#DBE7E4] transition-all cursor-pointer flex items-center gap-1"
+                          >
+                            <Eye className="w-3 h-3" /> Preview
+                          </button>
+                          <button
+                            onClick={() => { setEditingSms(tpl); setSmsBody(tpl.body); }}
+                            className="shrink-0 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border border-[#1B2D3C]/20 hover:bg-[#DBE7E4] transition-all cursor-pointer flex items-center gap-1"
+                          >
+                            <Pencil className="w-3 h-3" /> Edit
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -267,6 +320,52 @@ export default function EmailTemplatesTab({
             </div>
           )}
         </>
+      )}
+
+      {/* Email Template Preview Modal */}
+      {previewEmail && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setPreviewEmail(null)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[#1B2D3C]/10">
+              <div>
+                <h3 className="font-heading font-black text-sm text-[#1B2D3C]">{previewEmail.name}</h3>
+                <p className="text-[10px] text-[#1B2D3C]/50 font-semibold">Subject: {previewEmail.subject}</p>
+              </div>
+              <button onClick={() => setPreviewEmail(null)} className="p-1.5 rounded-lg hover:bg-stone-100 cursor-pointer">
+                <X className="w-4 h-4 text-[#1B2D3C]/60" />
+              </button>
+            </div>
+            <div className="overflow-y-auto p-5 flex-1">
+              <div className="text-xs text-[#1B2D3C]" dangerouslySetInnerHTML={{ __html: previewEmail.html }} />
+            </div>
+            <div className="px-5 py-2 border-t border-[#1B2D3C]/10 bg-stone-50">
+              <p className="text-[9px] text-[#1B2D3C]/40 font-semibold">Preview uses sample booking data. Actual emails will use real customer details.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SMS Template Preview Modal */}
+      {previewSms && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onClick={() => setPreviewSms(null)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[#1B2D3C]/10">
+              <h3 className="font-heading font-black text-sm text-[#1B2D3C]">{previewSms.name}</h3>
+              <button onClick={() => setPreviewSms(null)} className="p-1.5 rounded-lg hover:bg-stone-100 cursor-pointer">
+                <X className="w-4 h-4 text-[#1B2D3C]/60" />
+              </button>
+            </div>
+            <div className="p-5">
+              <div className="bg-[#DBE7E4] rounded-2xl p-4 rounded-tl-sm">
+                <p className="text-xs text-[#1B2D3C] whitespace-pre-wrap">{previewSms.body}</p>
+              </div>
+              <p className="text-[10px] text-[#1B2D3C]/40 mt-2 text-center">{previewSms.body.length} characters {previewSms.body.length > 160 && '(multiple SMS segments)'}</p>
+            </div>
+            <div className="px-5 py-2 border-t border-[#1B2D3C]/10 bg-stone-50">
+              <p className="text-[9px] text-[#1B2D3C]/40 font-semibold">Preview uses sample data. Actual SMS will use real customer details.</p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

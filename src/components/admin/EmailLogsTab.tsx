@@ -27,6 +27,7 @@ const TYPE_LABELS: Record<string, string> = {
   booking_confirmation: 'Confirmation',
   party_final_reminder: 'Party Reminder',
   party_final_reminder_sms: 'Party SMS',
+  party_reminder_sms: 'Party Reminder SMS',
   collection_ready: 'Collection Ready',
   collection_ready_sms: 'Collection SMS',
   gift_card_recipient: 'Gift Card',
