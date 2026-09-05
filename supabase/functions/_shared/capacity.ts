@@ -41,9 +41,12 @@ interface BookingRow {
   time?: string;
 }
 
+// Party slots are stored as ranges (e.g. "12:30-14:30"), so only the start
+// time is used for overlap comparisons.
 function parseTimeToMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number);
-  return h * 60 + (m || 0);
+  const start = time.split('-')[0].trim();
+  const [h, m] = start.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
 }
 
 function overlapsTwoHours(timeA: string, timeB: string): boolean {
@@ -97,8 +100,18 @@ export async function computeCapacity(
   const partyMax = findMax('party', DEFAULT_PARTY_CAPACITY[studio]);
 
   if (incomingIsParty) {
+    // Only one party may occupy the back area per slot; that rule is already
+    // enforced by the party_session_exists conflict above, so at this point the
+    // slot is free for a party booking.
     const booked = partyRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
-    return { remaining: partyMax - booked, max: partyMax, booked, hasPartyBooking, remainingBookings: 0, maxBookings: 0 };
+    return {
+      remaining: Math.max(0, partyMax - booked),
+      max: partyMax,
+      booked,
+      hasPartyBooking,
+      remainingBookings: 1,
+      maxBookings: 1,
+    };
   }
 
   // Open/painting bookings: front-only capacity if a party occupies the back area

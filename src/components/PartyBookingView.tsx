@@ -166,7 +166,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
       });
       setSlotCapacity(map);
     });
-  }, [date, studio]);
+  }, [date, studio, partyType, closures]);
 
   useEffect(() => {
     loadClosuresFromSupabase().then(setClosures);

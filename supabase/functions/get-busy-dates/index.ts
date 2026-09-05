@@ -1,11 +1,12 @@
 import { createClient } from 'supabase';
 import { isObject, isNonEmptyString, isInteger } from '../_shared/validate.ts';
 import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
+import {
+  PARTY_SESSION_TYPES,
+  DEFAULT_OPEN_CAPACITY,
+  DEFAULT_PARTY_CAPACITY,
+} from '../_shared/capacity.ts';
 
-const PARTY_SESSION_TYPES = ['birthday-party', 'baby-shower-hen', 'corporate'];
-
-const DEFAULT_OPEN_CAPACITY: Record<'Putney' | 'Wimbledon', number> = { Putney: 32, Wimbledon: 65 };
-const DEFAULT_PARTY_CAPACITY: Record<'Putney' | 'Wimbledon', number> = { Putney: 20, Wimbledon: 40 };
 const SLOTS = ['10:00', '12:00', '14:00', '16:00'];
 
 const corsHeaders = {
