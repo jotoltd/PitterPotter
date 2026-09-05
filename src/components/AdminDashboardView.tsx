@@ -26,6 +26,7 @@ import CollectionsTab, { CollectionStage } from './admin/CollectionsTab';
 import TagPopover, { TAG_COLORS, TAG_LABELS, getTagColor } from './admin/TagPopover';
 import DashboardSummary from './admin/DashboardSummary';
 import SMSAdminTab from './admin/SMSAdminTab';
+import DocumentationTab from './admin/DocumentationTab';
 import ImageModal from './ImageModal';
 import NotificationBell from './admin/NotificationBell';
 import { NotificationSettings } from './admin/NotificationSettings';
@@ -81,7 +82,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates' | 'sms'>(staff.role === 'super_admin' ? 'dashboard' : 'bookings');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates' | 'sms' | 'documentation'>(staff.role === 'super_admin' ? 'dashboard' : 'bookings');
   const [collectionUploadingId, setCollectionUploadingId] = useState<string | null>(null);
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
@@ -5024,6 +5025,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         </div>
       )}
 
+      {activeTab === 'documentation' && (
+        <DocumentationTab />
+      )}
+
       {activeTab === 'webmaster' && staff.role === 'super_admin' && (
         <WebmasterTab
           dbHealth={dbHealth}
@@ -5684,7 +5689,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
 // --- Grouped Navigation Dropdowns ---
 
-type TabValue = 'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates' | 'sms';
+type TabValue = 'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates' | 'sms' | 'documentation';
 
 function NavDropdown({
   label,
@@ -5778,6 +5783,7 @@ function AdminDropdown({
   const items: { value: TabValue; label: string }[] = [
     { value: 'analytics', label: 'Analytics' },
     { value: 'settings', label: 'Settings' },
+    { value: 'documentation', label: 'Documentation' },
     ...(isSuperAdmin ? [{ value: 'webmaster' as TabValue, label: 'Webmaster' }] : []),
   ];
   return <NavDropdown label="Admin" items={items} activeTab={activeTab} setActiveTab={setActiveTab} />;
