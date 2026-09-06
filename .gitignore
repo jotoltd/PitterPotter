@@ -7,3 +7,11 @@ coverage/
 .env*
 !.env.example
 .vercel
+
+# iOS build artifacts
+ios-admin/DerivedData/
+ios-app/PitterPotter/DerivedData/
+*.xcuserstate
+xcuserdata/
+build/
+DerivedData/
