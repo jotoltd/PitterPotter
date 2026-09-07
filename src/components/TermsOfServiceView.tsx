@@ -73,7 +73,7 @@ export default function TermsOfServiceView({ setCurrentPage }: TermsOfServiceVie
             <h2 className="font-heading text-lg font-black text-[#1B2D3C] mb-3">6. Pottery and Collections</h2>
             <ul className="list-disc pl-5 space-y-2">
               <li>Painted pottery requires firing, which typically takes up to 2 weeks. We will notify you when your items are ready for collection.</li>
-              <li>Items must be collected within 3 months of being ready. Uncollected items after this period may be donated or disposed of.</li>
+              <li>Items must be collected within 6 weeks of being notified they are ready. Uncollected items after this period may be donated to charity.</li>
               <li>While we take every care in firing your pottery, ceramic firing can occasionally cause breakage. We are not liable for items that crack or break during the firing process.</li>
               <li>Photos of painted items may be taken by staff for collection tracking purposes only.</li>
             </ul>

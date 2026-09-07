@@ -92,7 +92,7 @@ export default function PrivacyPolicyView({ setCurrentPage }: PrivacyPolicyViewP
           <section>
             <h2 className="font-heading text-lg font-black text-[#1B2D3C] mb-3">6. Data Retention</h2>
             <p>
-              We retain booking data for up to 2 years after your last session for collection tracking purposes. Payment records are kept for 7 years for tax compliance. Gift card data is retained until the gift card expires plus 6 months. Staff account data is retained for the duration of employment plus 6 months.
+              We retain booking data for up to 2 years after your last session for collection tracking purposes. Payment records are kept for 7 years for tax compliance. Gift card data is retained until the gift card expires plus 6 months. Staff account data is retained for the duration of employment plus 6 months. Painted pottery must be collected within 6 weeks of being notified it is ready; uncollected items after this period may be donated to charity.
             </p>
           </section>
 

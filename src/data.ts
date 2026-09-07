@@ -39,7 +39,7 @@ export const FAQ_ITEMS: FAQItem[] = [
     id: 'f3',
     category: 'fittings',
     question: 'How long will it take to collect my pieces?',
-    answer: 'Once you finish painting, your pottery has to be carefully hand-dipped in a protective clear glaze and fired at high temperature in our specialized kilns. This thorough artisan process takes several days. You can usually collect your finished, glossy, food-safe pottery around 2 weeks after painting. Please note that during peak seasonal times (like Christmas or school holidays) it can take up to 3 weeks. We will text you once your masterpiece is ready. We store finished pottery for up to 3 months, after which they may be donated to local charity shops.'
+    answer: 'Once you finish painting, your pottery has to be carefully hand-dipped in a protective clear glaze and fired at high temperature in our specialized kilns. This thorough artisan process takes several days. You can usually collect your finished, glossy, food-safe pottery around 2 weeks after painting. Please note that during peak seasonal times (like Christmas or school holidays) it can take up to 3 weeks. We will text you once your masterpiece is ready. Please collect within 6 weeks of being notified — after this period we may donate your item to charity.'
   },
   {
     id: 'f4',
