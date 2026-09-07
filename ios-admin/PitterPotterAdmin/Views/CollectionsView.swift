@@ -16,7 +16,6 @@ struct CollectionsView: View {
     @State private var scannedCode: String?
     @State private var scanResult: String?
     @State private var scanError: String?
-    @State private var pendingReadyBooking: Booking?
     @State private var scannedBooking: Booking?
 
     var filteredBookings: [Booking] {
@@ -67,7 +66,7 @@ struct CollectionsView: View {
                                     .contextMenu {
                                         if selectedStage == .painted {
                                             Button {
-                                                pendingReadyBooking = booking
+                                                moveToStage(booking, .ready)
                                             } label: {
                                                 Label("Move to Ready", systemImage: "arrow.right.circle.fill")
                                             }
@@ -154,23 +153,6 @@ struct CollectionsView: View {
                 Button("OK") { uploadError = nil }
             } message: {
                 Text(uploadError ?? "")
-            }
-            .alert("Send notification?", isPresented: .constant(pendingReadyBooking != nil)) {
-                Button("Send & Move") {
-                    if let b = pendingReadyBooking {
-                        moveToStage(b, .ready)
-                    }
-                    pendingReadyBooking = nil
-                }
-                Button("Cancel", role: .cancel) {
-                    pendingReadyBooking = nil
-                }
-            } message: {
-                if let b = pendingReadyBooking {
-                    Text("Move \(b.name) to Ready and send email/SMS notification?")
-                } else {
-                    Text("")
-                }
             }
             .alert("Scan Result", isPresented: .constant(scanError != nil)) {
                 Button("OK") { scanError = nil }
@@ -449,7 +431,6 @@ struct CollectionDetailSheet: View {
     @State private var showMoveSheet = false
     @State private var notificationStatus: String?
     @State private var isSendingNotification = false
-    @State private var pendingReadyMove = false
 
     var body: some View {
         NavigationStack {
@@ -482,23 +463,11 @@ struct CollectionDetailSheet: View {
                 ForEach(CollectionStage.allCases, id: \.self) { s in
                     if s != stage {
                         Button(s.label) {
-                            if s == .ready {
-                                pendingReadyMove = true
-                            } else {
-                                moveBooking(to: s)
-                            }
+                            moveBooking(to: s)
                         }
                     }
                 }
                 Button("Cancel", role: .cancel) {}
-            }
-            .alert("Send notification?", isPresented: $pendingReadyMove) {
-                Button("Send & Move") {
-                    moveBooking(to: .ready)
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Move \(booking.name) to Ready and send email/SMS notification?")
             }
         }
     }
@@ -699,7 +668,6 @@ struct ScanResultSheet: View {
             ScrollView {
                 VStack(spacing: 16) {
                     infoCard
-                    photosSection
                     markCollectedButton
                 }
                 .padding(16)
@@ -739,32 +707,6 @@ struct ScanResultSheet: View {
         .padding(16)
         .background(PPBrand.sage.opacity(0.5))
         .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
-    private var photosSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Verify Photos")
-                .font(PPBrand.bodyFontSmall.bold())
-                .foregroundStyle(PPBrand.charcoal)
-
-            if let photos = booking.photos, !photos.isEmpty {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                    ForEach(photos, id: \.self) { urlStr in
-                        if let url = URL(string: urlStr) {
-                            CachedAsyncImage(url: url)
-                                .frame(height: 140)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                    }
-                }
-            } else {
-                Text("No photos on file")
-                    .font(PPBrand.bodyFontCaption)
-                    .foregroundStyle(PPBrand.charcoal.opacity(0.4))
-                    .padding(.vertical, 20)
-                    .frame(maxWidth: .infinity)
-            }
-        }
     }
 
     private var markCollectedButton: some View {
