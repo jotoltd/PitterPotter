@@ -323,6 +323,22 @@ struct BookingListRow: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
+                // Photo thumbnail
+                if let photos = booking.photos, !photos.isEmpty, let url = URL(string: photos[0]) {
+                    CachedAsyncImage(url: url, contentMode: .fill)
+                        .frame(width: 48, height: 48)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(PPBrand.clay100.opacity(0.5))
+                        .frame(width: 48, height: 48)
+                        .overlay(
+                            Image(systemName: "camera")
+                                .font(.system(size: 16))
+                                .foregroundStyle(PPBrand.charcoal.opacity(0.3))
+                        )
+                }
+
                 // Date block
                 VStack(spacing: 2) {
                     Text(formattedDate.components(separatedBy: " ").first ?? "")
@@ -460,7 +476,7 @@ struct DayDashboardView: View {
                 StatBubble(label: "No-Show", value: noshowColumn.count, color: .red)
             }
 
-            // 4-column kanban (horizontal like web)
+            // 3-column kanban (horizontal like web) + No-Show below
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 12) {
                     KanbanColumn(
@@ -498,7 +514,13 @@ struct DayDashboardView: View {
                         onTap: { selectedBooking = $0 }
                     )
                     .frame(width: 280)
+                }
+                .padding(.bottom, 8)
+            }
 
+            // No-Show row below
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: 12) {
                     KanbanColumn(
                         title: "No-Show",
                         count: noshowColumn.count,
@@ -670,6 +692,13 @@ struct KanbanBookingCard: View {
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 6) {
+                if let photos = booking.photos, !photos.isEmpty, let url = URL(string: photos[0]) {
+                    CachedAsyncImage(url: url, contentMode: .fit)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 80)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+
                 Text(booking.name)
                     .font(.system(size: 14, weight: .heavy))
                     .foregroundStyle(PPBrand.charcoal)
