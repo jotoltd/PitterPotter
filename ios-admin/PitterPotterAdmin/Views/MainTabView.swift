@@ -144,9 +144,14 @@ struct WebTabBar: View {
                         }
                     } label: {
                         HStack(spacing: 6) {
-                            Text(item.label)
-                                .font(.system(size: 13, weight: .bold))
-                                .tracking(0.5)
+                            if item.tab == .scan {
+                                Image(systemName: "camera.viewfinder")
+                                    .font(.system(size: 16, weight: .bold))
+                            } else {
+                                Text(item.label)
+                                    .font(.system(size: 13, weight: .bold))
+                                    .tracking(0.5)
+                            }
 
                             if let badge = item.badge, badge > 0 {
                                 Text(badge > 99 ? "99+" : "\(badge)")
@@ -158,7 +163,7 @@ struct WebTabBar: View {
                                     .clipShape(Capsule())
                             }
                         }
-                        .foregroundStyle(selectedTab == item.tab ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.5))
+                        .foregroundStyle(item.tab == .scan ? PPBrand.sage : (selectedTab == item.tab ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.5)))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 12)
                         .overlay(alignment: .bottom) {
