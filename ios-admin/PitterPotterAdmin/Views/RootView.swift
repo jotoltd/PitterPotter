@@ -45,7 +45,7 @@ enum AppTab: String, CaseIterable, Identifiable {
 
     var isSuperAdminOnly: Bool {
         switch self {
-        case .staff, .sms, .audit, .emailLogs, .emailTemplates, .analytics, .webmaster: return true
+        case .staff, .giftCards, .sms, .audit, .emailLogs, .emailTemplates, .analytics, .webmaster: return true
         default: return false
         }
     }

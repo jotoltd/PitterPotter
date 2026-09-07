@@ -13,6 +13,7 @@ struct BookingsListView: View {
     @State private var showingPartyBooking = false
     @State private var showingNewBooking = false
     @State private var showingNewBabyPrint = false
+    @State private var showingGiftCardScanner = false
     @State private var recentSearches: [String] = UserDefaults.standard.stringArray(forKey: "pp_recent_searches") ?? []
 
     var body: some View {
@@ -297,6 +298,11 @@ struct BookingsListView: View {
                                     Label("Quick Walk-in (Ghost)", systemImage: "person.fill.questionmark")
                                 }
                                 Divider()
+                                Button {
+                                    showingGiftCardScanner = true
+                                } label: {
+                                    Label("Scan Gift Card", systemImage: "giftcard")
+                                }
                                 if authVM.staff?.role == "super_admin" {
                                     Button {
                                         CSVExporter.exportBookings(bookingsVM.bookings)
@@ -364,6 +370,10 @@ struct BookingsListView: View {
                 NewWalkInView(initialSessionType: .clayImprints)
                     .environmentObject(authVM)
                     .environmentObject(bookingsVM)
+            }
+            .sheet(isPresented: $showingGiftCardScanner) {
+                GiftCardScannerSheet()
+                    .environmentObject(authVM)
             }
             .sheet(item: $bookingToShare) { booking in
                 ShareSheet(items: [bookingShareText(booking)])

@@ -294,6 +294,12 @@ Deno.serve(async (req) => {
     const isSuperAdmin = staff.role === 'super_admin';
 
     if (action === 'list') {
+      if (!isSuperAdmin) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       const { data, error: listError } = await supabase
         .from('gift_cards')
         .select('*')
