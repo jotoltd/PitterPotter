@@ -564,15 +564,18 @@ let TAG_LABELS: [String: String] = [
     "glazing": "Glazing",
     "firing": "Firing",
     "ready": "Ready",
-    "needs_touchup": "Touch-up"
+    "needs_touchup": "Touch-up",
+    "location": "Location"
 ]
 let TAG_COLORS: [String: Color] = [
     "painted": Color(red: 0.8, green: 0.87, blue: 0.95),
     "glazing": Color(red: 0.88, green: 0.82, blue: 0.95),
     "firing": Color(red: 0.95, green: 0.82, blue: 0.75),
     "ready": Color(red: 0.82, green: 0.92, blue: 0.84),
-    "needs_touchup": Color(red: 0.95, green: 0.8, blue: 0.8)
+    "needs_touchup": Color(red: 0.95, green: 0.8, blue: 0.8),
+    "location": Color(red: 0.9, green: 0.85, blue: 0.7)
 ]
+let LOCATION_OPTIONS = ["Kitchen", "Shelf", "Under Air Con", "Box"]
 
 // MARK: - Collection Detail Sheet
 
@@ -730,7 +733,7 @@ struct CollectionDetailSheet: View {
                     }
                 }
                 if tagMode {
-                    Text("Tap a photo to add a tag")
+                    Text("Tap a photo to add a location or status stamp")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
@@ -1228,6 +1231,9 @@ struct PhotoTagBadge: View {
     }
 
     private var displayText: String {
+        if tag.status == "location" {
+            return tag.label ?? "Location"
+        }
         let statusLabel = TAG_LABELS[tag.status] ?? tag.status
         if let label = tag.label, !label.isEmpty {
             return "\(statusLabel) - \(label)"
@@ -1242,65 +1248,112 @@ struct TagSelectionSheet: View {
     let onAdd: (String, String) -> Void
     @Environment(\.dismiss) var dismiss
     @State private var selectedStatus = "painted"
+    @State private var selectedLocation: String? = nil
     @State private var label = ""
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                Text("Add Tag")
-                    .font(.system(size: 16, weight: .heavy, design: .rounded))
-                    .foregroundStyle(PPBrand.charcoal)
-
-                VStack(spacing: 8) {
-                    ForEach(TAG_STATUSES, id: \.self) { status in
-                        Button {
-                            selectedStatus = status
-                        } label: {
-                            HStack {
-                                Circle()
-                                    .fill(TAG_COLORS[status] ?? PPBrand.clay100)
-                                    .frame(width: 12, height: 12)
-                                Text(TAG_LABELS[status] ?? status)
-                                    .font(.system(size: 13, weight: .bold))
-                                    .foregroundStyle(PPBrand.charcoal)
-                                Spacer()
-                                if selectedStatus == status {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(PPBrand.charcoal)
-                                }
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .background(selectedStatus == status ? PPBrand.sage.opacity(0.5) : Color.clear)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
-                TextField("Label (optional, e.g. Kitchen, Face...)", text: $label)
-                    .font(.system(size: 13, weight: .medium))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(PPBrand.clay100.opacity(0.3))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                Button {
-                    onAdd(label, selectedStatus)
-                    dismiss()
-                } label: {
+            ScrollView {
+                VStack(spacing: 16) {
                     Text("Add Tag")
-                        .font(.system(size: 14, weight: .heavy))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(PPBrand.charcoal)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                }
+                        .font(.system(size: 16, weight: .heavy, design: .rounded))
+                        .foregroundStyle(PPBrand.charcoal)
 
-                Spacer()
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Location")
+                            .font(.system(size: 11, weight: .heavy))
+                            .textCase(.uppercase)
+                            .tracking(0.5)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.6))
+
+                        ForEach(LOCATION_OPTIONS, id: \.self) { loc in
+                            Button {
+                                selectedLocation = loc
+                                selectedStatus = "location"
+                            } label: {
+                                HStack {
+                                    Image(systemName: "mappin.circle.fill")
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(Color(red: 0.7, green: 0.55, blue: 0.3))
+                                    Text(loc)
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundStyle(PPBrand.charcoal)
+                                    Spacer()
+                                    if selectedLocation == loc {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(PPBrand.charcoal)
+                                    }
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(selectedLocation == loc ? Color(red: 0.9, green: 0.85, blue: 0.7).opacity(0.5) : Color.clear)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    Divider()
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Status Stamp")
+                            .font(.system(size: 11, weight: .heavy))
+                            .textCase(.uppercase)
+                            .tracking(0.5)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.6))
+
+                        ForEach(TAG_STATUSES, id: \.self) { status in
+                            Button {
+                                selectedStatus = status
+                                selectedLocation = nil
+                            } label: {
+                                HStack {
+                                    Circle()
+                                        .fill(TAG_COLORS[status] ?? PPBrand.clay100)
+                                        .frame(width: 12, height: 12)
+                                    Text(TAG_LABELS[status] ?? status)
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundStyle(PPBrand.charcoal)
+                                    Spacer()
+                                    if selectedStatus == status && selectedLocation == nil {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(PPBrand.charcoal)
+                                    }
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(selectedStatus == status && selectedLocation == nil ? PPBrand.sage.opacity(0.5) : Color.clear)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    TextField("Custom label (optional)", text: $label)
+                        .font(.system(size: 13, weight: .medium))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(PPBrand.clay100.opacity(0.3))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                    Button {
+                        let finalLabel = selectedLocation ?? label
+                        onAdd(finalLabel, selectedStatus)
+                        dismiss()
+                    } label: {
+                        Text("Add Tag")
+                            .font(.system(size: 14, weight: .heavy))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(PPBrand.charcoal)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+
+                    Spacer()
+                }
+                .padding(16)
             }
-            .padding(16)
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -214,7 +214,7 @@ struct PaintingScannerView: View {
         }
 
         guard let token = token, !token.isEmpty else {
-            scanError = "Invalid QR code \u2014 no token found"
+            scanError = "Invalid QR code — no token found"
             Haptics.error()
             return
         }
