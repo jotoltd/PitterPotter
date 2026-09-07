@@ -250,37 +250,108 @@ struct MonthCalendarView: View {
 struct BookingsListBelowCalendar: View {
     let bookings: [Booking]
     let onTap: (Booking) -> Void
+    @State private var statusFilter: StatusFilter = .upcoming
 
-    private var upcomingBookings: [Booking] {
+    enum StatusFilter: String, CaseIterable {
+        case upcoming = "Upcoming"
+        case all = "All"
+        case pending = "Pending"
+        case confirmed = "Confirmed"
+        case seated = "Seated"
+        case completed = "Completed"
+        case cancelled = "Cancelled"
+        case noShow = "No-Show"
+
+        var color: Color {
+            switch self {
+            case .upcoming: return PPBrand.charcoal
+            case .all: return PPBrand.charcoal
+            case .pending: return Color(red: 0.85, green: 0.75, blue: 0.2)
+            case .confirmed: return Color(red: 0.2, green: 0.65, blue: 0.35)
+            case .seated: return Color(red: 0.9, green: 0.6, blue: 0.1)
+            case .completed: return Color(red: 0.1, green: 0.5, blue: 0.55)
+            case .cancelled: return Color.red
+            case .noShow: return Color.red.opacity(0.6)
+            }
+        }
+    }
+
+    private var filteredBookings: [Booking] {
         let today = dateString(Date())
-        return bookings
-            .filter { $0.status != "cancelled" && $0.date >= today }
-            .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+        switch statusFilter {
+        case .upcoming:
+            return bookings
+                .filter { $0.status != "cancelled" && $0.date >= today }
+                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+        case .all:
+            return bookings
+                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+        case .pending:
+            return bookings.filter { $0.status == "pending" }
+                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+        case .confirmed:
+            return bookings.filter { $0.status == "confirmed" }
+                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+        case .seated:
+            return bookings.filter { $0.status == "seated" }
+                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+        case .completed:
+            return bookings.filter { $0.status == "completed" }
+                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+        case .cancelled:
+            return bookings.filter { $0.status == "cancelled" }
+                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+        case .noShow:
+            return bookings.filter { $0.status == "no_show" }
+                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+        }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Upcoming Bookings")
+                Text("Bookings")
                     .font(.system(size: 15, weight: .heavy))
                     .foregroundStyle(PPBrand.charcoal)
                     .textCase(.uppercase)
                     .tracking(1)
                 Spacer()
-                Text("\(upcomingBookings.count)")
+                Text("\(filteredBookings.count)")
                     .font(.system(size: 11, weight: .heavy))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
             .padding(.top, 20)
 
-            if upcomingBookings.isEmpty {
-                Text("No upcoming bookings")
+            // Filter chips
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(StatusFilter.allCases, id: \.self) { filter in
+                        Button {
+                            statusFilter = filter
+                            Haptics.light()
+                        } label: {
+                            Text(filter.rawValue)
+                                .font(.system(size: 11, weight: .heavy))
+                                .foregroundStyle(statusFilter == filter ? .white : filter.color)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(statusFilter == filter ? filter.color : filter.color.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
+            if filteredBookings.isEmpty {
+                Text("No bookings")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.4))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 24)
             } else {
-                ForEach(upcomingBookings) { booking in
+                ForEach(filteredBookings) { booking in
                     BookingListRow(booking: booking, onTap: { onTap(booking) })
                 }
             }

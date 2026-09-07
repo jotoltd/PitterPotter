@@ -285,10 +285,12 @@ struct BookingsListView: View {
                                     Label("Quick Walk-in (Ghost)", systemImage: "person.fill.questionmark")
                                 }
                                 Divider()
-                                Button {
-                                    CSVExporter.exportBookings(bookingsVM.bookings)
-                                } label: {
-                                    Label("Export CSV", systemImage: "square.and.arrow.up")
+                                if authVM.staff?.role == "super_admin" {
+                                    Button {
+                                        CSVExporter.exportBookings(bookingsVM.bookings)
+                                    } label: {
+                                        Label("Export CSV", systemImage: "square.and.arrow.up")
+                                    }
                                 }
                             } label: {
                                 Image(systemName: "plus")
