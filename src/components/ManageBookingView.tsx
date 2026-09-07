@@ -321,9 +321,8 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
               <p className="text-xs font-bold text-[#1B2D3C]">Collection Information:</p>
               <ul className="text-xs text-[#1B2D3C]/75 space-y-1 list-disc list-inside">
                 <li>Please collect within <strong>6 weeks</strong> of notification.</li>
-                <li>Please bring your own bag if possible.</li>
-                <li>Studio: <strong>Pitter Potter {booking.studio}</strong> ({booking.studio === 'Putney' ? '234 Upper Richmond Road, SW15 6TG' : '52 Wimbledon Hill Road, SW19 7PA'})</li>
                 <li>Closed on Mondays except during school holidays.</li>
+                <li>Please bring your own bag if possible.</li>
               </ul>
             </div>
           </div>

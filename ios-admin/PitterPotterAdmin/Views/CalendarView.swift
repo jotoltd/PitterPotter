@@ -715,7 +715,7 @@ struct DayDashboardView: View {
                             .foregroundStyle(.white)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(Color(red: 0.85, green: 0.45, blue: 0.1))
+                            .background(Color(red: 0.976, green: 0.451, blue: 0.086))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                     }

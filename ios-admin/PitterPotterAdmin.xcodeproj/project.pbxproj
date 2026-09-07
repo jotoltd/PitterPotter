@@ -398,7 +398,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = UUF5LG9UJS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PitterPotterAdmin/Info.plist;
@@ -428,7 +428,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = UUF5LG9UJS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PitterPotterAdmin/Info.plist;

@@ -232,21 +232,20 @@ export const DEFAULT_EMAIL_TEMPLATES: Record<string, DefaultTemplate> = {
       <p style="font-size:15px;line-height:1.6;color:#1B2D3C;margin:0 0 16px;">Hi {{name}},</p>
       <p style="font-size:15px;line-height:1.6;color:#1B2D3C;margin:0 0 24px;">Great news! The pottery you painted at <strong style="color:#1B2D3C;">{{studio}}</strong> on <strong>{{date}}</strong> is now ready for collection.</p>
 
-      <div style="background:#DBE7E4;border-radius:12px;padding:24px;margin:0 0 24px;">
-        <p style="font-size:14px;line-height:1.8;margin:0;color:#1B2D3C;">
-          <strong style="display:inline-block;width:90px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Studio</strong> {{studio}}<br/>
-          <strong style="display:inline-block;width:90px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Address</strong> {{studioAddress}}<br/>
-          <strong style="display:inline-block;width:90px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Phone</strong> {{studioPhone}}
-        </p>
-      </div>
-
       <div style="background:#FEF3C7;border-radius:12px;padding:20px;margin:0 0 24px;border:1px solid #FDE68A;">
         <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#92400E;">
           <strong style="font-size:12px;text-transform:uppercase;letter-spacing:1px;">Please note</strong>
         </p>
         <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#92400E;">Please collect within <strong>6 WEEKS</strong>, after this period your item(s) may be donated to charity.</p>
-        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#92400E;">Please also bring your own bag if you can.</p>
-        <p style="font-size:14px;line-height:1.6;margin:0;color:#92400E;">Closed on Mondays except school holidays.</p>
+        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#92400E;">Closed on Mondays except school holidays.</p>
+        <p style="font-size:14px;line-height:1.6;margin:0;color:#92400E;">Please also bring your own bag if you can.</p>
+      </div>
+
+      <div style="background:#DBE7E4;border-radius:12px;padding:24px;margin:0 0 24px;">
+        <p style="font-size:14px;line-height:1.8;margin:0;color:#1B2D3C;">
+          <strong style="display:inline-block;width:90px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Studio</strong> {{studio}}<br/>
+          <strong style="display:inline-block;width:90px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Phone</strong> {{studioPhone}}
+        </p>
       </div>
 
       <div style="background:#FFFFFF;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px;border:1px solid #D6E2E9;">
@@ -259,7 +258,6 @@ export const DEFAULT_EMAIL_TEMPLATES: Record<string, DefaultTemplate> = {
 
     <div style="text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid #D6E2E9;">
       <p style="font-size:13px;color:#1B2D3C;font-weight:700;margin:0 0 4px;">{{studio}}</p>
-      <p style="font-size:12px;color:#1B2D3C;opacity:0.6;margin:0 0 2px;line-height:1.5;">{{studioAddress}}</p>
       <p style="font-size:12px;color:#1B2D3C;opacity:0.6;margin:0;">{{studioPhone}}</p>
     </div>
   </div>

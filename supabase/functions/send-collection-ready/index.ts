@@ -100,7 +100,7 @@ async function sendReadySMS(
       manageUrl,
     }).replace(/\\n/g, '\n');
   } else {
-    message = `Dear ${booking.name}, your pottery from ${studioName} is ready to collect!\n\nClick here to show the QR code for collection: ${manageUrl}\n\nPlease collect within 6 WEEKS, after this period your item(s) may be donated to charity.\n\nPlease also bring your own bag if you can.\n\nClosed on Mondays except school holidays.\n\nAddress: ${studioInfo.address}\nPhone: ${studioInfo.phone}`;
+    message = `Dear ${booking.name}, your pottery from ${studioName} is ready to collect!\n\nPlease collect within 6 WEEKS, after this period your item(s) may be donated to charity.\n\nClosed on Mondays except school holidays.\n\nPlease bring your own bag if you can.\n\nClick here to show the QR code for collection: ${manageUrl}`;
   }
 
   if (message.length > 160) {
@@ -234,21 +234,20 @@ async function sendReadyEmail(
       <p style="font-size:15px;line-height:1.6;color:#1B2D3C;margin:0 0 16px;">Hi ${booking.name},</p>
       <p style="font-size:15px;line-height:1.6;color:#1B2D3C;margin:0 0 24px;">Great news! The pottery you painted at <strong style="color:#1B2D3C;">${studioName}</strong> on <strong>${formattedDate}</strong> is now ready for collection.</p>
 
-      <div style="background:#DBE7E4;border-radius:12px;padding:24px;margin:0 0 24px;">
-        <p style="font-size:14px;line-height:1.8;margin:0;color:#1B2D3C;">
-          <strong style="display:inline-block;width:90px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Studio</strong> ${studioName}<br/>
-          <strong style="display:inline-block;width:90px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Address</strong> ${studioInfo.address}<br/>
-          <strong style="display:inline-block;width:90px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Phone</strong> ${studioInfo.phone}
-        </p>
-      </div>
-
       <div style="background:#FEF3C7;border-radius:12px;padding:20px;margin:0 0 24px;border:1px solid #FDE68A;">
         <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#92400E;">
           <strong style="font-size:12px;text-transform:uppercase;letter-spacing:1px;">Please note</strong>
         </p>
         <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#92400E;">Please collect within <strong>6 WEEKS</strong>, after this period your item(s) may be donated to charity.</p>
-        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#92400E;">Please also bring your own bag if you can.</p>
-        <p style="font-size:14px;line-height:1.6;margin:0;color:#92400E;">Closed on Mondays except school holidays.</p>
+        <p style="font-size:14px;line-height:1.6;margin:0 0 12px;color:#92400E;">Closed on Mondays except school holidays.</p>
+        <p style="font-size:14px;line-height:1.6;margin:0;color:#92400E;">Please also bring your own bag if you can.</p>
+      </div>
+
+      <div style="background:#DBE7E4;border-radius:12px;padding:24px;margin:0 0 24px;">
+        <p style="font-size:14px;line-height:1.8;margin:0;color:#1B2D3C;">
+          <strong style="display:inline-block;width:90px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Studio</strong> ${studioName}<br/>
+          <strong style="display:inline-block;width:90px;color:#1B2D3C;opacity:0.6;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Phone</strong> ${studioInfo.phone}
+        </p>
       </div>
 
       ${manageUrl ? `
@@ -263,7 +262,6 @@ async function sendReadyEmail(
 
     <div style="text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid #D6E2E9;">
       <p style="font-size:13px;color:#1B2D3C;font-weight:700;margin:0 0 4px;">${studioName}</p>
-      <p style="font-size:12px;color:#1B2D3C;opacity:0.6;margin:0 0 2px;line-height:1.5;">${studioInfo.address}</p>
       <p style="font-size:12px;color:#1B2D3C;opacity:0.6;margin:0;">${studioInfo.phone}</p>
     </div>
   </div>

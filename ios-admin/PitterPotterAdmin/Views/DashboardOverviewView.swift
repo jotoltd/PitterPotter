@@ -245,7 +245,7 @@ struct DashboardOverviewView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(Color(red: 0.85, green: 0.45, blue: 0.1))
+                        .background(Color(red: 0.976, green: 0.451, blue: 0.086))
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }

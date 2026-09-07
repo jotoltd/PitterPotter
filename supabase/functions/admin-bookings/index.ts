@@ -145,12 +145,6 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'create') {
-      if (!isSuperAdmin && !staff.can_add_walk_ins) {
-        return new Response(JSON.stringify({ error: 'Forbidden' }), {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
       if (!isObject(booking)) {
         return new Response(JSON.stringify({ error: 'Invalid booking data' }), {
           status: 400,

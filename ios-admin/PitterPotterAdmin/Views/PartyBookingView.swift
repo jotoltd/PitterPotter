@@ -66,7 +66,6 @@ struct PartyBookingView: View {
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                     TextField("Phone", text: $phone)
-                        .keyboardType(.phonePad)
                 }
 
                 Section(header: Text("Booking")) {
@@ -78,7 +77,11 @@ struct PartyBookingView: View {
                         }
                     }
                     DatePicker("Date", selection: $date, displayedComponents: .date)
-                    .onChange(of: date) { _ in capacityResult = nil }
+                    .onChange(of: date) { _ in
+                        capacityResult = nil
+                        if let first = partyTimeSlots.first { time = first }
+                        checkCapacity()
+                    }
                     if partyTimeSlots.isEmpty {
                         Text("No slots available for this date")
                             .font(.caption)
@@ -89,14 +92,17 @@ struct PartyBookingView: View {
                                 Text(t).tag(t)
                             }
                         }
-                        .onChange(of: time) { _ in capacityResult = nil }
+                        .onChange(of: time) { _ in
+                            capacityResult = nil
+                            checkCapacity()
+                        }
                     }
                     Stepper("Painters: \(paintersCount)", value: $paintersCount, in: 1...100)
                     TextField("Notes", text: $notes, axis: .vertical)
                         .lineLimit(2...4)
                 }
 
-                Section(header: Text("Capacity Check")) {
+                Section(header: Text("Availability")) {
                     if checkingCapacity {
                         HStack {
                             ProgressView()
@@ -113,9 +119,10 @@ struct PartyBookingView: View {
                             Label("\(cap.remaining) of \(cap.max) spots available", systemImage: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
                         }
-                        Button("Recheck") { checkCapacity() }
                     } else {
-                        Button("Check Availability") { checkCapacity() }
+                        Text("Select date, time and studio to check availability")
+                            .font(.caption)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                 }
 
@@ -146,6 +153,7 @@ struct PartyBookingView: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 if let first = availableStudios.first { selectedStudio = first }
+                if let first = partyTimeSlots.first { time = first }
                 loadTimeSlots()
             }
             .toolbar {
@@ -153,7 +161,11 @@ struct PartyBookingView: View {
                     Button("Cancel") { dismiss() }
                 }
             }
-            .onChange(of: selectedStudio) { _ in capacityResult = nil }
+            .onChange(of: selectedStudio) { _ in
+                capacityResult = nil
+                if let first = partyTimeSlots.first { time = first }
+                checkCapacity()
+            }
             .onTapGesture {
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             }
