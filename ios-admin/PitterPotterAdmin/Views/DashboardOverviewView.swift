@@ -75,7 +75,7 @@ struct DashboardOverviewView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("Dashboard Summary")
-                        .font(.system(size: 17, weight: .heavy))
+                        .font(.system(size: 17, weight: .heavy, design: .rounded))
                         .foregroundStyle(PPBrand.charcoal)
                         .textCase(.uppercase)
                         .tracking(1)
@@ -230,7 +230,7 @@ struct DashboardOverviewView: View {
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Today's Schedule")
-                    .font(.system(size: 15, weight: .heavy))
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
                     .foregroundStyle(PPBrand.charcoal)
                     .textCase(.uppercase)
                     .tracking(1)
@@ -280,7 +280,7 @@ struct DashboardOverviewView: View {
                     .font(.system(size: 22))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.6))
                 Text("\(activeGiftCards)")
-                    .font(.system(size: 24, weight: .heavy))
+                    .font(.system(size: 24, weight: .heavy, design: .rounded))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Active Cards")
                     .font(.system(size: 11, weight: .semibold))
@@ -300,7 +300,7 @@ struct DashboardOverviewView: View {
                     .font(.system(size: 22))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.6))
                 Text("£\(String(format: "%.0f", giftCardValue))")
-                    .font(.system(size: 24, weight: .heavy))
+                    .font(.system(size: 24, weight: .heavy, design: .rounded))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Total Value")
                     .font(.system(size: 11, weight: .semibold))
@@ -329,7 +329,7 @@ struct DashboardOverviewView: View {
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Recently Added")
-                    .font(.system(size: 15, weight: .heavy))
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
                     .foregroundStyle(PPBrand.charcoal)
                     .textCase(.uppercase)
                     .tracking(1)
@@ -366,7 +366,7 @@ struct WebStatCard: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(value)
-                    .font(.system(size: 22, weight: .heavy))
+                    .font(.system(size: 22, weight: .heavy, design: .rounded))
                     .foregroundStyle(PPBrand.charcoal)
                 Text(title)
                     .font(.system(size: 11, weight: .bold))
@@ -402,7 +402,7 @@ struct RevenueBox: View {
                     .tracking(0.5)
             }
             Text(value)
-                .font(.system(size: 20, weight: .heavy))
+                .font(.system(size: 20, weight: .heavy, design: .rounded))
                 .foregroundStyle(PPBrand.charcoal)
             Spacer()
         }
@@ -480,7 +480,7 @@ struct ScheduleRow: View {
         HStack(spacing: 14) {
             VStack(alignment: .center, spacing: 2) {
                 Text(booking.time.split(separator: "-").first.map { String($0) } ?? booking.time)
-                    .font(.system(size: 15, weight: .heavy))
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
                     .foregroundStyle(PPBrand.charcoal)
                 Text(booking.studio.prefix(3).description)
                     .font(.system(size: 10, weight: .semibold))

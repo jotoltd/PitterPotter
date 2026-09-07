@@ -56,7 +56,7 @@ struct CalendarView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text(selectedDate == nil ? "Calendar" : "Day View")
-                        .font(.system(size: 17, weight: .heavy))
+                        .font(.system(size: 17, weight: .heavy, design: .rounded))
                         .foregroundStyle(PPBrand.charcoal)
                         .textCase(.uppercase)
                         .tracking(1)
@@ -347,7 +347,7 @@ struct BookingsListBelowCalendar: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Bookings")
-                    .font(.system(size: 15, weight: .heavy))
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
                     .foregroundStyle(PPBrand.charcoal)
                     .textCase(.uppercase)
                     .tracking(1)
@@ -617,7 +617,7 @@ struct DayDashboardView: View {
                     .webCard()
                 }
                 Text(formatDate(date))
-                    .font(.system(size: 18, weight: .heavy))
+                    .font(.system(size: 18, weight: .heavy, design: .rounded))
                     .foregroundStyle(PPBrand.charcoal)
                 Spacer()
             }
@@ -1003,7 +1003,7 @@ struct StatBubble: View {
     var body: some View {
         VStack(spacing: 2) {
             Text("\(value)")
-                .font(.system(size: 22, weight: .heavy))
+                .font(.system(size: 22, weight: .heavy, design: .rounded))
                 .foregroundStyle(color.text)
             Text(label)
                 .font(.system(size: 9, weight: .bold))

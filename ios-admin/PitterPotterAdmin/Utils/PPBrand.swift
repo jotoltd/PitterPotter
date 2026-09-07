@@ -15,13 +15,15 @@ enum PPBrand {
     static let accent = charcoal
 
     // MARK: - Fonts (matching web: Montserrat heading, DM Sans body)
+    // Montserrat = geometric sans-serif → SF Pro Rounded is closest system match
+    // DM Sans = clean grotesque → SF Pro default is closest system match
 
-    static let headingFont = Font.custom("Montserrat", size: 17, relativeTo: .headline)
-    static let headingFontLarge = Font.custom("Montserrat", size: 28, relativeTo: .largeTitle)
-    static let headingFontTitle = Font.custom("Montserrat", size: 22, relativeTo: .title2)
-    static let bodyFont = Font.custom("DM Sans", size: 16, relativeTo: .body)
-    static let bodyFontSmall = Font.custom("DM Sans", size: 13, relativeTo: .footnote)
-    static let bodyFontCaption = Font.custom("DM Sans", size: 11, relativeTo: .caption2)
+    static let headingFont = Font.system(size: 17, weight: .semibold, design: .rounded)
+    static let headingFontLarge = Font.system(size: 28, weight: .semibold, design: .rounded)
+    static let headingFontTitle = Font.system(size: 22, weight: .semibold, design: .rounded)
+    static let bodyFont = Font.system(size: 16, weight: .regular)
+    static let bodyFontSmall = Font.system(size: 13, weight: .medium)
+    static let bodyFontCaption = Font.system(size: 11, weight: .medium)
 
     // MARK: - Web-matching styles
 

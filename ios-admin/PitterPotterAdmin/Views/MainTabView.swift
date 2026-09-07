@@ -199,7 +199,7 @@ struct WebHeaderBar: View {
             // PP logo box
             HStack(spacing: 10) {
                 Text("PP")
-                    .font(.system(size: 14, weight: .heavy))
+                    .font(.system(size: 14, weight: .heavy, design: .rounded))
                     .foregroundStyle(PPBrand.charcoal)
                     .frame(width: 32, height: 32)
                     .background(PPBrand.charcoal.opacity(0.1))
@@ -207,7 +207,7 @@ struct WebHeaderBar: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Pitter Potter")
-                        .font(.system(size: 14, weight: .heavy))
+                        .font(.system(size: 14, weight: .heavy, design: .rounded))
                         .foregroundStyle(PPBrand.charcoal)
                     if let staff = staff {
                         Text("\(staff.name) · \(staff.role == "super_admin" ? "Super Admin" : "Staff")")

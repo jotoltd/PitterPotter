@@ -447,7 +447,7 @@ struct CollapsibleDateSection: View {
                         .foregroundStyle(PPBrand.charcoal.opacity(0.6))
 
                     Text(formattedDate)
-                        .font(.system(size: 13, weight: .heavy))
+                        .font(.system(size: 13, weight: .heavy, design: .rounded))
                         .foregroundStyle(PPBrand.charcoal)
                         .textCase(.uppercase)
                         .tracking(0.5)
