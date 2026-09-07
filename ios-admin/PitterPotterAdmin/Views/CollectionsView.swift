@@ -91,7 +91,11 @@ struct CollectionsView: View {
                                         }
                                     },
                                     onTap: { booking in selectedBooking = booking },
-                                    onMove: moveToStage
+                                    onMove: moveToStage,
+                                    onAddPhoto: { booking in
+                                        selectedBooking = booking
+                                        showCamera = true
+                                    }
                                 )
                             }
                         }
@@ -315,6 +319,7 @@ struct CollectionsView: View {
 struct CollectionCard: View {
     let booking: Booking
     let onTap: () -> Void
+    var onAddPhoto: (() -> Void)? = nil
 
     var photoCount: Int { booking.photos?.count ?? 0 }
 
@@ -378,6 +383,25 @@ struct CollectionCard: View {
                             .font(PPBrand.bodyFontCaption)
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
+
+                    // Add Photo button
+                    Button {
+                        onAddPhoto?()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 10, weight: .bold))
+                            Text("Add Photo")
+                                .font(.system(size: 10, weight: .heavy))
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(PPBrand.charcoal)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 4)
                 }
                 .padding(.horizontal, 10)
                 .padding(.bottom, 10)
@@ -400,6 +424,7 @@ struct CollapsibleDateSection: View {
     let onToggle: () -> Void
     let onTap: (Booking) -> Void
     let onMove: (Booking, CollectionStage) -> Void
+    var onAddPhoto: ((Booking) -> Void)? = nil
 
     private var photoCount: Int {
         bookings.reduce(0) { $0 + ($1.photos?.count ?? 0) }
@@ -460,7 +485,7 @@ struct CollapsibleDateSection: View {
             if isExpanded {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                     ForEach(bookings) { booking in
-                        CollectionCard(booking: booking, onTap: { onTap(booking) })
+                        CollectionCard(booking: booking, onTap: { onTap(booking) }, onAddPhoto: { onAddPhoto?(booking) })
                             .contextMenu {
                                 if stage == .painted {
                                     Button {
