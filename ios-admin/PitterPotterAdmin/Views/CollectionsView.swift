@@ -82,7 +82,7 @@ struct CollectionsView: View {
                                     date: group.date,
                                     bookings: group.bookings,
                                     stage: initialStage,
-                                    isExpanded: expandedDates.contains(group.date),
+                                    isExpanded: !searchText.isEmpty || expandedDates.contains(group.date),
                                     onToggle: {
                                         if expandedDates.contains(group.date) {
                                             expandedDates.remove(group.date)
