@@ -6,6 +6,7 @@ struct MainTabView: View {
     @StateObject private var notificationsVM = NotificationsViewModel()
     @State private var showingNotifications = false
     @State private var selectedTab: AppTab = .bookings
+    @State private var showingScanner = false
 
 
     var body: some View {
@@ -22,7 +23,8 @@ struct MainTabView: View {
             WebTabBar(
                 selectedTab: $selectedTab,
                 isSuperAdmin: authVM.staff?.role == "super_admin",
-                pendingCount: bookingsVM.bookings.filter { $0.status == "pending" }.count
+                pendingCount: bookingsVM.bookings.filter { $0.status == "pending" }.count,
+                onScan: { showingScanner = true }
             )
 
             // Content
@@ -43,6 +45,8 @@ struct MainTabView: View {
                 case .collected:
                     CollectionsView(initialStage: .collected)
                         .environmentObject(bookingsVM)
+                case .scan:
+                    EmptyView()
                 case .giftCards:
                     GiftCardView()
                 case .analytics:
@@ -72,6 +76,9 @@ struct MainTabView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .sheet(isPresented: $showingScanner) {
+            PaintingScannerView(bookingsVM: bookingsVM, authVM: authVM)
+        }
         .sheet(isPresented: $showingNotifications) {
             NotificationsView()
                 .environmentObject(authVM)
@@ -98,6 +105,7 @@ struct WebTabBar: View {
     @Binding var selectedTab: AppTab
     let isSuperAdmin: Bool
     let pendingCount: Int
+    var onScan: (() -> Void)? = nil
 
     private var tabs: [(tab: AppTab, label: String, badge: Int?)] {
         var t: [(AppTab, String, Int?)] = []
@@ -110,6 +118,7 @@ struct WebTabBar: View {
         t.append((.painted, "Painted", nil))
         t.append((.ready, "Ready", nil))
         t.append((.collected, "Collected", nil))
+        t.append((.scan, "Scan", nil))
         if isSuperAdmin {
             t.append((.giftCards, "Gift Vouchers", nil))
             t.append((.analytics, "Analytics", nil))
@@ -128,7 +137,11 @@ struct WebTabBar: View {
             HStack(spacing: 0) {
                 ForEach(tabs, id: \.tab) { item in
                     Button {
-                        selectedTab = item.tab
+                        if item.tab == .scan, let onScan = onScan {
+                            onScan()
+                        } else {
+                            selectedTab = item.tab
+                        }
                     } label: {
                         HStack(spacing: 6) {
                             Text(item.label)
