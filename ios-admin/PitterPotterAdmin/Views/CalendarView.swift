@@ -36,6 +36,13 @@ struct CalendarView: View {
                         onMonthChange: { calendarMonth = $0 },
                         onSelectDate: { dateStr in selectedDate = dateStr }
                     )
+
+                    BookingsListBelowCalendar(
+                        bookings: bookingsVM.bookings,
+                        onTap: { booking in
+                            selectedDate = booking.date
+                        }
+                    )
                 }
             }
             .background(Color.white)
@@ -235,6 +242,137 @@ struct MonthCalendarView: View {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
         return f.string(from: date)
+    }
+}
+
+// MARK: - Bookings List Below Calendar
+
+struct BookingsListBelowCalendar: View {
+    let bookings: [Booking]
+    let onTap: (Booking) -> Void
+
+    private var upcomingBookings: [Booking] {
+        let today = dateString(Date())
+        return bookings
+            .filter { $0.status != "cancelled" && $0.date >= today }
+            .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Upcoming Bookings")
+                    .font(.system(size: 15, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal)
+                    .textCase(.uppercase)
+                    .tracking(1)
+                Spacer()
+                Text("\(upcomingBookings.count)")
+                    .font(.system(size: 11, weight: .heavy))
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+            }
+            .padding(.top, 20)
+
+            if upcomingBookings.isEmpty {
+                Text("No upcoming bookings")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 24)
+            } else {
+                ForEach(upcomingBookings) { booking in
+                    BookingListRow(booking: booking, onTap: { onTap(booking) })
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 24)
+    }
+
+    private func dateString(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: date)
+    }
+}
+
+struct BookingListRow: View {
+    let booking: Booking
+    let onTap: () -> Void
+
+    private var statusColor: Color {
+        switch booking.status {
+        case "pending": return Color(red: 0.85, green: 0.75, blue: 0.2)
+        case "confirmed": return Color(red: 0.2, green: 0.65, blue: 0.35)
+        case "seated": return Color(red: 0.9, green: 0.6, blue: 0.1)
+        case "completed": return Color(red: 0.1, green: 0.5, blue: 0.55)
+        case "cancelled": return Color.red
+        case "no_show": return Color.red.opacity(0.6)
+        default: return PPBrand.charcoal.opacity(0.3)
+        }
+    }
+
+    private var formattedDate: String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        guard let d = f.date(from: booking.date) else { return booking.date }
+        f.dateFormat = "EEE d MMM"
+        return f.string(from: d)
+    }
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                // Date block
+                VStack(spacing: 2) {
+                    Text(formattedDate.components(separatedBy: " ").first ?? "")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                        .textCase(.uppercase)
+                    Text(formattedDate.components(separatedBy: " ").dropFirst().joined(separator: " "))
+                        .font(.system(size: 13, weight: .heavy))
+                        .foregroundStyle(PPBrand.charcoal)
+                }
+                .frame(width: 64, alignment: .leading)
+
+                Divider()
+                    .frame(height: 36)
+
+                // Booking info
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(booking.name)
+                        .font(.system(size: 14, weight: .heavy))
+                        .foregroundStyle(PPBrand.charcoal)
+                        .lineLimit(1)
+                    HStack(spacing: 8) {
+                        Label("\(booking.paintersCount)", systemImage: "person.2.fill")
+                        Label(booking.time, systemImage: "clock.fill")
+                        Label(booking.studio, systemImage: "mappin.fill")
+                    }
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                }
+
+                Spacer()
+
+                // Status badge
+                Text(booking.bookingStatus?.label ?? booking.status.capitalized)
+                    .font(.system(size: 9, weight: .heavy))
+                    .foregroundStyle(statusColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(statusColor.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+            .padding(12)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(PPBrand.charcoal.opacity(0.1), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
