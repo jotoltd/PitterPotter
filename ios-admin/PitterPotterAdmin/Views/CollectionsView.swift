@@ -751,6 +751,28 @@ struct ScanResultSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    // Photo
+                    if let photos = booking.photos, !photos.isEmpty, let url = URL(string: photos[0]) {
+                        CachedAsyncImage(url: url, contentMode: .fit)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 200)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    } else {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(PPBrand.clay100.opacity(0.5))
+                            .frame(height: 120)
+                            .overlay(
+                                VStack(spacing: 6) {
+                                    Image(systemName: "camera")
+                                        .font(.title2)
+                                        .foregroundStyle(PPBrand.charcoal.opacity(0.3))
+                                    Text("No photos")
+                                        .font(PPBrand.bodyFontCaption)
+                                        .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                                }
+                            )
+                    }
+
                     infoCard
                     markCollectedButton
                 }

@@ -74,8 +74,30 @@ struct PaintingScannerView: View {
             Spacer()
 
             VStack(spacing: 16) {
+                // Photo
+                if let photos = booking.photos, !photos.isEmpty, let url = URL(string: photos[0]) {
+                    CachedAsyncImage(url: url, contentMode: .fit)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 200)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                } else {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(PPBrand.clay100.opacity(0.5))
+                        .frame(height: 120)
+                        .overlay(
+                            VStack(spacing: 6) {
+                                Image(systemName: "camera")
+                                    .font(.system(size: 28))
+                                    .foregroundStyle(PPBrand.charcoal.opacity(0.3))
+                                Text("No photos")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                            }
+                        )
+                }
+
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 48))
+                    .font(.system(size: 36))
                     .foregroundStyle(Color.green)
 
                 Text(booking.name)
