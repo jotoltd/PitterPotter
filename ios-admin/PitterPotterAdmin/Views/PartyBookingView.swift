@@ -19,6 +19,7 @@ struct PartyBookingView: View {
     @State private var isCreating = false
     @State private var capacityResult: CapacityResult?
     @State private var checkingCapacity = false
+    @State private var loadedSlots: TimeSlotsData?
 
     private var availableStudios: [Studio] {
         guard let staff = authVM.staff else { return Studio.allCases }
@@ -28,7 +29,33 @@ struct PartyBookingView: View {
         return Studio.allCases
     }
 
-    private let timeSlots = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
+    private var partyTimeSlots: [String] {
+        let studioKey = selectedStudio.rawValue
+        let calendar = Calendar.current
+        let weekday = calendar.component(.weekday, from: date)
+        let isWeekend = weekday == 1 || weekday == 7
+        let dayType = isWeekend ? "weekend" : "weekday"
+        if let loaded = loadedSlots, let studio = loaded.dict[studioKey], 
+           let party = studio["party"], let slots = party[dayType] {
+            return filteredSlots(slots)
+        }
+        let defaults = ["10:00-12:00", "12:30-14:30", "15:00-17:00"]
+        return filteredSlots(defaults)
+    }
+
+    private func filteredSlots(_ slots: [String]) -> [String] {
+        let calendar = Calendar.current
+        let now = Date()
+        let isSameDay = calendar.isDate(date, inSameDayAs: now)
+        if !isSameDay { return slots }
+        return slots.filter { slot in
+            let startTime = slot.split(separator: "-").first.map(String.init) ?? slot
+            let parts = startTime.split(separator: ":").compactMap { Int($0) }
+            guard parts.count >= 2 else { return true }
+            let slotDate = calendar.date(bySettingHour: parts[0], minute: parts[1], second: 0, of: date) ?? date
+            return slotDate > now
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -51,10 +78,18 @@ struct PartyBookingView: View {
                         }
                     }
                     DatePicker("Date", selection: $date, displayedComponents: .date)
-                    Picker("Time", selection: $time) {
-                        ForEach(timeSlots, id: \.self) { t in
-                            Text(t).tag(t)
+                    .onChange(of: date) { _ in capacityResult = nil }
+                    if partyTimeSlots.isEmpty {
+                        Text("No slots available for this date")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    } else {
+                        Picker("Time", selection: $time) {
+                            ForEach(partyTimeSlots, id: \.self) { t in
+                                Text(t).tag(t)
+                            }
                         }
+                        .onChange(of: time) { _ in capacityResult = nil }
                     }
                     Stepper("Painters: \(paintersCount)", value: $paintersCount, in: 1...100)
                     TextField("Notes", text: $notes, axis: .vertical)
@@ -111,17 +146,37 @@ struct PartyBookingView: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 if let first = availableStudios.first { selectedStudio = first }
+                loadTimeSlots()
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
             }
-            .onChange(of: date) { _ in capacityResult = nil }
-            .onChange(of: time) { _ in capacityResult = nil }
             .onChange(of: selectedStudio) { _ in capacityResult = nil }
             .onTapGesture {
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
+        }
+    }
+
+    private func loadTimeSlots() {
+        guard let staff = authVM.staff else { return }
+        Task {
+            do {
+                if let value = try await APIClient.shared.loadSetting(key: "time_slots", staff: staff),
+                   let data = value.data(using: .utf8),
+                   let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    await MainActor.run {
+                        loadedSlots = TimeSlotsData.fromDict(parsed)
+                        if let first = partyTimeSlots.first { time = first }
+                    }
+                    return
+                }
+            } catch {}
+            await MainActor.run {
+                loadedSlots = TimeSlotsData.default
+                if let first = partyTimeSlots.first { time = first }
             }
         }
     }
