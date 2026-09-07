@@ -11,12 +11,22 @@ struct GhostBookingView: View {
     @State private var capacityLoading = false
     @State private var isSaving = false
 
+    private var availableStudios: [Studio] {
+        guard let staff = authVM.staff else { return Studio.allCases }
+        if let allowed = staff.allowedStudios, !allowed.isEmpty {
+            return allowed.compactMap { Studio(rawValue: $0) }
+        }
+        return Studio.allCases
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 Section(header: Text("Quick Walk-in"), footer: Text("Blocks seats from now for a 2-hour session — for walk-in painters.")) {
-                    Picker("Studio", selection: $selectedStudio) {
-                        ForEach(Studio.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    if availableStudios.count > 1 {
+                        Picker("Studio", selection: $selectedStudio) {
+                            ForEach(availableStudios, id: \.self) { Text($0.rawValue).tag($0) }
+                        }
                     }
 
                     Stepper("Seats: \(seats)", value: $seats, in: 1...50)
@@ -68,7 +78,10 @@ struct GhostBookingView: View {
                     Button("Cancel") { dismiss() }
                 }
             }
-            .onAppear { checkCapacity() }
+            .onAppear {
+                if let first = availableStudios.first { selectedStudio = first }
+                checkCapacity()
+            }
             .onChange(of: selectedStudio) { _ in checkCapacity() }
         }
     }

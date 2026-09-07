@@ -1087,19 +1087,7 @@ struct AddProfileSheet: View {
                 }
                 Section(header: Text("Details")) {
                     DatePicker("Date of Painting", selection: $date, displayedComponents: .date)
-                    if isSuperAdmin {
-                        Picker("Studio", selection: $studio) {
-                            ForEach(Studio.allCases, id: \.self) { s in
-                                Text(s.rawValue).tag(s)
-                            }
-                        }
-                    } else if availableStudios.count == 1 {
-                        Picker("Studio", selection: $studio) {
-                            ForEach(availableStudios, id: \.self) { s in
-                                Text(s.rawValue).tag(s)
-                            }
-                        }
-                    } else {
+                    if availableStudios.count > 1 {
                         Picker("Studio", selection: $studio) {
                             ForEach(availableStudios, id: \.self) { s in
                                 Text(s.rawValue).tag(s)
@@ -1141,7 +1129,7 @@ struct AddProfileSheet: View {
                 }
             }
             .onAppear {
-                if !isSuperAdmin, let s = availableStudios.first {
+                if let s = availableStudios.first {
                     studio = s
                 }
             }

@@ -7,6 +7,14 @@ struct NewWalkInView: View {
 
     var initialSessionType: SessionType = .painting
 
+    private var availableStudios: [Studio] {
+        guard let staff = authVM.staff else { return Studio.allCases }
+        if let allowed = staff.allowedStudios, !allowed.isEmpty {
+            return allowed.compactMap { Studio(rawValue: $0) }
+        }
+        return Studio.allCases
+    }
+
     @State private var name = ""
     @State private var email = ""
     @State private var phone = ""
@@ -32,8 +40,10 @@ struct NewWalkInView: View {
                 }
 
                 Section("Booking") {
-                    Picker("Studio", selection: $selectedStudio) {
-                        ForEach(Studio.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    if availableStudios.count > 1 {
+                        Picker("Studio", selection: $selectedStudio) {
+                            ForEach(availableStudios, id: \.self) { Text($0.rawValue).tag($0) }
+                        }
                     }
                     DatePicker("Date", selection: $date, displayedComponents: .date)
                     TextField("Time", text: $time)
@@ -52,7 +62,10 @@ struct NewWalkInView: View {
             }
             .navigationTitle(initialSessionType == .painting ? "New Walk-in" : initialSessionType == .clayImprints ? "New Baby Print" : "New Booking")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear { sessionType = initialSessionType }
+            .onAppear {
+                sessionType = initialSessionType
+                if let first = availableStudios.first { selectedStudio = first }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }

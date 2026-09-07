@@ -20,6 +20,14 @@ struct PartyBookingView: View {
     @State private var capacityResult: CapacityResult?
     @State private var checkingCapacity = false
 
+    private var availableStudios: [Studio] {
+        guard let staff = authVM.staff else { return Studio.allCases }
+        if let allowed = staff.allowedStudios, !allowed.isEmpty {
+            return allowed.compactMap { Studio(rawValue: $0) }
+        }
+        return Studio.allCases
+    }
+
     private let timeSlots = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"]
 
     var body: some View {
@@ -35,9 +43,11 @@ struct PartyBookingView: View {
                 }
 
                 Section(header: Text("Booking")) {
-                    Picker("Studio", selection: $selectedStudio) {
-                        ForEach(Studio.allCases, id: \.self) { s in
-                            Text(s.rawValue).tag(s)
+                    if availableStudios.count > 1 {
+                        Picker("Studio", selection: $selectedStudio) {
+                            ForEach(availableStudios, id: \.self) { s in
+                                Text(s.rawValue).tag(s)
+                            }
                         }
                     }
                     Picker("Session Type", selection: $sessionType) {
@@ -104,6 +114,9 @@ struct PartyBookingView: View {
             }
             .navigationTitle("New Party Booking")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                if let first = availableStudios.first { selectedStudio = first }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
