@@ -113,8 +113,8 @@ export default function CookiePolicyView({ setCurrentPage }: CookiePolicyViewPro
             </p>
             <div className="mt-3 space-y-1">
               <p><strong>Email:</strong> hello@pitterpotter.co.uk</p>
-              <p><strong>Putney Studio:</strong> 020 8789 1234</p>
-              <p><strong>Wimbledon Studio:</strong> 020 8946 1234</p>
+              <p><strong>Putney Studio:</strong> 020 8788 1635</p>
+              <p><strong>Wimbledon Studio:</strong> 020 3770 4499</p>
             </div>
           </section>
         </div>
