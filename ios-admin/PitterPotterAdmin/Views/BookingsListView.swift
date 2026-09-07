@@ -20,23 +20,28 @@ struct BookingsListView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(PPBrand.clay300)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.3))
                     TextField("Search name, email, phone...", text: $bookingsVM.searchText)
                         .textInputAutocapitalization(.never)
                         .font(.system(size: 15))
+                        .foregroundStyle(PPBrand.charcoal)
                     if !bookingsVM.searchText.isEmpty {
                         Button {
                             bookingsVM.searchText = ""
                         } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 16))
-                                .foregroundStyle(PPBrand.clay300)
+                                .foregroundStyle(PPBrand.charcoal.opacity(0.3))
                         }
                     }
                 }
                 .padding(12)
-                .background(PPBrand.charcoal.opacity(0.06))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .background(PPBrand.charcoal.opacity(0.04))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(PPBrand.charcoal.opacity(0.15), lineWidth: 1)
+                )
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
 
@@ -220,9 +225,16 @@ struct BookingsListView: View {
 
                 Spacer()
             }
-            .navigationTitle("Bookings")
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Bookings")
+                        .font(.system(size: 17, weight: .heavy))
+                        .foregroundStyle(PPBrand.charcoal)
+                        .textCase(.uppercase)
+                        .tracking(1)
+                }
                 ToolbarItem(placement: .topBarLeading) {
                     HStack {
                         Button {

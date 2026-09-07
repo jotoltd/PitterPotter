@@ -84,7 +84,7 @@ struct AnalyticsView: View {
                             .frame(width: 60, alignment: .leading)
                         GeometryReader { geo in
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(PPBrand.headerGradient)
+                                .fill(PPBrand.charcoal)
                                 .frame(width: geo.size.width * CGFloat(item.count) / CGFloat(maxCount))
                         }
                         .frame(height: 18)

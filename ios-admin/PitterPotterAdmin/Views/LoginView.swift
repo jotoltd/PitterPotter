@@ -13,75 +13,77 @@ struct LoginView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PPBrand.headerGradient
-                    .ignoresSafeArea()
+                Color.white.ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     Spacer()
 
-                    VStack(spacing: 20) {
-                        Image("BrandLogo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 72)
-
-                        VStack(spacing: 4) {
-                            Text("ADMIN")
-                                .font(.system(size: 13, weight: .heavy))
-                                .foregroundStyle(.white.opacity(0.6))
-                                .tracking(6)
-                                .textCase(.uppercase)
-                            Text("Pitter Potter")
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundStyle(.white)
+                    VStack(spacing: 24) {
+                        VStack(spacing: 8) {
+                            Text("Admin Login")
+                                .font(.system(size: 30, weight: .heavy))
+                                .foregroundStyle(PPBrand.charcoal)
+                            Text("Pitter Potter Booking Management")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         }
-                    }
 
-                    Spacer()
+                        VStack(spacing: 16) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("USERNAME")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(PPBrand.charcoal)
+                                    .tracking(1)
 
-                    VStack(spacing: 16) {
-                        VStack(spacing: 12) {
-                            HStack(spacing: 10) {
-                                Image(systemName: "person.fill")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.white.opacity(0.4))
-                                TextField("Username", text: $username)
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.white)
-                                    .textInputAutocapitalization(.never)
-                                    .autocorrectionDisabled()
-                                    .focused($focusedField, equals: .username)
-                                    .submitLabel(.next)
-                                    .onSubmit { focusedField = .password }
+                                HStack(spacing: 10) {
+                                    Image(systemName: "person.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(PPBrand.charcoal.opacity(0.3))
+                                    TextField("", text: $username)
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundStyle(PPBrand.charcoal)
+                                        .textInputAutocapitalization(.never)
+                                        .autocorrectionDisabled()
+                                        .focused($focusedField, equals: .username)
+                                        .submitLabel(.next)
+                                        .onSubmit { focusedField = .password }
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(PPBrand.charcoal.opacity(0.06))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(PPBrand.charcoal.opacity(0.2), lineWidth: 1)
+                                )
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
-                            .background(.white.opacity(0.08))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(.white.opacity(0.15), lineWidth: 1)
-                            )
 
-                            HStack(spacing: 10) {
-                                Image(systemName: "lock.fill")
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.white.opacity(0.4))
-                                SecureField("Password", text: $password)
-                                    .font(.system(size: 15))
-                                    .foregroundStyle(.white)
-                                    .focused($focusedField, equals: .password)
-                                    .submitLabel(.go)
-                                    .onSubmit { Task { await login() } }
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("PASSWORD")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(PPBrand.charcoal)
+                                    .tracking(1)
+
+                                HStack(spacing: 10) {
+                                    Image(systemName: "lock.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(PPBrand.charcoal.opacity(0.3))
+                                    SecureField("", text: $password)
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundStyle(PPBrand.charcoal)
+                                        .focused($focusedField, equals: .password)
+                                        .submitLabel(.go)
+                                        .onSubmit { Task { await login() } }
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(PPBrand.charcoal.opacity(0.06))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(PPBrand.charcoal.opacity(0.2), lineWidth: 1)
+                                )
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
-                            .background(.white.opacity(0.08))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(.white.opacity(0.15), lineWidth: 1)
-                            )
                         }
 
                         if let error = authVM.error {
@@ -89,9 +91,9 @@ struct LoginView: View {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .font(.system(size: 12))
                                 Text(error)
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(.system(size: 13, weight: .bold))
                             }
-                            .foregroundStyle(.red.opacity(0.9))
+                            .foregroundStyle(.red)
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
 
@@ -100,30 +102,33 @@ struct LoginView: View {
                         } label: {
                             if authVM.isLoading {
                                 ProgressView()
-                                    .tint(.white)
+                                    .tint(PPBrand.charcoal)
                                     .frame(maxWidth: .infinity, minHeight: 24)
                             } else {
-                                Text("Sign In")
-                                    .font(.system(size: 16, weight: .bold))
+                                Text("LOGIN")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(PPBrand.charcoal)
+                                    .tracking(2)
                                     .frame(maxWidth: .infinity)
                             }
                         }
-                        .padding(.vertical, 16)
-                        .background(.white)
-                        .foregroundStyle(PPBrand.charcoal)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(.vertical, 14)
+                        .background(PPBrand.sage)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(PPBrand.charcoal.opacity(0.2), lineWidth: 1)
+                        )
                         .disabled(username.isEmpty || password.isEmpty || authVM.isLoading)
                         .opacity(username.isEmpty || password.isEmpty ? 0.5 : 1.0)
                     }
-                    .padding(24)
-                    .background(.white.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .padding(32)
+                    .background(Color.white)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(.white.opacity(0.1), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 0)
+                            .stroke(PPBrand.charcoal.opacity(0.2), lineWidth: 1)
                     )
-                    .padding(.horizontal, 32)
-                    .shadow(color: .black.opacity(0.2), radius: 20, y: 10)
+                    .padding(.horizontal, 24)
 
                     Spacer()
                     Spacer()
@@ -131,10 +136,10 @@ struct LoginView: View {
                     VStack(spacing: 2) {
                         Text("Pitter Potter")
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.4))
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.4))
                         Text("Paint Your Own Pottery Studios")
                             .font(.system(size: 11))
-                            .foregroundStyle(.white.opacity(0.3))
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.3))
                     }
                     .padding(.bottom, 8)
                 }

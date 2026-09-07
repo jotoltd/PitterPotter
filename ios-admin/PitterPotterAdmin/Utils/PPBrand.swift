@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum PPBrand {
-    // MARK: - Colors
+    // MARK: - Colors (matching web admin exactly)
 
     static let charcoal = Color(hex: 0x1B2D3C)
     static let clay100 = Color(hex: 0xD6E2E9)
@@ -14,7 +14,7 @@ enum PPBrand {
     // Accent (used for buttons, highlights)
     static let accent = charcoal
 
-    // MARK: - Fonts
+    // MARK: - Fonts (matching web: Montserrat heading, DM Sans body)
 
     static let headingFont = Font.custom("Montserrat", size: 17, relativeTo: .headline)
     static let headingFontLarge = Font.custom("Montserrat", size: 28, relativeTo: .largeTitle)
@@ -23,29 +23,28 @@ enum PPBrand {
     static let bodyFontSmall = Font.custom("DM Sans", size: 13, relativeTo: .footnote)
     static let bodyFontCaption = Font.custom("DM Sans", size: 11, relativeTo: .caption2)
 
-    // MARK: - Gradients
+    // MARK: - Web-matching styles
 
-    static let headerGradient = LinearGradient(
-        colors: [charcoal, deepSlate],
-        startPoint: .leading,
-        endPoint: .trailing
-    )
+    // Card style: white bg, charcoal border at 15% opacity, rounded-xl (12pt)
+    static let cardCornerRadius: CGFloat = 12
+    static let cardBorderOpacity: Double = 0.15
 
-    static let cardGradient = LinearGradient(
-        colors: [charcoal.opacity(0.92), deepSlate.opacity(0.88)],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    // Button style: sage bg, charcoal text, uppercase, tracking-wider
+    static let buttonCornerRadius: CGFloat = 8
 
-    // MARK: - UI Helpers
+    // MARK: - Backgrounds (web uses white bg, not system grouped)
 
     static var brandBackground: Color {
-        Color(.systemBackground)
+        .white
     }
 
     static var secondaryBackground: Color {
-        clay100.opacity(0.3)
+        sage.opacity(0.3)
     }
+
+    // Web header bar colour
+    static let headerBackground = sage
+    static let headerTextColor = charcoal
 }
 
 extension Color {
@@ -54,5 +53,38 @@ extension Color {
         let g = Double((hex >> 8) & 0xFF) / 255.0
         let b = Double(hex & 0xFF) / 255.0
         self.init(.sRGB, red: r, green: g, blue: b, opacity: alpha)
+    }
+}
+
+// MARK: - Web-matching View Modifiers
+
+struct WebCardModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(Color.white)
+            .overlay(
+                RoundedRectangle(cornerRadius: PPBrand.cardCornerRadius)
+                    .stroke(PPBrand.charcoal.opacity(PPBrand.cardBorderOpacity), lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: PPBrand.cardCornerRadius))
+    }
+}
+
+struct WebStatBoxModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(12)
+            .background(PPBrand.clay100.opacity(0.3))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+extension View {
+    func webCard() -> some View {
+        modifier(WebCardModifier())
+    }
+
+    func webStatBox() -> some View {
+        modifier(WebStatBoxModifier())
     }
 }

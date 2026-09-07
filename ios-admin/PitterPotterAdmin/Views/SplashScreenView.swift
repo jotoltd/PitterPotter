@@ -9,7 +9,7 @@ struct SplashScreenView: View {
 
     var body: some View {
         ZStack {
-            PPBrand.headerGradient
+            PPBrand.sage
                 .opacity(gradientOpacity)
                 .ignoresSafeArea()
 
@@ -26,24 +26,24 @@ struct SplashScreenView: View {
                 VStack(spacing: 6) {
                     Text("ADMIN")
                         .font(.system(size: 14, weight: .heavy))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         .tracking(6)
                         .textCase(.uppercase)
                     Text("Pitter Potter")
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(PPBrand.charcoal)
                         .offset(y: textOffset)
                         .opacity(textOpacity)
                     Text("Paint Your Own Pottery Studios")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.4))
                         .opacity(textOpacity)
                 }
 
                 Spacer()
 
                 ProgressView()
-                    .tint(.white.opacity(0.6))
+                    .tint(PPBrand.charcoal.opacity(0.5))
                     .opacity(textOpacity)
                     .padding(.bottom, 60)
             }
