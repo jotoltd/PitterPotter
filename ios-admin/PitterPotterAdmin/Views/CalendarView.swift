@@ -251,6 +251,7 @@ struct BookingsListBelowCalendar: View {
     let bookings: [Booking]
     let onTap: (Booking) -> Void
     @State private var statusFilter: StatusFilter = .upcoming
+    @State private var searchText = ""
 
     enum StatusFilter: String, CaseIterable {
         case upcoming = "Upcoming"
@@ -278,33 +279,36 @@ struct BookingsListBelowCalendar: View {
 
     private var filteredBookings: [Booking] {
         let today = dateString(Date())
+        var result: [Booking]
         switch statusFilter {
         case .upcoming:
-            return bookings
-                .filter { $0.status != "cancelled" && $0.date >= today }
-                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+            result = bookings.filter { $0.status != "cancelled" && $0.date >= today }
         case .all:
-            return bookings
-                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+            result = bookings
         case .pending:
-            return bookings.filter { $0.status == "pending" }
-                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+            result = bookings.filter { $0.status == "pending" }
         case .confirmed:
-            return bookings.filter { $0.status == "confirmed" }
-                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+            result = bookings.filter { $0.status == "confirmed" }
         case .seated:
-            return bookings.filter { $0.status == "seated" }
-                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+            result = bookings.filter { $0.status == "seated" }
         case .completed:
-            return bookings.filter { $0.status == "completed" }
-                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+            result = bookings.filter { $0.status == "completed" }
         case .cancelled:
-            return bookings.filter { $0.status == "cancelled" }
-                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+            result = bookings.filter { $0.status == "cancelled" }
         case .noShow:
-            return bookings.filter { $0.status == "no_show" }
-                .sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
+            result = bookings.filter { $0.status == "no_show" }
         }
+        if !searchText.isEmpty {
+            let q = searchText.lowercased()
+            result = result.filter { b in
+                b.name.lowercased().contains(q) ||
+                (b.phone ?? "").contains(q) ||
+                (b.email ?? "").lowercased().contains(q) ||
+                b.date.contains(q) ||
+                b.studio.lowercased().contains(q)
+            }
+        }
+        return result.sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
     }
 
     var body: some View {
@@ -321,6 +325,31 @@ struct BookingsListBelowCalendar: View {
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
             .padding(.top, 20)
+
+            // Search bar
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                TextField("Search name, phone, date...", text: $searchText)
+                    .font(.system(size: 13, weight: .medium))
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.3))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(PPBrand.charcoal.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
 
             // Filter chips
             ScrollView(.horizontal, showsIndicators: false) {
