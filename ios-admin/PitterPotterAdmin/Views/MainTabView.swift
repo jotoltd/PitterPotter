@@ -5,6 +5,8 @@ struct MainTabView: View {
     @StateObject private var bookingsVM = BookingsViewModel()
     @StateObject private var notificationsVM = NotificationsViewModel()
     @State private var showingNotifications = false
+    @State private var selectedTab: AppTab = .bookings
+
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,84 +18,53 @@ struct MainTabView: View {
                 unreadCount: notificationsVM.unreadCount
             )
 
-            TabView {
-                if authVM.staff?.role == "super_admin" {
-                    // Super admin: Dashboard summary tab
+            // Horizontal tab bar matching web admin
+            WebTabBar(
+                selectedTab: $selectedTab,
+                isSuperAdmin: authVM.staff?.role == "super_admin",
+                pendingCount: bookingsVM.bookings.filter { $0.status == "pending" }.count
+            )
+
+            // Content
+            Group {
+                switch selectedTab {
+                case .dashboard:
                     DashboardOverviewView()
-                        .tabItem {
-                            Label("Dashboard", systemImage: "square.grid.2x2")
-                        }
                         .environmentObject(bookingsVM)
-                }
-
-                // Bookings = Calendar + Day Kanban (same as web "Bookings" tab)
-                CalendarView()
-                    .tabItem {
-                        Label(authVM.staff?.role == "super_admin" ? "Bookings" : "Dashboard", systemImage: "calendar")
-                    }
-                    .badge(bookingsVM.bookings.filter { $0.status == "pending" }.count)
-                    .environmentObject(bookingsVM)
-
-                // Collections = Painted / Ready / Collected (same as web)
-                CollectionsView()
-                    .tabItem {
-                        Label("Collections", systemImage: "tray.full")
-                    }
-                    .environmentObject(bookingsVM)
-
-                if authVM.staff?.role == "super_admin" {
-                    // Super admin only tabs
+                case .bookings:
+                    CalendarView()
+                        .environmentObject(bookingsVM)
+                case .collections:
+                    CollectionsView()
+                        .environmentObject(bookingsVM)
+                case .giftCards:
                     GiftCardView()
-                        .tabItem {
-                            Label("Gift Vouchers", systemImage: "giftcard")
-                        }
-
+                case .analytics:
                     AnalyticsView()
-                        .tabItem {
-                            Label("Analytics", systemImage: "chart.line.uptrend.xyaxis")
-                        }
                         .environmentObject(bookingsVM)
-
+                case .sms:
                     SMSAdminView()
-                        .tabItem {
-                            Label("SMS", systemImage: "message")
-                        }
-
+                case .emailLogs:
                     EmailLogsView()
-                        .tabItem {
-                            Label("Emails", systemImage: "envelope")
-                        }
-
+                case .emailTemplates:
                     EmailTemplatesView()
-                        .tabItem {
-                            Label("Templates", systemImage: "doc.text")
-                        }
-
+                case .audit:
                     AuditLogView()
-                        .tabItem {
-                            Label("Audit", systemImage: "doc.text.magnifyingglass")
-                        }
-
+                case .webmaster:
                     WebmasterView()
-                        .tabItem {
-                            Label("Webmaster", systemImage: "server.rack")
-                        }
-
-                    AdminSettingsView()
-                        .tabItem {
-                            Label("Settings", systemImage: "gearshape")
-                        }
-                        .environmentObject(bookingsVM)
-                } else {
-                    // Regular staff: just settings
-                    SettingsView()
-                        .tabItem {
-                            Label("Settings", systemImage: "gearshape")
-                        }
-                        .environmentObject(bookingsVM)
+                case .settings:
+                    if authVM.staff?.role == "super_admin" {
+                        AdminSettingsView()
+                            .environmentObject(bookingsVM)
+                    } else {
+                        SettingsView()
+                            .environmentObject(bookingsVM)
+                    }
+                default:
+                    EmptyView()
                 }
             }
-            .tint(PPBrand.charcoal)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .sheet(isPresented: $showingNotifications) {
             NotificationsView()
@@ -111,6 +82,81 @@ struct MainTabView: View {
         .onDisappear {
             bookingsVM.stopRealtime()
             notificationsVM.stopPolling()
+        }
+    }
+}
+
+// MARK: - Horizontal Tab Bar (matches web admin)
+
+struct WebTabBar: View {
+    @Binding var selectedTab: AppTab
+    let isSuperAdmin: Bool
+    let pendingCount: Int
+
+    private var tabs: [(tab: AppTab, label: String, badge: Int?)] {
+        var t: [(AppTab, String, Int?)] = []
+        if isSuperAdmin {
+            t.append((.dashboard, "Dashboard", pendingCount > 0 ? pendingCount : nil))
+            t.append((.bookings, "Bookings", nil))
+        } else {
+            t.append((.bookings, "Dashboard", pendingCount > 0 ? pendingCount : nil))
+        }
+        t.append((.collections, "Collections", nil))
+        if isSuperAdmin {
+            t.append((.giftCards, "Gift Vouchers", nil))
+            t.append((.analytics, "Analytics", nil))
+            t.append((.sms, "SMS", nil))
+            t.append((.emailLogs, "Emails", nil))
+            t.append((.emailTemplates, "Templates", nil))
+            t.append((.audit, "Audit", nil))
+            t.append((.webmaster, "Webmaster", nil))
+        }
+        t.append((.settings, "Settings", nil))
+        return t
+    }
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 0) {
+                ForEach(tabs, id: \.tab) { item in
+                    Button {
+                        selectedTab = item.tab
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(item.label)
+                                .font(.system(size: 13, weight: .bold))
+                                .tracking(0.5)
+
+                            if let badge = item.badge, badge > 0 {
+                                Text(badge > 99 ? "99+" : "\(badge)")
+                                    .font(.system(size: 9, weight: .black))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 2)
+                                    .background(Color.red)
+                                    .clipShape(Capsule())
+                            }
+                        }
+                        .foregroundStyle(selectedTab == item.tab ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.5))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .overlay(alignment: .bottom) {
+                            if selectedTab == item.tab {
+                                Rectangle()
+                                    .fill(PPBrand.charcoal)
+                                    .frame(height: 2)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .background(Color.white)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(PPBrand.charcoal.opacity(0.1))
+                .frame(height: 1)
         }
     }
 }

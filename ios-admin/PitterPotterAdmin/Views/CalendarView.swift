@@ -322,48 +322,58 @@ struct DayDashboardView: View {
                 StatBubble(label: "No-Show", value: noshowColumn.count, color: .red)
             }
 
-            // 4-column kanban
-            VStack(spacing: 12) {
-                KanbanColumn(
-                    title: "Bookings",
-                    count: bookingsColumn.count,
-                    bookings: bookingsColumn,
-                    columnType: .bookings,
-                    canUpdate: canUpdateStatus,
-                    onMove: handleMove,
-                    onNoShow: handleNoShow,
-                    onTap: { selectedBooking = $0 }
-                )
-                KanbanColumn(
-                    title: "Seated",
-                    count: seatedColumn.count,
-                    bookings: seatedColumn,
-                    columnType: .seated,
-                    canUpdate: canUpdateStatus,
-                    onMove: handleMove,
-                    onNoShow: nil,
-                    onTap: { selectedBooking = $0 }
-                )
-                KanbanColumn(
-                    title: "Complete",
-                    count: completeColumn.count,
-                    bookings: completeColumn,
-                    columnType: .complete,
-                    canUpdate: canUpdateStatus,
-                    onMove: handleMove,
-                    onNoShow: nil,
-                    onTap: { selectedBooking = $0 }
-                )
-                KanbanColumn(
-                    title: "No-Show",
-                    count: noshowColumn.count,
-                    bookings: noshowColumn,
-                    columnType: .noshow,
-                    canUpdate: canUpdateStatus,
-                    onMove: handleMove,
-                    onNoShow: nil,
-                    onTap: { selectedBooking = $0 }
-                )
+            // 4-column kanban (horizontal like web)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: 12) {
+                    KanbanColumn(
+                        title: "Bookings",
+                        count: bookingsColumn.count,
+                        bookings: bookingsColumn,
+                        columnType: .bookings,
+                        canUpdate: canUpdateStatus,
+                        onMove: handleMove,
+                        onNoShow: handleNoShow,
+                        onTap: { selectedBooking = $0 }
+                    )
+                    .frame(width: 280)
+
+                    KanbanColumn(
+                        title: "Seated",
+                        count: seatedColumn.count,
+                        bookings: seatedColumn,
+                        columnType: .seated,
+                        canUpdate: canUpdateStatus,
+                        onMove: handleMove,
+                        onNoShow: nil,
+                        onTap: { selectedBooking = $0 }
+                    )
+                    .frame(width: 280)
+
+                    KanbanColumn(
+                        title: "Complete",
+                        count: completeColumn.count,
+                        bookings: completeColumn,
+                        columnType: .complete,
+                        canUpdate: canUpdateStatus,
+                        onMove: handleMove,
+                        onNoShow: nil,
+                        onTap: { selectedBooking = $0 }
+                    )
+                    .frame(width: 280)
+
+                    KanbanColumn(
+                        title: "No-Show",
+                        count: noshowColumn.count,
+                        bookings: noshowColumn,
+                        columnType: .noshow,
+                        canUpdate: canUpdateStatus,
+                        onMove: handleMove,
+                        onNoShow: nil,
+                        onTap: { selectedBooking = $0 }
+                    )
+                    .frame(width: 280)
+                }
+                .padding(.bottom, 8)
             }
         }
         .padding(.horizontal, 16)
