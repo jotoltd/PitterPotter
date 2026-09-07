@@ -41,6 +41,19 @@ struct CachedAsyncImage: View {
         guard let url = url else { return }
         if let cached = Self.cache.object(forKey: url as NSURL) {
             await MainActor.run { image = cached }
+            return
+        }
+        await MainActor.run { isLoading = true }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            guard let img = UIImage(data: data) else { return }
+            Self.cache.setObject(img, forKey: url as NSURL)
+            await MainActor.run {
+                image = img
+                isLoading = false
+            }
+        } catch {
+            await MainActor.run { isLoading = false }
         }
     }
 }
