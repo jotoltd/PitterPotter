@@ -197,7 +197,7 @@ struct DashboardOverviewView: View {
                 VStack(spacing: 6) {
                     Image(systemName: "qrcode.viewfinder")
                         .font(.system(size: 18, weight: .semibold))
-                    Text("Collection Scanner")
+                    Text("Scanner")
                         .font(.system(size: 11, weight: .bold))
                 }
                 .frame(maxWidth: .infinity)

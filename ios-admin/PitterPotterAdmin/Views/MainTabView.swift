@@ -148,7 +148,7 @@ struct WebTabBar: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "qrcode.viewfinder")
                                         .font(.system(size: 13, weight: .bold))
-                                    Text("COLLECTION SCANNER")
+                                    Text("SCANNER")
                                         .font(.system(size: 11, weight: .heavy))
                                         .tracking(0.5)
                                 }

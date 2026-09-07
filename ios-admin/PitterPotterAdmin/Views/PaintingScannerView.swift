@@ -37,7 +37,7 @@ struct PaintingScannerView: View {
                     }
                 }
             }
-            .navigationTitle("Collection Scanner")
+            .navigationTitle("Scanner")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -54,10 +54,10 @@ struct PaintingScannerView: View {
                 Image(systemName: "qrcode.viewfinder")
                     .font(.system(size: 40))
                     .foregroundStyle(PPBrand.charcoal)
-                Text("Scan Collection QR Code")
+                Text("Scan QR Code")
                     .font(.system(size: 16, weight: .heavy))
                     .foregroundStyle(PPBrand.charcoal)
-                Text("Point the camera at the QR code sent to the customer")
+                Text("Point the camera at any QR code — collection, booking, or gift card")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.6))
                     .multilineTextAlignment(.center)
@@ -123,7 +123,7 @@ struct PaintingScannerView: View {
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         .padding(.top, 8)
-                } else {
+                } else if booking.status == "completed" {
                     Button {
                         markCollected(booking)
                     } label: {
@@ -145,6 +145,11 @@ struct PaintingScannerView: View {
                     }
                     .disabled(isMarking)
                     .padding(.top, 8)
+                } else {
+                    Text("Status: \(booking.status.capitalized)")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                        .padding(.top, 8)
                 }
 
                 Button {
@@ -217,18 +222,6 @@ struct PaintingScannerView: View {
         guard let booking = bookingsVM.bookings.first(where: { $0.managementToken == token }) else {
             scanError = "No booking found for this QR code"
             Haptics.error()
-            return
-        }
-
-        guard booking.status == "completed" else {
-            scanError = "Booking \(booking.name) is not completed (status: \(booking.status))"
-            Haptics.warning()
-            return
-        }
-
-        if booking.collectionStatus == CollectionStage.collected.rawValue {
-            scanError = "\(booking.name) is already collected"
-            Haptics.warning()
             return
         }
 
