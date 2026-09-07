@@ -28,7 +28,7 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .painted: return "paintbrush"
         case .ready: return "checkmark.circle"
         case .collected: return "tray.full.fill"
-        case .scan: return "paintbrush.pointed.fill"
+        case .scan: return "qrcode.viewfinder"
         case .calendar: return "calendar"
         case .capacity: return "chart.bar.xaxis"
         case .staff: return "person.2"

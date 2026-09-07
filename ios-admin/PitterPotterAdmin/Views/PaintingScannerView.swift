@@ -37,7 +37,7 @@ struct PaintingScannerView: View {
                     }
                 }
             }
-            .navigationTitle("Painting Scanner")
+            .navigationTitle("Collection Scanner")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -51,10 +51,10 @@ struct PaintingScannerView: View {
         VStack {
             Spacer()
             VStack(spacing: 12) {
-                Image(systemName: "paintbrush.pointed.fill")
+                Image(systemName: "qrcode.viewfinder")
                     .font(.system(size: 40))
                     .foregroundStyle(PPBrand.charcoal)
-                Text("Scan Painting QR Code")
+                Text("Scan Collection QR Code")
                     .font(.system(size: 16, weight: .heavy))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Point the camera at the QR code sent to the customer")

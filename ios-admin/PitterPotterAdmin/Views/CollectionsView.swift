@@ -118,7 +118,7 @@ struct CollectionsView: View {
                             scanError = nil
                         } label: {
                             HStack(spacing: 4) {
-                                Image(systemName: "paintbrush.pointed.fill")
+                                Image(systemName: "qrcode.viewfinder")
                                 Text("Scan")
                             }
                             .font(.system(size: 12, weight: .bold))

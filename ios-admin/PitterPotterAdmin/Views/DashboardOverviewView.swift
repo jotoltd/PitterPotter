@@ -8,7 +8,7 @@ struct DashboardOverviewView: View {
     @State private var showingNewWalkIn = false
     @State private var showingPartyBooking = false
     @State private var showingGhostBooking = false
-    @State private var showingPaintingScanner = false
+    @State private var showingCollectionScanner = false
 
     private var todayString: String {
         let formatter = DateFormatter()
@@ -107,7 +107,7 @@ struct DashboardOverviewView: View {
                     .environmentObject(authVM)
                     .environmentObject(bookingsVM)
             }
-            .sheet(isPresented: $showingPaintingScanner) {
+            .sheet(isPresented: $showingCollectionScanner) {
                 PaintingScannerView(bookingsVM: bookingsVM, authVM: authVM)
             }
         }
@@ -192,12 +192,12 @@ struct DashboardOverviewView: View {
                 }
             }
             Button {
-                showingPaintingScanner = true
+                showingCollectionScanner = true
             } label: {
                 VStack(spacing: 6) {
-                    Image(systemName: "paintbrush.pointed.fill")
+                    Image(systemName: "qrcode.viewfinder")
                         .font(.system(size: 18, weight: .semibold))
-                    Text("Painting Scanner")
+                    Text("Collection Scanner")
                         .font(.system(size: 11, weight: .bold))
                 }
                 .frame(maxWidth: .infinity)
