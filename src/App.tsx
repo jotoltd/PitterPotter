@@ -38,6 +38,9 @@ const PriceListView = lazy(() => import('./components/PriceListView'));
 const PotteryPaintingView = lazy(() => import('./components/PotteryPaintingView'));
 const FoodDrinkView = lazy(() => import('./components/FoodDrinkView'));
 const MaintenanceView = lazy(() => import('./components/MaintenanceView'));
+const PrivacyPolicyView = lazy(() => import('./components/PrivacyPolicyView'));
+const TermsOfServiceView = lazy(() => import('./components/TermsOfServiceView'));
+const CookiePolicyView = lazy(() => import('./components/CookiePolicyView'));
 
 const PAGE_TO_PATH: Record<Page, string> = {
   'home': '/',
@@ -71,6 +74,9 @@ const PAGE_TO_PATH: Record<Page, string> = {
   'party-payment': '/party-payment',
   'party-payment-success': '/party-payment-success',
   'manage-booking': '/manage-booking',
+  'privacy-policy': '/privacy-policy',
+  'terms-of-service': '/terms-of-service',
+  'cookie-policy': '/cookie-policy',
 };
 
 const PATH_TO_PAGE: Record<string, Page> = Object.entries(PAGE_TO_PATH).reduce((acc, [page, path]) => {
@@ -376,6 +382,12 @@ case 'party-birthday-putney':
  return <PartyPaymentView setCurrentPage={setCurrentPage} adminMode={adminMode} successMode />;
  case 'manage-booking':
  return <ManageBookingView setCurrentPage={setCurrentPage} />;
+ case 'privacy-policy':
+ return <PrivacyPolicyView setCurrentPage={setCurrentPage} />;
+ case 'terms-of-service':
+ return <TermsOfServiceView setCurrentPage={setCurrentPage} />;
+ case 'cookie-policy':
+ return <CookiePolicyView setCurrentPage={setCurrentPage} />;
  default:
  return <NotFoundView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  }
