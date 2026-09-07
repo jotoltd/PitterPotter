@@ -187,10 +187,9 @@ struct DashboardOverviewView: View {
     private var quickActionsRow: some View {
         VStack(spacing: 12) {
             HStack(spacing: 12) {
-                if authVM.staff?.canAddWalkIns == true {
-                    Button {
-                        showingNewWalkIn = true
-                    } label: {
+                Button {
+                    showingNewWalkIn = true
+                } label: {
                         VStack(spacing: 6) {
                             Image(systemName: "person.walk")
                                 .font(.system(size: 18, weight: .semibold))
@@ -202,12 +201,10 @@ struct DashboardOverviewView: View {
                         .background(PPBrand.charcoal)
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
                 }
-                if authVM.staff?.canAddWalkIns == true {
-                    Button {
-                        showingNewBooking = true
-                    } label: {
+                Button {
+                    showingNewBooking = true
+                } label: {
                         VStack(spacing: 6) {
                             Image(systemName: "person.2.fill")
                                 .font(.system(size: 18, weight: .semibold))
@@ -219,12 +216,10 @@ struct DashboardOverviewView: View {
                         .background(Color(red: 0.0, green: 0.65, blue: 0.35))
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
                 }
-                if authVM.staff?.canAddWalkIns == true {
-                    Button {
-                        showingPartyBooking = true
-                    } label: {
+                Button {
+                    showingPartyBooking = true
+                } label: {
                         VStack(spacing: 6) {
                             Image(systemName: "birthday.cake.fill")
                                 .font(.system(size: 18, weight: .semibold))
@@ -236,14 +231,12 @@ struct DashboardOverviewView: View {
                         .background(Color(red: 0.55, green: 0.25, blue: 0.65))
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
                 }
             }
             HStack(spacing: 12) {
-                if authVM.staff?.canAddWalkIns == true {
-                    Button {
-                        showingNewBabyPrint = true
-                    } label: {
+                Button {
+                    showingNewBabyPrint = true
+                } label: {
                         VStack(spacing: 6) {
                             Image(systemName: "figure.and.child.holdinghands")
                                 .font(.system(size: 18, weight: .semibold))
@@ -255,7 +248,6 @@ struct DashboardOverviewView: View {
                         .background(Color(red: 0.85, green: 0.45, blue: 0.1))
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
                 }
                 Button {
                     showingCollectionScanner = true

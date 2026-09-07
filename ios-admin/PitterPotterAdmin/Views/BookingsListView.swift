@@ -269,7 +269,7 @@ struct BookingsListView: View {
                                     .foregroundStyle(PPBrand.charcoal)
                             }
                         }
-                        if authVM.staff?.canAddWalkIns == true && !bookingsVM.isBulkSelectMode {
+                        if !bookingsVM.isBulkSelectMode {
                             Menu {
                                 Button {
                                     showingNewWalkIn = true

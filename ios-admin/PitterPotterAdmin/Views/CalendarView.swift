@@ -660,8 +660,7 @@ struct DayDashboardView: View {
             }
 
             // Action buttons (matching web DayDashboard)
-            if authVM.staff?.canAddWalkIns == true {
-                ScrollView(.horizontal, showsIndicators: false) {
+            ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         Button {
                             showingNewWalkIn = true
@@ -721,7 +720,6 @@ struct DayDashboardView: View {
                         }
                     }
                 }
-            }
 
             // Stat bubbles
             HStack(spacing: 8) {
