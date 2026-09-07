@@ -34,8 +34,14 @@ struct MainTabView: View {
                 case .bookings:
                     CalendarView()
                         .environmentObject(bookingsVM)
-                case .collections:
-                    CollectionsView()
+                case .painted:
+                    CollectionsView(initialStage: .painted)
+                        .environmentObject(bookingsVM)
+                case .ready:
+                    CollectionsView(initialStage: .ready)
+                        .environmentObject(bookingsVM)
+                case .collected:
+                    CollectionsView(initialStage: .collected)
                         .environmentObject(bookingsVM)
                 case .giftCards:
                     GiftCardView()
@@ -101,7 +107,9 @@ struct WebTabBar: View {
         } else {
             t.append((.bookings, "Dashboard", pendingCount > 0 ? pendingCount : nil))
         }
-        t.append((.collections, "Collections", nil))
+        t.append((.painted, "Painted", nil))
+        t.append((.ready, "Ready", nil))
+        t.append((.collected, "Collected", nil))
         if isSuperAdmin {
             t.append((.giftCards, "Gift Vouchers", nil))
             t.append((.analytics, "Analytics", nil))

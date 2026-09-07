@@ -3,7 +3,9 @@ import SwiftUI
 enum AppTab: String, CaseIterable, Identifiable {
     case dashboard = "Dashboard"
     case bookings = "Bookings"
-    case collections = "Collections"
+    case painted = "Painted"
+    case ready = "Ready"
+    case collected = "Collected"
     case calendar = "Calendar"
     case capacity = "Capacity"
     case staff = "Staff"
@@ -22,7 +24,9 @@ enum AppTab: String, CaseIterable, Identifiable {
         switch self {
         case .dashboard: return "square.grid.2x2"
         case .bookings: return "list.bullet.clipboard"
-        case .collections: return "tray.full"
+        case .painted: return "paintbrush"
+        case .ready: return "checkmark.circle"
+        case .collected: return "tray.full.fill"
         case .calendar: return "calendar"
         case .capacity: return "chart.bar.xaxis"
         case .staff: return "person.2"
@@ -51,8 +55,12 @@ enum AppTab: String, CaseIterable, Identifiable {
             DashboardOverviewView().environmentObject(bookingsVM)
         case .bookings:
             BookingsListView().environmentObject(bookingsVM)
-        case .collections:
-            CollectionsView().environmentObject(bookingsVM)
+        case .painted:
+            CollectionsView(initialStage: .painted).environmentObject(bookingsVM)
+        case .ready:
+            CollectionsView(initialStage: .ready).environmentObject(bookingsVM)
+        case .collected:
+            CollectionsView(initialStage: .collected).environmentObject(bookingsVM)
         case .calendar:
             CalendarView().environmentObject(bookingsVM)
         case .capacity:

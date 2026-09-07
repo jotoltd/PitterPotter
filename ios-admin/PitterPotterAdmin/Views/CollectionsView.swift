@@ -4,7 +4,7 @@ import PhotosUI
 struct CollectionsView: View {
     @EnvironmentObject var authVM: AuthViewModel
     @EnvironmentObject var bookingsVM: BookingsViewModel
-    @State private var selectedStage: CollectionStage = .painted
+    var initialStage: CollectionStage
     @State private var searchText = ""
     @State private var selectedStudio: Studio? = nil
     @State private var selectedBooking: Booking?
@@ -18,10 +18,14 @@ struct CollectionsView: View {
     @State private var scanError: String?
     @State private var scannedBooking: Booking?
 
+    init(initialStage: CollectionStage = .painted) {
+        self.initialStage = initialStage
+    }
+
     var filteredBookings: [Booking] {
         bookingsVM.bookings.filter { b in
             guard b.status == "completed" else { return false }
-            guard b.collectionStatus == selectedStage.rawValue else { return false }
+            guard b.collectionStatus == initialStage.rawValue else { return false }
             if let studio = selectedStudio, b.studio != studio.rawValue { return false }
             if !searchText.isEmpty {
                 let q = searchText.lowercased()
@@ -49,13 +53,12 @@ struct CollectionsView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                stagePicker
                 searchBar
 
                 if filteredBookings.isEmpty {
                     EmptyStateView(
                         icon: "tray",
-                        title: "Nothing \(selectedStage.label.lowercased()) yet",
+                        title: "Nothing \(initialStage.label.lowercased()) yet",
                         subtitle: "Bookings will appear here when moved to this stage"
                     )
                 } else {
@@ -64,13 +67,13 @@ struct CollectionsView: View {
                             ForEach(filteredBookings) { booking in
                                 CollectionCard(booking: booking, onTap: { selectedBooking = booking })
                                     .contextMenu {
-                                        if selectedStage == .painted {
+                                        if initialStage == .painted {
                                             Button {
                                                 moveToStage(booking, .ready)
                                             } label: {
                                                 Label("Move to Ready", systemImage: "arrow.right.circle.fill")
                                             }
-                                        } else if selectedStage == .ready {
+                                        } else if initialStage == .ready {
                                             Button {
                                                 moveToStage(booking, .collected)
                                             } label: {
@@ -81,7 +84,7 @@ struct CollectionsView: View {
                                             } label: {
                                                 Label("Back to Painted", systemImage: "arrow.left.circle")
                                             }
-                                        } else if selectedStage == .collected {
+                                        } else if initialStage == .collected {
                                             Button {
                                                 moveToStage(booking, .ready)
                                             } label: {
@@ -122,7 +125,7 @@ struct CollectionsView: View {
                 }
             }
             .sheet(item: $selectedBooking) { booking in
-                CollectionDetailSheet(booking: booking, stage: selectedStage)
+                CollectionDetailSheet(booking: booking, stage: initialStage)
                     .environmentObject(authVM)
                     .environmentObject(bookingsVM)
             }
@@ -132,7 +135,7 @@ struct CollectionsView: View {
                 }
             }
             .sheet(isPresented: $showAddProfile) {
-                AddProfileSheet(stage: selectedStage)
+                AddProfileSheet(stage: initialStage)
                     .environmentObject(authVM)
                     .environmentObject(bookingsVM)
             }
@@ -222,46 +225,11 @@ struct CollectionsView: View {
             return
         }
 
-        if let stage = CollectionStage(rawValue: booking.collectionStatus ?? "") {
-            selectedStage = stage
+        if let _ = CollectionStage(rawValue: booking.collectionStatus ?? "") {
+            // Stage determined by tab, no need to change
         }
         scannedBooking = booking
         Haptics.success()
-    }
-
-    private var stagePicker: some View {
-        HStack(spacing: 0) {
-            ForEach(CollectionStage.allCases, id: \.self) { stage in
-                Button {
-                    selectedStage = stage
-                    Haptics.light()
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(stage.label)
-                            .font(PPBrand.bodyFontSmall.bold())
-                        let count = countForStage(stage)
-                        if count > 0 {
-                            Text("\(count)")
-                                .font(PPBrand.bodyFontCaption.bold())
-                                .foregroundStyle(selectedStage == stage ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.4))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(selectedStage == stage ? PPBrand.charcoal.opacity(0.15) : PPBrand.charcoal.opacity(0.08))
-                                .clipShape(Capsule())
-                        }
-                    }
-                    .foregroundStyle(selectedStage == stage ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.5))
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity)
-                    .background(selectedStage == stage ? PPBrand.sage : Color.clear)
-                }
-            }
-        }
-        .background(PPBrand.clay100.opacity(0.3))
-        .overlay(
-            Rectangle().fill(PPBrand.charcoal.opacity(0.1)).frame(height: 1),
-            alignment: .bottom
-        )
     }
 
     private var searchBar: some View {
