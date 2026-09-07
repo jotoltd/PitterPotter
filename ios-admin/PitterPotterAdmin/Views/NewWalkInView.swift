@@ -5,6 +5,8 @@ struct NewWalkInView: View {
     @EnvironmentObject var bookingsVM: BookingsViewModel
     @Environment(\.dismiss) var dismiss
 
+    var initialSessionType: SessionType = .painting
+
     @State private var name = ""
     @State private var email = ""
     @State private var phone = ""
@@ -48,8 +50,9 @@ struct NewWalkInView: View {
                         .lineLimit(3...6)
                 }
             }
-            .navigationTitle("New Walk-in")
+            .navigationTitle(initialSessionType == .painting ? "New Walk-in" : initialSessionType == .clayImprints ? "New Baby Print" : "New Booking")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear { sessionType = initialSessionType }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }

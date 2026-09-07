@@ -600,6 +600,11 @@ struct DayDashboardView: View {
     let authVM: AuthViewModel
 
     @State private var selectedBooking: Booking? = nil
+    @State private var showingNewWalkIn = false
+    @State private var showingNewBooking = false
+    @State private var showingPartyBooking = false
+    @State private var showingNewBabyPrint = false
+    @State private var showingGhostBooking = false
 
     private var staffStudio: String? {
         guard let studios = authVM.staff?.allowedStudios, studios.count == 1 else { return nil }
@@ -652,6 +657,70 @@ struct DayDashboardView: View {
                     .font(.system(size: 18, weight: .heavy, design: .rounded))
                     .foregroundStyle(PPBrand.charcoal)
                 Spacer()
+            }
+
+            // Action buttons (matching web DayDashboard)
+            if authVM.staff?.canAddWalkIns == true {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        Button {
+                            showingNewWalkIn = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "person.walk")
+                                Text("Walk-in")
+                            }
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(PPBrand.charcoal)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        Button {
+                            showingNewBooking = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "person.2.fill")
+                                Text("New Booking")
+                            }
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(red: 0.0, green: 0.65, blue: 0.35))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        Button {
+                            showingPartyBooking = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "birthday.cake.fill")
+                                Text("New Party")
+                            }
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(red: 0.55, green: 0.25, blue: 0.65))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        Button {
+                            showingNewBabyPrint = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "figure.and.child.holdinghands")
+                                Text("New Baby Print")
+                            }
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(red: 0.85, green: 0.45, blue: 0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                }
             }
 
             // Stat bubbles
@@ -735,6 +804,26 @@ struct DayDashboardView: View {
                     .environmentObject(bookingsVM)
                     .environmentObject(authVM)
             }
+        }
+        .sheet(isPresented: $showingNewWalkIn) {
+            NewWalkInView()
+                .environmentObject(authVM)
+                .environmentObject(bookingsVM)
+        }
+        .sheet(isPresented: $showingNewBooking) {
+            NewWalkInView(initialSessionType: .painting)
+                .environmentObject(authVM)
+                .environmentObject(bookingsVM)
+        }
+        .sheet(isPresented: $showingPartyBooking) {
+            PartyBookingView()
+                .environmentObject(authVM)
+                .environmentObject(bookingsVM)
+        }
+        .sheet(isPresented: $showingNewBabyPrint) {
+            NewWalkInView(initialSessionType: .clayImprints)
+                .environmentObject(authVM)
+                .environmentObject(bookingsVM)
         }
     }
 

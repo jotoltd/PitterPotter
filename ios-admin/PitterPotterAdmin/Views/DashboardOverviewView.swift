@@ -9,6 +9,8 @@ struct DashboardOverviewView: View {
     @State private var showingPartyBooking = false
     @State private var showingGhostBooking = false
     @State private var showingCollectionScanner = false
+    @State private var showingNewBooking = false
+    @State private var showingNewBabyPrint = false
 
     private var todayString: String {
         let formatter = DateFormatter()
@@ -107,6 +109,16 @@ struct DashboardOverviewView: View {
                     .environmentObject(authVM)
                     .environmentObject(bookingsVM)
             }
+            .sheet(isPresented: $showingNewBooking) {
+                NewWalkInView(initialSessionType: .painting)
+                    .environmentObject(authVM)
+                    .environmentObject(bookingsVM)
+            }
+            .sheet(isPresented: $showingNewBabyPrint) {
+                NewWalkInView(initialSessionType: .clayImprints)
+                    .environmentObject(authVM)
+                    .environmentObject(bookingsVM)
+            }
             .sheet(isPresented: $showingCollectionScanner) {
                 PaintingScannerView(bookingsVM: bookingsVM, authVM: authVM)
             }
@@ -173,64 +185,119 @@ struct DashboardOverviewView: View {
     }
 
     private var quickActionsRow: some View {
-        HStack(spacing: 12) {
-            if authVM.staff?.canAddWalkIns == true {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                if authVM.staff?.canAddWalkIns == true {
+                    Button {
+                        showingNewWalkIn = true
+                    } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: "person.walk")
+                                .font(.system(size: 18, weight: .semibold))
+                            Text("Walk-in")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(PPBrand.charcoal)
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+                if authVM.staff?.canAddWalkIns == true {
+                    Button {
+                        showingNewBooking = true
+                    } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: "person.2.fill")
+                                .font(.system(size: 18, weight: .semibold))
+                            Text("New Booking")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(red: 0.0, green: 0.65, blue: 0.35))
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+                if authVM.staff?.canAddWalkIns == true {
+                    Button {
+                        showingPartyBooking = true
+                    } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: "birthday.cake.fill")
+                                .font(.system(size: 18, weight: .semibold))
+                            Text("New Party")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(red: 0.55, green: 0.25, blue: 0.65))
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+            }
+            HStack(spacing: 12) {
+                if authVM.staff?.canAddWalkIns == true {
+                    Button {
+                        showingNewBabyPrint = true
+                    } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: "figure.and.child.holdinghands")
+                                .font(.system(size: 18, weight: .semibold))
+                            Text("New Baby Print")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(red: 0.85, green: 0.45, blue: 0.1))
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
                 Button {
-                    showingNewWalkIn = true
+                    showingCollectionScanner = true
                 } label: {
                     VStack(spacing: 6) {
-                        Image(systemName: "person.walk")
+                        Image(systemName: "qrcode.viewfinder")
                             .font(.system(size: 18, weight: .semibold))
-                        Text("Walk-in")
+                        Text("Scanner")
                             .font(.system(size: 11, weight: .bold))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(PPBrand.charcoal)
-                    .foregroundStyle(.white)
+                    .background(PPBrand.sage)
+                    .foregroundStyle(PPBrand.charcoal)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(PPBrand.charcoal.opacity(0.15), lineWidth: 1)
+                    )
                 }
-            }
-            Button {
-                showingCollectionScanner = true
-            } label: {
-                VStack(spacing: 6) {
-                    Image(systemName: "qrcode.viewfinder")
-                        .font(.system(size: 18, weight: .semibold))
-                    Text("Scanner")
-                        .font(.system(size: 11, weight: .bold))
+                NavigationLink {
+                    BookingsListView()
+                        .environmentObject(bookingsVM)
+                        .environmentObject(authVM)
+                        .environmentObject(toastManager)
+                } label: {
+                    VStack(spacing: 6) {
+                        Image(systemName: "list.bullet.clipboard")
+                            .font(.system(size: 18, weight: .semibold))
+                        Text("Bookings")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(PPBrand.clay100.opacity(0.3))
+                    .foregroundStyle(PPBrand.charcoal)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(PPBrand.charcoal.opacity(0.15), lineWidth: 1)
+                    )
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(PPBrand.sage)
-                .foregroundStyle(PPBrand.charcoal)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(PPBrand.charcoal.opacity(0.15), lineWidth: 1)
-                )
-            }
-            NavigationLink {
-                BookingsListView()
-                    .environmentObject(bookingsVM)
-                    .environmentObject(authVM)
-                    .environmentObject(toastManager)
-            } label: {
-                VStack(spacing: 6) {
-                    Image(systemName: "list.bullet.clipboard")
-                        .font(.system(size: 18, weight: .semibold))
-                    Text("Bookings")
-                        .font(.system(size: 11, weight: .bold))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(PPBrand.clay100.opacity(0.3))
-                .foregroundStyle(PPBrand.charcoal)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(PPBrand.charcoal.opacity(0.15), lineWidth: 1)
-                )
             }
         }
     }

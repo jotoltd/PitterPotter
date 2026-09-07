@@ -11,6 +11,8 @@ struct BookingsListView: View {
     @State private var bookingToShare: Booking?
     @State private var showingBulkActions = false
     @State private var showingPartyBooking = false
+    @State private var showingNewBooking = false
+    @State private var showingNewBabyPrint = false
     @State private var recentSearches: [String] = UserDefaults.standard.stringArray(forKey: "pp_recent_searches") ?? []
 
     var body: some View {
@@ -272,12 +274,22 @@ struct BookingsListView: View {
                                 Button {
                                     showingNewWalkIn = true
                                 } label: {
-                                    Label("Walk-in Booking", systemImage: "person.walk")
+                                    Label("Walk-in", systemImage: "person.walk")
+                                }
+                                Button {
+                                    showingNewBooking = true
+                                } label: {
+                                    Label("New Booking", systemImage: "person.2.fill")
                                 }
                                 Button {
                                     showingPartyBooking = true
                                 } label: {
-                                    Label("Party Booking", systemImage: "birthday.cake")
+                                    Label("New Party", systemImage: "birthday.cake.fill")
+                                }
+                                Button {
+                                    showingNewBabyPrint = true
+                                } label: {
+                                    Label("New Baby Print", systemImage: "figure.and.child.holdinghands")
                                 }
                                 Button {
                                     showingGhostBooking = true
@@ -340,6 +352,16 @@ struct BookingsListView: View {
             }
             .sheet(isPresented: $showingPartyBooking) {
                 PartyBookingView()
+                    .environmentObject(authVM)
+                    .environmentObject(bookingsVM)
+            }
+            .sheet(isPresented: $showingNewBooking) {
+                NewWalkInView(initialSessionType: .painting)
+                    .environmentObject(authVM)
+                    .environmentObject(bookingsVM)
+            }
+            .sheet(isPresented: $showingNewBabyPrint) {
+                NewWalkInView(initialSessionType: .clayImprints)
                     .environmentObject(authVM)
                     .environmentObject(bookingsVM)
             }
