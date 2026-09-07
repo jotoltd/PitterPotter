@@ -50,11 +50,6 @@ struct PartyBookingView: View {
                             }
                         }
                     }
-                    Picker("Session Type", selection: $sessionType) {
-                        Text("Birthday Party").tag(SessionType.birthdayParty)
-                        Text("Baby Shower / Hen").tag(SessionType.babyShowerHen)
-                        Text("Corporate").tag(SessionType.corporate)
-                    }
                     DatePicker("Date", selection: $date, displayedComponents: .date)
                     Picker("Time", selection: $time) {
                         ForEach(timeSlots, id: \.self) { t in

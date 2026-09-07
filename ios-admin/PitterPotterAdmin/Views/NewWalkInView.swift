@@ -48,9 +48,6 @@ struct NewWalkInView: View {
                     DatePicker("Date", selection: $date, displayedComponents: .date)
                     TextField("Time", text: $time)
                     Stepper("Painters: \(paintersCount)", value: $paintersCount, in: 1...100)
-                    Picker("Session Type", selection: $sessionType) {
-                        ForEach(SessionType.allCases, id: \.self) { Text($0.label).tag($0) }
-                    }
                 }
 
                 Section("Details") {
