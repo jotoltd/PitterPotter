@@ -17,6 +17,12 @@ struct CollectionsView: View {
     @State private var scanResult: String?
     @State private var scanError: String?
     @State private var scannedBooking: Booking?
+    @State private var expandedDates: Set<String> = []
+    @State private var sortOrder: SortOrder = .newest
+
+    enum SortOrder {
+        case newest, oldest
+    }
 
     init(initialStage: CollectionStage = .painted) {
         self.initialStage = initialStage
@@ -33,6 +39,13 @@ struct CollectionsView: View {
             }
             return true
         }
+    }
+
+    var groupedByDate: [(date: String, bookings: [Booking])] {
+        let map = Dictionary(grouping: filteredBookings, by: { $0.date })
+        var entries = map.map { (date: $0.key, bookings: $0.value.sorted { $0.time < $1.time }) }
+        entries.sort { sortOrder == .newest ? $0.date > $1.date : $0.date < $1.date }
+        return entries
     }
 
     private func moveToStage(_ booking: Booking, _ stage: CollectionStage) {
@@ -63,35 +76,23 @@ struct CollectionsView: View {
                     )
                 } else {
                     ScrollView {
-                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                            ForEach(filteredBookings) { booking in
-                                CollectionCard(booking: booking, onTap: { selectedBooking = booking })
-                                    .contextMenu {
-                                        if initialStage == .painted {
-                                            Button {
-                                                moveToStage(booking, .ready)
-                                            } label: {
-                                                Label("Move to Ready", systemImage: "arrow.right.circle.fill")
-                                            }
-                                        } else if initialStage == .ready {
-                                            Button {
-                                                moveToStage(booking, .collected)
-                                            } label: {
-                                                Label("Mark Collected", systemImage: "checkmark.circle.fill")
-                                            }
-                                            Button {
-                                                moveToStage(booking, .painted)
-                                            } label: {
-                                                Label("Back to Painted", systemImage: "arrow.left.circle")
-                                            }
-                                        } else if initialStage == .collected {
-                                            Button {
-                                                moveToStage(booking, .ready)
-                                            } label: {
-                                                Label("Back to Ready", systemImage: "arrow.left.circle")
-                                            }
+                        VStack(spacing: 10) {
+                            ForEach(groupedByDate, id: \.date) { group in
+                                CollapsibleDateSection(
+                                    date: group.date,
+                                    bookings: group.bookings,
+                                    stage: initialStage,
+                                    isExpanded: expandedDates.contains(group.date),
+                                    onToggle: {
+                                        if expandedDates.contains(group.date) {
+                                            expandedDates.remove(group.date)
+                                        } else {
+                                            expandedDates.insert(group.date)
                                         }
-                                    }
+                                    },
+                                    onTap: { booking in selectedBooking = booking },
+                                    onMove: moveToStage
+                                )
                             }
                         }
                         .padding(16)
@@ -386,6 +387,116 @@ struct CollectionCard: View {
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(PPBrand.charcoal.opacity(0.1), lineWidth: 1))
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Collapsible Date Section (matches web date-grouped collapse view)
+
+struct CollapsibleDateSection: View {
+    let date: String
+    let bookings: [Booking]
+    let stage: CollectionStage
+    let isExpanded: Bool
+    let onToggle: () -> Void
+    let onTap: (Booking) -> Void
+    let onMove: (Booking, CollectionStage) -> Void
+
+    private var photoCount: Int {
+        bookings.reduce(0) { $0 + ($1.photos?.count ?? 0) }
+    }
+
+    private var formattedDate: String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        guard let d = f.date(from: date) else { return date }
+        f.dateFormat = "EEE d MMM yyyy"
+        return f.string(from: d)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Button(action: onToggle) {
+                HStack(spacing: 8) {
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.6))
+
+                    Text(formattedDate)
+                        .font(.system(size: 13, weight: .heavy))
+                        .foregroundStyle(PPBrand.charcoal)
+                        .textCase(.uppercase)
+                        .tracking(0.5)
+
+                    Text("\(bookings.count) booking\(bookings.count != 1 ? "s" : "")")
+                        .font(.system(size: 10, weight: .heavy))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.6))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(PPBrand.charcoal.opacity(0.08))
+                        .clipShape(Capsule())
+
+                    if photoCount > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "camera")
+                                .font(.system(size: 9, weight: .bold))
+                            Text("\(photoCount)")
+                                .font(.system(size: 10, weight: .heavy))
+                        }
+                        .foregroundStyle(Color(red: 0.1, green: 0.5, blue: 0.4))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color(red: 0.1, green: 0.5, blue: 0.4).opacity(0.12))
+                        .clipShape(Capsule())
+                    }
+
+                    Spacer()
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(PPBrand.clay100.opacity(0.3))
+            }
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                    ForEach(bookings) { booking in
+                        CollectionCard(booking: booking, onTap: { onTap(booking) })
+                            .contextMenu {
+                                if stage == .painted {
+                                    Button {
+                                        onMove(booking, .ready)
+                                    } label: {
+                                        Label("Move to Ready", systemImage: "arrow.right.circle.fill")
+                                    }
+                                } else if stage == .ready {
+                                    Button {
+                                        onMove(booking, .collected)
+                                    } label: {
+                                        Label("Mark Collected", systemImage: "checkmark.circle.fill")
+                                    }
+                                    Button {
+                                        onMove(booking, .painted)
+                                    } label: {
+                                        Label("Back to Painted", systemImage: "arrow.left.circle")
+                                    }
+                                } else if stage == .collected {
+                                    Button {
+                                        onMove(booking, .ready)
+                                    } label: {
+                                        Label("Back to Ready", systemImage: "arrow.left.circle")
+                                    }
+                                }
+                            }
+                    }
+                }
+                .padding(10)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(PPBrand.charcoal.opacity(0.1), lineWidth: 1))
+        .animation(.easeInOut(duration: 0.2), value: isExpanded)
     }
 }
 
