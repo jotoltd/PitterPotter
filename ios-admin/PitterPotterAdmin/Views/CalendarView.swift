@@ -251,6 +251,7 @@ struct BookingsListBelowCalendar: View {
     let bookings: [Booking]
     let onTap: (Booking) -> Void
     @State private var statusFilter: StatusFilter = .upcoming
+    @State private var sessionFilter: SessionFilter = .all
     @State private var searchText = ""
 
     enum StatusFilter: String, CaseIterable {
@@ -277,6 +278,28 @@ struct BookingsListBelowCalendar: View {
         }
     }
 
+    enum SessionFilter: String, CaseIterable {
+        case all = "All Types"
+        case painting = "Painting"
+        case birthdayParty = "Birthday Party"
+        case babyShowerHen = "Baby Shower / Hen"
+        case clayImprints = "Clay Imprints"
+        case corporate = "Corporate"
+        case exclusiveHire = "Exclusive Hire"
+
+        var rawValueKey: String? {
+            switch self {
+            case .all: return nil
+            case .painting: return "painting"
+            case .birthdayParty: return "birthday-party"
+            case .babyShowerHen: return "baby-shower-hen"
+            case .clayImprints: return "clay-imprints"
+            case .corporate: return "corporate"
+            case .exclusiveHire: return "exclusive-hire"
+            }
+        }
+    }
+
     private var filteredBookings: [Booking] {
         let today = dateString(Date())
         var result: [Booking]
@@ -297,6 +320,9 @@ struct BookingsListBelowCalendar: View {
             result = bookings.filter { $0.status == "cancelled" }
         case .noShow:
             result = bookings.filter { $0.status == "no_show" }
+        }
+        if let sessionKey = sessionFilter.rawValueKey {
+            result = result.filter { $0.sessionType == sessionKey }
         }
         if !searchText.isEmpty {
             let q = searchText.lowercased()
@@ -371,6 +397,28 @@ struct BookingsListBelowCalendar: View {
                     }
                 }
                 .padding(.vertical, 4)
+            }
+
+            // Session type filter chips
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(SessionFilter.allCases, id: \.self) { filter in
+                        Button {
+                            sessionFilter = filter
+                            Haptics.light()
+                        } label: {
+                            Text(filter.rawValue)
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(sessionFilter == filter ? .white : PPBrand.charcoal.opacity(0.6))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(sessionFilter == filter ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.06))
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 2)
             }
 
             if filteredBookings.isEmpty {
