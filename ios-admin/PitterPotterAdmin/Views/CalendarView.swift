@@ -6,6 +6,7 @@ struct CalendarView: View {
 
     @State private var calendarMonth = Date()
     @State private var selectedDate: String? = nil
+    @State private var searchText = ""
 
     var body: some View {
         NavigationStack {
@@ -29,6 +30,7 @@ struct CalendarView: View {
                         authVM: authVM
                     )
                 } else {
+                if searchText.isEmpty {
                     MonthCalendarView(
                         bookings: bookingsVM.bookings,
                         selectedDate: selectedDate,
@@ -36,15 +38,18 @@ struct CalendarView: View {
                         onMonthChange: { calendarMonth = $0 },
                         onSelectDate: { dateStr in selectedDate = dateStr }
                     )
+                }
 
                     BookingsListBelowCalendar(
                         bookings: bookingsVM.bookings,
                         onTap: { booking in
                             selectedDate = booking.date
-                        }
+                        },
+                        searchText: $searchText
                     )
                 }
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(Color.white)
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
@@ -250,9 +255,10 @@ struct MonthCalendarView: View {
 struct BookingsListBelowCalendar: View {
     let bookings: [Booking]
     let onTap: (Booking) -> Void
+    @Binding var searchText: String
     @State private var statusFilter: StatusFilter = .upcoming
     @State private var sessionFilter: SessionFilter = .all
-    @State private var searchText = ""
+    @FocusState private var searchFocused: Bool
 
     enum StatusFilter: String, CaseIterable {
         case upcoming = "Upcoming"
@@ -361,6 +367,7 @@ struct BookingsListBelowCalendar: View {
                     .font(.system(size: 13, weight: .medium))
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                    .focused($searchFocused)
                 if !searchText.isEmpty {
                     Button {
                         searchText = ""
