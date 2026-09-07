@@ -585,8 +585,8 @@ struct CollectionDetailSheet: View {
     @State private var showCamera = false
     @State private var isUploading = false
     @State private var uploadError: String?
-    @State private var showMoveSheet = false
     @State private var showReadyPrompt = false
+    @State private var showCollectedPrompt = false
     @State private var notificationStatus: String?
     @State private var isSendingNotification = false
     @State private var tagMode = false
@@ -619,16 +619,6 @@ struct CollectionDetailSheet: View {
             } message: {
                 Text(uploadError ?? "")
             }
-            .confirmationDialog("Move to", isPresented: $showMoveSheet) {
-                ForEach(CollectionStage.allCases, id: \.self) { s in
-                    if s != stage {
-                        Button(s.label) {
-                            moveBooking(to: s)
-                        }
-                    }
-                }
-                Button("Cancel", role: .cancel) {}
-            }
             .alert("Ready for Collection?", isPresented: $showReadyPrompt) {
                 Button("Mark Ready") {
                     moveBooking(to: .ready)
@@ -636,6 +626,14 @@ struct CollectionDetailSheet: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Mark \(booking.name)'s item as ready for collection? This will notify the customer.")
+            }
+            .alert("Mark as Collected?", isPresented: $showCollectedPrompt) {
+                Button("Mark Collected") {
+                    moveBooking(to: .collected)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Confirm \(booking.name)'s item has been collected?")
             }
         }
     }
@@ -813,7 +811,7 @@ struct CollectionDetailSheet: View {
 
             if stage == .ready, authVM.staff != nil {
                 Button {
-                    moveBooking(to: .collected)
+                    showCollectedPrompt = true
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.circle.fill")
@@ -826,18 +824,6 @@ struct CollectionDetailSheet: View {
                     .foregroundStyle(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
-            }
-
-            Button {
-                showMoveSheet = true
-            } label: {
-                Text("Move to different stage")
-                    .font(PPBrand.bodyFontSmall.bold())
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(PPBrand.clay100)
-                    .foregroundStyle(PPBrand.charcoal)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
             }
 
             if stage == .ready, let staff = authVM.staff {
