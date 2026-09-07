@@ -27,7 +27,6 @@ struct GiftCardScannerView: UIViewControllerRepresentable {
         func didFindCode(_ code: String) {
             DispatchQueue.main.async {
                 self.parent.scannedCode = code
-                self.parent.dismiss()
             }
         }
     }
@@ -41,6 +40,7 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
     weak var delegate: ScannerViewControllerDelegate?
     private let session = AVCaptureSession()
     private var previewLayer: AVCaptureVideoPreviewLayer?
+    private var hasScanned = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -50,6 +50,7 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        hasScanned = false
         if !session.isRunning {
             DispatchQueue.global(qos: .userInitiated).async { [weak self] in
                 self?.session.startRunning()
@@ -120,8 +121,11 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
     }
 
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
+        guard !hasScanned else { return }
         if let obj = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
            let code = obj.stringValue {
+            hasScanned = true
+            session.stopRunning()
             delegate?.didFindCode(code)
         }
     }
