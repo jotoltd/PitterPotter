@@ -17,48 +17,42 @@ struct MainTabView: View {
             )
 
             TabView {
-                DashboardOverviewView()
-                    .tabItem {
-                        Label("Dashboard", systemImage: "square.grid.2x2")
-                    }
-                    .environmentObject(bookingsVM)
+                if authVM.staff?.role == "super_admin" {
+                    // Super admin: Dashboard summary tab
+                    DashboardOverviewView()
+                        .tabItem {
+                            Label("Dashboard", systemImage: "square.grid.2x2")
+                        }
+                        .environmentObject(bookingsVM)
+                }
 
-                BookingsListView()
+                // Bookings = Calendar + Day Kanban (same as web "Bookings" tab)
+                CalendarView()
                     .tabItem {
-                        Label("Bookings", systemImage: "list.bullet.clipboard")
+                        Label(authVM.staff?.role == "super_admin" ? "Bookings" : "Dashboard", systemImage: "calendar")
                     }
                     .badge(bookingsVM.bookings.filter { $0.status == "pending" }.count)
                     .environmentObject(bookingsVM)
 
+                // Collections = Painted / Ready / Collected (same as web)
                 CollectionsView()
                     .tabItem {
                         Label("Collections", systemImage: "tray.full")
                     }
                     .environmentObject(bookingsVM)
 
-                CalendarView()
-                    .tabItem {
-                        Label("Calendar", systemImage: "calendar")
-                    }
-                    .environmentObject(bookingsVM)
-
-                CapacityView()
-                    .tabItem {
-                        Label("Capacity", systemImage: "chart.bar.xaxis")
-                    }
-                    .environmentObject(bookingsVM)
-
                 if authVM.staff?.role == "super_admin" {
+                    // Super admin only tabs
+                    GiftCardView()
+                        .tabItem {
+                            Label("Gift Vouchers", systemImage: "giftcard")
+                        }
+
                     AnalyticsView()
                         .tabItem {
                             Label("Analytics", systemImage: "chart.line.uptrend.xyaxis")
                         }
                         .environmentObject(bookingsVM)
-
-                    GiftCardView()
-                        .tabItem {
-                            Label("Gift Cards", systemImage: "giftcard")
-                        }
 
                     SMSAdminView()
                         .tabItem {
@@ -91,6 +85,7 @@ struct MainTabView: View {
                         }
                         .environmentObject(bookingsVM)
                 } else {
+                    // Regular staff: just settings
                     SettingsView()
                         .tabItem {
                             Label("Settings", systemImage: "gearshape")
