@@ -41,7 +41,7 @@ struct GhostBookingView: View {
                     } else {
                         Text("Tap to check capacity")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                 }
 

@@ -18,7 +18,7 @@ struct AuditLogView: View {
                             .font(.largeTitle)
                             .foregroundStyle(.orange)
                         Text(error)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         Button("Retry") { loadLogs() }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -87,12 +87,12 @@ struct AuditLogRowView: View {
                         .foregroundStyle(PPBrand.charcoal)
                     Text(log.entity)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
                 if let username = log.username {
                     Text("by \(username)")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
                 if let entityId = log.entityId {
                     Text("ID: \(entityId)")

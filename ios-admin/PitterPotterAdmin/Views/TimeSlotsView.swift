@@ -90,7 +90,7 @@ struct TimeSlotsView: View {
                     if currentSlots.isEmpty {
                         Text("No slots configured")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                     ForEach(currentSlots, id: \.self) { slot in
                         HStack {

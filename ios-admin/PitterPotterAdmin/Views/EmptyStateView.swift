@@ -14,12 +14,12 @@ struct EmptyStateView: View {
                 .foregroundStyle(PPBrand.clay300)
                 .frame(width: 80, height: 80)
                 .background(PPBrand.charcoal.opacity(0.05))
-                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
             VStack(spacing: 6) {
                 Text(title)
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 Text(subtitle)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(PPBrand.clay300)

@@ -78,7 +78,7 @@ struct NotificationSettingsView: View {
                 if setting.customTitle != nil || setting.customMessage != nil {
                     Image(systemName: "pencil.line")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
 
                 Button(action: {
@@ -106,13 +106,13 @@ struct NotificationSettingsView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Custom Title")
                         .font(.caption2.bold())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     TextField("Leave empty for default", text: $editTitle)
                         .textFieldStyle(.roundedBorder)
 
                     Text("Custom Message")
                         .font(.caption2.bold())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     TextField("Leave empty for default", text: $editMessage, axis: .vertical)
                         .textFieldStyle(.roundedBorder)
                         .lineLimit(2...4)
@@ -148,7 +148,7 @@ struct NotificationSettingsView: View {
             if availableTypes.isEmpty {
                 Text("All types already have a rule for \(newStudio)")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
         }
     }

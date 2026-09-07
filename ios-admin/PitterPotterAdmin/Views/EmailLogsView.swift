@@ -62,12 +62,12 @@ struct EmailLogRow: View {
             if let recipient = log.recipient {
                 Text(recipient)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
             if let subject = log.subject {
                 Text(subject)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     .lineLimit(2)
             }
             HStack {

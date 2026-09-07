@@ -43,7 +43,7 @@ struct GiftCardView: View {
                             .font(.largeTitle)
                             .foregroundStyle(.orange)
                         Text(error)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         Button("Retry") { loadGiftCards() }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -374,7 +374,7 @@ struct GiftCardRowView: View {
                 if let name = card.recipientName {
                     Text(name)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
                 if let email = card.recipientEmail, !email.isEmpty {
                     Text(email)
@@ -392,7 +392,7 @@ struct GiftCardRowView: View {
                 if let balance = card.balance, balance != card.amount {
                     Text("Bal £\(String(format: "%.0f", balance))")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
                 Text(card.statusLabel)
                     .font(.system(size: 9, weight: .bold))

@@ -44,7 +44,7 @@ struct AnalyticsView: View {
                 }
                 .padding(20)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.white)
             .navigationTitle("Analytics")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear { loadGiftCards() }
@@ -97,9 +97,8 @@ struct AnalyticsView: View {
             }
         }
         .padding(20)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+        .webCard()
+        
     }
 
     private var popularDatesChart: some View {
@@ -139,9 +138,8 @@ struct AnalyticsView: View {
             }
         }
         .padding(20)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+        .webCard()
+        
     }
 
     private var studioBreakdown: some View {
@@ -181,9 +179,8 @@ struct AnalyticsView: View {
             }
         }
         .padding(20)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+        .webCard()
+        
     }
 
     private var giftCardStatus: some View {
@@ -204,7 +201,7 @@ struct AnalyticsView: View {
                         .foregroundStyle(.green)
                     Text("Active")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         .textCase(.uppercase)
                         .tracking(0.3)
                 }
@@ -219,7 +216,7 @@ struct AnalyticsView: View {
                         .foregroundStyle(PPBrand.charcoal)
                     Text("Redeemed")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         .textCase(.uppercase)
                         .tracking(0.3)
                 }
@@ -234,7 +231,7 @@ struct AnalyticsView: View {
                         .foregroundStyle(.red)
                     Text("Expired")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         .textCase(.uppercase)
                         .tracking(0.3)
                 }
@@ -245,9 +242,8 @@ struct AnalyticsView: View {
             }
         }
         .padding(20)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+        .webCard()
+        
     }
 
     private func loadGiftCards() {

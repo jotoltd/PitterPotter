@@ -237,7 +237,7 @@ struct AdminSettingsView: View {
                         .font(.headline)
                     Text(authVM.staff?.username ?? "")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
             }
             LabeledContent("Role", value: authVM.staff?.role.capitalized ?? "")

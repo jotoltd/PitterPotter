@@ -17,7 +17,7 @@ struct SettingsView: View {
                                 .font(.headline)
                             Text(authVM.staff?.username ?? "")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                             HStack(spacing: 6) {
                                 Text(authVM.staff?.role.capitalized ?? "")
                                     .font(.caption2)
@@ -51,7 +51,7 @@ struct SettingsView: View {
                     LabeledContent("Supabase URL") {
                         Text(String(APIConfig.supabaseURL.prefix(30)) + "...")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                 }
 

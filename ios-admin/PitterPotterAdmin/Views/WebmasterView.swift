@@ -29,7 +29,7 @@ struct WebmasterView: View {
                 }
                 .padding(20)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.white)
             .navigationTitle("Webmaster")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
@@ -86,7 +86,7 @@ struct WebmasterView: View {
                             Text(name)
                                 .font(.caption2)
                                 .fontWeight(.bold)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                             Text(info.exists ? "\(info.rows)" : "Missing")
                                 .font(.subheadline)
                                 .fontWeight(.bold)
@@ -100,13 +100,13 @@ struct WebmasterView: View {
             } else {
                 Text("Tap Refresh to check")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
         }
         .padding(20)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+        .webCard()
+.overlay(RoundedRectangle(cornerRadius: 12).stroke(PPBrand.charcoal.opacity(0.15), lineWidth: 1))
+        
     }
 
     private var dbBackupSection: some View {
@@ -129,7 +129,7 @@ struct WebmasterView: View {
             } else if dbBackups.isEmpty {
                 Text("No backups yet")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             } else {
                 ForEach(dbBackups) { backup in
                     HStack {
@@ -156,9 +156,9 @@ struct WebmasterView: View {
             }
         }
         .padding(20)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+        .webCard()
+.overlay(RoundedRectangle(cornerRadius: 12).stroke(PPBrand.charcoal.opacity(0.15), lineWidth: 1))
+        
         .confirmationDialog("Select tables to backup", isPresented: $showCreateBackup) {
             Button("Backup All") {
                 createBackup(Array(Set(backupTableOptions.map { $0.value })))
@@ -192,7 +192,7 @@ struct WebmasterView: View {
                             .fontWeight(.bold)
                         Text("Bookings")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                     VStack {
                         Text("\(status.sampleGiftCards)")
@@ -200,7 +200,7 @@ struct WebmasterView: View {
                             .fontWeight(.bold)
                         Text("Gift Cards")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                     Spacer()
                     Button("Add") { addSampleData() }
@@ -211,13 +211,13 @@ struct WebmasterView: View {
             } else {
                 Text("Tap Refresh to load")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
         }
         .padding(20)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+        .webCard()
+.overlay(RoundedRectangle(cornerRadius: 12).stroke(PPBrand.charcoal.opacity(0.15), lineWidth: 1))
+        
     }
 
     private func loadDbHealth() {

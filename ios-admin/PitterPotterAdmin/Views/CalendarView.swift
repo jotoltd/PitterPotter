@@ -206,7 +206,7 @@ struct CalendarBookingCard: View {
                     .fontWeight(.bold)
             }
             .frame(width: 56)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
 
             // Color bar
             Rectangle()
@@ -238,7 +238,7 @@ struct CalendarBookingCard: View {
                         .font(.caption)
                         .lineLimit(1)
                 }
-                .foregroundStyle(.secondary)
+                .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
 
             Spacer()

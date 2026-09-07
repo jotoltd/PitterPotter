@@ -204,7 +204,7 @@ struct RootView: View {
                     .environmentObject(authVM)
             } else {
                 Text("Select a section")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
         }
         .tint(PPBrand.charcoal)

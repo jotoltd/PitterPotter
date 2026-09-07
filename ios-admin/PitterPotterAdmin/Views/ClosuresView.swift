@@ -47,7 +47,7 @@ struct ClosuresView: View {
             if schoolHolidays.isEmpty {
                 Text("No holiday periods set")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
             ForEach(schoolHolidays.indices, id: \.self) { idx in
                 let holiday = schoolHolidays[idx]
@@ -60,7 +60,7 @@ struct ClosuresView: View {
                         }
                         Text("\(holiday.from) → \(holiday.to)")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                     Spacer()
                     Button(role: .destructive) {
@@ -103,7 +103,7 @@ struct ClosuresView: View {
             if closedDates.isEmpty {
                 Text("No closed dates set")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
             ForEach(closedDates.indices, id: \.self) { idx in
                 let entry = closedDates[idx]

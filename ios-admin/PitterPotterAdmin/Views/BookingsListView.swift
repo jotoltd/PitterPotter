@@ -101,7 +101,7 @@ struct BookingsListView: View {
                             .foregroundStyle(.orange)
                         Text(error)
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         Button("Retry") {
                             if let staff = authVM.staff {
                                 Task { await bookingsVM.loadBookings(staff: staff) }
@@ -475,7 +475,7 @@ struct BookingRowView: View {
                         .font(.system(size: 12, weight: .medium))
                         .lineLimit(1)
                 }
-                .foregroundStyle(.secondary)
+                .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
 
             Spacer()

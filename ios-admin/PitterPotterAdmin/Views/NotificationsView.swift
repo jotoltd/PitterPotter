@@ -14,7 +14,7 @@ struct NotificationsView: View {
                             .tint(PPBrand.charcoal)
                         Text("Loading notifications...")
                             .font(PPBrand.bodyFontSmall)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                 } else if notificationsVM.notifications.isEmpty {
                     EmptyStateView(
@@ -104,7 +104,7 @@ private struct NotificationRow: View {
 
                 Text(notification.message)
                     .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     .lineLimit(2)
 
                 HStack(spacing: 6) {

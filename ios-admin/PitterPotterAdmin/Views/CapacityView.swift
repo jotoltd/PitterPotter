@@ -118,7 +118,7 @@ struct CapacityRowView: View {
                     .foregroundStyle(capacity.remaining > 0 ? .green : .red)
                 Text("\(capacity.booked) booked")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
 
             // Capacity bar

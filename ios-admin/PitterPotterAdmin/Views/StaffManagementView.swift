@@ -18,7 +18,7 @@ struct StaffManagementView: View {
                             .foregroundStyle(.orange)
                         Text(error)
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         Button("Retry") {
                             if let staff = authVM.staff {
                                 Task { await staffVM.loadStaff(staff: staff) }
@@ -123,7 +123,7 @@ struct StaffRowView: View {
                 }
                 Text(member.username)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
 
                 HStack(spacing: 4) {
                     if member.canUpdateStatus { PermDot(color: .green, icon: "checkmark.circle") }
@@ -133,7 +133,7 @@ struct StaffRowView: View {
                     if let studios = member.allowedStudios, !studios.isEmpty {
                         Text(studios.joined(separator: ", "))
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                 }
             }

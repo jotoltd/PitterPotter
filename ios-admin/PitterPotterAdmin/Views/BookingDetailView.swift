@@ -39,7 +39,7 @@ struct BookingDetailView: View {
             }
             .padding(20)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(Color.white)
         .navigationTitle(currentBooking.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -120,13 +120,13 @@ struct BookingDetailView: View {
                 HStack(spacing: 6) {
                     Text(currentBooking.sessionTypeEnum?.label ?? currentBooking.sessionType)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     Text("\u{00B7}")
                         .font(.system(size: 13))
                         .foregroundStyle(PPBrand.clay300)
                     Text(currentBooking.studio)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
             }
             Spacer()
@@ -144,9 +144,8 @@ struct BookingDetailView: View {
             }
         }
         .padding(20)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+        .webCard()
+        
     }
 
     private var quickStatusActions: some View {
@@ -299,9 +298,8 @@ struct BookingDetailView: View {
             }
         }
         .padding(20)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+        .webCard()
+        
     }
 
     private var bookingInfoCard: some View {
@@ -321,9 +319,8 @@ struct BookingDetailView: View {
             }
         }
         .padding(20)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+        .webCard()
+        
     }
 
     private var contactCard: some View {
@@ -343,9 +340,8 @@ struct BookingDetailView: View {
             }
         }
         .padding(20)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+        .webCard()
+        
     }
 
     @ViewBuilder
@@ -369,9 +365,9 @@ struct BookingDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(20)
             .background(Color.orange.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: 12)
                     .stroke(Color.orange.opacity(0.2), lineWidth: 1)
             )
         }
@@ -410,7 +406,7 @@ struct BookingDetailView: View {
                     ProgressView()
                     Text("Uploading...")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
             }
 
@@ -432,9 +428,8 @@ struct BookingDetailView: View {
             }
         }
         .padding(20)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+        .webCard()
+        
     }
 
     private func photoThumbnail(url: String, index: Int) -> some View {
@@ -543,7 +538,7 @@ struct InfoRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: 7))
             Text(label)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             Spacer()
             Text(value)
                 .font(.system(size: 14, weight: .semibold))

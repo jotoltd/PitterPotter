@@ -86,7 +86,7 @@ struct PartyBookingView: View {
                             .keyboardType(.decimalPad)
                         Text("A deposit payment link will be emailed to the customer.")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                 }
 
