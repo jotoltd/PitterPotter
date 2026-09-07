@@ -6,7 +6,7 @@ struct DashboardOverviewView: View {
     @EnvironmentObject var toastManager: ToastManager
     @State private var giftCards: [GiftCard] = []
     @State private var showingNewWalkIn = false
-    @State private var showingGiftCardRedeem = false
+    @State private var showingPaintingScanner = false
 
     private var todayString: String {
         let formatter = DateFormatter()
@@ -95,9 +95,8 @@ struct DashboardOverviewView: View {
                     .environmentObject(authVM)
                     .environmentObject(bookingsVM)
             }
-            .sheet(isPresented: $showingGiftCardRedeem) {
-                GiftCardRedeemView()
-                    .environmentObject(authVM)
+            .sheet(isPresented: $showingPaintingScanner) {
+                PaintingScannerView(bookingsVM: bookingsVM, authVM: authVM)
             }
         }
     }
@@ -181,12 +180,12 @@ struct DashboardOverviewView: View {
                 }
             }
             Button {
-                showingGiftCardRedeem = true
+                showingPaintingScanner = true
             } label: {
                 VStack(spacing: 6) {
-                    Image(systemName: "qrcode.viewfinder")
+                    Image(systemName: "paintbrush.pointed.fill")
                         .font(.system(size: 18, weight: .semibold))
-                    Text("Redeem")
+                    Text("Painting Scanner")
                         .font(.system(size: 11, weight: .bold))
                 }
                 .frame(maxWidth: .infinity)

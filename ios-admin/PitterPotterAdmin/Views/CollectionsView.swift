@@ -103,7 +103,7 @@ struct CollectionsView: View {
                     }
                 }
             }
-            .navigationTitle("Collections")
+            .navigationTitle(initialStage.label)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 12) {
@@ -112,8 +112,12 @@ struct CollectionsView: View {
                             scanResult = nil
                             scanError = nil
                         } label: {
-                            Image(systemName: "qrcode.viewfinder")
-                                .foregroundStyle(PPBrand.charcoal)
+                            HStack(spacing: 4) {
+                                Image(systemName: "paintbrush.pointed.fill")
+                                Text("Scan")
+                            }
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(PPBrand.charcoal)
                         }
                         Button {
                             showAddProfile = true
