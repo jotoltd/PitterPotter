@@ -322,14 +322,14 @@ struct CollectionCard: View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 8) {
                 if let photos = booking.photos, !photos.isEmpty, let url = URL(string: photos[0]) {
-                    CachedAsyncImage(url: url)
-                        .frame(height: 140)
-                        .clipped()
+                    CachedAsyncImage(url: url, contentMode: .fit)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 160)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 } else {
                     Rectangle()
                         .fill(PPBrand.clay100.opacity(0.5))
-                        .frame(height: 140)
+                        .frame(height: 160)
                         .overlay(
                             VStack(spacing: 6) {
                                 Image(systemName: "camera")
@@ -599,8 +599,9 @@ struct CollectionDetailSheet: View {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
                     ForEach(photos, id: \.self) { urlStr in
                         if let url = URL(string: urlStr) {
-                            CachedAsyncImage(url: url)
-                                .frame(height: 120)
+                            CachedAsyncImage(url: url, contentMode: .fit)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 180)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                     }
@@ -913,9 +914,9 @@ struct AddProfileSheet: View {
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
                             ForEach(photos, id: \.self) { urlStr in
                                 if let url = URL(string: urlStr) {
-                                    CachedAsyncImage(url: url)
-                                        .frame(height: 80)
-                                        .clipped()
+                                    CachedAsyncImage(url: url, contentMode: .fit)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 100)
                                         .clipShape(RoundedRectangle(cornerRadius: 6))
                                 }
                             }
