@@ -45,7 +45,8 @@ struct CalendarView: View {
                         onTap: { booking in
                             selectedDate = booking.date
                         },
-                        searchText: $searchText
+                        searchText: $searchText,
+                        staffStudio: authVM.staff?.allowedStudios?.count == 1 ? authVM.staff?.allowedStudios?.first : nil
                     )
                 }
             }
@@ -256,6 +257,7 @@ struct BookingsListBelowCalendar: View {
     let bookings: [Booking]
     let onTap: (Booking) -> Void
     @Binding var searchText: String
+    var staffStudio: String? = nil
     @State private var statusFilter: StatusFilter = .upcoming
     @State private var sessionFilter: SessionFilter = .all
     @FocusState private var searchFocused: Bool
@@ -436,7 +438,7 @@ struct BookingsListBelowCalendar: View {
                     .padding(.vertical, 24)
             } else {
                 ForEach(filteredBookings) { booking in
-                    BookingListRow(booking: booking, onTap: { onTap(booking) })
+                    BookingListRow(booking: booking, onTap: { onTap(booking) }, staffStudio: staffStudio)
                 }
             }
         }
@@ -454,6 +456,19 @@ struct BookingsListBelowCalendar: View {
 struct BookingListRow: View {
     let booking: Booking
     let onTap: () -> Void
+    var staffStudio: String? = nil
+
+    private var sessionLabel: String? {
+        switch booking.sessionType {
+        case "painting": return nil
+        case "birthday-party": return "Party"
+        case "baby-shower-hen": return "Shower/Hen"
+        case "clay-imprints": return "Baby Prints"
+        case "corporate": return "Corporate"
+        case "exclusive-hire": return "Exclusive Hire"
+        default: return nil
+        }
+    }
 
     private var statusColor: Color {
         switch booking.status {
@@ -518,10 +533,22 @@ struct BookingListRow: View {
                     HStack(spacing: 8) {
                         Label("\(booking.paintersCount)", systemImage: "person.2.fill")
                         Label(booking.time, systemImage: "clock.fill")
-                        Label(booking.studio, systemImage: "mappin.fill")
+                        if staffStudio == nil || staffStudio != booking.studio {
+                            Label(booking.studio, systemImage: "mappin.fill")
+                        }
                     }
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+
+                    if let label = sessionLabel {
+                        Text(label)
+                            .font(.system(size: 8, weight: .heavy))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(PPBrand.charcoal.opacity(0.6))
+                            .clipShape(Capsule())
+                    }
                 }
 
                 Spacer()
@@ -573,6 +600,11 @@ struct DayDashboardView: View {
     let authVM: AuthViewModel
 
     @State private var selectedBooking: Booking? = nil
+
+    private var staffStudio: String? {
+        guard let studios = authVM.staff?.allowedStudios, studios.count == 1 else { return nil }
+        return studios[0]
+    }
 
     private var dayBookings: [Booking] {
         bookings.filter { $0.date == date && $0.status != "cancelled" }.sorted { $0.time < $1.time }
@@ -642,7 +674,8 @@ struct DayDashboardView: View {
                         canUpdate: canUpdateStatus,
                         onMove: handleMove,
                         onNoShow: handleNoShow,
-                        onTap: { selectedBooking = $0 }
+                        onTap: { selectedBooking = $0 },
+                        staffStudio: staffStudio
                     )
                     .frame(width: 280)
 
@@ -654,7 +687,8 @@ struct DayDashboardView: View {
                         canUpdate: canUpdateStatus,
                         onMove: handleMove,
                         onNoShow: nil,
-                        onTap: { selectedBooking = $0 }
+                        onTap: { selectedBooking = $0 },
+                        staffStudio: staffStudio
                     )
                     .frame(width: 280)
 
@@ -666,7 +700,8 @@ struct DayDashboardView: View {
                         canUpdate: canUpdateStatus,
                         onMove: handleMove,
                         onNoShow: nil,
-                        onTap: { selectedBooking = $0 }
+                        onTap: { selectedBooking = $0 },
+                        staffStudio: staffStudio
                     )
                     .frame(width: 280)
                 }
@@ -684,7 +719,8 @@ struct DayDashboardView: View {
                         canUpdate: canUpdateStatus,
                         onMove: handleMove,
                         onNoShow: nil,
-                        onTap: { selectedBooking = $0 }
+                        onTap: { selectedBooking = $0 },
+                        staffStudio: staffStudio
                     )
                     .frame(width: 280)
                 }
@@ -777,6 +813,7 @@ struct KanbanColumn: View {
     let onMove: (String, String) -> Void
     let onNoShow: ((String) -> Void)?
     let onTap: (Booking) -> Void
+    var staffStudio: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -810,7 +847,8 @@ struct KanbanColumn: View {
                         canUpdate: canUpdate,
                         onMove: onMove,
                         onNoShow: onNoShow,
-                        onTap: { onTap(booking) }
+                        onTap: { onTap(booking) },
+                        staffStudio: staffStudio
                     )
                 }
             }
@@ -843,6 +881,19 @@ struct KanbanBookingCard: View {
     let onMove: (String, String) -> Void
     let onNoShow: ((String) -> Void)?
     let onTap: () -> Void
+    var staffStudio: String? = nil
+
+    private var sessionLabel: String? {
+        switch booking.sessionType {
+        case "painting": return nil
+        case "birthday-party": return "Party"
+        case "baby-shower-hen": return "Shower/Hen"
+        case "clay-imprints": return "Baby Prints"
+        case "corporate": return "Corporate"
+        case "exclusive-hire": return "Exclusive Hire"
+        default: return nil
+        }
+    }
 
     var body: some View {
         Button(action: onTap) {
@@ -870,12 +921,24 @@ struct KanbanBookingCard: View {
                         .font(.system(size: 9))
                     Text(booking.time)
                         .font(.system(size: 10, weight: .bold))
-                    Text("·")
-                        .font(.system(size: 10))
-                    Text(booking.studio)
-                        .font(.system(size: 10, weight: .bold))
+                    if staffStudio == nil || staffStudio != booking.studio {
+                        Text("·")
+                            .font(.system(size: 10))
+                        Text(booking.studio)
+                            .font(.system(size: 10, weight: .bold))
+                    }
                 }
                 .foregroundStyle(PPBrand.charcoal.opacity(0.6))
+
+                if let label = sessionLabel {
+                    Text(label)
+                        .font(.system(size: 8, weight: .heavy))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(PPBrand.charcoal.opacity(0.6))
+                        .clipShape(Capsule())
+                }
 
                 if canUpdate {
                     HStack(spacing: 6) {

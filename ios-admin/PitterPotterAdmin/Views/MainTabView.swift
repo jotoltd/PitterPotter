@@ -127,8 +127,8 @@ struct WebTabBar: View {
             t.append((.emailTemplates, "Templates", nil))
             t.append((.audit, "Audit", nil))
             t.append((.webmaster, "Webmaster", nil))
+            t.append((.settings, "Settings", nil))
         }
-        t.append((.settings, "Settings", nil))
         return t
     }
 
