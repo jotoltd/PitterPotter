@@ -549,6 +549,31 @@ struct CollapsibleDateSection: View {
     }
 }
 
+// MARK: - Photo Tag Types
+
+struct TagPopoverState: Identifiable {
+    let id = UUID()
+    let photoIndex: Int
+    let x: Double
+    let y: Double
+}
+
+let TAG_STATUSES = ["painted", "glazing", "firing", "ready", "needs_touchup"]
+let TAG_LABELS: [String: String] = [
+    "painted": "Painted",
+    "glazing": "Glazing",
+    "firing": "Firing",
+    "ready": "Ready",
+    "needs_touchup": "Touch-up"
+]
+let TAG_COLORS: [String: Color] = [
+    "painted": Color(red: 0.8, green: 0.87, blue: 0.95),
+    "glazing": Color(red: 0.88, green: 0.82, blue: 0.95),
+    "firing": Color(red: 0.95, green: 0.82, blue: 0.75),
+    "ready": Color(red: 0.82, green: 0.92, blue: 0.84),
+    "needs_touchup": Color(red: 0.95, green: 0.8, blue: 0.8)
+]
+
 // MARK: - Collection Detail Sheet
 
 struct CollectionDetailSheet: View {
@@ -564,6 +589,8 @@ struct CollectionDetailSheet: View {
     @State private var showReadyPrompt = false
     @State private var notificationStatus: String?
     @State private var isSendingNotification = false
+    @State private var tagMode = false
+    @State private var tagPopover: TagPopoverState?
 
     var body: some View {
         NavigationStack {
@@ -645,6 +672,21 @@ struct CollectionDetailSheet: View {
                 Text("Photos")
                     .font(PPBrand.bodyFontSmall.bold())
                 Spacer()
+                if let photos = booking.photos, !photos.isEmpty, authVM.staff?.canUpdateStatus == true {
+                    Button {
+                        tagMode.toggle()
+                    } label: {
+                        Text(tagMode ? "✓ Tag Mode ON" : "Tag Mode")
+                            .font(.system(size: 9, weight: .heavy))
+                            .textCase(.uppercase)
+                            .tracking(0.5)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(tagMode ? PPBrand.charcoal : PPBrand.clay100)
+                            .foregroundStyle(tagMode ? .white : PPBrand.charcoal)
+                            .clipShape(Capsule())
+                    }
+                }
                 Button {
                     showCamera = true
                 } label: {
@@ -655,19 +697,97 @@ struct CollectionDetailSheet: View {
 
             if let photos = booking.photos, !photos.isEmpty {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                    ForEach(photos, id: \.self) { urlStr in
+                    ForEach(Array(photos.enumerated()), id: \.offset) { index, urlStr in
                         if let url = URL(string: urlStr) {
-                            CachedAsyncImage(url: url, contentMode: .fit)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 180)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            ZStack {
+                                CachedAsyncImage(url: url, contentMode: .fit)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 180)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                                if tagMode {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(PPBrand.charcoal.opacity(0.5), lineWidth: 2)
+                                        .frame(height: 180)
+                                }
+
+                                let tags = booking.photoTags?[String(index)] ?? []
+                                ForEach(Array(tags.enumerated()), id: \.offset) { ti, tag in
+                                    PhotoTagBadge(tag: tag, canRemove: authVM.staff?.canUpdateStatus == true) {
+                                        removePhotoTag(photoIndex: index, tagIndex: ti)
+                                    }
+                                    .position(
+                                        x: CGFloat(tag.x) / 100 * UIScreen.main.bounds.width * 0.46,
+                                        y: CGFloat(tag.y) / 100 * 180
+                                    )
+                                }
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture { location in
+                                if tagMode {
+                                    presentTagPopover(photoIndex: index, location: location)
+                                }
+                            }
                         }
                     }
+                }
+                if tagMode {
+                    Text("Tap a photo to add a tag")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
             } else {
                 Text("No photos yet")
                     .font(PPBrand.bodyFontCaption)
                     .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+            }
+        }
+        .sheet(item: $tagPopover) { state in
+            TagSelectionSheet { label, status in
+                addPhotoTag(photoIndex: state.photoIndex, label: label, status: status, x: state.x, y: state.y)
+                tagPopover = nil
+            }
+            .presentationDetents([.height(280)])
+        }
+    }
+
+    private func presentTagPopover(photoIndex: Int, location: CGPoint) {
+        let x = Double(location.x)
+        let y = Double(location.y)
+        tagPopover = TagPopoverState(photoIndex: photoIndex, x: x, y: y)
+    }
+
+    private func addPhotoTag(photoIndex: Int, label: String, status: String, x: Double, y: Double) {
+        guard let staff = authVM.staff else { return }
+        var updated = booking
+        var tags = updated.photoTags ?? [:]
+        var existing = tags[String(photoIndex)] ?? []
+        existing.append(PhotoTag(id: nil, label: label.isEmpty ? nil : label, status: status, x: x, y: y))
+        tags[String(photoIndex)] = existing
+        updated.photoTags = tags
+        Task {
+            try? await APIClient.shared.updateBooking(updated, staff: staff)
+            await MainActor.run {
+                bookingsVM.updateBookingLocally(updated)
+            }
+        }
+    }
+
+    private func removePhotoTag(photoIndex: Int, tagIndex: Int) {
+        guard let staff = authVM.staff else { return }
+        var updated = booking
+        guard var tags = updated.photoTags, var existing = tags[String(photoIndex)] else { return }
+        existing.remove(at: tagIndex)
+        if existing.isEmpty {
+            tags.removeValue(forKey: String(photoIndex))
+        } else {
+            tags[String(photoIndex)] = existing
+        }
+        updated.photoTags = tags.isEmpty ? nil : tags
+        Task {
+            try? await APIClient.shared.updateBooking(updated, staff: staff)
+            await MainActor.run {
+                bookingsVM.updateBookingLocally(updated)
             }
         }
     }
@@ -1100,6 +1220,119 @@ struct AddProfileSheet: View {
                 }
             } catch {
                 await MainActor.run { isSaving = false }
+            }
+        }
+    }
+}
+
+// MARK: - Photo Tag Badge
+
+struct PhotoTagBadge: View {
+    let tag: PhotoTag
+    let canRemove: Bool
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Text(displayText)
+                .font(.system(size: 7, weight: .heavy))
+                .textCase(.uppercase)
+                .tracking(0.3)
+            if canRemove {
+                Button(action: onRemove) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 6, weight: .bold))
+                }
+            }
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 2)
+        .background(TAG_COLORS[tag.status] ?? PPBrand.clay100)
+        .foregroundStyle(PPBrand.charcoal)
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(0.15), radius: 2, y: 1)
+    }
+
+    private var displayText: String {
+        let statusLabel = TAG_LABELS[tag.status] ?? tag.status
+        if let label = tag.label, !label.isEmpty {
+            return "\(statusLabel) - \(label)"
+        }
+        return statusLabel
+    }
+}
+
+// MARK: - Tag Selection Sheet
+
+struct TagSelectionSheet: View {
+    let onAdd: (String, String) -> Void
+    @Environment(\.dismiss) var dismiss
+    @State private var selectedStatus = "painted"
+    @State private var label = ""
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                Text("Add Tag")
+                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                    .foregroundStyle(PPBrand.charcoal)
+
+                VStack(spacing: 8) {
+                    ForEach(TAG_STATUSES, id: \.self) { status in
+                        Button {
+                            selectedStatus = status
+                        } label: {
+                            HStack {
+                                Circle()
+                                    .fill(TAG_COLORS[status] ?? PPBrand.clay100)
+                                    .frame(width: 12, height: 12)
+                                Text(TAG_LABELS[status] ?? status)
+                                    .font(.system(size: 13, weight: .bold))
+                                    .foregroundStyle(PPBrand.charcoal)
+                                Spacer()
+                                if selectedStatus == status {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(PPBrand.charcoal)
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(selectedStatus == status ? PPBrand.sage.opacity(0.5) : Color.clear)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                TextField("Label (optional, e.g. Kitchen, Face...)", text: $label)
+                    .font(.system(size: 13, weight: .medium))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(PPBrand.clay100.opacity(0.3))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                Button {
+                    onAdd(label, selectedStatus)
+                    dismiss()
+                } label: {
+                    Text("Add Tag")
+                        .font(.system(size: 14, weight: .heavy))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(PPBrand.charcoal)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+
+                Spacer()
+            }
+            .padding(16)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cancel") { dismiss() }
+                }
             }
         }
     }
