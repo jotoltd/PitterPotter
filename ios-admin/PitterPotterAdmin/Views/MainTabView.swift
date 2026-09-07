@@ -145,8 +145,22 @@ struct WebTabBar: View {
                     } label: {
                         HStack(spacing: 6) {
                             if item.tab == .scan {
-                                Image(systemName: "camera.viewfinder")
-                                    .font(.system(size: 16, weight: .bold))
+                                HStack(spacing: 4) {
+                                    Image(systemName: "qrcode.viewfinder")
+                                        .font(.system(size: 13, weight: .bold))
+                                    Text("COLLECTION SCANNER")
+                                        .font(.system(size: 11, weight: .heavy))
+                                        .tracking(0.5)
+                                }
+                                .foregroundStyle(PPBrand.charcoal)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(PPBrand.sage)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(PPBrand.charcoal.opacity(0.15), lineWidth: 1)
+                                )
                             } else {
                                 Text(item.label)
                                     .font(.system(size: 13, weight: .bold))
@@ -163,9 +177,9 @@ struct WebTabBar: View {
                                     .clipShape(Capsule())
                             }
                         }
-                        .foregroundStyle(item.tab == .scan ? PPBrand.sage : (selectedTab == item.tab ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.5)))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, item.tab == .scan ? 0 : 16)
+                        .padding(.vertical, item.tab == .scan ? 4 : 12)
+                        .foregroundStyle(item.tab == .scan ? .clear : (selectedTab == item.tab ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.5)))
                         .overlay(alignment: .bottom) {
                             if selectedTab == item.tab {
                                 Rectangle()
