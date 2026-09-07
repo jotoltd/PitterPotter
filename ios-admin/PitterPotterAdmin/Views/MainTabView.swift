@@ -119,8 +119,8 @@ struct WebTabBar: View {
         t.append((.ready, "Ready", nil))
         t.append((.collected, "Collected", nil))
         t.append((.scan, "Scan", nil))
+        t.append((.giftCards, "Gift Vouchers", nil))
         if isSuperAdmin {
-            t.append((.giftCards, "Gift Vouchers", nil))
             t.append((.analytics, "Analytics", nil))
             t.append((.sms, "SMS", nil))
             t.append((.emailLogs, "Emails", nil))
