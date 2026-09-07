@@ -35,7 +35,7 @@ export default function TermsOfServiceView({ setCurrentPage }: TermsOfServiceVie
           <section>
             <h2 className="font-heading text-lg font-black text-[#1B2D3C] mb-3">2. About Us</h2>
             <p>
-              Pitter Potter is a "Paint Your Own Pottery" studio business operating from two locations in London: Putney and Wimbledon. We offer pottery painting sessions, baby clay imprints, birthday parties, baby shower/hen parties, and corporate events.
+              Pitter Potter is a "Paint Your Own Pottery" studio business operating from two locations in London: Putney and Wimbledon. We offer pottery painting sessions, baby prints, birthday parties, baby shower/hen parties, and corporate events.
             </p>
           </section>
 

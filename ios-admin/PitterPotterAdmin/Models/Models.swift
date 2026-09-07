@@ -99,7 +99,7 @@ enum SessionType: String, Codable, CaseIterable {
         case .painting: return "Painting"
         case .birthdayParty: return "Birthday Party"
         case .babyShowerHen: return "Baby Shower / Hen"
-        case .clayImprints: return "Clay Imprints"
+        case .clayImprints: return "Baby Prints"
         case .corporate: return "Corporate"
         case .exclusiveHire: return "Exclusive Hire"
         }

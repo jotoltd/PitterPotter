@@ -6,6 +6,8 @@ struct DashboardOverviewView: View {
     @EnvironmentObject var toastManager: ToastManager
     @State private var giftCards: [GiftCard] = []
     @State private var showingNewWalkIn = false
+    @State private var showingPartyBooking = false
+    @State private var showingGhostBooking = false
     @State private var showingPaintingScanner = false
 
     private var todayString: String {
@@ -92,6 +94,16 @@ struct DashboardOverviewView: View {
             }
             .sheet(isPresented: $showingNewWalkIn) {
                 NewWalkInView()
+                    .environmentObject(authVM)
+                    .environmentObject(bookingsVM)
+            }
+            .sheet(isPresented: $showingPartyBooking) {
+                PartyBookingView()
+                    .environmentObject(authVM)
+                    .environmentObject(bookingsVM)
+            }
+            .sheet(isPresented: $showingGhostBooking) {
+                GhostBookingView()
                     .environmentObject(authVM)
                     .environmentObject(bookingsVM)
             }

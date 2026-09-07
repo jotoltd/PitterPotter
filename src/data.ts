@@ -123,7 +123,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     imageUrl: '', // This will be mapped to clay_imprint image
     title: 'A Little Impression',
     category: 'imprint',
-    caption: 'Highly popular clay imprint plaque capturing matching hand and footprints.'
+    caption: 'Highly popular baby print plaque capturing matching hand and footprints.'
   },
   {
     id: 'g4',

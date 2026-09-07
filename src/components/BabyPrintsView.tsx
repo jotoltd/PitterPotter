@@ -23,7 +23,7 @@ interface GalleryItem {
 
 function getDefaultGalleryItems(): GalleryItem[] {
   return [
-    { key: 'gallery_main', src: getCachedContent('baby-prints', 'gallery_main', Images.clayImprint), alt: 'Baby clay imprint keepsakes' },
+    { key: 'gallery_main', src: getCachedContent('baby-prints', 'gallery_main', Images.clayImprint), alt: 'Baby prints keepsakes' },
     { key: 'gallery_1', src: getCachedContent('baby-prints', 'gallery_1', Images.productGallery[0]), alt: 'Baby print example 2' },
     { key: 'gallery_2', src: getCachedContent('baby-prints', 'gallery_2', Images.productGallery[1]), alt: 'Baby print example 3' },
     { key: 'gallery_3', src: getCachedContent('baby-prints', 'gallery_3', Images.productGallery[2]), alt: 'Baby print example 4' },
@@ -70,7 +70,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
           sortedKeys.map((key, index) => ({
             key,
             src: getCachedContent('baby-prints', key, values[key] || getDefaultSrc(index)),
-            alt: index === 0 ? 'Baby clay imprint keepsakes' : `Baby print example ${index + 1}`,
+            alt: index === 0 ? 'Baby prints keepsakes' : `Baby print example ${index + 1}`,
           }))
         );
       });
@@ -180,7 +180,7 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
           contentKey="hero_image"
           page="baby-prints"
           defaultSrc={Images.clayImprint}
-          alt="Baby clay imprint keepsakes"
+          alt="Baby prints keepsakes"
           className="w-full h-full object-cover"
           adminMode={adminMode}
         />

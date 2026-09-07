@@ -289,7 +289,7 @@ struct BookingsListBelowCalendar: View {
         case painting = "Painting"
         case birthdayParty = "Birthday Party"
         case babyShowerHen = "Baby Shower / Hen"
-        case clayImprints = "Clay Imprints"
+        case clayImprints = "Baby Prints"
         case corporate = "Corporate"
         case exclusiveHire = "Exclusive Hire"
 
