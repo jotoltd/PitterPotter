@@ -294,12 +294,6 @@ Deno.serve(async (req) => {
     const isSuperAdmin = staff.role === 'super_admin';
 
     if (action === 'list') {
-      if (!isSuperAdmin) {
-        return new Response(JSON.stringify({ error: 'Forbidden' }), {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
       const { data, error: listError } = await supabase
         .from('gift_cards')
         .select('*')
@@ -514,12 +508,6 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'updateStatus') {
-      if (!isSuperAdmin) {
-        return new Response(JSON.stringify({ error: 'Forbidden' }), {
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
       if (!isNonEmptyString(id) || !isOneOf(status, ['active', 'redeemed', 'expired', 'cancelled', 'disabled'] as const)) {
         return new Response(JSON.stringify({ error: 'Invalid id or status' }), {
           status: 400,
