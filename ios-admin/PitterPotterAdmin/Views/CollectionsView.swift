@@ -127,8 +127,12 @@ struct CollectionsView: View {
                         Button {
                             showAddProfile = true
                         } label: {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundStyle(PPBrand.charcoal)
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus")
+                                Text("Add Profile")
+                            }
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(PPBrand.charcoal)
                         }
                     }
                 }
