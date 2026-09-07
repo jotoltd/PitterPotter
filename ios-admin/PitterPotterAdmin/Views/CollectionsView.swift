@@ -425,6 +425,8 @@ struct CollapsibleDateSection: View {
     let onTap: (Booking) -> Void
     let onMove: (Booking, CollectionStage) -> Void
     var onAddPhoto: ((Booking) -> Void)? = nil
+    @State private var showingReadyPrompt = false
+    @State private var pendingMoveBooking: Booking?
 
     private var photoCount: Int {
         bookings.reduce(0) { $0 + ($1.photos?.count ?? 0) }
@@ -489,9 +491,10 @@ struct CollapsibleDateSection: View {
                             .contextMenu {
                                 if stage == .painted {
                                     Button {
-                                        onMove(booking, .ready)
+                                        showingReadyPrompt = true
+                                        pendingMoveBooking = booking
                                     } label: {
-                                        Label("Move to Ready", systemImage: "arrow.right.circle.fill")
+                                        Label("Ready for Collection", systemImage: "checkmark.circle.fill")
                                     }
                                 } else if stage == .ready {
                                     Button {
@@ -502,13 +505,13 @@ struct CollapsibleDateSection: View {
                                     Button {
                                         onMove(booking, .painted)
                                     } label: {
-                                        Label("Back to Painted", systemImage: "arrow.left.circle")
+                                        Label("Back to Painted", systemImage: "arrow.uturn.left.circle")
                                     }
                                 } else if stage == .collected {
                                     Button {
                                         onMove(booking, .ready)
                                     } label: {
-                                        Label("Back to Ready", systemImage: "arrow.left.circle")
+                                        Label("Back to Ready", systemImage: "arrow.uturn.left.circle")
                                     }
                                 }
                             }
@@ -522,6 +525,23 @@ struct CollapsibleDateSection: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(PPBrand.charcoal.opacity(0.1), lineWidth: 1))
         .animation(.easeInOut(duration: 0.2), value: isExpanded)
+        .alert("Ready for Collection?", isPresented: $showingReadyPrompt) {
+            Button("Mark Ready") {
+                if let booking = pendingMoveBooking {
+                    onMove(booking, .ready)
+                }
+                pendingMoveBooking = nil
+            }
+            Button("Cancel", role: .cancel) {
+                pendingMoveBooking = nil
+            }
+        } message: {
+            if let booking = pendingMoveBooking {
+                Text("Mark \(booking.name)'s item as ready for collection? This will notify the customer.")
+            } else {
+                Text("Mark this item as ready for collection?")
+            }
+        }
     }
 }
 
@@ -537,6 +557,7 @@ struct CollectionDetailSheet: View {
     @State private var isUploading = false
     @State private var uploadError: String?
     @State private var showMoveSheet = false
+    @State private var showReadyPrompt = false
     @State private var notificationStatus: String?
     @State private var isSendingNotification = false
 
@@ -576,6 +597,14 @@ struct CollectionDetailSheet: View {
                     }
                 }
                 Button("Cancel", role: .cancel) {}
+            }
+            .alert("Ready for Collection?", isPresented: $showReadyPrompt) {
+                Button("Mark Ready") {
+                    moveBooking(to: .ready)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Mark \(booking.name)'s item as ready for collection? This will notify the customer.")
             }
         }
     }
@@ -641,6 +670,23 @@ struct CollectionDetailSheet: View {
 
     private var actionButtons: some View {
         VStack(spacing: 8) {
+            if stage == .painted, authVM.staff != nil {
+                Button {
+                    showReadyPrompt = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text("Ready for Collection")
+                    }
+                    .font(PPBrand.bodyFont.bold())
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(PPBrand.charcoal)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+            }
+
             if stage == .ready, authVM.staff != nil {
                 Button {
                     moveBooking(to: .collected)
