@@ -3139,6 +3139,16 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                       {inq.source === 'walk-in' && <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold">Walk-in</span>}
                       {tablePlanEnabled && inq.tableId && <span className="px-1.5 py-0.5 bg-[#DBE7E4] text-[#1B2D3C] rounded-full text-[10px] font-bold">{inq.tableId}</span>}
                     </div>
+                    {inq.photos && inq.photos.length > 0 && (
+                      <div className="flex gap-1 mt-1.5" onClick={(e) => e.stopPropagation()}>
+                        {inq.photos.slice(0, 5).map((url, i) => (
+                          <img key={i} src={url} alt={`Photo ${i + 1}`} className="w-12 h-12 object-cover rounded-md border border-[#1B2D3C]/10 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setDrawerBooking(inq)} />
+                        ))}
+                        {inq.photos.length > 5 && (
+                          <div className="w-12 h-12 rounded-md border border-[#1B2D3C]/10 bg-[#D6E2E9] flex items-center justify-center text-[10px] font-black text-[#1B2D3C]/60">+{inq.photos.length - 5}</div>
+                        )}
+                      </div>
+                    )}
                     {canUpdateStatus && inq.status !== 'cancelled' && (
                       <div className="flex gap-2 pt-1" onClick={e => e.stopPropagation()}>
                         {inq.status !== 'confirmed' && (
@@ -3229,10 +3239,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                             {SESSION_LABELS[inq.sessionType] ?? inq.sessionType}
                           </span>
                           {inq.photos && inq.photos.length > 0 && (
-                            <span className="inline-flex items-center gap-0.5 ml-1 text-[#1B2D3C]/50" title={`${inq.photos.length} photo${inq.photos.length > 1 ? 's' : ''}`}>
-                              <Camera className="w-3 h-3" />
-                              <span className="text-[9px] font-bold">{inq.photos.length}</span>
-                            </span>
+                            <div className="flex gap-1 mt-1">
+                              {inq.photos.slice(0, 3).map((url, i) => (
+                                <img key={i} src={url} alt={`Photo ${i + 1}`} className="w-10 h-10 object-cover rounded-md border border-[#1B2D3C]/10" />
+                              ))}
+                              {inq.photos.length > 3 && (
+                                <div className="w-10 h-10 rounded-md border border-[#1B2D3C]/10 bg-[#D6E2E9] flex items-center justify-center text-[9px] font-black text-[#1B2D3C]/60">+{inq.photos.length - 3}</div>
+                              )}
+                            </div>
                           )}
                         </td>
                         <td className="px-4 py-3">
