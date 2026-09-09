@@ -4,7 +4,7 @@ import ConfirmDialog from './ConfirmDialog';
 import FloorPlanView from './FloorPlanView';
 import WimbledonFloorPlan, { findAvailableTable, findMultipleTables } from './WimbledonFloorPlan';
 import PutneyFloorPlan, { findAvailablePutneyTable, findMultiplePutneyTables } from './PutneyFloorPlan';
-import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock, Camera, ScanLine, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock, Camera, ScanLine, AlertCircle, Package, Check } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO, getDay } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow, EmailTemplate, SMSTemplate, EmailLog } from '../types';
@@ -5716,6 +5716,44 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   <XCircle className="w-4 h-4" /> Cancel Booking
                 </button>
               )}
+              {/* Collection stage actions for completed bookings */}
+              {canEdit && drawerBooking.status === 'completed' && (() => {
+                const stage = drawerBooking.collectionStatus ?? 'painted';
+                return (
+                  <>
+                    {stage === 'painted' && (
+                      <button onClick={async () => {
+                        const updated = { ...drawerBooking, collectionStatus: 'ready' as CollectionStage };
+                        setDrawerBooking(updated);
+                        await handleSetCollectionStage(drawerBooking, 'ready');
+                      }}
+                        className="w-full px-3 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-black rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2">
+                        <Package className="w-4 h-4" /> Mark as Ready to Collect
+                      </button>
+                    )}
+                    {stage === 'ready' && (
+                      <button onClick={async () => {
+                        const updated = { ...drawerBooking, collectionStatus: 'collected' as CollectionStage, collectedAt: new Date().toISOString() };
+                        setDrawerBooking(updated);
+                        await handleSetCollectionStage(drawerBooking, 'collected');
+                      }}
+                        className="w-full px-3 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2">
+                        <Check className="w-4 h-4" /> Mark as Collected
+                      </button>
+                    )}
+                    {stage === 'collected' && (
+                      <button onClick={async () => {
+                        const updated = { ...drawerBooking, collectionStatus: 'ready' as CollectionStage, collectedAt: undefined };
+                        setDrawerBooking(updated);
+                        await handleSetCollectionStage(drawerBooking, 'ready');
+                      }}
+                        className="w-full px-3 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-black rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2">
+                        <ChevronDown className="w-4 h-4" /> Move Back to Ready
+                      </button>
+                    )}
+                  </>
+                );
+              })()}
               {canDelete && (
                 <button onClick={() => { deleteInquiry(drawerBooking.id); setDrawerBooking(null); }}
                   className="w-full px-3 py-2 text-[10px] font-bold text-red-400 hover:text-red-600 transition-all cursor-pointer text-center">
