@@ -100,6 +100,18 @@ function BookingCard({
           </div>
         </div>
       </div>
+      {booking.photos && booking.photos.length > 0 && (
+        <div className="flex gap-1 mt-2 flex-wrap">
+          {booking.photos.slice(0, 4).map((url, i) => (
+            <img key={i} src={url} alt={`Photo ${i + 1}`} className="w-10 h-10 object-cover rounded-md border border-[#1B2D3C]/10" />
+          ))}
+          {booking.photos.length > 4 && (
+            <div className="w-10 h-10 rounded-md border border-[#1B2D3C]/10 bg-[#D6E2E9] flex items-center justify-center text-[9px] font-black text-[#1B2D3C]/60">
+              +{booking.photos.length - 4}
+            </div>
+          )}
+        </div>
+      )}
       {canUpdate && (
         <div className="flex items-center gap-1.5 mt-2.5">
           {column !== 'bookings' && (
@@ -215,6 +227,16 @@ function BookingDetailModal({
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50">Table</p>
               <p className="text-sm font-bold text-[#1B2D3C]">{booking.tableId}</p>
+            </div>
+          )}
+          {booking.photos && booking.photos.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-2">Photos</p>
+              <div className="grid grid-cols-3 gap-2">
+                {booking.photos.map((url, i) => (
+                  <img key={i} src={url} alt={`Photo ${i + 1}`} className="w-full aspect-square object-cover rounded-lg border border-[#1B2D3C]/10" />
+                ))}
+              </div>
             </div>
           )}
         </div>
