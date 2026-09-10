@@ -1,13 +1,41 @@
 import { useState } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
+export interface PhotoTagData {
+  label?: string;
+  status: string;
+  x: number;
+  y: number;
+}
+
 interface ImageModalProps {
   images: string[];
   initialIndex: number;
   onClose: () => void;
+  photoTags?: Record<number, PhotoTagData[]>;
 }
 
-export default function ImageModal({ images, initialIndex, onClose }: ImageModalProps) {
+const TAG_COLORS: Record<string, string> = {
+  painted: 'bg-blue-500 text-white',
+  glazing: 'bg-purple-500 text-white',
+  firing: 'bg-orange-500 text-white',
+  ready: 'bg-emerald-500 text-white',
+  needs_touchup: 'bg-red-500 text-white',
+};
+
+const TAG_LABELS: Record<string, string> = {
+  painted: 'Painted',
+  glazing: 'Glazing',
+  firing: 'Firing',
+  ready: 'Ready',
+  needs_touchup: 'Touch-up',
+};
+
+function getTagColor(status: string): string {
+  return TAG_COLORS[status] || 'bg-white/90 text-[#1B2D3C]';
+}
+
+export default function ImageModal({ images, initialIndex, onClose, photoTags }: ImageModalProps) {
   const [index, setIndex] = useState(initialIndex);
 
   const prev = (e: React.MouseEvent) => {
@@ -19,6 +47,8 @@ export default function ImageModal({ images, initialIndex, onClose }: ImageModal
     e.stopPropagation();
     setIndex(i => (i + 1) % images.length);
   };
+
+  const tags = photoTags?.[index] || [];
 
   return (
     <div
@@ -49,12 +79,26 @@ export default function ImageModal({ images, initialIndex, onClose }: ImageModal
         </>
       )}
 
-      <img
-        src={images[index]}
-        alt={`Photo ${index + 1}`}
-        className="max-w-full max-h-full object-contain rounded-lg"
-        onClick={(e) => e.stopPropagation()}
-      />
+      <div className="relative max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
+        <img
+          src={images[index]}
+          alt={`Photo ${index + 1}`}
+          className="max-w-full max-h-full object-contain rounded-lg"
+        />
+        {tags.map((t, ti) => (
+          <div
+            key={ti}
+            className="absolute flex items-center gap-0.5"
+            style={{ left: `${t.x}%`, top: `${t.y}%`, transform: 'translate(-50%, -50%)' }}
+          >
+            <span
+              className={`px-2 py-1 text-xs font-black uppercase tracking-wider rounded-full flex items-center gap-0.5 whitespace-nowrap shadow-lg ${getTagColor(t.status)}`}
+            >
+              {t.label ? `${TAG_LABELS[t.status] || t.status} - ${t.label}` : (TAG_LABELS[t.status] || t.status)}
+            </span>
+          </div>
+        ))}
+      </div>
 
       {images.length > 1 && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-white/10 rounded-full text-white text-xs font-bold">

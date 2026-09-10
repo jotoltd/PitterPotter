@@ -312,6 +312,7 @@ export default function CollectionsTab({
   const [dateQuery, setDateQuery] = useState('');
   const [modalImages, setModalImages] = useState<string[] | null>(null);
   const [modalIndex, setModalIndex] = useState(0);
+  const [modalPhotoTags, setModalPhotoTags] = useState<Record<number, { label?: string; status: string; x: number; y: number }[]> | undefined>(undefined);
   const [studioFilter, setStudioFilter] = useState<'all' | 'Putney' | 'Wimbledon'>('all');
   const [needsPhotoOnly, setNeedsPhotoOnly] = useState(false);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
@@ -717,7 +718,7 @@ export default function CollectionsTab({
               onSetPhotoTag={onSetPhotoTag}
               onAddPhotoTag={onAddPhotoTag}
               onRemovePhotoTag={onRemovePhotoTag}
-              onOpenImage={(images, index) => { setModalImages(images); setModalIndex(index); }}
+              onOpenImage={(images, index) => { setModalImages(images); setModalIndex(index); setModalPhotoTags(b.photoTags); }}
             />
           ))}
         </div>
@@ -774,7 +775,7 @@ export default function CollectionsTab({
                         onSetPhotoTag={onSetPhotoTag}
                         onAddPhotoTag={onAddPhotoTag}
                         onRemovePhotoTag={onRemovePhotoTag}
-                        onOpenImage={(images, index) => { setModalImages(images); setModalIndex(index); }}
+                        onOpenImage={(images, index) => { setModalImages(images); setModalIndex(index); setModalPhotoTags(b.photoTags); }}
                       />
                     ))}
                   </div>
@@ -789,7 +790,8 @@ export default function CollectionsTab({
         <ImageModal
           images={modalImages}
           initialIndex={modalIndex}
-          onClose={() => setModalImages(null)}
+          onClose={() => { setModalImages(null); setModalPhotoTags(undefined); }}
+          photoTags={modalPhotoTags}
         />
       )}
 
@@ -954,10 +956,33 @@ export default function CollectionsTab({
 
             {scannedBooking.photos && scannedBooking.photos.length > 0 ? (
               <div className="p-4">
-                <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                  {scannedBooking.photos.map((url, i) => (
-                    <img key={i} src={url} alt={`Photo ${i + 1}`} className="w-full aspect-square object-cover rounded-lg" />
-                  ))}
+                <div className="grid grid-cols-1 gap-3 max-h-[60vh] overflow-y-auto">
+                  {scannedBooking.photos.map((url, i) => {
+                    const tags = scannedBooking.photoTags?.[i] || [];
+                    return (
+                      <div
+                        key={i}
+                        className="relative rounded-lg overflow-hidden border border-[#1B2D3C]/15 cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => { setModalImages(scannedBooking.photos!); setModalIndex(i); setModalPhotoTags(scannedBooking.photoTags); }}
+                      >
+                        <img src={url} alt={`Photo ${i + 1}`} className="w-full max-h-48 object-contain bg-[#F8FAFA]" />
+                        {tags.map((t, ti) => (
+                          <div
+                            key={ti}
+                            className="absolute flex items-center gap-0.5"
+                            style={{ left: `${t.x}%`, top: `${t.y}%`, transform: 'translate(-50%, -50%)' }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span
+                              className={`px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full whitespace-nowrap shadow-md ${getTagColor(t.status)}`}
+                            >
+                              {t.label ? `${TAG_LABELS[t.status] || t.status} - ${t.label}` : (TAG_LABELS[t.status] || t.status)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ) : (

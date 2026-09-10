@@ -138,6 +138,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [modalImages, setModalImages] = useState<string[] | null>(null);
   const [modalIndex, setModalIndex] = useState(0);
+  const [modalPhotoTags, setModalPhotoTags] = useState<Record<number, { label?: string; status: string; x: number; y: number }[]> | undefined>(undefined);
   const [drawerTagMode, setDrawerTagMode] = useState(false);
   const [drawerTagPopover, setDrawerTagPopover] = useState<{ photoIndex: number; x: number; y: number } | null>(null);
   const [pageSettings, setPageSettings] = useState<{ page_key: string; enabled: boolean }[]>([]);
@@ -3972,7 +3973,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               {editingBooking.photos && editingBooking.photos.length > 0 ? (
                 <div className="grid grid-cols-2 gap-2">
                   {editingBooking.photos.map((url, i) => (
-                    <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20 cursor-pointer" onClick={() => { setModalImages(editingBooking.photos!); setModalIndex(i); }}>
+                    <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/20 cursor-pointer" onClick={() => { setModalImages(editingBooking.photos!); setModalIndex(i); setModalPhotoTags(editingBooking.photoTags); }}>
                       <img src={url} alt={`Painting ${i + 1}`} className="w-full h-full object-cover" />
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDeletePhoto(i); }}
@@ -5373,7 +5374,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         <ImageModal
           images={modalImages}
           initialIndex={modalIndex}
-          onClose={() => setModalImages(null)}
+          onClose={() => { setModalImages(null); setModalPhotoTags(undefined); }}
+          photoTags={modalPhotoTags}
         />
       )}
 
@@ -5547,7 +5549,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                               const y = ((e.clientY - rect.top) / rect.height) * 100;
                               setDrawerTagPopover({ photoIndex: i, x, y });
                             } else {
-                              setModalImages(drawerBooking.photos!); setModalIndex(i);
+                              setModalImages(drawerBooking.photos!); setModalIndex(i); setModalPhotoTags(drawerBooking.photoTags);
                             }
                           }}
                         >
