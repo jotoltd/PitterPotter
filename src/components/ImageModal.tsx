@@ -52,27 +52,27 @@ export default function ImageModal({ images, initialIndex, onClose, photoTags }:
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+        className="fixed top-4 right-4 z-[210] p-3 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-lg"
       >
-        <X className="w-5 h-5" />
+        <X className="w-6 h-6" />
       </button>
 
       {images.length > 1 && (
         <>
           <button
             onClick={prev}
-            className="absolute left-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+            className="fixed left-4 top-1/2 -translate-y-1/2 z-[210] p-3 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-lg"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
           <button
             onClick={next}
-            className="absolute right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+            className="fixed right-4 top-1/2 -translate-y-1/2 z-[210] p-3 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer shadow-lg"
           >
             <ChevronRight className="w-6 h-6" />
           </button>
@@ -101,7 +101,7 @@ export default function ImageModal({ images, initialIndex, onClose, photoTags }:
       </div>
 
       {images.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-white/10 rounded-full text-white text-xs font-bold">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[210] px-3 py-1.5 bg-white/20 rounded-full text-white text-xs font-bold">
           {index + 1} / {images.length}
         </div>
       )}
