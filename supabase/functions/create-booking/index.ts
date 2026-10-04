@@ -2,6 +2,7 @@ import { createClient } from 'supabase';
 import { isObject, isNonEmptyString, isInteger } from '../_shared/validate.ts';
 import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 import { computeCapacity, StudioName } from '../_shared/capacity.ts';
+import { allocateAndApply, persistAllocation } from '../_shared/allocation.ts';
 import { createNotification } from '../_shared/notifications.ts';
 
 const corsHeaders = {
@@ -91,6 +92,8 @@ Deno.serve(async (req) => {
       booking.date,
       booking.time,
       booking.sessionType,
+      undefined,
+      booking.paintersCount,
     );
 
     if (capacity.conflict === 'party_session_exists') {
@@ -136,13 +139,42 @@ Deno.serve(async (req) => {
       management_token: managementToken,
     };
 
-    const { error: insertError } = await supabase.from('bookings').insert(bookingRow);
-    if (insertError) {
+    const { data: insertedRows, error: insertError } = await supabase.from('bookings').insert(bookingRow).select('id');
+    if (insertError || !insertedRows || !insertedRows.length) {
       console.error('Failed to create booking:', insertError);
       return new Response(JSON.stringify({ error: 'Failed to create booking' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+    const bookingPrimaryId = insertedRows[0].id as string;
+
+    // Wimbledon resource allocation: store the physical tables/configurations this booking occupies.
+    if (booking.studio === 'Wimbledon' && status !== 'cancelled') {
+      try {
+        const allocation = await allocateAndApply(supabase, {
+          studio: 'Wimbledon',
+          date: booking.date,
+          time: booking.time,
+          paintersCount: booking.paintersCount,
+          sessionType: booking.sessionType,
+        });
+        if (!allocation.success) {
+          await supabase.from('bookings').delete().eq('id', bookingPrimaryId);
+          return new Response(JSON.stringify({ error: allocation.reason || 'No available table configuration for this booking' }), {
+            status: 409,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        await persistAllocation(supabase, bookingPrimaryId, allocation);
+      } catch (allocErr) {
+        console.error('Allocation error during create booking:', allocErr);
+        await supabase.from('bookings').delete().eq('id', bookingPrimaryId);
+        return new Response(JSON.stringify({ error: 'Failed to allocate tables for this booking' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     // Create admin notification for new online booking

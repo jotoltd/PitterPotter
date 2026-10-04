@@ -17,19 +17,19 @@ struct CreateGiftCardView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("Amount").font(.system(size: 13, weight: .bold)).foregroundStyle(PPBrand.charcoal)) {
+                Section(header: Text("Amount").font(AppFont.body(13, weight: .bold)).foregroundStyle(PPBrand.charcoal)) {
                     HStack {
                         Text("£")
-                            .font(.system(size: 20, weight: .heavy))
+                            .font(AppFont.heading(20))
                             .foregroundStyle(PPBrand.charcoal)
                         TextField("Amount", text: $amount)
                             .keyboardType(.decimalPad)
-                            .font(.system(size: 20, weight: .heavy))
+                            .font(AppFont.heading(20))
                             .foregroundStyle(PPBrand.charcoal)
                     }
                 }
 
-                Section(header: Text("Recipient").font(.system(size: 13, weight: .bold)).foregroundStyle(PPBrand.charcoal)) {
+                Section(header: Text("Recipient").font(AppFont.body(13, weight: .bold)).foregroundStyle(PPBrand.charcoal)) {
                     TextField("Name", text: $recipientName)
                     TextField("Email", text: $recipientEmail)
                         .keyboardType(.emailAddress)
@@ -37,12 +37,12 @@ struct CreateGiftCardView: View {
                         .disabled(isPhysical)
                     if isPhysical {
                         Text("Email skipped for physical cards")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(AppFont.body(12, weight: .medium))
                             .foregroundStyle(PPBrand.clay300)
                     }
                 }
 
-                Section(header: Text("Sender").font(.system(size: 13, weight: .bold)).foregroundStyle(PPBrand.charcoal)) {
+                Section(header: Text("Sender").font(AppFont.body(13, weight: .bold)).foregroundStyle(PPBrand.charcoal)) {
                     TextField("Sender Name", text: $senderName)
                     TextField("Message", text: $message, axis: .vertical)
                         .lineLimit(2...4)
@@ -60,7 +60,7 @@ struct CreateGiftCardView: View {
                         HStack {
                             if isCreating { ProgressView() }
                             Text(isCreating ? "Creating..." : "Create Gift Card")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(AppFont.body(16, weight: .bold))
                         }
                         .frame(maxWidth: .infinity)
                         .foregroundColor(PPBrand.charcoal)
@@ -69,7 +69,7 @@ struct CreateGiftCardView: View {
                 }
 
                 if let card = createdCard {
-                    Section(header: Text("Created Gift Card").font(.system(size: 13, weight: .bold)).foregroundStyle(PPBrand.charcoal)) {
+                    Section(header: Text("Created Gift Card").font(AppFont.body(13, weight: .bold)).foregroundStyle(PPBrand.charcoal)) {
                         VStack(spacing: 16) {
                             if let qrImage = generateQRCode(from: card.code) {
                                 Image(uiImage: qrImage)
@@ -88,12 +88,12 @@ struct CreateGiftCardView: View {
                                 .foregroundStyle(PPBrand.charcoal)
 
                             Text("£\(String(format: "%.2f", card.amount))")
-                                .font(.system(size: 28, weight: .heavy))
+                                .font(AppFont.heading(28))
                                 .foregroundStyle(PPBrand.charcoal)
 
                             if isPhysical {
                                 Text("Print this QR code for the physical card")
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(AppFont.body(13, weight: .medium))
                                     .foregroundStyle(PPBrand.clay300)
                             }
 
@@ -102,9 +102,9 @@ struct CreateGiftCardView: View {
                             } label: {
                                 HStack(spacing: 6) {
                                     Image(systemName: "square.and.arrow.up")
-                                        .font(.system(size: 14, weight: .semibold))
+                                        .font(AppFont.body(14, weight: .medium))
                                     Text("Share / Print")
-                                        .font(.system(size: 14, weight: .bold))
+                                        .font(AppFont.body(14, weight: .bold))
                                 }
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 24)

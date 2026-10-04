@@ -52,13 +52,13 @@ struct PaintingScannerView: View {
             Spacer()
             VStack(spacing: 12) {
                 Image(systemName: "qrcode.viewfinder")
-                    .font(.system(size: 40))
+                    .font(AppFont.body(40))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Scan QR Code")
-                    .font(.system(size: 16, weight: .heavy))
+                    .font(AppFont.heading(16))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Point the camera at any QR code — collection, booking, or gift card")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(AppFont.body(12, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.6))
                     .multilineTextAlignment(.center)
             }
@@ -70,59 +70,67 @@ struct PaintingScannerView: View {
     }
 
     private func scannedResultView(_ booking: Booking) -> some View {
-        VStack(spacing: 16) {
-            Spacer()
-
+        ScrollView {
             VStack(spacing: 16) {
-                // Photo
-                if let photos = booking.photos, !photos.isEmpty, let url = URL(string: photos[0]) {
-                    CachedAsyncImage(url: url, contentMode: .fit)
+                if let photo = booking.photos?.first, let url = URL(string: photo) {
+                    CachedAsyncImage(url: url, contentMode: .fit, maxDimension: 1000)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 200)
+                        .frame(height: 240)
+                        .background(PPBrand.clay100.opacity(0.35))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(.horizontal, 24)
+                        .padding(.top, 24)
                 } else {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(PPBrand.clay100.opacity(0.5))
-                        .frame(height: 120)
-                        .overlay(
-                            VStack(spacing: 6) {
-                                Image(systemName: "camera")
-                                    .font(.system(size: 28))
-                                    .foregroundStyle(PPBrand.charcoal.opacity(0.3))
-                                Text("No photos")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(PPBrand.charcoal.opacity(0.4))
-                            }
-                        )
-                }
-
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 36))
-                    .foregroundStyle(Color.green)
-
-                Text(booking.name)
-                    .font(.system(size: 20, weight: .heavy))
-                    .foregroundStyle(PPBrand.charcoal)
-
-                VStack(spacing: 6) {
-                    HStack(spacing: 16) {
-                        Label("\(booking.paintersCount)", systemImage: "person.2.fill")
-                        Label(booking.time, systemImage: "clock.fill")
-                        Label(booking.studio, systemImage: "mappin.fill")
+                    VStack(spacing: 6) {
+                        Image(systemName: "camera")
+                            .font(AppFont.body(28))
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.3))
+                        Text("No photo")
+                            .font(AppFont.body(12, weight: .medium))
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.4))
                     }
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(PPBrand.charcoal.opacity(0.6))
-
-                    Text(booking.date)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 160)
+                    .background(PPBrand.clay100.opacity(0.5))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(.horizontal, 24)
+                    .padding(.top, 24)
                 }
 
+                HStack(spacing: 8) {
+                    Image(systemName: "mappin.circle.fill")
+                        .font(AppFont.body(16, weight: .bold))
+                    Text("Location")
+                        .font(AppFont.body(12, weight: .bold))
+                    Spacer()
+                    Text(bookingLocation(booking) ?? "Not set")
+                        .font(AppFont.body(14, weight: .bold))
+                }
+                .foregroundStyle(PPBrand.charcoal)
+                .padding(14)
+                .background(PPBrand.sage)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal, 24)
+
+                // Info card
+                VStack(alignment: .leading, spacing: 10) {
+                    infoRow("Name", booking.name, icon: "person.fill")
+                    infoRow("Date", PPDateDisplay.date(booking.date), icon: "calendar")
+                    infoRow("Phone", booking.phone.flatMap { $0.isEmpty ? nil : $0 } ?? "Not provided", icon: "phone.fill")
+                    infoRow("Email", booking.email.flatMap { $0.isEmpty ? nil : $0 } ?? "Not provided", icon: "envelope.fill")
+                    infoRow("Tags", bookingTagSummary(booking) ?? "No tags added", icon: "checkmark.circle.fill")
+                }
+                .padding(16)
+                .background(PPBrand.sage.opacity(0.5))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 24)
+
+                // Action button
                 if booking.collectionStatus == CollectionStage.collected.rawValue {
                     Text("Already collected")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(AppFont.body(14, weight: .bold))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
-                        .padding(.top, 8)
+                        .padding(.horizontal, 24)
                 } else if booking.status == "completed" {
                     Button {
                         markCollected(booking)
@@ -136,7 +144,7 @@ struct PaintingScannerView: View {
                             }
                             Text("Mark as Collected")
                         }
-                        .font(.system(size: 16, weight: .bold))
+                        .font(AppFont.body(16, weight: .bold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(isMarking ? Color.green.opacity(0.6) : Color.green)
@@ -144,12 +152,12 @@ struct PaintingScannerView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .disabled(isMarking)
-                    .padding(.top, 8)
+                    .padding(.horizontal, 24)
                 } else {
-                    Text("Status: \(booking.status.capitalized)")
-                        .font(.system(size: 14, weight: .bold))
+                    Text("Status: \(booking.status.capitalized) — not ready to collect")
+                        .font(AppFont.body(14, weight: .bold))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
-                        .padding(.top, 8)
+                        .padding(.horizontal, 24)
                 }
 
                 Button {
@@ -158,19 +166,78 @@ struct PaintingScannerView: View {
                     scanError = nil
                 } label: {
                     Text("Scan Another")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(AppFont.body(14, weight: .bold))
                         .foregroundStyle(PPBrand.charcoal)
+                        .padding(.horizontal, 24)
                 }
                 .padding(.top, 4)
+                .padding(.bottom, 24)
             }
-            .padding(24)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: Color.black.opacity(0.1), radius: 8, y: 4)
-            .padding(.horizontal, 24)
-
-            Spacer()
         }
+    }
+
+    private func infoRow(_ label: String, _ value: String, icon: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(AppFont.body(12))
+                .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                .frame(width: 20)
+            Text(label)
+                .font(AppFont.body(11, weight: .bold))
+                .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                .frame(width: 80, alignment: .leading)
+            Text(value)
+                .font(AppFont.body(12, weight: .semibold))
+                .foregroundStyle(PPBrand.charcoal)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func sessionLabel(_ session: String) -> String {
+        switch session {
+        case "painting": return "Painting"
+        case "birthday-party": return "Birthday Party"
+        case "baby-shower-hen": return "Baby Shower / Hen"
+        case "clay-imprints": return "Baby Prints"
+        case "corporate": return "Corporate"
+        case "exclusive-hire": return "Exclusive Hire"
+        default: return session
+        }
+    }
+
+    private func collectionStageLabel(_ booking: Booking) -> String? {
+        guard let status = booking.collectionStatus else { return nil }
+        switch status {
+        case CollectionStage.painted.rawValue: return "Painted"
+        case CollectionStage.ready.rawValue: return "Ready to Collect"
+        case CollectionStage.collected.rawValue: return "Collected"
+        default: return status.capitalized
+        }
+    }
+
+    private func bookingLocation(_ booking: Booking) -> String? {
+        guard let photoTags = booking.photoTags else { return nil }
+        for key in photoTags.keys.sorted() {
+            if let location = photoTags[key]?.first(where: { $0.status == "location" })?.label, !location.isEmpty {
+                return location
+            }
+        }
+        return nil
+    }
+
+    private func bookingTagSummary(_ booking: Booking) -> String? {
+        guard let photoTags = booking.photoTags else { return nil }
+        var counts: [String: Int] = [:]
+        for tag in photoTags.values.flatMap({ $0 }) where tag.status != "location" {
+            let label = tag.label.flatMap { $0.isEmpty ? nil : $0 } ?? tag.status.replacingOccurrences(of: "_", with: " ").capitalized
+            counts[label, default: 0] += 1
+        }
+        guard !counts.isEmpty else { return nil }
+        return counts.keys.sorted().map { counts[$0] == 1 ? $0 : "\(counts[$0]!) × \($0)" }.joined(separator: ", ")
+    }
+
+    private func tagLabel(_ tag: PhotoTag) -> String {
+        tag.label.flatMap { $0.isEmpty ? nil : $0 } ?? tag.status.replacingOccurrences(of: "_", with: " ").capitalized
     }
 
     private func errorView(_ error: String) -> some View {
@@ -178,10 +245,10 @@ struct PaintingScannerView: View {
             Spacer()
             VStack(spacing: 12) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 40))
+                    .font(AppFont.body(40))
                     .foregroundStyle(Color.orange)
                 Text(error)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFont.body(14, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal)
                     .multilineTextAlignment(.center)
                 Button {
@@ -189,7 +256,7 @@ struct PaintingScannerView: View {
                     scannedCode = nil
                 } label: {
                     Text("Try Again")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(AppFont.body(14, weight: .bold))
                         .foregroundStyle(PPBrand.charcoal)
                 }
             }
@@ -219,14 +286,20 @@ struct PaintingScannerView: View {
             return
         }
 
-        guard let booking = bookingsVM.bookings.first(where: { $0.managementToken == token }) else {
-            scanError = "No booking found for this QR code"
-            Haptics.error()
-            return
+        Task {
+            if let staff = authVM.staff {
+                await bookingsVM.loadBookings(staff: staff)
+            }
+            await MainActor.run {
+                guard let booking = bookingsVM.bookings.first(where: { $0.managementToken == token }) else {
+                    scanError = "No booking found for this QR code"
+                    Haptics.error()
+                    return
+                }
+                scannedBooking = booking
+                Haptics.success()
+            }
         }
-
-        scannedBooking = booking
-        Haptics.success()
     }
 
     private func markCollected(_ booking: Booking) {
@@ -234,17 +307,26 @@ struct PaintingScannerView: View {
         isMarking = true
         Haptics.light()
         Task {
-            var updated = booking
-            updated.collectionStatus = CollectionStage.collected.rawValue
-            try? await APIClient.shared.updateBooking(updated, staff: staff)
-            await MainActor.run {
-                bookingsVM.updateBookingLocally(updated)
-                isMarking = false
-                Haptics.success()
-                scannedBooking = nil
-                scannedCode = nil
-                scanError = nil
-                dismiss()
+            do {
+                try await APIClient.shared.updateCollectionStatus(
+                    bookingId: booking.id, studio: booking.studio,
+                    status: CollectionStage.collected.rawValue, staff: staff
+                )
+                await MainActor.run {
+                    bookingsVM.updateBookingLocally(booking.id, collectionStatus: CollectionStage.collected.rawValue)
+                    isMarking = false
+                    Haptics.success()
+                    scannedBooking = nil
+                    scannedCode = nil
+                    scanError = nil
+                    dismiss()
+                }
+            } catch {
+                await MainActor.run {
+                    isMarking = false
+                    scanError = "Failed to update: \(error.localizedDescription)"
+                    Haptics.error()
+                }
             }
         }
     }

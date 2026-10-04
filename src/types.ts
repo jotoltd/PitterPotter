@@ -37,6 +37,7 @@ export interface BookingInquiry {
   giftCardDiscount?: number;
   finalPrice?: number;
   tableId?: string;
+  resources?: Array<{ table_id?: string; table_configuration_id?: string; configuration_name?: string; blocked_start?: string; blocked_end?: string }>;
   depositAmount?: number;
   finalSeats?: number;
   finalBalance?: number;

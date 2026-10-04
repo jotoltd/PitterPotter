@@ -1,29 +1,22 @@
 // Shared capacity logic for open (painting) and party bookings.
-//
-// Each studio has a "front" area (used for open painting sessions) and a
-// "back" area (used for parties). When no party is booked in a time slot,
-// open painting bookings may use the full studio (front + back). When a
-// party IS booked in that slot, the back tables are reserved for the party
-// and open bookings are limited to the front-tables-only capacity.
-//
-// capacity table session_type values:
-//   'open'            - full studio capacity for open/painting sessions (no party present)
-//   'open_restricted' - front-tables-only capacity for open/painting sessions (party present)
-//   'party'           - capacity for a party booking (birthday / hen / corporate)
+// Wimbledon now uses the resource-based allocation engine in allocation.ts.
+// Putney keeps the previous coarse seat-count model until it is migrated.
 
-export const PARTY_SESSION_TYPES = ['birthday-party', 'baby-shower-hen', 'corporate'];
-
-export type StudioName = 'Putney' | 'Wimbledon';
+import {
+  planAllocation,
+  largestAvailablePartyCapacity,
+  isPartySessionType,
+  loadStudioConfigFromDb,
+  StudioName,
+  PARTY_SESSION_TYPES,
+} from './allocation.ts';
 
 export const DEFAULT_MAX_BOOKINGS: Record<StudioName, number> = { Putney: 99, Wimbledon: 17 };
 export const DEFAULT_RESTRICTED_MAX_BOOKINGS: Record<StudioName, number> = { Putney: 99, Wimbledon: 10 };
 export const DEFAULT_OPEN_CAPACITY: Record<StudioName, number> = { Putney: 32, Wimbledon: 58 };
 export const DEFAULT_OPEN_RESTRICTED_CAPACITY: Record<StudioName, number> = { Putney: 15, Wimbledon: 32 };
 export const DEFAULT_PARTY_CAPACITY: Record<StudioName, number> = { Putney: 20, Wimbledon: 26 };
-
-// How many parties may run at the same time in a studio's back area.
-// Putney has a single party space; Wimbledon's back area seats two.
-export const DEFAULT_MAX_CONCURRENT_PARTIES: Record<StudioName, number> = { Putney: 1, Wimbledon: 2 };
+export const DEFAULT_MAX_CONCURRENT_PARTIES: Record<StudioName, number> = { Putney: 1, Wimbledon: 1 };
 
 // deno-lint-ignore no-explicit-any
 type SupabaseClient = any;
@@ -35,7 +28,8 @@ export interface CapacityResult {
   hasPartyBooking: boolean;
   remainingBookings: number;
   maxBookings: number;
-  conflict?: 'party_session_exists';
+  conflict?: 'party_session_exists' | 'no_valid_configuration';
+  allocationReason?: string;
 }
 
 interface BookingRow {
@@ -43,10 +37,9 @@ interface BookingRow {
   session_type?: string;
   booking_id?: string;
   time?: string;
+  resources?: Array<{ table_id?: string; blocked_start?: string; blocked_end?: string }>;
 }
 
-// Party slots are stored as ranges (e.g. "12:30-14:30"), so only the start
-// time is used for overlap comparisons.
 function parseTimeToMinutes(time: string): number {
   const start = time.split('-')[0].trim();
   const [h, m] = start.split(':').map(Number);
@@ -55,6 +48,10 @@ function parseTimeToMinutes(time: string): number {
 
 function overlapsTwoHours(timeA: string, timeB: string): boolean {
   return Math.abs(parseTimeToMinutes(timeA) - parseTimeToMinutes(timeB)) < 120;
+}
+
+function isPartyRow(row: BookingRow): boolean {
+  return PARTY_SESSION_TYPES.includes(row.session_type ?? '');
 }
 
 // Staff are allowed to overbook (walk-ins, squeezing in regulars), so this
@@ -81,15 +78,18 @@ export async function capacityWarning(
   if (typeof date !== 'string' || !date || typeof time !== 'string' || !time) return null;
 
   try {
-    const capacity = await computeCapacity(supabase, studio, date, time, sessionType, excludeBookingId);
+    const capacity = await computeCapacity(supabase, studio as StudioName, date, time, sessionType, excludeBookingId, seats);
     const when = `${time} on ${date}`;
 
     if (capacity.conflict === 'party_session_exists') {
       const spaces = capacity.maxBookings;
       return `${studio} already has the maximum of ${spaces} part${spaces === 1 ? 'y' : 'ies'} booked at ${when}.`;
     }
+    if (capacity.conflict === 'no_valid_configuration') {
+      return capacity.allocationReason || `No valid ${isPartySessionType(sessionType ?? '') ? 'party' : 'table'} configuration available at ${when}.`;
+    }
     if (seats > capacity.remaining) {
-      const noun = PARTY_SESSION_TYPES.includes(sessionType ?? '') ? 'party seat' : 'seat';
+      const noun = isPartySessionType(sessionType ?? '') ? 'party seat' : 'seat';
       return `Over capacity: ${seats} ${noun}${seats === 1 ? '' : 's'} booked but only ${capacity.remaining} of ${capacity.max} remain at ${when}.`;
     }
     if (capacity.remainingBookings <= 0) {
@@ -109,8 +109,116 @@ export async function computeCapacity(
   time: string,
   sessionType: string | undefined,
   excludeBookingId?: string,
+  paintersCount = 1,
 ): Promise<CapacityResult> {
-  // Query all bookings for the date+studio, then filter by 2-hour window overlap
+  // Wimbledon: use resource-based allocation engine.
+  if (studio === 'Wimbledon') {
+    const config = await loadStudioConfigFromDb(supabase, studio);
+    const incomingIsParty = isPartySessionType(sessionType ?? '');
+
+    // First check if the requested booking itself can be allocated,
+    // including moving existing bookings to free space.
+    const plan = await planAllocation(supabase, {
+      studio,
+      date,
+      time,
+      paintersCount,
+      sessionType: sessionType ?? '',
+      excludeBookingId: excludeBookingId ?? null,
+    });
+    const allocation = plan.result;
+
+    // For party requests, "remaining" is the largest party configuration
+    // currently free — not the size of the config chosen for this group.
+    let partyCap = { available: 0, total: 0 };
+    if (incomingIsParty) {
+      partyCap = await largestAvailablePartyCapacity(supabase, {
+        studio,
+        date,
+        time,
+        paintersCount,
+        sessionType: sessionType ?? '',
+        excludeBookingId: excludeBookingId ?? null,
+      });
+    }
+
+    // Count existing bookings and rough seat usage for display numbers.
+    const { data } = await supabase
+      .from('bookings')
+      .select('painters_count, session_type, booking_id, time, resources')
+      .eq('studio', studio)
+      .eq('date', date)
+      .in('status', ['pending', 'confirmed']);
+
+    const rows: BookingRow[] = (data || [])
+      .filter((r: BookingRow) => !excludeBookingId || r.booking_id !== excludeBookingId)
+      .filter((r: BookingRow) => r.time != null && overlapsTwoHours(r.time, time));
+
+    const partyRows = rows.filter(isPartyRow);
+    const openRows = rows.filter((r) => !isPartyRow(r));
+    const hasPartyBooking = partyRows.length > 0;
+
+    // Business rule: at most one party per overlapping slot, per studio —
+    // regardless of whether a second party area is physically free.
+    const maxConcurrentParties = DEFAULT_MAX_CONCURRENT_PARTIES[studio];
+    if (incomingIsParty && partyRows.length >= maxConcurrentParties) {
+      return {
+        remaining: 0,
+        max: 0,
+        booked: 0,
+        hasPartyBooking: true,
+        remainingBookings: 0,
+        maxBookings: maxConcurrentParties,
+        conflict: 'party_session_exists',
+      };
+    }
+
+    if (!allocation.success) {
+      return {
+        // Even if this exact size can't be seated, report the largest party
+        // configuration that IS free so the UI can show partial availability.
+        remaining: incomingIsParty ? partyCap.available : 0,
+        max: incomingIsParty ? partyCap.total : 0,
+        booked: incomingIsParty
+          ? partyRows.reduce((sum, r) => sum + (r.painters_count || 1), 0)
+          : openRows.reduce((sum, r) => sum + (r.painters_count || 1), 0),
+        hasPartyBooking,
+        remainingBookings: 0,
+        maxBookings: incomingIsParty ? DEFAULT_MAX_CONCURRENT_PARTIES[studio] : (hasPartyBooking ? DEFAULT_RESTRICTED_MAX_BOOKINGS[studio] : DEFAULT_MAX_BOOKINGS[studio]),
+        conflict: 'no_valid_configuration',
+        allocationReason: allocation.reason,
+      };
+    }
+
+    // Approximate remaining capacity for display purposes.
+    // When allocation succeeded we ensure remaining is at least the requested
+    // count so the coarse heuristic does not produce a false warning.
+    // For parties, remaining seats = largest party area still free (table
+    // conflicts already account for what's been booked).
+    const baseMax = incomingIsParty
+      ? (partyCap.total || DEFAULT_PARTY_CAPACITY[studio])
+      : (hasPartyBooking ? DEFAULT_OPEN_RESTRICTED_CAPACITY[studio] : DEFAULT_OPEN_CAPACITY[studio]);
+    const booked = incomingIsParty
+      ? partyRows.reduce((sum, r) => sum + (r.painters_count || 1), 0)
+      : openRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
+    const maxBookings = incomingIsParty
+      ? DEFAULT_MAX_CONCURRENT_PARTIES[studio]
+      : (hasPartyBooking ? DEFAULT_RESTRICTED_MAX_BOOKINGS[studio] : DEFAULT_MAX_BOOKINGS[studio]);
+    const remaining = incomingIsParty
+      ? Math.max(paintersCount, partyCap.available)
+      : Math.max(paintersCount, baseMax - booked);
+
+    return {
+      remaining,
+      max: baseMax,
+      booked,
+      hasPartyBooking,
+      remainingBookings: Math.max(0, maxBookings - (incomingIsParty ? partyRows.length : openRows.length)),
+      maxBookings,
+    };
+  }
+
+  // Putney: previous coarse model.
   const { data, error } = await supabase
     .from('bookings')
     .select('painters_count, session_type, booking_id, time')
@@ -129,7 +237,6 @@ export async function computeCapacity(
   const openRows = rows.filter((r) => !PARTY_SESSION_TYPES.includes(r.session_type ?? ''));
   const hasPartyBooking = partyRows.length > 0;
 
-  // A studio's back area can host a limited number of parties at the same time.
   const maxConcurrentParties = DEFAULT_MAX_CONCURRENT_PARTIES[studio];
   if (incomingIsParty && partyRows.length >= maxConcurrentParties) {
     return {
@@ -158,8 +265,6 @@ export async function computeCapacity(
   const partyMax = findMax('party', DEFAULT_PARTY_CAPACITY[studio]);
 
   if (incomingIsParty) {
-    // A free party space exists (checked above); seats are shared across any
-    // parties already running in this slot.
     const booked = partyRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
     return {
       remaining: Math.max(0, partyMax - booked),
@@ -171,7 +276,6 @@ export async function computeCapacity(
     };
   }
 
-  // Open/painting bookings: front-only capacity if a party occupies the back area
   const max = hasPartyBooking ? openRestrictedMax : openFullMax;
   const booked = openRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
   const maxBookings = hasPartyBooking ? DEFAULT_RESTRICTED_MAX_BOOKINGS[studio] : DEFAULT_MAX_BOOKINGS[studio];

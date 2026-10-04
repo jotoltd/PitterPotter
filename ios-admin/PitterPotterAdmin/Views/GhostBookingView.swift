@@ -45,12 +45,12 @@ struct GhostBookingView: View {
                         }
                         if cap.hasPartyBooking {
                             Label("A party is booked at this time", systemImage: "exclamationmark.triangle")
-                                .font(.caption)
+                                .font(AppFont.body(12, weight: .medium))
                                 .foregroundStyle(.orange)
                         }
                     } else {
                         Text("Tap to check capacity")
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                 }

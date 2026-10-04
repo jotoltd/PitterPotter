@@ -126,7 +126,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false, se
 
     let remaining: number;
     try {
-      remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time, sessionType);
+      remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time, sessionType, paintersCount);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to check availability. Please try again.');
       setSubmitting(false);

@@ -120,6 +120,8 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
   const [showPayment, setShowPayment] = useState(false);
   const [pendingBooking, setPendingBooking] = useState<BookingInquiry | null>(null);
   const [depositNoticeType, setDepositNoticeType] = useState<'info' | 'warning' | 'success' | 'error'>('info');
+  const [redirectConfirming, setRedirectConfirming] = useState(false);
+  const [redirectConfirmed, setRedirectConfirmed] = useState(false);
 
   const info = PARTY_INFO[partyType];
   const IconComponent = info.icon;
@@ -128,6 +130,39 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
     setDate(selectedDate);
     setTime(undefined);
   };
+
+  // Handle return from a bank/3DS redirect — the page reloads with Stripe's
+  // payment params, so we must re-confirm server-side to create the booking.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const pi = params.get('payment_intent');
+    const redirectStatus = params.get('redirect_status');
+    if (!pi || !redirectStatus) return;
+    window.history.replaceState({}, '', window.location.pathname);
+    if (redirectStatus !== 'succeeded') {
+      setError('Payment was not completed. Please try again or contact the studio.');
+      return;
+    }
+    setRedirectConfirming(true);
+    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confirm-party-payment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ paymentIntentId: pi }),
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.error) throw new Error(data.error || 'Booking confirmation failed');
+        setRedirectConfirmed(true);
+        setSubmitted(true);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Payment succeeded but booking could not be confirmed. Please contact the studio with your payment reference.');
+      })
+      .finally(() => setRedirectConfirming(false));
+  }, []);
 
   useEffect(() => {
     if (isSupabaseEnabled() && supabase) {
@@ -154,7 +189,8 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
     const sType = sessionTypeMap[partyType];
     Promise.all(slots.map(async (slot) => {
       try {
-        const remaining = await getRemainingCapacity(studio, dateStr, slot, sType);
+        // Probe with the largest possible party size so the slot list shows the maximum remaining capacity.
+        const remaining = await getRemainingCapacity(studio, dateStr, slot, sType, 28);
         return { slot, remaining };
       } catch {
         return { slot, remaining: 0 };
@@ -248,7 +284,7 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
 
     let remaining: number;
     try {
-      remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time, sessionTypeMap[partyType]);
+      remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time, sessionTypeMap[partyType], guestCount);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to check availability. Please try again.');
       return;
@@ -447,6 +483,20 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
     }
   };
 
+  if (redirectConfirming) {
+    return (
+      <div className="min-h-screen bg-[#FFFFFF] flex items-center justify-center px-4 py-20">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="p-4 bg-[#D6E2E9] rounded-full inline-block animate-pulse">
+            <IconComponent className="w-8 h-8 text-[#1B2D3C]" />
+          </div>
+          <h2 className="font-heading text-2xl font-black text-[#1B2D3C]">Confirming your booking…</h2>
+          <p className="text-sm text-[#1B2D3C]/70 font-medium">Please wait while we confirm your payment.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-[#FFFFFF] flex items-center justify-center px-4 py-20">
@@ -458,35 +508,39 @@ export default function PartyBookingView({ partyType, studio, setCurrentPage, ad
           <p className="text-sm text-[#1B2D3C]/70 font-medium">
             <EditableText contentKey={`party_${partyType}_success_message`} page="party-booking" defaultValue={`Your ${info.title.toLowerCase()} booking at our ${studio} studio is confirmed. A confirmation email is on its way.`} adminMode={adminMode} className="text-sm text-[#1B2D3C]/70" />
           </p>
-          <div className="bg-[#D6E2E9]/30 p-4 rounded-lg text-left space-y-2 text-xs font-semibold text-[#1B2D3C]">
-            <p><span className="font-bold"><EditableText contentKey="party_event_label" page="party-booking" defaultValue="Event:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {info.title}</p>
-            <p><span className="font-bold"><EditableText contentKey="party_studio_label" page="party-booking" defaultValue="Studio:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {studio}</p>
-            <p><span className="font-bold"><EditableText contentKey="party_date_label" page="party-booking" defaultValue="Date:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {date && format(date, 'EEEE, do MMMM yyyy')}</p>
-            <p><span className="font-bold"><EditableText contentKey="party_time_label" page="party-booking" defaultValue="Time:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {time}</p>
-            <p><span className="font-bold"><EditableText contentKey="party_guests_label" page="party-booking" defaultValue="Guests:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {guests === '' ? 1 : guests}</p>
-            <p><span className="font-bold"><EditableText contentKey="party_name_label" page="party-booking" defaultValue="Name:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {name}</p>
-            <p><span className="font-bold"><EditableText contentKey="party_phone_label" page="party-booking" defaultValue="Phone:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {phone}</p>
-          </div>
+          {!redirectConfirmed && (
+            <div className="bg-[#D6E2E9]/30 p-4 rounded-lg text-left space-y-2 text-xs font-semibold text-[#1B2D3C]">
+              <p><span className="font-bold"><EditableText contentKey="party_event_label" page="party-booking" defaultValue="Event:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {info.title}</p>
+              <p><span className="font-bold"><EditableText contentKey="party_studio_label" page="party-booking" defaultValue="Studio:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {studio}</p>
+              <p><span className="font-bold"><EditableText contentKey="party_date_label" page="party-booking" defaultValue="Date:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {date && format(date, 'EEEE, do MMMM yyyy')}</p>
+              <p><span className="font-bold"><EditableText contentKey="party_time_label" page="party-booking" defaultValue="Time:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {time}</p>
+              <p><span className="font-bold"><EditableText contentKey="party_guests_label" page="party-booking" defaultValue="Guests:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {guests === '' ? 1 : guests}</p>
+              <p><span className="font-bold"><EditableText contentKey="party_name_label" page="party-booking" defaultValue="Name:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {name}</p>
+              <p><span className="font-bold"><EditableText contentKey="party_phone_label" page="party-booking" defaultValue="Phone:" adminMode={adminMode} className="text-xs font-bold text-[#1B2D3C]" /></span> {phone}</p>
+            </div>
+          )}
 
           {/* Invitation actions */}
-          <div className="bg-[#1B2D3C] rounded-xl p-5 space-y-3">
-            <p className="text-white font-black text-sm">Your Party Invitation</p>
-            <p className="text-white/60 text-xs font-medium">Download a beautifully designed invitation card to share with your guests.</p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleDownloadInvitation}
-                className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-white transition-all cursor-pointer"
-              >
-                <Download className="w-4 h-4" /> Download PDF
-              </button>
-              <button
-                onClick={handleShareInvitation}
-                className="flex-1 flex items-center justify-center gap-2 py-3 bg-white/10 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-white/20 transition-all cursor-pointer border border-white/20"
-              >
-                <Share2 className="w-4 h-4" /> Share
-              </button>
+          {!redirectConfirmed && (
+            <div className="bg-[#1B2D3C] rounded-xl p-5 space-y-3">
+              <p className="text-white font-black text-sm">Your Party Invitation</p>
+              <p className="text-white/60 text-xs font-medium">Download a beautifully designed invitation card to share with your guests.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleDownloadInvitation}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-white transition-all cursor-pointer"
+                >
+                  <Download className="w-4 h-4" /> Download PDF
+                </button>
+                <button
+                  onClick={handleShareInvitation}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-white/10 text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-white/20 transition-all cursor-pointer border border-white/20"
+                >
+                  <Share2 className="w-4 h-4" /> Share
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <button
             onClick={() => setCurrentPage('home')}

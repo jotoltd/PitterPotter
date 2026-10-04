@@ -17,7 +17,7 @@ struct StaffManagementView: View {
                             .font(.largeTitle)
                             .foregroundStyle(.orange)
                         Text(error)
-                            .font(.subheadline)
+                            .font(AppFont.body(15, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         Button("Retry") {
                             if let staff = authVM.staff {
@@ -104,16 +104,16 @@ struct StaffRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "person.circle.fill")
-                .font(.title2)
+                .font(AppFont.heading(22))
                 .foregroundStyle(PPBrand.charcoal)
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(member.name)
-                        .font(.headline)
+                        .font(AppFont.body(17, weight: .semibold))
                     if member.isSuperAdmin {
                         Text("Super Admin")
-                            .font(.caption2)
+                            .font(AppFont.body(11, weight: .medium))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(Color.purple.opacity(0.2))
@@ -122,7 +122,7 @@ struct StaffRowView: View {
                     }
                 }
                 Text(member.username)
-                    .font(.caption)
+                    .font(AppFont.body(12, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
 
                 HStack(spacing: 4) {
@@ -130,12 +130,9 @@ struct StaffRowView: View {
                     if member.canEditBookings { PermDot(color: .blue, icon: "pencil.circle") }
                     if member.canAddWalkIns { PermDot(color: .orange, icon: "plus.app") }
                     if member.canDeleteBookings { PermDot(color: .red, icon: "trash") }
-                    if let studios = member.allowedStudios, !studios.isEmpty {
-                        Text(studios.joined(separator: ", "))
-                            .font(.caption2)
-                            .foregroundStyle(PPBrand.charcoal.opacity(0.5))
-                    }
                 }
+
+                StudioBadgesView(member: member)
             }
 
             Spacer()
@@ -150,8 +147,46 @@ struct PermDot: View {
 
     var body: some View {
         Image(systemName: icon)
-            .font(.caption2)
+            .font(AppFont.body(11, weight: .medium))
             .foregroundStyle(color)
+    }
+}
+
+// MARK: - Studio Badges
+
+struct StudioBadgesView: View {
+    let member: StaffMember
+
+    var body: some View {
+        if member.isSuperAdmin {
+            Text("All")
+                .font(AppFont.body(10, weight: .bold))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.purple.opacity(0.15))
+                .foregroundStyle(.purple)
+                .clipShape(Capsule())
+        } else if let studios = member.allowedStudios, !studios.isEmpty {
+            HStack(spacing: 4) {
+                ForEach(studios, id: \.self) { studio in
+                    Text(studio)
+                        .font(AppFont.body(10, weight: .bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.green.opacity(0.15))
+                        .foregroundStyle(PPBrand.charcoal)
+                        .clipShape(Capsule())
+                }
+            }
+        } else {
+            Text("All")
+                .font(AppFont.body(10, weight: .bold))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.gray.opacity(0.15))
+                .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                .clipShape(Capsule())
+        }
     }
 }
 

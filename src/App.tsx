@@ -96,14 +96,19 @@ function getPageFromPath(): Page {
   return 'not-found';
 }
 
+function isShortUrlPath(path: string): boolean {
+  const code = path.replace(/^\/+/, '');
+  return !!code
+    && code.length >= 3
+    && code.length <= 10
+    && /^[a-z0-9]+$/i.test(code)
+    && !PATH_TO_PAGE[`/${code}`];
+}
+
 async function checkShortUrl(): Promise<boolean> {
   const path = window.location.pathname;
   const code = path.replace(/^\/+/, '');
-  if (!code || code.length < 3 || code.length > 10 || !/^[a-z0-9]+$/i.test(code)) {
-    return false;
-  }
-  if (code in PATH_TO_PAGE || PATH_TO_PAGE[`/${code}`]) return false;
-  if (!isSupabaseEnabled()) return false;
+  if (!isShortUrlPath(path) || !isSupabaseEnabled()) return false;
   try {
     const { data, error } = await supabase!
       .from('short_urls')
@@ -129,6 +134,7 @@ export default function App() {
  const [paintersCountPreset, setPaintersCountPreset] = useState<number>(1);
  const [currentStaff, setCurrentStaff] = useState<Staff | null>(null);
  const [showSplash, setShowSplash] = useState(true);
+ const [resolvingShortUrl, setResolvingShortUrl] = useState(() => isShortUrlPath(window.location.pathname));
  const [adminMode, setAdminMode] = useState(false);
  const [disabledPages, setDisabledPages] = useState<Set<string>>(new Set());
  const [maintenanceMode, setMaintenanceMode] = useState(false);
@@ -225,7 +231,16 @@ export default function App() {
     const initialPage = getPageFromPath();
     setCurrentPage(initialPage);
 
-    checkShortUrl();
+    if (isShortUrlPath(window.location.pathname)) {
+      void checkShortUrl().then(redirecting => {
+        if (!redirecting) {
+          setCurrentPage(getPageFromPath());
+          setResolvingShortUrl(false);
+        }
+      });
+    } else {
+      setResolvingShortUrl(false);
+    }
 
     const handlePopState = () => {
       setCurrentPage(getPageFromPath());
@@ -259,13 +274,14 @@ export default function App() {
  }, [currentPage]);
 
  useEffect(() => {
+    if (resolvingShortUrl) return;
     const targetPath = PAGE_TO_PATH[currentPage] || '/';
     const currentPath = window.location.pathname;
     if (currentPath !== targetPath) {
       const search = window.location.search;
       window.history.pushState({}, '', search ? `${targetPath}${search}` : targetPath);
     }
-  }, [currentPage]);
+  }, [currentPage, resolvingShortUrl]);
 
  const handleAdminLogin = (staff: Staff) => {
     setCurrentStaff(staff);
@@ -392,6 +408,14 @@ case 'party-birthday-putney':
  return <NotFoundView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  }
  };
+
+ if (resolvingShortUrl) {
+   return (
+     <div className="flex min-h-screen items-center justify-center bg-white">
+       <div className="w-8 h-8 border-2 border-[#1B2D3C]/20 border-t-[#1B2D3C] rounded-full animate-spin" />
+     </div>
+   );
+ }
 
  if (maintenanceMode && !isAdminLoggedIn && currentPage !== 'admin') {
    return (

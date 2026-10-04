@@ -77,7 +77,7 @@ struct NotificationSettingsView: View {
 
                 if setting.customTitle != nil || setting.customMessage != nil {
                     Image(systemName: "pencil.line")
-                        .font(.caption)
+                        .font(AppFont.body(12, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
 
@@ -97,7 +97,7 @@ struct NotificationSettingsView: View {
 
                 Button(role: .destructive, action: { deleteSetting(setting) }) {
                     Image(systemName: "trash")
-                        .font(.caption)
+                        .font(AppFont.body(12, weight: .medium))
                 }
                 .buttonStyle(.borderless)
             }
@@ -147,7 +147,7 @@ struct NotificationSettingsView: View {
 
             if availableTypes.isEmpty {
                 Text("All types already have a rule for \(newStudio)")
-                    .font(.caption)
+                    .font(AppFont.body(12, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
         }

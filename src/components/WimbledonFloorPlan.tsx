@@ -20,7 +20,7 @@ interface TableDef {
   size: TableSize;
   chairs: ChairSide[];
   label: string;
-  area?: 'main' | 'party1' | 'party2' | 'right-lower';
+  area?: 'main' | 'party1' | 'party2' | 'back';
 }
 
 interface PositionedTable extends TableDef {
@@ -53,7 +53,7 @@ const CHAIR_R = 9;
 const CHAIR_GAP = 5;
 const BLOCKED_STORAGE_KEY = 'pitter_potter_blocked_tables';
 
-const PARTY_CAPACITY = 26;
+const PARTY_CAPACITY = 9;
 
 const STATUS_FILL: Record<TableStatus, string> = {
   free: '#FFFFFF',
@@ -114,7 +114,7 @@ export function findAvailableTable(
   time: string,
   partyArea?: 'party1' | 'party2'
 ): string | null {
-  const allTables = [...TABLES, ...PARTY_1_TABLES, ...PARTY_2_TABLES, ...RIGHT_LOWER_TABLES];
+  const allTables = [...TABLES, ...PARTY_1_TABLES, ...PARTY_2_TABLES, ...BACK_TABLES];
   const candidates = partyArea
     ? allTables.filter(t => t.area === partyArea)
     : allTables.filter(t => !t.area?.startsWith('party'));
@@ -138,7 +138,7 @@ export function findMultipleTables(
   paintersCount: number,
   partyArea?: 'party1' | 'party2'
 ): string[] {
-  const allTables = [...TABLES, ...PARTY_1_TABLES, ...PARTY_2_TABLES, ...RIGHT_LOWER_TABLES];
+  const allTables = [...TABLES, ...PARTY_1_TABLES, ...PARTY_2_TABLES, ...BACK_TABLES];
   const candidates = partyArea
     ? allTables.filter(t => t.area === partyArea)
     : allTables.filter(t => !t.area?.startsWith('party'));
@@ -218,12 +218,13 @@ function Chair({ cx, cy, status, colour }: { cx: number; cy: number; status: Tab
 }
 
 function TableShape({
-  def, status, count, chairColours, onClick,
+  def, status, count, chairColours, occupantLabels, onClick,
 }: {
   def: PositionedTable;
   status: TableStatus;
   count: number;
   chairColours: (string | null)[];
+  occupantLabels: string[];
   onClick: () => void;
 }) {
   const w = tableWidth(def.size);
@@ -265,52 +266,63 @@ function TableShape({
         stroke={STATUS_STROKE[status]}
         strokeWidth={status === 'selected' ? 2.5 : 1.5}
       />
-      <text x={def.x + w / 2} y={def.y + h / 2 - 6} textAnchor="middle" dominantBaseline="middle"
+      <text x={def.x + w / 2} y={def.y + h / 2 - (occupantLabels.length ? 10 : 6)} textAnchor="middle" dominantBaseline="middle"
         fontSize={11} fontWeight="800" fill={STATUS_TEXT[status]}>
         T{def.id}
       </text>
-      <text x={def.x + w / 2} y={def.y + h / 2 + 7} textAnchor="middle" dominantBaseline="middle"
-        fontSize={8} fill={STATUS_SUB[status]}>
-        {label}
-      </text>
+      {occupantLabels.length ? (
+        occupantLabels.map((l, i) => (
+          <text key={i} x={def.x + w / 2} y={def.y + h / 2 + 1 + i * 9} textAnchor="middle" dominantBaseline="middle"
+            fontSize={7} fontWeight="700" fill={STATUS_TEXT[status]}>
+            {l}
+          </text>
+        ))
+      ) : (
+        <text x={def.x + w / 2} y={def.y + h / 2 + 7} textAnchor="middle" dominantBaseline="middle"
+          fontSize={8} fill={STATUS_SUB[status]}>
+          {label}
+        </text>
+      )}
     </g>
   );
 }
 
+// Layout matching the Wimbledon table spec (same as iOS floor plan):
+// Front: T1–T4 down the left, T5–T10 down the right (beam between T8 & T9).
+// Bar centre-left between front and back.
+// Back: Party Area 1 (T15+T16) and Party Area 2 (T17+T18) on the left;
+// T11, T12, T13 down the right, T14 at the bottom.
 const TABLES: PositionedTable[] = [
-  // ── LEFT COLUMN ──────────────────────────────────────────────
-  // 6 large tables (4/5 people, 4 chairs each)
-  { id: 1, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T1',  x: 40,  y: 60  },
-  { id: 2, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T2',  x: 40,  y: 165 },
-  { id: 3, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T3',  x: 40,  y: 270 },
-  { id: 4, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T4',  x: 40,  y: 375 },
-
-  // ── RIGHT COLUMN ─────────────────────────────────────────────
-  // 2 more large tables (4 chairs each) = 6 total large
-  { id: 5,  size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T5',  x: 310, y: 60  },
-  { id: 6,  size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T6',  x: 310, y: 165 },
-  // 4 small tables (2/3 people, 2 chairs each)
-  { id: 7,  size: 'small', chairs: ['left', 'right'], area: 'main', label: 'T7',  x: 310, y: 270 },
-  { id: 8,  size: 'small', chairs: ['left', 'right'], area: 'main', label: 'T8',  x: 310, y: 340 },
-  { id: 9,  size: 'small', chairs: ['top', 'bottom'], area: 'main', label: 'T9',  x: 310, y: 410 },
-  { id: 10, size: 'small', chairs: ['top', 'bottom'], area: 'main', label: 'T10', x: 310, y: 480 },
+  { id: 1,  size: 'small', chairs: ['top', 'left', 'right'], area: 'main', label: 'T1',  x: 50,  y: 17  },
+  { id: 2,  size: 'large', chairs: ['top', 'top', 'bottom', 'left', 'right'], area: 'main', label: 'T2',  x: 50,  y: 87  },
+  { id: 3,  size: 'large', chairs: ['top', 'top', 'bottom', 'left', 'right'], area: 'main', label: 'T3',  x: 50,  y: 157 },
+  { id: 4,  size: 'large', chairs: ['top', 'top', 'bottom', 'left', 'right'], area: 'main', label: 'T4',  x: 50,  y: 227 },
+  { id: 5,  size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T5',  x: 310, y: 17  },
+  { id: 6,  size: 'small', chairs: ['top', 'bottom'], area: 'main', label: 'T6',  x: 310, y: 87  },
+  { id: 7,  size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T7',  x: 310, y: 157 },
+  { id: 8,  size: 'small', chairs: ['top', 'bottom'], area: 'main', label: 'T8',  x: 310, y: 227 },
+  { id: 9,  size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'main', label: 'T9',  x: 310, y: 297 },
+  { id: 10, size: 'small', chairs: ['top', 'left', 'right'], area: 'main', label: 'T10', x: 310, y: 367 },
 ];
 
-// Back area: 5 large tables (4 chairs) + 2 small tables (3 chairs) = 26 seats
+// Back right: normal tables that can also extend the party areas.
+const BACK_TABLES: PositionedTable[] = [
+  { id: 11, size: 'small', chairs: ['top', 'left', 'right'], area: 'back', label: 'T11', x: 310, y: 447 },
+  { id: 12, size: 'small', chairs: ['top', 'left', 'right'], area: 'back', label: 'T12', x: 310, y: 517 },
+  { id: 13, size: 'small', chairs: ['top', 'left', 'right'], area: 'back', label: 'T13', x: 310, y: 587 },
+  { id: 14, size: 'large', chairs: ['top', 'top', 'bottom', 'left', 'right'], area: 'back', label: 'T14', x: 310, y: 657 },
+];
+
+// Party Area 1: T15 + T16 (expandable with T13/T12).
 const PARTY_1_TABLES: PositionedTable[] = [
-  { id: 11, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party1', label: 'T11', x: 40,  y: 680 },
-  { id: 12, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party1', label: 'T12', x: 155, y: 680 },
+  { id: 15, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party1', label: 'T15', x: 50,  y: 447 },
+  { id: 16, size: 'large', chairs: ['top', 'top', 'bottom', 'left', 'right'], area: 'party1', label: 'T16', x: 170, y: 447 },
 ];
 
+// Party Area 2: T17 + T18 (expandable with T14).
 const PARTY_2_TABLES: PositionedTable[] = [
-  { id: 15, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party2', label: 'T15', x: 40,  y: 900 },
-  { id: 16, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party2', label: 'T16', x: 155, y: 900 },
-  { id: 17, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party2', label: 'T17', x: 270, y: 900 },
-];
-
-const RIGHT_LOWER_TABLES: PositionedTable[] = [
-  { id: 13, size: 'small', chairs: ['left', 'right', 'top'], area: 'right-lower', label: 'T13', x: 370, y: 900 },
-  { id: 14, size: 'small', chairs: ['left', 'right', 'top'], area: 'right-lower', label: 'T14', x: 370, y: 990 },
+  { id: 17, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party2', label: 'T17', x: 50,  y: 517 },
+  { id: 18, size: 'large', chairs: ['top', 'top', 'bottom', 'left', 'right'], area: 'party2', label: 'T18', x: 170, y: 517 },
 ];
 
 export default function WimbledonFloorPlan({
@@ -332,13 +344,13 @@ export default function WimbledonFloorPlan({
     setBlockedTables(loadBlockedTables());
   }, []);
 
-  const allTables = [...TABLES, ...PARTY_1_TABLES, ...PARTY_2_TABLES, ...RIGHT_LOWER_TABLES];
+  const allTables = [...TABLES, ...PARTY_1_TABLES, ...PARTY_2_TABLES, ...BACK_TABLES];
 
   const bookingsByTable = useMemo(() => {
     const map = new Map<string, BookingInquiry[]>();
     if (!selectedDate) return map;
     bookings
-      .filter(b => b.date === selectedDate && b.studio === 'Wimbledon')
+      .filter(b => b.date === selectedDate && b.studio === 'Wimbledon' && b.status !== 'cancelled' && b.status !== 'no_show')
       .forEach(b => {
         if (!b.tableId) return;
         b.tableId.split(',').map(t => t.trim()).filter(Boolean).forEach(tid => {
@@ -352,7 +364,7 @@ export default function WimbledonFloorPlan({
 
   const unassignedBookings = useMemo(() => {
     if (!selectedDate) return [];
-    return bookings.filter(b => b.date === selectedDate && b.studio === 'Wimbledon' && !b.tableId);
+    return bookings.filter(b => b.date === selectedDate && b.studio === 'Wimbledon' && !b.tableId && b.status !== 'cancelled' && b.status !== 'no_show');
   }, [bookings, selectedDate]);
 
   const blockedIdsForDate = useMemo(() => {
@@ -413,7 +425,7 @@ export default function WimbledonFloorPlan({
   const bookingColourMap = useMemo(() => {
     const map = new Map<string, string>();
     const relevantBookings = bookings.filter(
-      b => b.date === selectedDate && b.studio === 'Wimbledon' && (!selectedTime || (b.time && overlapsTwoHours(b.time, selectedTime)))
+      b => b.date === selectedDate && b.studio === 'Wimbledon' && b.status !== 'cancelled' && b.status !== 'no_show' && (!selectedTime || (b.time && overlapsTwoHours(b.time, selectedTime)))
     );
     relevantBookings.forEach((b, i) => { map.set(b.id, getBookingColour(i)); });
     return map;
@@ -421,7 +433,7 @@ export default function WimbledonFloorPlan({
 
   const bookingLegend = useMemo(() => {
     return bookings
-      .filter(b => b.date === selectedDate && b.studio === 'Wimbledon' && (!selectedTime || (b.time && overlapsTwoHours(b.time, selectedTime))))
+      .filter(b => b.date === selectedDate && b.studio === 'Wimbledon' && b.status !== 'cancelled' && b.status !== 'no_show' && (!selectedTime || (b.time && overlapsTwoHours(b.time, selectedTime))))
       .map((b, i) => ({ name: b.name, painters: b.paintersCount, colour: getBookingColour(i), time: b.time }));
   }, [bookings, selectedDate, selectedTime]);
 
@@ -442,6 +454,10 @@ export default function WimbledonFloorPlan({
         chairColours[seatIdx] = colour;
       }
     }
+    const occupantLabels = relevantBookings
+      .slice(0, 2)
+      .map(b => `${b.time.split('-')[0].trim()} ${b.name}`.slice(0, 16));
+    if (relevantBookings.length > 2) occupantLabels.push(`+${relevantBookings.length - 2} more`);
     return (
       <TableShape
         key={t.id}
@@ -449,6 +465,7 @@ export default function WimbledonFloorPlan({
         status={status}
         count={count}
         chairColours={chairColours}
+        occupantLabels={occupantLabels}
         onClick={() => handleClick(t.id)}
       />
     );
@@ -459,7 +476,7 @@ export default function WimbledonFloorPlan({
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="font-heading font-black text-[#1B2D3C] text-base">Wimbledon Studio</h3>
-          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold mt-0.5">17 tables · 52 Wimbledon Hill Road, London, SW19 7PA</p>
+          <p className="text-[10px] text-[#1B2D3C]/50 font-semibold mt-0.5">18 tables · 52 Wimbledon Hill Road, London, SW19 7PA</p>
         </div>
         {selectedTable && (
           <div className="bg-[#DBE7E4] text-[#1B2D3C] px-3 py-1.5 rounded-lg text-xs font-bold">
@@ -537,31 +554,35 @@ export default function WimbledonFloorPlan({
       )}
 
       <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-        <svg viewBox="0 0 450 1080" className="w-full max-w-[450px] h-auto mx-auto" style={{ minHeight: '600px' }}>
-          <rect x={10} y={10} width={420} height={615} rx={8} fill="#F8FAFB" stroke="#1B2D3C" strokeWidth={1} strokeDasharray="4 3" />
-          <text x={220} y={30} textAnchor="middle" fontSize={10} fontWeight="700" fill="#1B2D3C99" letterSpacing="2">MAIN AREA</text>
+        <svg viewBox="0 0 460 745" className="w-full max-w-[460px] h-auto mx-auto" style={{ minHeight: '600px' }}>
+          {/* Front area */}
+          <rect x={15} y={10} width={430} height={425} rx={8} fill="#F8FAFB" stroke="#1B2D3C" strokeOpacity={0.3} strokeWidth={1} strokeDasharray="4 3" />
+          <text x={230} y={28} textAnchor="middle" fontSize={10} fontWeight="700" fill="#1B2D3C99" letterSpacing="2">FRONT</text>
 
-          <rect x={10} y={480} width={170} height={60} rx={4} fill="#DBE7E4" stroke="#1B2D3C" strokeWidth={1.2} />
-          <text x={95} y={515} textAnchor="middle" fontSize={13} fontWeight="800" fill="#1B2D3C" letterSpacing="3">BAR</text>
+          {/* Bar between front and back, centre-left */}
+          <rect x={60} y={322} width={180} height={50} rx={4} fill="#DBE7E4" stroke="#1B2D3C" strokeWidth={1.2} />
+          <text x={150} y={350} textAnchor="middle" fontSize={13} fontWeight="800" fill="#1B2D3C" letterSpacing="3">BAR</text>
 
-          <line x1={290} y1={400} x2={390} y2={400} stroke="#1B2D3C" strokeWidth={1.5} />
-          <line x1={310} y1={398} x2={375} y2={415} stroke="#1B2D3C55" strokeWidth={1} />
-          <line x1={375} y1={398} x2={310} y2={415} stroke="#1B2D3C55" strokeWidth={1} />
-          <text x={342} y={410} textAnchor="middle" fontSize={9} fontWeight="700" fill="#1B2D3C80">SEPARATOR</text>
+          {/* Structural beam between T8 and T9 */}
+          <rect x={310} y={287} width={50} height={10} rx={2} fill="#1B2D3C" fillOpacity={0.5} />
+          <text x={335} y={282} textAnchor="middle" fontSize={8} fontWeight="700" fill="#1B2D3C80">BEAM</text>
+
+          {/* Back area */}
+          <rect x={15} y={436} width={430} height={300} rx={8} fill="#F8FAFB" stroke="#1B2D3C" strokeOpacity={0.3} strokeWidth={1} strokeDasharray="4 3" />
+
+          {/* Party Area 1 */}
+          <rect x={40} y={442} width={245} height={70} rx={8} fill="#f0fdf4" stroke="#16a34a" strokeWidth={1} strokeDasharray="4 3" />
+          {/* Party Area 2 */}
+          <rect x={40} y={512} width={245} height={70} rx={8} fill="#f0fdf4" stroke="#16a34a" strokeWidth={1} strokeDasharray="4 3" />
+          <text x={300} y={470} textAnchor="start" fontSize={8} fontWeight="700" fill="#16a34a99" transform="rotate(-90 300 470)">PA1</text>
+          <text x={300} y={540} textAnchor="start" fontSize={8} fontWeight="700" fill="#16a34a99" transform="rotate(-90 300 540)">PA2</text>
+
+          <text x={385} y={710} textAnchor="middle" fontSize={10} fontWeight="700" fill="#1B2D3C80">Toilets</text>
 
           {TABLES.map(renderTable)}
-          <line x1={10} y1={635} x2={430} y2={635} stroke="#1B2D3C" strokeWidth={1.5} />
-
-          <rect x={10} y={645} width={280} height={140} rx={8} fill="#f0fdf4" stroke="#16a34a" strokeWidth={1} strokeDasharray="4 3" />
-          <text x={150} y={665} textAnchor="middle" fontSize={10} fontWeight="700" fill="#16a34a99" letterSpacing="2">PARTY AREA 1</text>
+          {BACK_TABLES.map(renderTable)}
           {PARTY_1_TABLES.map(renderTable)}
-
-          <line x1={10} y1={800} x2={280} y2={800} stroke="#1B2D3C" strokeWidth={1.5} />
-
-          <rect x={10} y={810} width={420} height={250} rx={8} fill="#eff6ff" stroke="#2563eb" strokeWidth={1} strokeDasharray="4 3" />
-          <text x={220} y={832} textAnchor="middle" fontSize={10} fontWeight="700" fill="#2563eb99" letterSpacing="2">PARTY AREA 2</text>
           {PARTY_2_TABLES.map(renderTable)}
-          {RIGHT_LOWER_TABLES.map(renderTable)}
         </svg>
       </div>
 

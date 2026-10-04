@@ -13,6 +13,8 @@ struct GiftCardView: View {
     @State private var voucherFileURL: URL?
     @State private var showingVoucherShare = false
     @State private var downloadingVoucher: GiftCard?
+    @State private var cardToRedeem: GiftCard?
+    @State private var cardToUnredeem: GiftCard?
 
     private let statusOptions = ["active", "redeemed", "expired", "cancelled", "disabled"]
 
@@ -23,7 +25,8 @@ struct GiftCardView: View {
                 let q = searchText.lowercased()
                 if !card.code.lowercased().contains(q),
                    !(card.recipientName?.lowercased().contains(q) ?? false),
-                   !(card.recipientEmail?.lowercased().contains(q) ?? false) {
+                   !(card.recipientEmail?.lowercased().contains(q) ?? false),
+                   !(card.recipientPhone?.lowercased().contains(q) ?? false) {
                     return false
                 }
             }
@@ -31,9 +34,26 @@ struct GiftCardView: View {
         }
     }
 
+    private var totalSold: Int { giftCards.count }
+
+    private var activeCount: Int {
+        giftCards.filter { $0.status == "active" }.count
+    }
+
+    private var totalValue: Double {
+        giftCards.reduce(0) { $0 + $1.amount }
+    }
+
+    private var remainingBalance: Double {
+        giftCards.reduce(0) { $0 + ($1.balance ?? $1.amount) }
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                if !giftCards.isEmpty {
+                    giftCardStatsHeader
+                }
                 if isLoading {
                     ProgressView("Loading gift cards...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -59,7 +79,7 @@ struct GiftCardView: View {
                             .swipeActions(edge: .trailing) {
                                 if card.status == "active" {
                                     Button {
-                                        redeemCard(card)
+                                        cardToRedeem = card
                                     } label: {
                                         Label("Redeem", systemImage: "checkmark.circle.fill")
                                     }
@@ -75,6 +95,12 @@ struct GiftCardView: View {
                                         Label("Disable", systemImage: "nosign")
                                     }
                                     .tint(.orange)
+                                    Button(role: .destructive) {
+                                        expireCard(card)
+                                    } label: {
+                                        Label("Expire", systemImage: "calendar.badge.exclamationmark")
+                                    }
+                                    .tint(.red)
                                 }
                                 if card.status == "disabled" {
                                     Button {
@@ -84,6 +110,20 @@ struct GiftCardView: View {
                                     }
                                     .tint(.green)
                                 }
+                                if card.status == "redeemed" {
+                                    Button {
+                                        cardToUnredeem = card
+                                    } label: {
+                                        Label("Un-redeem", systemImage: "arrow.uturn.backward.circle")
+                                    }
+                                    .tint(.green)
+                                }
+                                Button {
+                                    copyCode(card)
+                                } label: {
+                                    Label("Copy", systemImage: "doc.on.doc")
+                                }
+                                .tint(PPBrand.clay300)
                                 Button {
                                     downloadVoucher(card)
                                 } label: {
@@ -98,16 +138,25 @@ struct GiftCardView: View {
                             }
                             .contextMenu {
                                 if card.status == "active" {
-                                    Button("Mark Redeemed") { redeemCard(card) }
+                                    Button("Mark Redeemed") { cardToRedeem = card }
                                     Button("Cancel Card", role: .destructive) { cancelCard(card) }
                                     Button { disableCard(card) } label: {
                                         Label("Disable Card", systemImage: "nosign")
                                     }
+                                    Button("Expire Card", role: .destructive) { expireCard(card) }
                                 }
                                 if card.status == "disabled" {
                                     Button { enableCard(card) } label: {
                                         Label("Enable Card", systemImage: "checkmark.circle")
                                     }
+                                }
+                                if card.status == "redeemed" {
+                                    Button { cardToUnredeem = card } label: {
+                                        Label("Un-redeem Card", systemImage: "arrow.uturn.backward.circle")
+                                    }
+                                }
+                                Button { copyCode(card) } label: {
+                                    Label("Copy Code", systemImage: "doc.on.doc")
                                 }
                                 if let email = card.recipientEmail, !email.isEmpty {
                                     Button { resendCard(card) } label: {
@@ -125,7 +174,7 @@ struct GiftCardView: View {
             }
             .navigationTitle("Gift Cards")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $searchText, prompt: "Search code, name, email")
+            .searchable(text: $searchText, prompt: "Search code, name, email, phone")
             .onAppear { loadGiftCards() }
             .refreshable { loadGiftCards() }
             .toolbar {
@@ -170,7 +219,41 @@ struct GiftCardView: View {
                     Text("Permanently delete gift card \(card.code)? This cannot be undone.")
                 }
             }
+            .alert("Mark Redeemed?", isPresented: Binding(
+                get: { cardToRedeem != nil },
+                set: { if !$0 { cardToRedeem = nil } }
+            )) {
+                Button("Mark Redeemed") { if let card = cardToRedeem { redeemCard(card) }; cardToRedeem = nil }
+                Button("Cancel", role: .cancel) { cardToRedeem = nil }
+            } message: {
+                if let card = cardToRedeem {
+                    Text("Mark gift card \(card.code) as redeemed?")
+                }
+            }
+            .alert("Un-redeem Gift Card?", isPresented: Binding(
+                get: { cardToUnredeem != nil },
+                set: { if !$0 { cardToUnredeem = nil } }
+            )) {
+                Button("Restore to Active") { if let card = cardToUnredeem { unredeemCard(card) }; cardToUnredeem = nil }
+                Button("Cancel", role: .cancel) { cardToUnredeem = nil }
+            } message: {
+                if let card = cardToUnredeem {
+                    Text("Restore gift card \(card.code) to active? If its balance was fully used it will be restored to the full amount.")
+                }
+            }
         }
+    }
+
+    private var giftCardStatsHeader: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+            WebStatCard(title: "Total Sold", value: "\(totalSold)", icon: "giftcard.fill")
+            WebStatCard(title: "Active", value: "\(activeCount)", icon: "checkmark.circle")
+            WebStatCard(title: "Total Value", value: String(format: "£%.2f", totalValue), icon: "sterlingsign.circle")
+            WebStatCard(title: "Remaining Balance", value: String(format: "£%.2f", remainingBalance), icon: "creditcard")
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
     }
 
     private func loadGiftCards() {
@@ -214,6 +297,28 @@ struct GiftCardView: View {
                 await MainActor.run {
                     Haptics.error()
                     toastManager.error("Failed to redeem card")
+                }
+            }
+        }
+    }
+
+    private func unredeemCard(_ card: GiftCard) {
+        guard let staff = authVM.staff else { return }
+        Task {
+            do {
+                let restoredBalance = try await APIClient.shared.unredeemGiftCard(id: card.id, staff: staff)
+                await MainActor.run {
+                    if let idx = giftCards.firstIndex(where: { $0.id == card.id }) {
+                        giftCards[idx].status = "active"
+                        giftCards[idx].balance = restoredBalance
+                    }
+                    Haptics.success()
+                    toastManager.success("Gift card restored to active")
+                }
+            } catch {
+                await MainActor.run {
+                    Haptics.error()
+                    toastManager.error("Failed to un-redeem card")
                 }
             }
         }
@@ -280,6 +385,33 @@ struct GiftCardView: View {
                 }
             }
         }
+    }
+
+    private func expireCard(_ card: GiftCard) {
+        guard let staff = authVM.staff else { return }
+        Task {
+            do {
+                try await APIClient.shared.updateGiftCardStatus(id: card.id, status: "expired", staff: staff)
+                await MainActor.run {
+                    if let idx = giftCards.firstIndex(where: { $0.id == card.id }) {
+                        giftCards[idx].status = "expired"
+                    }
+                    Haptics.success()
+                    toastManager.success("Gift card expired")
+                }
+            } catch {
+                await MainActor.run {
+                    Haptics.error()
+                    toastManager.error("Failed to expire card")
+                }
+            }
+        }
+    }
+
+    private func copyCode(_ card: GiftCard) {
+        UIPasteboard.general.string = card.code
+        Haptics.light()
+        toastManager.success("Code copied to clipboard")
     }
 
     @State private var cardToDelete: GiftCard?
@@ -360,7 +492,7 @@ struct GiftCardRowView: View {
         HStack(spacing: 12) {
             VStack(spacing: 4) {
                 Image(systemName: "giftcard.fill")
-                    .font(.system(size: 20))
+                    .font(AppFont.body(20))
                     .foregroundStyle(statusColor)
             }
             .frame(width: 44, height: 44)
@@ -373,12 +505,12 @@ struct GiftCardRowView: View {
                     .foregroundStyle(PPBrand.charcoal)
                 if let name = card.recipientName {
                     Text(name)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(AppFont.body(13, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
                 if let email = card.recipientEmail, !email.isEmpty {
                     Text(email)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(AppFont.body(11, weight: .medium))
                         .foregroundStyle(PPBrand.clay300)
                 }
             }
@@ -387,15 +519,15 @@ struct GiftCardRowView: View {
 
             VStack(alignment: .trailing, spacing: 4) {
                 Text("£\(String(format: "%.0f", card.amount))")
-                    .font(.system(size: 17, weight: .heavy))
+                    .font(AppFont.heading(17))
                     .foregroundStyle(PPBrand.charcoal)
                 if let balance = card.balance, balance != card.amount {
                     Text("Bal £\(String(format: "%.0f", balance))")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.body(11, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
                 Text(card.statusLabel)
-                    .font(.system(size: 9, weight: .bold))
+                    .font(AppFont.body(9, weight: .bold))
                     .textCase(.uppercase)
                     .tracking(0.3)
                     .padding(.horizontal, 8)
@@ -410,11 +542,11 @@ struct GiftCardRowView: View {
 
     private var statusColor: Color {
         switch card.status {
-        case "active": return .green
+        case "active": return PPBrand.confirmedBadgeText
         case "redeemed": return PPBrand.charcoal
-        case "expired": return .orange
-        case "cancelled": return .red
-        case "disabled": return .orange
+        case "expired": return PPBrand.cancelledBadgeText
+        case "cancelled": return PPBrand.cancelledBadgeText
+        case "disabled": return PPBrand.seatedBadgeText
         default: return .gray
         }
     }
@@ -479,13 +611,13 @@ struct GiftCardScannerSheet: View {
             Spacer()
             VStack(spacing: 8) {
                 Image(systemName: "giftcard")
-                    .font(.system(size: 40))
+                    .font(AppFont.body(40))
                     .foregroundStyle(.white.opacity(0.8))
                 Text("Scan a gift card QR code")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(AppFont.body(16, weight: .bold))
                     .foregroundStyle(.white.opacity(0.9))
                 Text("Point the camera at the QR code")
-                    .font(.system(size: 13))
+                    .font(AppFont.body(13))
                     .foregroundStyle(.white.opacity(0.6))
             }
             .padding(.bottom, 60)
@@ -497,10 +629,10 @@ struct GiftCardScannerSheet: View {
             Spacer()
             VStack(spacing: 12) {
                 Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 36))
+                    .font(AppFont.body(36))
                     .foregroundStyle(.orange)
                 Text(message)
-                    .font(.system(size: 15, weight: .medium))
+                    .font(AppFont.body(15, weight: .medium))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(PPBrand.charcoal)
                 Button {
@@ -508,7 +640,7 @@ struct GiftCardScannerSheet: View {
                     scannedCode = nil
                 } label: {
                     Text("Try Again")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(AppFont.body(14, weight: .bold))
                         .foregroundStyle(PPBrand.charcoal)
                 }
             }
@@ -527,11 +659,11 @@ struct GiftCardScannerSheet: View {
 
             VStack(spacing: 16) {
                 Image(systemName: "giftcard.fill")
-                    .font(.system(size: 36))
+                    .font(AppFont.body(36))
                     .foregroundStyle(Color.purple)
 
                 Text("Gift Card")
-                    .font(.system(size: 20, weight: .heavy))
+                    .font(AppFont.heading(20))
                     .foregroundStyle(PPBrand.charcoal)
 
                 Text(card.code)
@@ -541,15 +673,15 @@ struct GiftCardScannerSheet: View {
                 VStack(spacing: 6) {
                     HStack(spacing: 16) {
                         Label(String(format: "£%.2f", card.balance), systemImage: "sterlingsign.circle.fill")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(AppFont.body(14, weight: .bold))
                         Label(card.status.capitalized, systemImage: "tag.fill")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFont.body(12, weight: .bold))
                     }
                     .foregroundStyle(PPBrand.charcoal.opacity(0.7))
 
                     if let name = card.recipientName, !name.isEmpty {
                         Text(name)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(AppFont.body(12, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                 }
@@ -566,7 +698,7 @@ struct GiftCardScannerSheet: View {
                             }
                             Text("Mark as Redeemed")
                         }
-                        .font(.system(size: 16, weight: .bold))
+                        .font(AppFont.body(16, weight: .bold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(isRedeeming ? Color.purple.opacity(0.6) : Color.purple)
@@ -577,7 +709,7 @@ struct GiftCardScannerSheet: View {
                     .padding(.top, 8)
                 } else {
                     Text("Status: \(card.status.capitalized)")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(AppFont.body(14, weight: .bold))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         .padding(.top, 8)
                 }
@@ -588,7 +720,7 @@ struct GiftCardScannerSheet: View {
                     scanError = nil
                 } label: {
                     Text("Scan Another")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(AppFont.body(14, weight: .bold))
                         .foregroundStyle(PPBrand.charcoal)
                 }
                 .padding(.top, 4)

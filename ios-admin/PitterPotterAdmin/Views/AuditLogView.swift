@@ -74,7 +74,7 @@ struct AuditLogRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: iconForAction(log.action))
-                .font(.system(size: 16, weight: .semibold))
+                .font(AppFont.body(16, weight: .medium))
                 .frame(width: 36, height: 36)
                 .background(colorForAction(log.action).opacity(0.1))
                 .foregroundStyle(colorForAction(log.action))
@@ -83,15 +83,15 @@ struct AuditLogRowView: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(log.action.capitalized)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppFont.body(15, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal)
                     Text(log.entity)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(AppFont.body(13, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
                 if let username = log.username {
                     Text("by \(username)")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.body(12, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
                 if let entityId = log.entityId {
@@ -104,8 +104,8 @@ struct AuditLogRowView: View {
             Spacer()
 
             if let createdAt = log.createdAt {
-                Text(createdAt.prefix(16))
-                    .font(.system(size: 11, weight: .medium))
+                Text(PPDateDisplay.dateTime(createdAt))
+                    .font(AppFont.body(11, weight: .medium))
                     .foregroundStyle(PPBrand.clay300)
             }
         }

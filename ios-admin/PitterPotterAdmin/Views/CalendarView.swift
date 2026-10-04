@@ -1,12 +1,24 @@
 import SwiftUI
+import UIKit
+
+private let sharedDateFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.dateFormat = "yyyy-MM-dd"
+    return f
+}()
 
 struct CalendarView: View {
     @EnvironmentObject var authVM: AuthViewModel
     @EnvironmentObject var bookingsVM: BookingsViewModel
+    @EnvironmentObject var toastManager: ToastManager
 
     @State private var calendarMonth = Date()
     @State private var selectedDate: String? = nil
     @State private var searchText = ""
+
+    private var canAddBookings: Bool {
+        authVM.staff?.role == "super_admin" || authVM.staff?.canAddWalkIns == true
+    }
 
     var body: some View {
         NavigationStack {
@@ -27,10 +39,11 @@ struct CalendarView: View {
                         },
                         canUpdateStatus: authVM.staff?.canUpdateStatus ?? false,
                         bookingsVM: bookingsVM,
-                        authVM: authVM
+                        authVM: authVM,
+                        toastManager: toastManager
                     )
                 } else {
-                if searchText.isEmpty {
+                    if searchText.isEmpty {
                     MonthCalendarView(
                         bookings: bookingsVM.bookings,
                         selectedDate: selectedDate,
@@ -46,7 +59,17 @@ struct CalendarView: View {
                             selectedDate = booking.date
                         },
                         searchText: $searchText,
-                        staffStudio: authVM.staff?.allowedStudios?.count == 1 ? authVM.staff?.allowedStudios?.first : nil
+                        staffStudio: authVM.staff?.allowedStudios?.count == 1 ? authVM.staff?.allowedStudios?.first : nil,
+                        canUpdateStatus: authVM.staff?.canUpdateStatus ?? false || authVM.staff?.role == "super_admin",
+                        onUpdateStatus: { id, status in
+                            Task {
+                                if let staff = authVM.staff {
+                                    if let booking = bookingsVM.bookings.first(where: { $0.id == id }) {
+                                        await bookingsVM.updateStatus(booking: booking, status: status, staff: staff)
+                                    }
+                                }
+                            }
+                        }
                     )
                 }
             }
@@ -57,7 +80,7 @@ struct CalendarView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text(selectedDate == nil ? "Calendar" : "Day View")
-                        .font(.system(size: 17, weight: .heavy, design: .rounded))
+                        .font(AppFont.heading(17))
                         .foregroundStyle(PPBrand.charcoal)
                         .textCase(.uppercase)
                         .tracking(1)
@@ -67,7 +90,7 @@ struct CalendarView: View {
                         Button("Today") {
                             calendarMonth = Date()
                         }
-                        .font(.system(size: 12, weight: .bold))
+                        .font(AppFont.body(12, weight: .bold))
                         .foregroundStyle(PPBrand.charcoal)
                     }
                 }
@@ -76,6 +99,7 @@ struct CalendarView: View {
                 BookingDetailView(booking: booking)
                     .environmentObject(bookingsVM)
                     .environmentObject(authVM)
+                    .environmentObject(toastManager)
             }
             .refreshable {
                 if let staff = authVM.staff {
@@ -125,12 +149,12 @@ struct MonthCalendarView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(month.formatted(.dateTime.month(.wide).year()))
-                        .font(.system(size: 20, weight: .heavy))
+                        .font(AppFont.heading(20))
                         .foregroundStyle(PPBrand.charcoal)
                     HStack(spacing: 12) {
-                        LegendDot(color: .green, label: "Painting")
-                        LegendDot(color: .orange, label: "Baby Prints")
-                        LegendDot(color: .purple, label: "Party")
+                        LegendDot(color: Color(hex: 0x10B981), label: "Painting")
+                        LegendDot(color: Color(hex: 0xFB923C), label: "Baby Prints")
+                        LegendDot(color: Color(hex: 0xA855F7), label: "Party")
                     }
                 }
                 Spacer()
@@ -138,7 +162,7 @@ struct MonthCalendarView: View {
                     onMonthChange(Date())
                 } label: {
                     Text("Today")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(AppFont.body(10, weight: .bold))
                         .foregroundStyle(PPBrand.charcoal)
                         .textCase(.uppercase)
                         .tracking(1)
@@ -150,15 +174,15 @@ struct MonthCalendarView: View {
                         )
                 }
                 HStack(spacing: 0) {
-                    Button { onMonthChange(Calendar.current.date(byAdding: .month, value: -1, to: month)!) } label: {
+                    Button { if let d = Calendar.current.date(byAdding: .month, value: -1, to: month) { onMonthChange(d) } } label: {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(AppFont.body(14, weight: .bold))
                             .foregroundStyle(PPBrand.charcoal)
                             .frame(width: 32, height: 32)
                     }
-                    Button { onMonthChange(Calendar.current.date(byAdding: .month, value: 1, to: month)!) } label: {
+                    Button { if let d = Calendar.current.date(byAdding: .month, value: 1, to: month) { onMonthChange(d) } } label: {
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(AppFont.body(14, weight: .bold))
                             .foregroundStyle(PPBrand.charcoal)
                             .frame(width: 32, height: 32)
                     }
@@ -175,7 +199,7 @@ struct MonthCalendarView: View {
             HStack(spacing: 0) {
                 ForEach(weekdays, id: \.self) { day in
                     Text(day)
-                        .font(.system(size: 10, weight: .heavy))
+                        .font(AppFont.heading(10))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.6))
                         .textCase(.uppercase)
                         .tracking(1)
@@ -202,32 +226,46 @@ struct MonthCalendarView: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("\(cal.component(.day, from: day))")
-                                .font(.system(size: 12, weight: .heavy))
-                                .foregroundStyle(isToday ? Color.white : PPBrand.charcoal)
-                                .frame(width: 24, height: 24)
-                                .background(isToday ? PPBrand.sage : Color.clear)
+                                .font(AppFont.heading(14))
+                                .foregroundStyle(isSelected ? Color.white : isToday ? Color.white : PPBrand.charcoal)
+                                .frame(width: 30, height: 30)
+                                .background(
+                                    isSelected ? PPBrand.charcoal :
+                                    isToday ? PPBrand.sage : Color.clear
+                                )
                                 .clipShape(Circle())
+                                .overlay(
+                                    isToday && !isSelected ?
+                                        Circle().stroke(PPBrand.sage, lineWidth: 2)
+                                    : nil
+                                )
 
                             if let types {
                                 HStack(spacing: 3) {
-                                    if types.painting { Circle().fill(.green).frame(width: 6, height: 6) }
-                                    if types.babyPrints { Circle().fill(.orange).frame(width: 6, height: 6) }
-                                    if types.party { Circle().fill(.purple).frame(width: 6, height: 6) }
+                                    if types.painting { Circle().fill(Color(hex: 0x10B981)).frame(width: 6, height: 6) }
+                                    if types.babyPrints { Circle().fill(Color(hex: 0xFB923C)).frame(width: 6, height: 6) }
+                                    if types.party { Circle().fill(Color(hex: 0xA855F7)).frame(width: 6, height: 6) }
                                     if types.painters > 0 {
                                         Text("\(types.painters)")
-                                            .font(.system(size: 8, weight: .heavy))
-                                            .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                                            .font(AppFont.heading(8))
+                                            .foregroundStyle(isSelected ? Color.white : PPBrand.charcoal.opacity(0.4))
                                     }
                                 }
                             }
                             Spacer()
                         }
-                        .frame(maxWidth: .infinity, minHeight: 56, alignment: .topLeading)
+                        .frame(maxWidth: .infinity, minHeight: 60, alignment: .topLeading)
                         .padding(6)
                         .background(
-                            isSelected ? PPBrand.sage.opacity(0.5) :
-                            isToday ? PPBrand.clay100.opacity(0.3) :
+                            isSelected ? PPBrand.sage.opacity(0.85) :
+                            isToday ? PPBrand.clay100.opacity(0.5) :
                             inMonth ? Color.white : Color(.systemGray6).opacity(0.3)
+                        )
+                        .overlay(
+                            isSelected ?
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(PPBrand.charcoal, lineWidth: 3)
+                            : nil
                         )
                         .overlay(alignment: .trailing) {
                             Rectangle().fill(PPBrand.charcoal.opacity(0.06)).frame(width: 0.5)
@@ -245,9 +283,7 @@ struct MonthCalendarView: View {
     }
 
     private func dateString(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f.string(from: date)
+        sharedDateFormatter.string(from: date)
     }
 }
 
@@ -258,79 +294,74 @@ struct BookingsListBelowCalendar: View {
     let onTap: (Booking) -> Void
     @Binding var searchText: String
     var staffStudio: String? = nil
-    @State private var statusFilter: StatusFilter = .upcoming
-    @State private var sessionFilter: SessionFilter = .all
+    var canUpdateStatus: Bool = false
+    var onUpdateStatus: ((String, BookingStatus) -> Void)? = nil
+    @State private var statusFilter: String = "all"
+    @State private var bookingTypeTab: String = "all"
+    @State private var selectedIds: Set<String> = []
+    @State private var sortField: String = "added"
+    @State private var sortAsc: Bool = false
     @FocusState private var searchFocused: Bool
 
-    enum StatusFilter: String, CaseIterable {
-        case upcoming = "Upcoming"
-        case all = "All"
-        case pending = "Pending"
-        case confirmed = "Confirmed"
-        case seated = "Seated"
-        case completed = "Completed"
-        case cancelled = "Cancelled"
-        case noShow = "No-Show"
-
-        var color: Color {
-            switch self {
-            case .upcoming: return PPBrand.charcoal
-            case .all: return PPBrand.charcoal
-            case .pending: return Color(red: 0.85, green: 0.75, blue: 0.2)
-            case .confirmed: return Color(red: 0.2, green: 0.65, blue: 0.35)
-            case .seated: return Color(red: 0.9, green: 0.6, blue: 0.1)
-            case .completed: return Color(red: 0.1, green: 0.5, blue: 0.55)
-            case .cancelled: return Color.red
-            case .noShow: return Color.red.opacity(0.6)
+    private func sortHeader(_ field: String, _ label: String) -> some View {
+        Button {
+            if sortField == field {
+                sortAsc.toggle()
+            } else {
+                sortField = field
+                sortAsc = false
             }
+        } label: {
+            HStack(spacing: 3) {
+                Text(label)
+                    .font(AppFont.body(10, weight: .bold))
+                    .textCase(.uppercase)
+                    .tracking(0.5)
+                if sortField == field {
+                    Image(systemName: sortAsc ? "chevron.up" : "chevron.down")
+                        .font(AppFont.body(8, weight: .bold))
+                }
+            }
+            .foregroundStyle(PPBrand.charcoal)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 8)
         }
+        .buttonStyle(.plain)
     }
 
-    enum SessionFilter: String, CaseIterable {
-        case all = "All Types"
-        case painting = "Painting"
-        case birthdayParty = "Birthday Party"
-        case babyShowerHen = "Baby Shower / Hen"
-        case clayImprints = "Baby Prints"
-        case corporate = "Corporate"
-        case exclusiveHire = "Exclusive Hire"
-
-        var rawValueKey: String? {
-            switch self {
-            case .all: return nil
-            case .painting: return "painting"
-            case .birthdayParty: return "birthday-party"
-            case .babyShowerHen: return "baby-shower-hen"
-            case .clayImprints: return "clay-imprints"
-            case .corporate: return "corporate"
-            case .exclusiveHire: return "exclusive-hire"
-            }
+    private var sortedBookings: [Booking] {
+        let result = filteredBookings
+        switch sortField {
+        case "added":
+            return result.sorted { sortAsc ? ($0.createdAt ?? "") < ($1.createdAt ?? "") : ($0.createdAt ?? "") > ($1.createdAt ?? "") }
+        case "date":
+            return result.sorted { sortAsc ? $0.date < $1.date : $0.date > $1.date }
+        case "name":
+            return result.sorted { sortAsc ? $0.name < $1.name : $0.name > $1.name }
+        case "status":
+            return result.sorted { sortAsc ? $0.status < $1.status : $0.status > $1.status }
+        default:
+            return result
         }
     }
 
     private var filteredBookings: [Booking] {
-        let today = dateString(Date())
-        var result: [Booking]
+        var result = bookings
         switch statusFilter {
-        case .upcoming:
-            result = bookings.filter { $0.status != "cancelled" && $0.date >= today }
-        case .all:
-            result = bookings
-        case .pending:
-            result = bookings.filter { $0.status == "pending" }
-        case .confirmed:
-            result = bookings.filter { $0.status == "confirmed" }
-        case .seated:
-            result = bookings.filter { $0.status == "seated" }
-        case .completed:
-            result = bookings.filter { $0.status == "completed" }
-        case .cancelled:
-            result = bookings.filter { $0.status == "cancelled" }
-        case .noShow:
-            result = bookings.filter { $0.status == "no_show" }
+        case "all": break
+        case "pending": result = result.filter { $0.status == "pending" }
+        case "confirmed": result = result.filter { $0.status == "confirmed" }
+        case "seated": result = result.filter { $0.status == "seated" }
+        case "completed": result = result.filter { $0.status == "completed" }
+        case "cancelled": result = result.filter { $0.status == "cancelled" }
+        default: break
         }
-        if let sessionKey = sessionFilter.rawValueKey {
-            result = result.filter { $0.sessionType == sessionKey }
+        switch bookingTypeTab {
+        case "all": break
+        case "painting": result = result.filter { $0.sessionType == "painting" }
+        case "baby-prints": result = result.filter { $0.sessionType == "clay-imprints" }
+        case "party": result = result.filter { ["birthday-party", "baby-shower-hen", "corporate"].contains($0.sessionType) }
+        default: break
         }
         if !searchText.isEmpty {
             let q = searchText.lowercased()
@@ -345,101 +376,210 @@ struct BookingsListBelowCalendar: View {
         return result.sorted { $0.date == $1.date ? $0.time < $1.time : $0.date < $1.date }
     }
 
+    private func countForTab(_ tab: String) -> Int {
+        switch tab {
+        case "all": return bookings.count
+        case "painting": return bookings.filter { $0.sessionType == "painting" }.count
+        case "baby-prints": return bookings.filter { $0.sessionType == "clay-imprints" }.count
+        case "party": return bookings.filter { ["birthday-party", "baby-shower-hen", "corporate"].contains($0.sessionType) }.count
+        default: return 0
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // Booking type tabs (matching web: All Bookings, Painting, Baby Prints, Party)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach([("all", "All Bookings"), ("painting", "Painting"), ("baby-prints", "Baby Prints"), ("party", "Party")], id: \.0) { tab in
+                        Button {
+                            bookingTypeTab = tab.0
+                            Haptics.light()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(tab.1)
+                                    .font(AppFont.body(11, weight: .bold))
+                                Text("\(countForTab(tab.0))")
+                                    .font(AppFont.body(9, weight: .black))
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 1)
+                                    .background(bookingTypeTab == tab.0 ? PPBrand.charcoal.opacity(0.15) : PPBrand.charcoal.opacity(0.08))
+                                    .clipShape(Capsule())
+                            }
+                            .foregroundStyle(bookingTypeTab == tab.0 ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.6))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(bookingTypeTab == tab.0 ? PPBrand.sage : Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(PPBrand.charcoal.opacity(bookingTypeTab == tab.0 ? 0.3 : 0.15), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.top, 16)
+            }
+
+            // Search + status filter toolbar (matching web)
+            VStack(spacing: 8) {
+                // Search
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(AppFont.body(13, weight: .bold))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                    TextField("Search name, email or phone…", text: $searchText)
+                        .font(AppFont.body(12, weight: .semibold))
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .focused($searchFocused)
+                    if !searchText.isEmpty {
+                        Button {
+                            searchText = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(AppFont.body(14))
+                                .foregroundStyle(PPBrand.charcoal.opacity(0.3))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(PPBrand.charcoal.opacity(0.15), lineWidth: 1))
+
+                // Status filter (segmented like web — no bright colors)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 0) {
+                        ForEach([("all", "All"), ("pending", "Awaiting"), ("confirmed", "Confirmed"), ("seated", "Seated"), ("completed", "Complete"), ("cancelled", "Cancelled")], id: \.0) { status in
+                            Button {
+                                statusFilter = status.0
+                                Haptics.light()
+                            } label: {
+                                Text(status.1)
+                                    .font(AppFont.body(10, weight: .bold))
+                                    .foregroundStyle(statusFilter == status.0 ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.6))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 7)
+                                    .background(statusFilter == status.0 ? PPBrand.sage : Color.white)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(RoundedRectangle(cornerRadius: 8).stroke(PPBrand.charcoal.opacity(0.15), lineWidth: 1))
+                }
+            }
+
+            // Bookings count
             HStack {
-                Text("Bookings")
-                    .font(.system(size: 15, weight: .heavy, design: .rounded))
-                    .foregroundStyle(PPBrand.charcoal)
-                    .textCase(.uppercase)
-                    .tracking(1)
-                Spacer()
-                Text("\(filteredBookings.count)")
-                    .font(.system(size: 11, weight: .heavy))
+                Text("\(filteredBookings.count) booking\(filteredBookings.count != 1 ? "s" : "")")
+                    .font(AppFont.body(11, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
-            }
-            .padding(.top, 20)
-
-            // Search bar
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(PPBrand.charcoal.opacity(0.4))
-                TextField("Search name, phone, date...", text: $searchText)
-                    .font(.system(size: 13, weight: .medium))
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .focused($searchFocused)
-                if !searchText.isEmpty {
-                    Button {
-                        searchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 14))
-                            .foregroundStyle(PPBrand.charcoal.opacity(0.3))
-                    }
-                    .buttonStyle(.plain)
+                if statusFilter != "all" || bookingTypeTab != "all" || !searchText.isEmpty {
+                    Text("(filtered)")
+                        .font(AppFont.body(11, weight: .medium))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.4))
                 }
+                Spacer()
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(PPBrand.charcoal.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-
-            // Filter chips
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(StatusFilter.allCases, id: \.self) { filter in
-                        Button {
-                            statusFilter = filter
-                            Haptics.light()
-                        } label: {
-                            Text(filter.rawValue)
-                                .font(.system(size: 11, weight: .heavy))
-                                .foregroundStyle(statusFilter == filter ? .white : filter.color)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(statusFilter == filter ? filter.color : filter.color.opacity(0.12))
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-
-            // Session type filter chips
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(SessionFilter.allCases, id: \.self) { filter in
-                        Button {
-                            sessionFilter = filter
-                            Haptics.light()
-                        } label: {
-                            Text(filter.rawValue)
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(sessionFilter == filter ? .white : PPBrand.charcoal.opacity(0.6))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .background(sessionFilter == filter ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.06))
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.vertical, 2)
-            }
+            .padding(.top, 4)
 
             if filteredBookings.isEmpty {
-                Text("No bookings")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(PPBrand.charcoal.opacity(0.4))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 24)
-            } else {
-                ForEach(filteredBookings) { booking in
-                    BookingListRow(booking: booking, onTap: { onTap(booking) }, staffStudio: staffStudio)
+                VStack(spacing: 8) {
+                    Image(systemName: "tray")
+                        .font(AppFont.body(28))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.2))
+                    Text("No bookings found")
+                        .font(AppFont.body(13, weight: .semibold))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                    Text("Adjust your filters or add a new booking")
+                        .font(AppFont.body(11, weight: .medium))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.3))
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 32)
+            } else {
+                // Table (matching web desktop)
+                LazyVStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        // Checkbox column with select all
+                        Button {
+                            if selectedIds.count == sortedBookings.count {
+                                selectedIds.removeAll()
+                            } else {
+                                selectedIds = Set(sortedBookings.map { $0.id })
+                            }
+                        } label: {
+                            Image(systemName: selectedIds.count == sortedBookings.count && !sortedBookings.isEmpty ? "checkmark.square.fill" : "square")
+                                .font(AppFont.body(12, weight: .bold))
+                                .foregroundStyle(PPBrand.charcoal)
+                        }
+                        .buttonStyle(.plain)
+                        .frame(width: 40, alignment: .center)
+                        .padding(.horizontal, 4)
+
+                        sortHeader("added", "ADDED")
+                        sortHeader("date", "DATE")
+                        sortHeader("name", "GUEST")
+                        Text("SESSION")
+                            .font(AppFont.body(10, weight: .bold))
+                            .textCase(.uppercase)
+                            .tracking(0.5)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 8)
+                        sortHeader("status", "STATUS")
+                        Text("TABLE")
+                            .font(AppFont.body(10, weight: .bold))
+                            .textCase(.uppercase)
+                            .tracking(0.5)
+                            .frame(width: 70, alignment: .leading)
+                            .padding(.horizontal, 8)
+                        Text("ACTIONS")
+                            .font(AppFont.body(10, weight: .bold))
+                            .textCase(.uppercase)
+                            .tracking(0.5)
+                            .frame(width: 90, alignment: .center)
+                            .padding(.horizontal, 8)
+                    }
+                    .padding(.vertical, 10)
+                    .background(PPBrand.clay100)
+                    .overlay(
+                        Rectangle()
+                            .fill(PPBrand.charcoal.opacity(0.15))
+                            .frame(height: 1),
+                        alignment: .bottom
+                    )
+
+                    ForEach(sortedBookings) { booking in
+                        BookingListRow(
+                            booking: booking,
+                            onTap: { onTap(booking) },
+                            staffStudio: staffStudio,
+                            canUpdateStatus: canUpdateStatus,
+                            isSelected: selectedIds.contains(booking.id),
+                            onToggleSelect: { id in
+                                if selectedIds.contains(id) {
+                                    selectedIds.remove(id)
+                                } else {
+                                    selectedIds.insert(id)
+                                }
+                            },
+                            onConfirm: { id in onUpdateStatus?(id, .confirmed) },
+                            onAwaiting: { id in onUpdateStatus?(id, .pending) },
+                            onCancel: { id in onUpdateStatus?(id, .cancelled) }
+                        )
+                    }
+                }
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(PPBrand.charcoal.opacity(0.15), lineWidth: 1)
+                )
             }
         }
         .padding(.horizontal, 16)
@@ -447,9 +587,7 @@ struct BookingsListBelowCalendar: View {
     }
 
     private func dateString(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f.string(from: date)
+        sharedDateFormatter.string(from: date)
     }
 }
 
@@ -457,120 +595,353 @@ struct BookingListRow: View {
     let booking: Booking
     let onTap: () -> Void
     var staffStudio: String? = nil
+    var canUpdateStatus: Bool = false
+    var isSelected: Bool = false
+    var onToggleSelect: ((String) -> Void)? = nil
+    var onConfirm: ((String) -> Void)? = nil
+    var onAwaiting: ((String) -> Void)? = nil
+    var onCancel: ((String) -> Void)? = nil
 
-    private var sessionLabel: String? {
-        switch booking.sessionType {
-        case "painting": return nil
-        case "birthday-party": return "Party"
-        case "baby-shower-hen": return "Shower/Hen"
-        case "clay-imprints": return "Baby Prints"
-        case "corporate": return "Corporate"
-        case "exclusive-hire": return "Exclusive Hire"
-        default: return nil
+    private var statusBgColor: Color {
+        switch booking.status {
+        case "confirmed": return Color(red: 0.94, green: 0.99, blue: 0.94)
+        case "cancelled": return Color(red: 0.99, green: 0.93, blue: 0.93)
+        case "seated": return Color(red: 0.99, green: 0.96, blue: 0.88)
+        case "completed": return Color(red: 0.92, green: 0.98, blue: 0.96)
+        default: return Color(red: 0.99, green: 0.96, blue: 0.88)
         }
     }
 
-    private var statusColor: Color {
+    private var statusTextColor: Color {
         switch booking.status {
-        case "pending": return Color(red: 0.85, green: 0.75, blue: 0.2)
-        case "confirmed": return Color(red: 0.2, green: 0.65, blue: 0.35)
-        case "seated": return Color(red: 0.9, green: 0.6, blue: 0.1)
-        case "completed": return Color(red: 0.1, green: 0.5, blue: 0.55)
-        case "cancelled": return Color.red
-        case "no_show": return Color.red.opacity(0.6)
-        default: return PPBrand.charcoal.opacity(0.3)
+        case "confirmed": return Color(red: 0.1, green: 0.5, blue: 0.2)
+        case "cancelled": return Color(red: 0.7, green: 0.15, blue: 0.15)
+        case "seated": return Color(red: 0.6, green: 0.4, blue: 0.1)
+        case "completed": return Color(red: 0.1, green: 0.4, blue: 0.3)
+        default: return Color(red: 0.6, green: 0.4, blue: 0.1)
+        }
+    }
+
+    private var statusLabel: String {
+        switch booking.status {
+        case "pending": return "Awaiting"
+        case "confirmed": return "Confirmed"
+        case "seated": return "Seated"
+        case "completed": return "Complete"
+        case "cancelled": return "Cancelled"
+        case "no_show": return "No-Show"
+        default: return booking.status.capitalized
+        }
+    }
+
+    private var statusIcon: String {
+        switch booking.status {
+        case "confirmed": return "checkmark.circle.fill"
+        case "cancelled": return "xmark.circle.fill"
+        case "seated": return "person.2.fill"
+        case "completed": return "checkmark.circle.fill"
+        default: return "clock.fill"
+        }
+    }
+
+    private var sessionLabel: String {
+        switch booking.sessionType {
+        case "painting": return "Painting"
+        case "birthday-party": return "Birthday Party"
+        case "baby-shower-hen": return "Baby Shower / Hen"
+        case "clay-imprints": return "Baby Prints"
+        case "corporate": return "Corporate"
+        case "exclusive-hire": return "Exclusive Hire"
+        default: return booking.sessionType ?? "—"
+        }
+    }
+
+    private var sessionBadgeColors: (bg: Color, text: Color) {
+        switch booking.sessionType {
+        case "painting": return (PPBrand.paintingBadgeBg, PPBrand.paintingBadgeText)
+        case "birthday-party": return (Color(red: 1.0, green: 0.88, blue: 0.93), Color(red: 0.7, green: 0.1, blue: 0.4))
+        case "baby-shower-hen": return (Color(red: 0.92, green: 0.88, blue: 0.97), Color(red: 0.4, green: 0.2, blue: 0.6))
+        case "clay-imprints": return (Color(red: 1.0, green: 0.92, blue: 0.82), Color(red: 0.7, green: 0.4, blue: 0.1))
+        case "corporate": return (Color(red: 0.9, green: 0.9, blue: 0.95), Color(red: 0.2, green: 0.2, blue: 0.3))
+        case "exclusive-hire": return (Color(red: 0.88, green: 0.9, blue: 0.98), Color(red: 0.2, green: 0.2, blue: 0.6))
+        default: return (Color.gray.opacity(0.15), Color.gray)
         }
     }
 
     private var formattedDate: String {
+        guard let d = sharedDateFormatter.date(from: booking.date) else { return booking.date }
         let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        guard let d = f.date(from: booking.date) else { return booking.date }
-        f.dateFormat = "EEE d MMM"
+        f.dateFormat = "dd MMM yyyy"
         return f.string(from: d)
     }
 
+    private var formattedAdded: String {
+        guard let added = booking.createdAt else { return "—" }
+        let formats = [
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXXXX",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ssXXXXX",
+            "yyyy-MM-dd'T'HH:mm:ssXXX",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd"
+        ]
+        for format in formats {
+            let f = DateFormatter()
+            f.dateFormat = format
+            f.locale = Locale(identifier: "en_US_POSIX")
+            f.timeZone = TimeZone(secondsFromGMT: 0)
+            if let d = f.date(from: added) {
+                let out = DateFormatter()
+                out.dateFormat = "dd MMM yyyy, HH:mm"
+                out.timeZone = TimeZone.current
+                return out.string(from: d)
+            }
+        }
+        return added
+    }
+
     var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 12) {
-                // Photo thumbnail
-                if let photos = booking.photos, !photos.isEmpty, let url = URL(string: photos[0]) {
-                    CachedAsyncImage(url: url, contentMode: .fill)
-                        .frame(width: 48, height: 48)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                } else {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(PPBrand.clay100.opacity(0.5))
-                        .frame(width: 48, height: 48)
-                        .overlay(
-                            Image(systemName: "camera")
-                                .font(.system(size: 16))
-                                .foregroundStyle(PPBrand.charcoal.opacity(0.3))
-                        )
-                }
+        HStack(spacing: 0) {
+            // Checkbox column
+            Button {
+                onToggleSelect?(booking.id)
+            } label: {
+                Image(systemName: isSelected ? "checkmark.square.fill" : "square")
+                    .font(AppFont.body(12, weight: .bold))
+                    .foregroundStyle(isSelected ? PPBrand.charcoal : PPBrand.charcoal.opacity(0.3))
+            }
+            .buttonStyle(.plain)
+            .frame(width: 40, alignment: .center)
+            .padding(.horizontal, 4)
 
-                // Date block
-                VStack(spacing: 2) {
-                    Text(formattedDate.components(separatedBy: " ").first ?? "")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
-                        .textCase(.uppercase)
-                    Text(formattedDate.components(separatedBy: " ").dropFirst().joined(separator: " "))
-                        .font(.system(size: 13, weight: .heavy))
-                        .foregroundStyle(PPBrand.charcoal)
-                }
-                .frame(width: 64, alignment: .leading)
+            Divider().frame(height: 32)
 
-                Divider()
-                    .frame(height: 36)
-
-                // Booking info
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(booking.name)
-                        .font(.system(size: 14, weight: .heavy))
-                        .foregroundStyle(PPBrand.charcoal)
-                        .lineLimit(1)
-                    HStack(spacing: 8) {
-                        Label("\(booking.paintersCount)", systemImage: "person.2.fill")
-                        Label(booking.time, systemImage: "clock.fill")
-                        if staffStudio == nil || staffStudio != booking.studio {
-                            Label(booking.studio, systemImage: "mappin.fill")
-                        }
-                    }
-                    .font(.system(size: 10, weight: .bold))
+            // Added column
+            VStack(alignment: .leading, spacing: 1) {
+                Text(formattedAdded)
+                    .font(AppFont.body(11, weight: .black))
+                    .foregroundStyle(PPBrand.charcoal)
+                Text(booking.studio)
+                    .font(AppFont.body(10, weight: .semibold))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 8)
 
-                    if let label = sessionLabel {
-                        Text(label)
-                            .font(.system(size: 8, weight: .heavy))
-                            .foregroundStyle(.white)
+            Divider().frame(height: 32)
+
+            // Date column
+            VStack(alignment: .leading, spacing: 1) {
+                Text(formattedDate)
+                    .font(AppFont.body(11, weight: .black))
+                    .foregroundStyle(PPBrand.charcoal)
+                Text(booking.time)
+                    .font(AppFont.body(10, weight: .regular))
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 8)
+
+            Divider().frame(height: 32)
+
+            // Guest column
+            VStack(alignment: .leading, spacing: 1) {
+                Text(booking.name)
+                    .font(AppFont.body(11, weight: .black))
+                    .foregroundStyle(PPBrand.charcoal)
+                    .lineLimit(1)
+                if let email = booking.email, !email.isEmpty {
+                    Text(email)
+                        .font(AppFont.body(9, weight: .semibold))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                        .lineLimit(1)
+                }
+                if let phone = booking.phone, !phone.isEmpty {
+                    Text(phone)
+                        .font(AppFont.body(10, weight: .semibold))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                }
+                HStack(spacing: 4) {
+                    HStack(spacing: 2) {
+                        Image(systemName: "person.2.fill")
+                            .font(AppFont.body(8, weight: .bold))
+                        Text("\(booking.paintersCount)")
+                            .font(AppFont.body(10, weight: .black))
+                    }
+                    .foregroundStyle(PPBrand.charcoal)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(PPBrand.clay100)
+                    .clipShape(Capsule())
+                    if booking.source == "walk-in" {
+                        Text("Walk-in")
+                            .font(AppFont.body(9, weight: .bold))
+                            .foregroundStyle(Color(red: 0.5, green: 0.3, blue: 0.7))
                             .padding(.horizontal, 5)
-                            .padding(.vertical, 2)
-                            .background(PPBrand.charcoal.opacity(0.6))
+                            .padding(.vertical, 1)
+                            .background(Color(red: 0.92, green: 0.88, blue: 0.96))
                             .clipShape(Capsule())
                     }
                 }
-
-                Spacer()
-
-                // Status badge
-                Text(booking.bookingStatus?.label ?? booking.status.capitalized)
-                    .font(.system(size: 9, weight: .heavy))
-                    .foregroundStyle(statusColor)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(statusColor.opacity(0.12))
-                    .clipShape(Capsule())
             }
-            .padding(12)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(PPBrand.charcoal.opacity(0.1), lineWidth: 1)
-            )
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 8)
+
+            Divider().frame(height: 32)
+
+            // Session column
+            VStack(alignment: .leading, spacing: 4) {
+                let colors = sessionBadgeColors
+                Text(sessionLabel)
+                    .font(AppFont.body(10, weight: .bold))
+                    .foregroundStyle(colors.text)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(colors.bg)
+                    .clipShape(Capsule())
+                if let photos = booking.photos, !photos.isEmpty {
+                    HStack(spacing: 3) {
+                        ForEach(photos.prefix(3).indices, id: \.self) { i in
+                            if let url = URL(string: photos[i]) {
+                                CachedAsyncImage(url: url, contentMode: .fill)
+                                    .frame(width: 32, height: 32)
+                                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                                    .overlay(RoundedRectangle(cornerRadius: 5).stroke(PPBrand.charcoal.opacity(0.1), lineWidth: 1))
+                            }
+                        }
+                        if photos.count > 3 {
+                            Text("+\(photos.count - 3)")
+                                .font(AppFont.body(9, weight: .black))
+                                .foregroundStyle(PPBrand.charcoal.opacity(0.6))
+                                .frame(width: 32, height: 32)
+                                .background(PPBrand.clay100)
+                                .clipShape(RoundedRectangle(cornerRadius: 5))
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 8)
+
+            Divider().frame(height: 32)
+
+            // Status column
+            HStack(spacing: 3) {
+                Image(systemName: statusIcon)
+                    .font(AppFont.body(9, weight: .bold))
+                Text(statusLabel)
+                    .font(AppFont.body(10, weight: .black))
+                    .textCase(.uppercase)
+                    .tracking(0.5)
+            }
+            .foregroundStyle(statusTextColor)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(statusBgColor)
+            .clipShape(Capsule())
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 8)
+
+            Divider().frame(height: 32)
+
+            // Table column
+            Group {
+                if let tableId = booking.tableId, !tableId.isEmpty {
+                    Text(tableId)
+                        .font(AppFont.body(10, weight: .bold))
+                        .foregroundStyle(PPBrand.charcoal)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(PPBrand.sage)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                } else {
+                    Text("Assign")
+                        .font(AppFont.body(10, weight: .bold))
+                        .foregroundStyle(Color(red: 0.6, green: 0.4, blue: 0.1))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color(red: 0.99, green: 0.96, blue: 0.88))
+                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(red: 0.9, green: 0.8, blue: 0.5), lineWidth: 1))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+            }
+            .frame(width: 70, alignment: .leading)
+            .padding(.horizontal, 8)
+
+            Divider().frame(height: 32)
+
+            // Actions column (small icon buttons like web desktop)
+            HStack(spacing: 6) {
+                if canUpdateStatus && booking.status != "confirmed" && booking.status != "cancelled" {
+                    Button {
+                        onConfirm?(booking.id)
+                    } label: {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(AppFont.body(12, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(6)
+                            .background(Color(red: 0.05, green: 0.6, blue: 0.3))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                    .buttonStyle(.plain)
+                }
+                if canUpdateStatus && booking.status == "confirmed" {
+                    Button {
+                        onAwaiting?(booking.id)
+                    } label: {
+                        Image(systemName: "clock")
+                            .font(AppFont.body(12, weight: .bold))
+                            .foregroundStyle(Color(red: 0.6, green: 0.4, blue: 0.1))
+                            .padding(6)
+                            .background(Color(red: 0.99, green: 0.96, blue: 0.88))
+                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(red: 0.9, green: 0.8, blue: 0.5), lineWidth: 1))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                    .buttonStyle(.plain)
+                }
+                if canUpdateStatus && booking.status != "cancelled" {
+                    Button {
+                        onCancel?(booking.id)
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(AppFont.body(12, weight: .bold))
+                            .foregroundStyle(Color(red: 0.7, green: 0.2, blue: 0.2))
+                            .padding(6)
+                            .background(Color(red: 0.99, green: 0.93, blue: 0.93))
+                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color(red: 0.95, green: 0.75, blue: 0.75), lineWidth: 1))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                    .buttonStyle(.plain)
+                }
+                // ⋯ button to open detail (matching web)
+                Button {
+                    onTap()
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(AppFont.body(12, weight: .bold))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                        .padding(6)
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(width: 90, alignment: .center)
+            .padding(.horizontal, 8)
         }
-        .buttonStyle(.plain)
+        .padding(.vertical, 10)
+        .background(isSelected ? PPBrand.clay100.opacity(0.5) : Color.white)
+        .overlay(
+            Rectangle()
+                .fill(PPBrand.charcoal.opacity(0.08))
+                .frame(height: 1),
+            alignment: .bottom
+        )
+        .contentShape(Rectangle())
+        .onTapGesture { onTap() }
     }
 }
 
@@ -582,7 +953,7 @@ struct LegendDot: View {
         HStack(spacing: 3) {
             Circle().fill(color).frame(width: 6, height: 6)
             Text(label)
-                .font(.system(size: 9, weight: .bold))
+                .font(AppFont.body(9, weight: .bold))
                 .foregroundStyle(PPBrand.charcoal.opacity(0.6))
         }
     }
@@ -598,12 +969,10 @@ struct DayDashboardView: View {
     let canUpdateStatus: Bool
     let bookingsVM: BookingsViewModel
     let authVM: AuthViewModel
+    let toastManager: ToastManager
 
     @State private var selectedBooking: Booking? = nil
-    @State private var showingNewWalkIn = false
-    @State private var showingNewBooking = false
-    @State private var showingPartyBooking = false
-    @State private var showingNewBabyPrint = false
+    @State private var photoBooking: Booking? = nil
     @State private var showingGhostBooking = false
 
     private var staffStudio: String? {
@@ -644,9 +1013,9 @@ struct DayDashboardView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFont.body(12, weight: .bold))
                         Text("Calendar")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFont.body(12, weight: .bold))
                     }
                     .foregroundStyle(PPBrand.charcoal)
                     .padding(.horizontal, 12)
@@ -654,72 +1023,14 @@ struct DayDashboardView: View {
                     .webCard()
                 }
                 Text(formatDate(date))
-                    .font(.system(size: 18, weight: .heavy, design: .rounded))
-                    .foregroundStyle(PPBrand.charcoal)
+                    .font(AppFont.heading(18))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(PPBrand.charcoal)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
                 Spacer()
             }
-
-            // Action buttons (matching web DayDashboard)
-            ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        Button {
-                            showingNewWalkIn = true
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "person.walk")
-                                Text("Walk-in")
-                            }
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(PPBrand.charcoal)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        Button {
-                            showingNewBooking = true
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "person.2.fill")
-                                Text("New Booking")
-                            }
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color(red: 0.0, green: 0.65, blue: 0.35))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        Button {
-                            showingPartyBooking = true
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "birthday.cake.fill")
-                                Text("New Party")
-                            }
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color(red: 0.55, green: 0.25, blue: 0.65))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        Button {
-                            showingNewBabyPrint = true
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "figure.and.child.holdinghands")
-                                Text("New Baby Print")
-                            }
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color(red: 0.976, green: 0.451, blue: 0.086))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                    }
-                }
 
             // Stat bubbles
             HStack(spacing: 8) {
@@ -730,7 +1041,7 @@ struct DayDashboardView: View {
                 StatBubble(label: "No-Show", value: noshowColumn.count, color: .red)
             }
 
-            // 3-column kanban (horizontal like web) + No-Show below
+            // 4-column kanban (horizontal like web)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 12) {
                     KanbanColumn(
@@ -742,6 +1053,7 @@ struct DayDashboardView: View {
                         onMove: handleMove,
                         onNoShow: handleNoShow,
                         onTap: { selectedBooking = $0 },
+                        onAddPhoto: { photoBooking = $0 },
                         staffStudio: staffStudio
                     )
                     .frame(width: 280)
@@ -755,6 +1067,7 @@ struct DayDashboardView: View {
                         onMove: handleMove,
                         onNoShow: nil,
                         onTap: { selectedBooking = $0 },
+                        onAddPhoto: { photoBooking = $0 },
                         staffStudio: staffStudio
                     )
                     .frame(width: 280)
@@ -768,16 +1081,11 @@ struct DayDashboardView: View {
                         onMove: handleMove,
                         onNoShow: nil,
                         onTap: { selectedBooking = $0 },
+                        onAddPhoto: { photoBooking = $0 },
                         staffStudio: staffStudio
                     )
                     .frame(width: 280)
-                }
-                .padding(.bottom, 8)
-            }
 
-            // No-Show row below
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .top, spacing: 12) {
                     KanbanColumn(
                         title: "No-Show",
                         count: noshowColumn.count,
@@ -787,6 +1095,7 @@ struct DayDashboardView: View {
                         onMove: handleMove,
                         onNoShow: nil,
                         onTap: { selectedBooking = $0 },
+                        onAddPhoto: { photoBooking = $0 },
                         staffStudio: staffStudio
                     )
                     .frame(width: 280)
@@ -801,27 +1110,45 @@ struct DayDashboardView: View {
                 BookingDetailView(booking: booking)
                     .environmentObject(bookingsVM)
                     .environmentObject(authVM)
+                    .environmentObject(toastManager)
             }
         }
-        .sheet(isPresented: $showingNewWalkIn) {
-            NewWalkInView()
-                .environmentObject(authVM)
-                .environmentObject(bookingsVM)
+        .sheet(item: $photoBooking) { booking in
+            CameraPicker { data in
+                uploadPhoto(data, for: booking)
+            }
         }
-        .sheet(isPresented: $showingNewBooking) {
-            NewWalkInView(initialSessionType: .painting)
-                .environmentObject(authVM)
-                .environmentObject(bookingsVM)
-        }
-        .sheet(isPresented: $showingPartyBooking) {
-            PartyBookingView()
-                .environmentObject(authVM)
-                .environmentObject(bookingsVM)
-        }
-        .sheet(isPresented: $showingNewBabyPrint) {
-            NewWalkInView(initialSessionType: .clayImprints)
-                .environmentObject(authVM)
-                .environmentObject(bookingsVM)
+    }
+
+    private func uploadPhoto(_ data: Data, for booking: Booking) {
+        guard let staff = authVM.staff else { return }
+        Task {
+            do {
+                let url = try await APIClient.shared.uploadPhoto(
+                    imageData: data,
+                    fileName: "photo_\(Int(Date().timeIntervalSince1970)).jpg",
+                    bookingId: booking.id,
+                    staff: staff
+                )
+                if let urlObject = URL(string: url), let image = UIImage(data: data) {
+                    CachedAsyncImage.prefetch(url: urlObject, image: image)
+                }
+                var updated = booking
+                var photos = updated.photos ?? []
+                photos.append(url)
+                updated.photos = photos
+                try await APIClient.shared.updateBooking(updated, staff: staff)
+                await MainActor.run {
+                    bookingsVM.updateBookingLocally(updated)
+                    photoBooking = nil
+                    Haptics.success()
+                }
+            } catch {
+                await MainActor.run {
+                    Haptics.error()
+                    toastManager.show("Photo upload failed", type: .error)
+                }
+            }
         }
     }
 
@@ -850,11 +1177,7 @@ struct DayDashboardView: View {
     }
 
     private func formatDate(_ s: String) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        guard let d = f.date(from: s) else { return s }
-        f.dateFormat = "EEEE d MMMM yyyy"
-        return f.string(from: d)
+        PPDateDisplay.date(s)
     }
 }
 
@@ -900,19 +1223,20 @@ struct KanbanColumn: View {
     let onMove: (String, String) -> Void
     let onNoShow: ((String) -> Void)?
     let onTap: (Booking) -> Void
+    let onAddPhoto: (Booking) -> Void
     var staffStudio: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(title)
-                    .font(.system(size: 13, weight: .heavy))
+                    .font(AppFont.heading(13))
                     .foregroundStyle(columnType.headerColor)
                     .textCase(.uppercase)
                     .tracking(1)
                 Spacer()
                 Text("\(count)")
-                    .font(.system(size: 10, weight: .heavy))
+                    .font(AppFont.heading(10))
                     .foregroundStyle(columnType.headerColor)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
@@ -922,7 +1246,7 @@ struct KanbanColumn: View {
 
             if bookings.isEmpty {
                 Text(emptyMessage)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(AppFont.body(12, weight: .medium))
                     .foregroundStyle(columnType.headerColor.opacity(0.4))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 24)
@@ -935,6 +1259,7 @@ struct KanbanColumn: View {
                         onMove: onMove,
                         onNoShow: onNoShow,
                         onTap: { onTap(booking) },
+                        onAddPhoto: onAddPhoto,
                         staffStudio: staffStudio
                     )
                 }
@@ -968,6 +1293,7 @@ struct KanbanBookingCard: View {
     let onMove: (String, String) -> Void
     let onNoShow: ((String) -> Void)?
     let onTap: () -> Void
+    let onAddPhoto: (Booking) -> Void
     var staffStudio: String? = nil
 
     private var sessionLabel: String? {
@@ -982,49 +1308,113 @@ struct KanbanBookingCard: View {
         }
     }
 
+    private var locationTagSummary: String? {
+        guard let tags = booking.photoTags, !tags.isEmpty else { return nil }
+        var locations: [String] = []
+        for (_, photoTags) in tags {
+            for tag in photoTags {
+                if tag.status == "location", let label = tag.label, !label.isEmpty {
+                    if !locations.contains(label) {
+                        locations.append(label)
+                    }
+                }
+            }
+        }
+        return locations.isEmpty ? nil : locations.joined(separator: ", ")
+    }
+
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 6) {
-                if let photos = booking.photos, !photos.isEmpty, let url = URL(string: photos[0]) {
-                    CachedAsyncImage(url: url, contentMode: .fit)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 80)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                // Photos with tag badges (like web collections)
+                if let photos = booking.photos, !photos.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 4) {
+                            ForEach(photos.indices, id: \.self) { i in
+                                if let url = URL(string: photos[i]) {
+                                    ZStack {
+                                        CachedAsyncImage(url: url, contentMode: .fill)
+                                            .frame(width: 56, height: 56)
+                                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(PPBrand.charcoal.opacity(0.1), lineWidth: 1))
+
+                                        // Tag badges overlay
+                                        let photoTags = (booking.photoTags?[String(i)] ?? []).filter { $0.status != "location" }
+                                        if !photoTags.isEmpty {
+                                            ForEach(photoTags) { tag in
+                                                PhotoTagBadge(tag: tag, canRemove: false) {}
+                                                    .position(
+                                                        x: CGFloat(tag.x) / 100 * 56,
+                                                        y: CGFloat(tag.y) / 100 * 56
+                                                    )
+                                            }
+                                        }
+                                    }
+                                    .frame(width: 56, height: 56)
+                                }
+                            }
+                        }
+                    }
+                    .frame(height: 56)
                 }
 
+                Button {
+                    onAddPhoto(booking)
+                } label: {
+                    Label("Add Photo", systemImage: "camera.fill")
+                        .font(AppFont.body(10, weight: .bold))
+                        .foregroundStyle(PPBrand.charcoal)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(PPBrand.sage)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .buttonStyle(.plain)
+
                 Text(booking.name)
-                    .font(.system(size: 14, weight: .heavy))
+                    .font(AppFont.heading(14))
                     .foregroundStyle(PPBrand.charcoal)
                     .lineLimit(1)
 
                 HStack(spacing: 6) {
                     Image(systemName: "person.2.fill")
-                        .font(.system(size: 9))
+                        .font(AppFont.body(9))
                     Text("\(booking.paintersCount)")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(AppFont.body(10, weight: .bold))
                     Text("·")
-                        .font(.system(size: 10))
+                        .font(AppFont.body(10))
                     Image(systemName: "clock.fill")
-                        .font(.system(size: 9))
-                    Text(booking.time)
-                        .font(.system(size: 10, weight: .bold))
+                        .font(AppFont.body(9))
+                    Text(PPDateDisplay.time(booking.time))
+                        .font(AppFont.body(10, weight: .bold))
                     if staffStudio == nil || staffStudio != booking.studio {
                         Text("·")
-                            .font(.system(size: 10))
+                            .font(AppFont.body(10))
                         Text(booking.studio)
-                            .font(.system(size: 10, weight: .bold))
+                            .font(AppFont.body(10, weight: .bold))
                     }
                 }
                 .foregroundStyle(PPBrand.charcoal.opacity(0.6))
 
-                if let label = sessionLabel {
-                    Text(label)
-                        .font(.system(size: 8, weight: .heavy))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(PPBrand.charcoal.opacity(0.6))
-                        .clipShape(Capsule())
+                if booking.sessionType != "painting" {
+                    SessionTypeBadge(sessionType: booking.sessionType)
+                }
+
+                // Location tags summary (like web collections)
+                if let tagSummary = locationTagSummary {
+                    HStack(spacing: 4) {
+                        Image(systemName: "mappin.circle.fill")
+                            .font(AppFont.body(10))
+                            .foregroundStyle(Color.orange)
+                        Text(tagSummary)
+                            .font(AppFont.body(10, weight: .bold))
+                            .foregroundStyle(PPBrand.charcoal)
+                            .lineLimit(1)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.orange.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
 
                 if canUpdate {
@@ -1035,9 +1425,9 @@ struct KanbanBookingCard: View {
                             } label: {
                                 HStack(spacing: 2) {
                                     Image(systemName: "chevron.left")
-                                        .font(.system(size: 9, weight: .bold))
+                                        .font(AppFont.body(9, weight: .bold))
                                     Text("Back")
-                                        .font(.system(size: 9, weight: .bold))
+                                        .font(AppFont.body(9, weight: .bold))
                                         .textCase(.uppercase)
                                         .tracking(1)
                                 }
@@ -1060,9 +1450,9 @@ struct KanbanBookingCard: View {
                             } label: {
                                 HStack(spacing: 2) {
                                     Image(systemName: "xmark")
-                                        .font(.system(size: 9, weight: .bold))
+                                        .font(AppFont.body(9, weight: .bold))
                                     Text("No-Show")
-                                        .font(.system(size: 9, weight: .bold))
+                                        .font(AppFont.body(9, weight: .bold))
                                         .textCase(.uppercase)
                                         .tracking(1)
                                 }
@@ -1081,11 +1471,11 @@ struct KanbanBookingCard: View {
                             } label: {
                                 HStack(spacing: 2) {
                                     Text(columnType == .bookings ? "Seat" : "Complete")
-                                        .font(.system(size: 9, weight: .bold))
+                                        .font(AppFont.body(9, weight: .bold))
                                         .textCase(.uppercase)
                                         .tracking(1)
                                     Image(systemName: "chevron.right")
-                                        .font(.system(size: 9, weight: .bold))
+                                        .font(AppFont.body(9, weight: .bold))
                                 }
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 8)
@@ -1153,10 +1543,10 @@ struct StatBubble: View {
     var body: some View {
         VStack(spacing: 2) {
             Text("\(value)")
-                .font(.system(size: 22, weight: .heavy, design: .rounded))
+                .font(AppFont.heading(22))
                 .foregroundStyle(color.text)
             Text(label)
-                .font(.system(size: 9, weight: .bold))
+                .font(AppFont.body(9, weight: .bold))
                 .foregroundStyle(color.text.opacity(0.7))
                 .textCase(.uppercase)
                 .tracking(1)

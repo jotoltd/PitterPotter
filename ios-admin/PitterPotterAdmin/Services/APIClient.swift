@@ -86,15 +86,18 @@ actor APIClient {
             let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
             throw APIError.serverError(error?.error ?? "Failed to load bookings (status \(http.statusCode))")
         }
-        do {
-            return try JSONDecoder().decode([Booking].self, from: data)
-        } catch {
-            print("❌ Booking decode error: \(error)")
-            if let str = String(data: data, encoding: .utf8) {
-                print("❌ Response preview: \(str.prefix(500))")
+        // Decode off the main thread for large payloads
+        return try await Task.detached(priority: .userInitiated) {
+            do {
+                return try JSONDecoder().decode([Booking].self, from: data)
+            } catch {
+                print("❌ Booking decode error: \(error)")
+                if let str = String(data: data, encoding: .utf8) {
+                    print("❌ Response preview: \(str.prefix(500))")
+                }
+                throw APIError.serverError("Failed to decode bookings: \(error.localizedDescription)")
             }
-            throw APIError.serverError("Failed to decode bookings: \(error.localizedDescription)")
-        }
+        }.value
     }
 
     func updateBooking(_ booking: Booking, staff: Staff) async throws {
@@ -123,6 +126,48 @@ actor APIClient {
             let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
             throw APIError.serverError(error?.error ?? "Failed to update booking")
         }
+    }
+
+    /// Partial update — sends only the given fields so a stale local copy can
+    /// never overwrite columns it didn't intend to change. `fields` uses the
+    /// same camelCase keys as `toDictionary()` (e.g. "notes", "photoTags");
+    /// pass NSNull() to clear a field.
+    func updateBookingFields(id: String, studio: String, fields: [String: Any], staff: Staff) async throws {
+        var request = URLRequest(url: URL(string: APIConfig.bookingsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        var bookingDict: [String: Any] = ["id": id, "studio": studio]
+        for (key, value) in fields {
+            bookingDict[key] = value
+        }
+        let body: [String: Any] = [
+            "action": "patch",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "booking": bookingDict,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        if http.statusCode == 401 {
+            throw APIError.unauthorized
+        }
+        guard http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to save booking")
+        }
+    }
+
+    /// Encodes an optional Encodable value to a JSON-safe object for patch fields.
+    static func jsonPatchValue<T: Encodable>(_ value: T?) throws -> Any {
+        guard let value else { return NSNull() }
+        let data = try JSONEncoder().encode(value)
+        return try JSONSerialization.jsonObject(with: data)
     }
 
     func updateBookingStatus(id: String, status: String, staff: Staff) async throws {
@@ -322,6 +367,49 @@ actor APIClient {
         }
     }
 
+    // MARK: - Change Own Password
+
+    /// Changes the logged-in staff member's own password.
+    /// Verifies the current password by attempting a login (the existing
+    /// session remains valid thanks to multi-session support), then updates
+    /// the password via the staff-management `update` action.
+    func changeOwnPassword(currentPassword: String, newPassword: String, staff: Staff) async throws {
+        // Verify the current password by attempting a login. This does not
+        // invalidate the existing session because `staff_sessions` keeps the
+        // old token row (the edge function only inserts a new row).
+        _ = try await login(username: staff.username, password: currentPassword)
+
+        var request = URLRequest(url: URL(string: APIConfig.staffManagementEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "update",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "staff": [
+                "id": staff.id,
+                "name": staff.name,
+                "role": staff.role,
+                "password": newPassword,
+            ],
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+        if http.statusCode == 401 {
+            throw APIError.unauthorized
+        }
+        guard http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to change password")
+        }
+    }
+
     func deleteBooking(id: String, staff: Staff) async throws {
         var request = URLRequest(url: URL(string: APIConfig.bookingsEndpoint)!)
         request.httpMethod = "POST"
@@ -476,6 +564,29 @@ actor APIClient {
             let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
             throw APIError.serverError(error?.error ?? "Failed to update gift card")
         }
+    }
+
+    func unredeemGiftCard(id: String, staff: Staff) async throws -> Double {
+        var request = URLRequest(url: URL(string: APIConfig.giftCardsEndpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
+
+        let body: [String: Any] = [
+            "action": "unredeem",
+            "username": staff.username,
+            "sessionToken": staff.sessionToken,
+            "id": id,
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to un-redeem gift card")
+        }
+        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        return json?["balance"] as? Double ?? 0
     }
 
     func deleteGiftCard(id: String, staff: Staff) async throws {
@@ -1036,26 +1147,30 @@ actor APIClient {
 
     // MARK: - Collection Status
 
-    func updateCollectionStatus(bookingId: String, status: String, staff: Staff) async throws {
+    func updateCollectionStatus(bookingId: String, studio: String, status: String, staff: Staff, location: String? = nil, collectedAt: String? = nil) async throws {
         var request = URLRequest(url: URL(string: APIConfig.bookingsEndpoint)!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(APIConfig.supabaseAnonKey)", forHTTPHeaderField: "Authorization")
 
-        let body: [String: Any] = [
-            "action": "update",
+        var body: [String: Any] = [
+            "action": "updateCollection",
             "username": staff.username,
             "sessionToken": staff.sessionToken,
-            "booking": [
-                "id": bookingId,
-                "collectionStatus": status,
-            ],
+            "id": bookingId,
+            "collectionStatus": status,
         ]
+        if let location { body["location"] = location }
+        if let collectedAt { body["collectedAt"] = collectedAt }
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (_, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
+        }
+        guard http.statusCode == 200 else {
+            let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+            throw APIError.serverError(error?.error ?? "Failed to update collection status")
         }
     }
 
@@ -1420,12 +1535,14 @@ struct GiftCard: Codable, Identifiable {
     var status: String
     var recipientName: String?
     var recipientEmail: String?
+    var recipientPhone: String?
     var createdAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id, code, amount, balance, status
         case recipientName = "recipient_name"
         case recipientEmail = "recipient_email"
+        case recipientPhone = "recipient_phone"
         case createdAt = "created_at"
     }
 

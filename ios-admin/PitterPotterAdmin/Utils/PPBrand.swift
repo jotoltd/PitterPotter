@@ -9,6 +9,7 @@ enum PPBrand {
     static let clay300 = Color(hex: 0x9FB3C8)
     static let sage = Color(hex: 0xDBE7E4)
     static let deepSlate = Color(hex: 0x243B53)
+    static let mist = Color(hex: 0xF8FAFA)  // web content background
     static let white = Color.white
 
     // Accent (used for buttons, highlights)
@@ -27,9 +28,9 @@ enum PPBrand {
 
     // MARK: - Web-matching styles
 
-    // Card style: white bg, charcoal border at 15% opacity, rounded-xl (12pt)
-    static let cardCornerRadius: CGFloat = 12
-    static let cardBorderOpacity: Double = 0.15
+    // Card style: white bg, charcoal border at 20% opacity, shadow-sm, rounded-lg
+    static let cardCornerRadius: CGFloat = 10
+    static let cardBorderOpacity: Double = 0.2
 
     // Button style: sage bg, charcoal text, uppercase, tracking-wider
     static let buttonCornerRadius: CGFloat = 8
@@ -47,6 +48,28 @@ enum PPBrand {
     // Web header bar colour
     static let headerBackground = sage
     static let headerTextColor = charcoal
+
+    // MARK: - Status badge colors (matching web Tailwind classes)
+    static let confirmedBadgeBg = Color(hex: 0xD1FAE5)   // emerald-100
+    static let confirmedBadgeText = Color(hex: 0x065F46)  // emerald-800
+    static let pendingBadgeBg = Color(hex: 0xFEF3C7)      // amber-100
+    static let pendingBadgeText = Color(hex: 0x92400E)    // amber-800
+    static let cancelledBadgeBg = Color(hex: 0xFEE2E2)    // red-100
+    static let cancelledBadgeText = Color(hex: 0xB91C1C) // red-700
+    static let seatedBadgeBg = Color(hex: 0xFEF3C7)       // amber-100
+    static let seatedBadgeText = Color(hex: 0x92400E)     // amber-800
+    static let completedBadgeBg = Color(hex: 0xCCFBF1)    // teal-100
+    static let completedBadgeText = Color(hex: 0x115E59)  // teal-800
+
+    // Session type badge colors (matching web SESSION_BADGE)
+    static let paintingBadgeBg = Color(hex: 0xECFDF5)      // emerald-50
+    static let paintingBadgeText = Color(hex: 0x047857)   // emerald-700
+    static let partyBadgeBg = Color(hex: 0xFAF5FF)        // purple-50
+    static let partyBadgeText = Color(hex: 0x6B21A8)      // purple-700
+    static let babyPrintBadgeBg = Color(hex: 0xFFF7ED)    // orange-50
+    static let babyPrintBadgeText = Color(hex: 0xC2410C)  // orange-700
+    static let exclusiveBadgeBg = Color(hex: 0xEEF2FF)    // indigo-50
+    static let exclusiveBadgeText = Color(hex: 0x4338CA)  // indigo-700
 }
 
 extension Color {
@@ -69,6 +92,7 @@ struct WebCardModifier: ViewModifier {
                     .stroke(PPBrand.charcoal.opacity(PPBrand.cardBorderOpacity), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: PPBrand.cardCornerRadius))
+            .shadow(color: PPBrand.charcoal.opacity(0.04), radius: 2, y: 1)
     }
 }
 

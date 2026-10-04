@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import DashboardOverview from './DashboardOverview';
 import ConfirmDialog from './ConfirmDialog';
 import FloorPlanView from './FloorPlanView';
-import WimbledonFloorPlan, { findAvailableTable, findMultipleTables } from './WimbledonFloorPlan';
-import PutneyFloorPlan, { findAvailablePutneyTable, findMultiplePutneyTables } from './PutneyFloorPlan';
+import WimbledonFloorPlan from './WimbledonFloorPlan';
+import PutneyFloorPlan from './PutneyFloorPlan';
+import { allocateResources as allocateResourcesFromBookings, formatResources, isPartySessionType } from '../lib/allocation';
+import { findAvailablePutneyTable, findMultiplePutneyTables } from './PutneyFloorPlan';
 import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock, Camera, ScanLine, AlertCircle, Package, Check } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO, getDay } from 'date-fns';
@@ -82,7 +84,10 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [inquiries, setInquiries] = useState<BookingInquiry[]>([]);
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates' | 'sms' | 'documentation'>(staff.role === 'super_admin' ? 'dashboard' : 'bookings');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'floor-plan' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates' | 'sms' | 'documentation'>(staff.role === 'super_admin' ? 'dashboard' : 'bookings');
+  const [floorPlanStudio, setFloorPlanStudio] = useState<'Putney' | 'Wimbledon'>(staff.allowedStudios?.[0] === 'Putney' ? 'Putney' : 'Wimbledon');
+  const [floorPlanDate, setFloorPlanDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [floorPlanTime, setFloorPlanTime] = useState<string>('12:00');
   const [collectionUploadingId, setCollectionUploadingId] = useState<string | null>(null);
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
@@ -92,6 +97,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [partyGuestLimitWimbledon, setPartyGuestLimitWimbledon] = useState<number>(16);
   const [depositNoticeType, setDepositNoticeTypeState] = useState<'info' | 'warning' | 'success' | 'error'>('info');
   const [tablePlanEnabled, setTablePlanEnabled] = useState<boolean>(false);
+  const [partySetupBuffer, setPartySetupBuffer] = useState<number>(30);
+  const [partyCleanupBuffer, setPartyCleanupBuffer] = useState<number>(20);
+  const [bufferSaving, setBufferSaving] = useState(false);
   const [capacityRows, setCapacityRows] = useState<{ studio: string; session_type: string; max_painters: number }[]>([]);
   const [capacitySaving, setCapacitySaving] = useState(false);
   const [timeSlotConfig, setTimeSlotConfig] = useState<TimeSlotsData>(() => getAllSlots());
@@ -231,11 +239,11 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     setCurrentPage(1);
   }, [filter, studioFilter, bookingTypeTab, debouncedSearchTerm, dateRange, sort]);
 
-  const fetchCapacity = useCallback(async (studio: string, date: string, time: string, setter: (v: number | null) => void, sessionType?: string, conflictSetter?: (v: string | null) => void) => {
+  const fetchCapacity = useCallback(async (studio: string, date: string, time: string, setter: (v: number | null) => void, sessionType?: string, conflictSetter?: (v: string | null) => void, paintersCount?: number) => {
     if (!studio || !date || !time) { setter(null); if (conflictSetter) conflictSetter(null); return; }
     setCapacityLoading(true);
     try {
-      const remaining = await getRemainingCapacity(studio as 'Putney' | 'Wimbledon', date, time, sessionType);
+      const remaining = await getRemainingCapacity(studio as 'Putney' | 'Wimbledon', date, time, sessionType, paintersCount);
       setter(remaining);
       if (conflictSetter) conflictSetter(null);
     } catch (err) {
@@ -248,13 +256,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   useEffect(() => {
     if (showAddModal && newBooking.studio && newBooking.date && newBooking.time) {
-      fetchCapacity(newBooking.studio, newBooking.date, newBooking.time, setNewBookingCapacity, newBooking.sessionType, setNewBookingConflict);
+      fetchCapacity(newBooking.studio, newBooking.date, newBooking.time, setNewBookingCapacity, newBooking.sessionType, setNewBookingConflict, newBooking.paintersCount);
     }
   }, [showAddModal, newBooking.studio, newBooking.date, newBooking.time, newBooking.sessionType, fetchCapacity]);
 
   useEffect(() => {
     if (showEditModal && editingBooking?.studio && editingBooking?.date && editingBooking?.time) {
-      fetchCapacity(editingBooking.studio, editingBooking.date, editingBooking.time, setEditBookingCapacity);
+      fetchCapacity(editingBooking.studio, editingBooking.date, editingBooking.time, setEditBookingCapacity, editingBooking.sessionType, undefined, editingBooking.paintersCount);
     }
   }, [showEditModal, editingBooking?.studio, editingBooking?.date, editingBooking?.time, fetchCapacity]);
 
@@ -262,7 +270,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     let isMounted = true;
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([loadInquiries(), loadGiftCards(), loadStripeMode(), loadPartyPrice(), loadTablePlanEnabled()]);
+      await Promise.all([loadInquiries(), loadGiftCards(), loadStripeMode(), loadPartyPrice(), loadTablePlanEnabled(), loadPartyBuffers()]);
       if (isMounted) setLoading(false);
     };
     loadData();
@@ -350,9 +358,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   // Auto-refresh bookings and gift cards every 60s while dashboard is active
   useEffect(() => {
-    if (activeTab !== 'dashboard' && activeTab !== 'bookings' && activeTab !== 'gift-cards') return;
+    if (activeTab !== 'dashboard' && activeTab !== 'bookings' && activeTab !== 'gift-cards' && activeTab !== 'floor-plan') return;
     const refresh = async () => {
-      if (activeTab === 'dashboard' || activeTab === 'bookings') await loadInquiries();
+      if (activeTab === 'dashboard' || activeTab === 'bookings' || activeTab === 'floor-plan') await loadInquiries();
       if (activeTab === 'gift-cards') await loadGiftCards();
       setLastUpdated(new Date());
     };
@@ -626,6 +634,56 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     } catch (err) {
       console.error('Failed to update table plan setting:', err);
       showToast('Failed to update table plan setting', 'error');
+    }
+  };
+
+  const loadPartyBuffers = async () => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    try {
+      const [setupRes, cleanupRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ action: 'load', username: staff.username, sessionToken: staff.sessionToken, key: 'party_setup_buffer_minutes' }),
+        }),
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ action: 'load', username: staff.username, sessionToken: staff.sessionToken, key: 'party_cleanup_buffer_minutes' }),
+        }),
+      ]);
+      const setup = await setupRes.json().catch(() => ({}));
+      const cleanup = await cleanupRes.json().catch(() => ({}));
+      if (setup.value) setPartySetupBuffer(Number(setup.value) || 30);
+      if (cleanup.value) setPartyCleanupBuffer(Number(cleanup.value) || 20);
+    } catch (err) {
+      console.error('Failed to load party buffer settings:', err);
+    }
+  };
+
+  const savePartyBuffers = async () => {
+    if (!isSupabaseEnabled() || !staff?.sessionToken) return;
+    setBufferSaving(true);
+    try {
+      const [setupRes, cleanupRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ action: 'update', username: staff.username, sessionToken: staff.sessionToken, key: 'party_setup_buffer_minutes', value: String(partySetupBuffer) }),
+        }),
+        fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ action: 'update', username: staff.username, sessionToken: staff.sessionToken, key: 'party_cleanup_buffer_minutes', value: String(partyCleanupBuffer) }),
+        }),
+      ]);
+      if (!setupRes.ok || !cleanupRes.ok) throw new Error('Failed to save');
+      showToast('Party buffer settings saved', 'success');
+    } catch (err) {
+      console.error('Failed to save party buffer settings:', err);
+      showToast('Failed to save party buffer settings', 'error');
+    } finally {
+      setBufferSaving(false);
     }
   };
 
@@ -1113,6 +1171,31 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
   };
 
+  const unredeemGiftCard = async (id: string, code: string) => {
+    showConfirmDialog({
+      title: 'Un-redeem Gift Card',
+      message: `Restore gift card ${code} to active? If its balance was fully used, it will be restored to the full amount.`,
+      confirmLabel: 'Restore',
+      variant: 'warning',
+      onConfirm: async () => {
+        closeConfirmDialog();
+        try {
+          const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-gift-cards`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({ action: 'unredeem', username: staff.username, sessionToken: staff.sessionToken, id }),
+          });
+          const data = await response.json();
+          if (!response.ok || data.error) throw new Error(data.error || 'Failed to un-redeem');
+          setGiftCards(giftCards.map((c) => c.id === id ? { ...c, status: 'active', balance: data.balance } : c));
+          showToast(`Gift card ${code} restored to active`, 'success');
+        } catch (err) {
+          showToast(err instanceof Error ? err.message : 'Failed to un-redeem gift card', 'error');
+        }
+      },
+    });
+  };
+
   const deleteGiftCard = async (id: string, code: string) => {
     showConfirmDialog({
       title: 'Delete Gift Card',
@@ -1333,25 +1416,40 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const autoAssignTable = async (booking: BookingInquiry, silent = false): Promise<string | null> => {
     try {
-      let tableIds: string[] = [];
+      let tableId = '';
       if (booking.studio === 'Wimbledon') {
-        const blocked = JSON.parse(localStorage.getItem('pitter_potter_blocked_tables') || '[]');
-        const partyArea = booking.sessionType.includes('party') ? (booking.paintersCount > 8 ? 'party2' : 'party1') : undefined;
-        tableIds = findMultipleTables(inquiries, blocked, booking.date, booking.time, booking.paintersCount, partyArea);
+        const allocation = allocateResourcesFromBookings({
+          studio: booking.studio,
+          date: booking.date,
+          time: booking.time,
+          paintersCount: booking.paintersCount,
+          sessionType: booking.sessionType,
+          partyArea: isPartySessionType(booking.sessionType) ? (booking.paintersCount > 14 ? 'PA1+PA2' : undefined) : undefined,
+          excludeBookingId: booking.id,
+        }, inquiries);
+        if (!allocation.success) {
+          if (!silent) showToast(allocation.reason || 'No available table configuration', 'error');
+          return null;
+        }
+        tableId = formatResources(allocation.resources);
       } else {
         const blocked = JSON.parse(localStorage.getItem('pitter_potter_blocked_tables_putney') || '[]');
         const partyOnly = booking.sessionType.includes('party');
-        tableIds = findMultiplePutneyTables(inquiries, blocked, booking.date, booking.time, booking.paintersCount, partyOnly);
+        const tableIds = findMultiplePutneyTables(inquiries, blocked, booking.date, booking.time, booking.paintersCount, partyOnly);
+        if (!tableIds.length) {
+          if (!silent) showToast('No available tables found', 'error');
+          return null;
+        }
+        tableId = tableIds.join(', ');
       }
-      if (!tableIds.length) {
+      if (!tableId) {
         if (!silent) showToast('No available tables found', 'error');
         return null;
       }
-      const tableId = tableIds.join(', ');
       const updated = { ...booking, tableId };
       await updateBooking(updated, staff);
       setInquiries(prev => prev.map(i => i.id === booking.id ? updated : i));
-      if (!silent) showToast(`Table${tableIds.length > 1 ? 's' : ''} ${tableId} assigned`, 'success');
+      if (!silent) showToast(`Table${tableId.includes(',') ? 's' : ''} ${tableId} assigned`, 'success');
       return tableId;
     } catch {
       if (!silent) showToast('Auto-assign failed', 'error');
@@ -1853,10 +1951,15 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
   const saveBookingEdit = async (updatedBooking: BookingInquiry) => {
     const oldBooking = inquiries.find((i) => i.id === updatedBooking.id);
-    const remaining = await getRemainingCapacity(updatedBooking.studio, updatedBooking.date, updatedBooking.time);
-    const available = oldBooking ? remaining + oldBooking.paintersCount : remaining;
-    if (updatedBooking.paintersCount > available) {
-      showToast(`This session only has room for ${available} seat${available === 1 ? '' : 's'} after this edit.`, 'error');
+    let remaining = 0;
+    try {
+      remaining = await getRemainingCapacity(updatedBooking.studio, updatedBooking.date, updatedBooking.time, updatedBooking.sessionType, updatedBooking.paintersCount);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Cannot save: time slot conflict', 'error');
+      return;
+    }
+    if (remaining < updatedBooking.paintersCount) {
+      showToast(`This session only has room for ${remaining} seat${remaining === 1 ? '' : 's'} after this edit.`, 'error');
       return;
     }
     if (!oldBooking) {
@@ -2617,6 +2720,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               { value: 'ready', label: 'Ready', badge: null },
               { value: 'collected', label: 'Collected', badge: null },
               ...(isSuperAdmin ? [{ value: 'gift-cards', label: 'Gift Vouchers', badge: null }] : []),
+              { value: 'floor-plan', label: 'Floor Plan', badge: null },
             ].map((tab) => (
               <button
                 key={tab.value}
@@ -2829,6 +2933,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                               className="px-2 py-1 bg-red-50 text-red-700 text-[10px] font-bold uppercase tracking-wider rounded hover:bg-red-100 cursor-pointer"
                             >
                               Expire
+                            </button>
+                          )}
+                          {card.status === 'redeemed' && (
+                            <button
+                              onClick={() => unredeemGiftCard(card.id, card.code)}
+                              className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded hover:bg-emerald-100 cursor-pointer"
+                            >
+                              Un-redeem
                             </button>
                           )}
                           {staff.role === 'super_admin' && card.recipientEmail && (
@@ -3266,9 +3378,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                           <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                             <button onClick={() => setAssignModalBooking(inq)}
                               className={`px-2 py-1 text-[10px] font-bold border transition-all cursor-pointer rounded-lg ${
-                                inq.tableId ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C] hover:bg-[#D6E2E9]' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                                inq.tableId ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C] hover:bg-[#D6E2E9]' : 'bg-red-50 text-red-700 border-red-300 hover:bg-red-100'
                               }`}>
-                              {inq.tableId ?? 'Assign'}
+                              {inq.tableId ?? (inq.studio === 'Wimbledon' && inq.status !== 'cancelled' && inq.status !== 'no_show' ? '⚠ No table' : 'Assign')}
                             </button>
                           </td>
                         )}
@@ -3341,6 +3453,60 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           )}
         </div>
           </>
+        )}
+
+        {activeTab === 'floor-plan' && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3 bg-white border border-[#1B2D3C]/10 p-4 rounded-xl">
+              <h2 className="font-heading text-lg font-black text-[#1B2D3C] mr-2">Floor Plan</h2>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold uppercase text-[#1B2D3C]/60">Studio</label>
+                <select
+                  value={floorPlanStudio}
+                  onChange={(e) => setFloorPlanStudio(e.target.value as 'Putney' | 'Wimbledon')}
+                  className="px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-xs font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/50 cursor-pointer"
+                >
+                  <option value="Putney">Putney</option>
+                  <option value="Wimbledon">Wimbledon</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold uppercase text-[#1B2D3C]/60">Date</label>
+                <input
+                  type="date"
+                  value={floorPlanDate}
+                  onChange={(e) => setFloorPlanDate(e.target.value)}
+                  className="px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-xs font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/50"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold uppercase text-[#1B2D3C]/60">Time</label>
+                <input
+                  type="time"
+                  value={floorPlanTime}
+                  onChange={(e) => setFloorPlanTime(e.target.value)}
+                  className="px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-xs font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/50"
+                />
+              </div>
+            </div>
+            <div className="bg-white border border-[#1B2D3C]/10 p-4 rounded-xl overflow-x-auto">
+              {floorPlanStudio === 'Wimbledon' ? (
+                <WimbledonFloorPlan
+                  bookings={inquiries}
+                  selectedDate={floorPlanDate}
+                  selectedTime={floorPlanTime}
+                  readOnly
+                />
+              ) : (
+                <PutneyFloorPlan
+                  bookings={inquiries}
+                  selectedDate={floorPlanDate}
+                  selectedTime={floorPlanTime}
+                  readOnly
+                />
+              )}
+            </div>
+          </div>
         )}
 
         {/* Settings tab — Staff + Capacity + Stripe + Page Visibility + Table Plan */}
@@ -5254,6 +5420,43 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             </div>
           </div>
 
+          {/* Party Buffers */}
+          <div id="settings-party-buffers" className="bg-white border border-[#1B2D3C]/10 p-6 rounded-xl space-y-4 scroll-mt-[140px] max-w-xl">
+            <div>
+              <h2 className="font-heading text-lg font-black text-[#1B2D3C]">Party Buffers</h2>
+              <p className="text-xs text-[#1B2D3C]/70 mt-1">Minutes before and after a party to block the allocated tables for setup and cleanup.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase tracking-wider text-[#1B2D3C]/70">Setup buffer (min)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={partySetupBuffer}
+                  onChange={(e) => setPartySetupBuffer(Math.max(0, Number(e.target.value)))}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/50"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold uppercase tracking-wider text-[#1B2D3C]/70">Cleanup buffer (min)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={partyCleanupBuffer}
+                  onChange={(e) => setPartyCleanupBuffer(Math.max(0, Number(e.target.value)))}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/50"
+                />
+              </div>
+            </div>
+            <button
+              onClick={savePartyBuffers}
+              disabled={bufferSaving}
+              className="px-4 py-2 bg-[#1B2D3C] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#243B53] disabled:opacity-50 cursor-pointer"
+            >
+              {bufferSaving ? 'Saving...' : 'Save Buffers'}
+            </button>
+          </div>
+
           {/* Notification Settings — super admin only */}
           {isSuperAdmin && (
             <div id="settings-notifications" className="scroll-mt-[140px]">
@@ -5818,7 +6021,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
 // --- Grouped Navigation Dropdowns ---
 
-type TabValue = 'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates' | 'sms' | 'documentation';
+type TabValue = 'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'floor-plan' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates' | 'sms' | 'documentation';
 
 function NavDropdown({
   label,

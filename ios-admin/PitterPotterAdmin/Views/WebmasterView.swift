@@ -29,7 +29,7 @@ struct WebmasterView: View {
                 }
                 .padding(20)
             }
-            .background(Color.white)
+            .background(PPBrand.mist)
             .navigationTitle("Webmaster")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
@@ -49,14 +49,14 @@ struct WebmasterView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "heart.text.square.fill")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFont.body(14, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Database Health")
-                    .font(.system(size: 17, weight: .heavy))
+                    .font(AppFont.heading(17))
                     .foregroundStyle(PPBrand.charcoal)
                 Spacer()
                 Button("Refresh") { loadDbHealth() }
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.body(13, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal)
             }
 
@@ -68,14 +68,14 @@ struct WebmasterView: View {
                         .fill(health.healthy ? Color.green : Color.red)
                         .frame(width: 8, height: 8)
                     Text(health.healthy ? "All tables healthy" : "Issues detected")
-                        .font(.subheadline)
+                        .font(AppFont.body(15, weight: .medium))
                         .foregroundStyle(health.healthy ? .green : .red)
                 }
 
                 if !health.issues.isEmpty {
                     ForEach(health.issues, id: \.self) { issue in
                         Text("• \(issue)")
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .foregroundStyle(.red)
                     }
                 }
@@ -84,11 +84,11 @@ struct WebmasterView: View {
                     ForEach(health.tables.sorted(by: { $0.key < $1.key }), id: \.key) { name, info in
                         VStack(spacing: 2) {
                             Text(name)
-                                .font(.caption2)
+                                .font(AppFont.body(11, weight: .medium))
                                 .fontWeight(.bold)
                                 .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                             Text(info.exists ? "\(info.rows)" : "Missing")
-                                .font(.subheadline)
+                                .font(AppFont.body(15, weight: .medium))
                                 .fontWeight(.bold)
                                 .foregroundStyle(info.exists ? .green : .red)
                         }
@@ -99,7 +99,7 @@ struct WebmasterView: View {
                 }
             } else {
                 Text("Tap Refresh to check")
-                    .font(.caption)
+                    .font(AppFont.body(12, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
         }
@@ -113,14 +113,14 @@ struct WebmasterView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "externaldrive.fill")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFont.body(14, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Database Backups")
-                    .font(.system(size: 17, weight: .heavy))
+                    .font(AppFont.heading(17))
                     .foregroundStyle(PPBrand.charcoal)
                 Spacer()
                 Button("Create") { showCreateBackup = true }
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.body(13, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal)
             }
 
@@ -128,18 +128,18 @@ struct WebmasterView: View {
                 ProgressView()
             } else if dbBackups.isEmpty {
                 Text("No backups yet")
-                    .font(.caption)
+                    .font(AppFont.body(12, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             } else {
                 ForEach(dbBackups) { backup in
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(backup.name)
-                                .font(.subheadline)
+                                .font(AppFont.body(15, weight: .medium))
                                 .fontWeight(.medium)
                             if let createdAt = backup.createdAt {
-                                Text(String(createdAt.prefix(16)))
-                                    .font(.caption2)
+                                Text(PPDateDisplay.dateTime(createdAt))
+                                    .font(AppFont.body(11, weight: .medium))
                                     .foregroundStyle(.tertiary)
                             }
                         }
@@ -148,7 +148,7 @@ struct WebmasterView: View {
                             deleteBackup(backup)
                         } label: {
                             Image(systemName: "trash")
-                                .font(.caption)
+                                .font(AppFont.body(12, weight: .medium))
                         }
                     }
                     .padding(.vertical, 4)
@@ -171,14 +171,14 @@ struct WebmasterView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "flask.fill")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFont.body(14, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Sample Data")
-                    .font(.system(size: 17, weight: .heavy))
+                    .font(AppFont.heading(17))
                     .foregroundStyle(PPBrand.charcoal)
                 Spacer()
                 Button("Refresh") { loadSampleData() }
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(AppFont.body(13, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal)
             }
 
@@ -188,29 +188,29 @@ struct WebmasterView: View {
                 HStack(spacing: 16) {
                     VStack {
                         Text("\(status.sampleBookings)")
-                            .font(.title2)
+                            .font(AppFont.heading(22))
                             .fontWeight(.bold)
                         Text("Bookings")
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                     VStack {
                         Text("\(status.sampleGiftCards)")
-                            .font(.title2)
+                            .font(AppFont.heading(22))
                             .fontWeight(.bold)
                         Text("Gift Cards")
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                     Spacer()
                     Button("Add") { addSampleData() }
-                        .font(.caption)
+                        .font(AppFont.body(12, weight: .medium))
                     Button("Remove", role: .destructive) { removeSampleData() }
-                        .font(.caption)
+                        .font(AppFont.body(12, weight: .medium))
                 }
             } else {
                 Text("Tap Refresh to load")
-                    .font(.caption)
+                    .font(AppFont.body(12, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
         }

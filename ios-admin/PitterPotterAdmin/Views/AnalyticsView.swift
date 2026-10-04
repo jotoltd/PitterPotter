@@ -44,7 +44,7 @@ struct AnalyticsView: View {
                 }
                 .padding(20)
             }
-            .background(Color.white)
+            .background(PPBrand.mist)
             .navigationTitle("Analytics")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear { loadGiftCards() }
@@ -64,23 +64,23 @@ struct AnalyticsView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFont.body(14, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Bookings by Month")
-                    .font(.system(size: 17, weight: .heavy))
+                    .font(AppFont.heading(17))
                     .foregroundStyle(PPBrand.charcoal)
             }
 
             if bookingsByMonth.isEmpty {
                 Text("No data yet")
-                    .font(.system(size: 14))
+                    .font(AppFont.body(14))
                     .foregroundStyle(PPBrand.clay300)
             } else {
                 let maxCount = max(bookingsByMonth.map { $0.count }.max() ?? 1, 1)
                 ForEach(bookingsByMonth, id: \.month) { item in
                     HStack {
                         Text(item.month)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(AppFont.body(12, weight: .medium))
                             .frame(width: 60, alignment: .leading)
                         GeometryReader { geo in
                             RoundedRectangle(cornerRadius: 4)
@@ -89,7 +89,7 @@ struct AnalyticsView: View {
                         }
                         .frame(height: 18)
                         Text("\(item.count)")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFont.body(12, weight: .bold))
                             .foregroundStyle(PPBrand.charcoal)
                             .frame(width: 30, alignment: .trailing)
                     }
@@ -105,23 +105,23 @@ struct AnalyticsView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "calendar.badge.clock")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFont.body(14, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Popular Dates")
-                    .font(.system(size: 17, weight: .heavy))
+                    .font(AppFont.heading(17))
                     .foregroundStyle(PPBrand.charcoal)
             }
 
             if popularDates.isEmpty {
                 Text("No data yet")
-                    .font(.system(size: 14))
+                    .font(AppFont.body(14))
                     .foregroundStyle(PPBrand.clay300)
             } else {
                 let maxCount = max(popularDates.map { $0.count }.max() ?? 1, 1)
                 ForEach(popularDates, id: \.date) { item in
                     HStack {
                         Text(item.date)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(AppFont.body(12, weight: .medium))
                             .frame(width: 100, alignment: .leading)
                         GeometryReader { geo in
                             RoundedRectangle(cornerRadius: 4)
@@ -130,7 +130,7 @@ struct AnalyticsView: View {
                         }
                         .frame(height: 18)
                         Text("\(item.count)")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFont.body(12, weight: .bold))
                             .foregroundStyle(PPBrand.charcoal)
                             .frame(width: 30, alignment: .trailing)
                     }
@@ -146,23 +146,23 @@ struct AnalyticsView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "building.2.fill")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFont.body(14, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Bookings by Studio")
-                    .font(.system(size: 17, weight: .heavy))
+                    .font(AppFont.heading(17))
                     .foregroundStyle(PPBrand.charcoal)
             }
 
             if studioCounts.isEmpty {
                 Text("No data yet")
-                    .font(.system(size: 14))
+                    .font(AppFont.body(14))
                     .foregroundStyle(PPBrand.clay300)
             } else {
                 let maxCount = max(studioCounts.map { $0.count }.max() ?? 1, 1)
                 ForEach(studioCounts, id: \.studio) { item in
                     HStack {
                         Text(item.studio)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(AppFont.body(12, weight: .medium))
                             .frame(width: 80, alignment: .leading)
                         GeometryReader { geo in
                             RoundedRectangle(cornerRadius: 4)
@@ -171,7 +171,7 @@ struct AnalyticsView: View {
                         }
                         .frame(height: 18)
                         Text("\(item.count)")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(AppFont.body(12, weight: .bold))
                             .foregroundStyle(PPBrand.charcoal)
                             .frame(width: 30, alignment: .trailing)
                     }
@@ -187,20 +187,20 @@ struct AnalyticsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "giftcard.fill")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFont.body(14, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Gift Card Status")
-                    .font(.system(size: 17, weight: .heavy))
+                    .font(AppFont.heading(17))
                     .foregroundStyle(PPBrand.charcoal)
             }
 
             HStack(spacing: 12) {
                 VStack(spacing: 4) {
                     Text("\(activeGiftCards)")
-                        .font(.system(size: 22, weight: .heavy))
+                        .font(AppFont.heading(22))
                         .foregroundStyle(.green)
                     Text("Active")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.body(11, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         .textCase(.uppercase)
                         .tracking(0.3)
@@ -212,10 +212,10 @@ struct AnalyticsView: View {
 
                 VStack(spacing: 4) {
                     Text("\(redeemedGiftCards)")
-                        .font(.system(size: 22, weight: .heavy))
+                        .font(AppFont.heading(22))
                         .foregroundStyle(PPBrand.charcoal)
                     Text("Redeemed")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.body(11, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         .textCase(.uppercase)
                         .tracking(0.3)
@@ -227,10 +227,10 @@ struct AnalyticsView: View {
 
                 VStack(spacing: 4) {
                     Text("\(expiredGiftCards)")
-                        .font(.system(size: 22, weight: .heavy))
+                        .font(AppFont.heading(22))
                         .foregroundStyle(.red)
                     Text("Expired")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(AppFont.body(11, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         .textCase(.uppercase)
                         .tracking(0.3)

@@ -68,6 +68,8 @@ Deno.serve(async (req) => {
         booking.date as string,
         booking.time as string,
         booking.sessionType as string,
+        undefined,
+        Number(booking.paintersCount) || 1,
       );
       if (capacity.conflict === 'party_session_exists') {
         return new Response(JSON.stringify({ error: 'This time slot already has a party booked. Please choose a different time.' }), {

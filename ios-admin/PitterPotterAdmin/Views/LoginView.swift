@@ -21,26 +21,26 @@ struct LoginView: View {
                     VStack(spacing: 24) {
                         VStack(spacing: 8) {
                             Text("Admin Login")
-                                .font(.system(size: 30, weight: .heavy))
+                                .font(AppFont.heading(30))
                                 .foregroundStyle(PPBrand.charcoal)
                             Text("Pitter Potter Booking Management")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(AppFont.body(12, weight: .medium))
                                 .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         }
 
                         VStack(spacing: 16) {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("USERNAME")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFont.body(10, weight: .bold))
                                     .foregroundStyle(PPBrand.charcoal)
                                     .tracking(1)
 
                                 HStack(spacing: 10) {
                                     Image(systemName: "person.fill")
-                                        .font(.system(size: 14))
+                                        .font(AppFont.body(14))
                                         .foregroundStyle(PPBrand.charcoal.opacity(0.3))
                                     TextField("", text: $username)
-                                        .font(.system(size: 14, weight: .bold))
+                                        .font(AppFont.body(14, weight: .bold))
                                         .foregroundStyle(PPBrand.charcoal)
                                         .textInputAutocapitalization(.never)
                                         .autocorrectionDisabled()
@@ -50,7 +50,7 @@ struct LoginView: View {
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 10)
-                                .background(PPBrand.charcoal.opacity(0.06))
+                                .background(Color.white)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
@@ -60,16 +60,16 @@ struct LoginView: View {
 
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("PASSWORD")
-                                    .font(.system(size: 10, weight: .bold))
+                                    .font(AppFont.body(10, weight: .bold))
                                     .foregroundStyle(PPBrand.charcoal)
                                     .tracking(1)
 
                                 HStack(spacing: 10) {
                                     Image(systemName: "lock.fill")
-                                        .font(.system(size: 14))
+                                        .font(AppFont.body(14))
                                         .foregroundStyle(PPBrand.charcoal.opacity(0.3))
                                     SecureField("", text: $password)
-                                        .font(.system(size: 14, weight: .bold))
+                                        .font(AppFont.body(14, weight: .bold))
                                         .foregroundStyle(PPBrand.charcoal)
                                         .focused($focusedField, equals: .password)
                                         .submitLabel(.go)
@@ -77,7 +77,7 @@ struct LoginView: View {
                                 }
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 10)
-                                .background(PPBrand.charcoal.opacity(0.06))
+                                .background(Color.white)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
@@ -89,9 +89,9 @@ struct LoginView: View {
                         if let error = authVM.error {
                             HStack(spacing: 6) {
                                 Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.system(size: 12))
+                                    .font(AppFont.body(12))
                                 Text(error)
-                                    .font(.system(size: 13, weight: .bold))
+                                    .font(AppFont.body(13, weight: .bold))
                             }
                             .foregroundStyle(.red)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -106,7 +106,7 @@ struct LoginView: View {
                                     .frame(maxWidth: .infinity, minHeight: 24)
                             } else {
                                 Text("LOGIN")
-                                    .font(.system(size: 14, weight: .bold))
+                                    .font(AppFont.body(14, weight: .bold))
                                     .foregroundStyle(PPBrand.charcoal)
                                     .tracking(2)
                                     .frame(maxWidth: .infinity)
@@ -135,10 +135,10 @@ struct LoginView: View {
 
                     VStack(spacing: 2) {
                         Text("Pitter Potter")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(AppFont.body(11, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.4))
                         Text("Paint Your Own Pottery Studios")
-                            .font(.system(size: 11))
+                            .font(AppFont.body(11))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.3))
                     }
                     .padding(.bottom, 8)

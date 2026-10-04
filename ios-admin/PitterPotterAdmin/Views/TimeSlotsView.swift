@@ -47,7 +47,7 @@ struct TimeSlotsView: View {
                         selectedStudio = studio
                     } label: {
                         Text(studio)
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .fontWeight(.bold)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
@@ -65,7 +65,7 @@ struct TimeSlotsView: View {
                         selectedDayType = dt.key
                     } label: {
                         Text(dt.label)
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .fontWeight(.bold)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
@@ -89,7 +89,7 @@ struct TimeSlotsView: View {
                     let currentSlots = getSlots(for: session.key)
                     if currentSlots.isEmpty {
                         Text("No slots configured")
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                     ForEach(currentSlots, id: \.self) { slot in
@@ -121,7 +121,7 @@ struct TimeSlotsView: View {
                             addSlot(session: session.key)
                         } label: {
                             Image(systemName: "plus.circle.fill")
-                                .font(.title3)
+                                .font(AppFont.heading(20))
                         }
                     }
                 }

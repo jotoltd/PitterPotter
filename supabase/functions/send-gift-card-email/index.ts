@@ -32,6 +32,12 @@ interface GiftCardRow {
   status: string;
 }
 
+// pdf-lib's WinAnsi fonts can't encode control chars (\n, \t) or non-Latin1 chars (emoji).
+function sanitizePdfText(s: string | null | undefined, fallback = ''): string {
+  if (!s) return fallback;
+  return s.replace(/[^\x00-\xFF]/g, '').replace(/[\x00-\x1F\x7F-\x9F]+/g, ' ').trim() || fallback;
+}
+
 async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([600, 400]);
@@ -160,7 +166,7 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
     font: fontRegular,
     color: rgb(0.4, 0.4, 0.4),
   });
-  page.drawText(giftCard.sender_name || 'Anonymous', {
+  page.drawText(sanitizePdfText(giftCard.sender_name, 'Anonymous'), {
     x: valueX,
     y,
     size: 11,
@@ -176,7 +182,7 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
     font: fontRegular,
     color: rgb(0.4, 0.4, 0.4),
   });
-  page.drawText(giftCard.recipient_name || 'Valued Customer', {
+  page.drawText(sanitizePdfText(giftCard.recipient_name, 'Valued Customer'), {
     x: valueX,
     y,
     size: 11,
@@ -185,7 +191,8 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
   });
 
   // Personal message
-  if (giftCard.message) {
+  const safeMessage = sanitizePdfText(giftCard.message);
+  if (safeMessage) {
     y -= 28;
     page.drawText('Message:', {
       x: labelX,
@@ -195,9 +202,9 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
       color: rgb(0.4, 0.4, 0.4),
     });
     y -= 14;
-    // Word wrap the message
+    // Word wrap the message (split on all whitespace so newlines never reach drawText)
     const maxWidth = width - 160;
-    const words = giftCard.message.split(' ');
+    const words = safeMessage.split(/\s+/);
     let line = '';
     for (const word of words) {
       const testLine = line ? `${line} ${word}` : word;

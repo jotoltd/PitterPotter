@@ -2,11 +2,18 @@ import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject var authVM: AuthViewModel
-    @StateObject private var bookingsVM = BookingsViewModel()
-    @StateObject private var notificationsVM = NotificationsViewModel()
+    @EnvironmentObject var bookingsVM: BookingsViewModel
+    @EnvironmentObject var notificationsVM: NotificationsViewModel
     @State private var showingNotifications = false
     @State private var selectedTab: AppTab = .bookings
     @State private var showingScanner = false
+    @State private var showingNewWalkIn = false
+    @State private var showingNewBooking = false
+    @State private var showingPartyBooking = false
+    @State private var showingNewBabyPrint = false
+    @State private var showingExclusiveHire = false
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var wasActive = true
 
 
     var body: some View {
@@ -16,8 +23,22 @@ struct MainTabView: View {
                 staff: authVM.staff,
                 onLogout: { authVM.logout() },
                 onNotifications: { showingNotifications = true },
-                unreadCount: notificationsVM.unreadCount
+                unreadCount: notificationsVM.unreadCount,
+                canAddWalkIn: authVM.staff?.canAddWalkIns == true || authVM.staff?.role == "super_admin",
+                onWalkIn: { showingNewWalkIn = true },
+                onNewBooking: { showingNewBooking = true },
+                onNewParty: { showingPartyBooking = true },
+                onNewBabyPrint: { showingNewBabyPrint = true },
+                onExclusiveHire: { showingExclusiveHire = true },
+                onRedeemCard: { showingScanner = true },
+                onEditor: authVM.staff?.role == "super_admin" ? { 
+                    if let url = URL(string: "https://pitterpotter.co.uk/admin") {
+                        UIApplication.shared.open(url)
+                    }
+                } : nil
             )
+            .frame(maxWidth: 1280)
+            .frame(maxWidth: .infinity)
 
             // Horizontal tab bar matching web admin
             WebTabBar(
@@ -26,6 +47,8 @@ struct MainTabView: View {
                 pendingCount: bookingsVM.bookings.filter { $0.status == "pending" }.count,
                 onScan: { showingScanner = true }
             )
+            .frame(maxWidth: 1280)
+            .frame(maxWidth: .infinity)
 
             // Content
             Group {
@@ -47,6 +70,8 @@ struct MainTabView: View {
                         .environmentObject(bookingsVM)
                 case .scan:
                     EmptyView()
+                case .floorPlan:
+                    FloorPlanTabView().environmentObject(bookingsVM)
                 case .giftCards:
                     GiftCardView()
                 case .analytics:
@@ -62,6 +87,8 @@ struct MainTabView: View {
                     AuditLogView()
                 case .webmaster:
                     WebmasterView()
+                case .documentation:
+                    DocumentationView()
                 case .settings:
                     if authVM.staff?.role == "super_admin" {
                         AdminSettingsView()
@@ -75,26 +102,70 @@ struct MainTabView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: 1280) // Match web's max-w-7xl
         }
         .sheet(isPresented: $showingScanner) {
             PaintingScannerView(bookingsVM: bookingsVM, authVM: authVM)
+        }
+        .sheet(isPresented: $showingNewWalkIn) {
+            NewWalkInView(initialSessionType: .painting)
+                .environmentObject(authVM)
+                .environmentObject(bookingsVM)
+        }
+        .sheet(isPresented: $showingNewBooking) {
+            NewWalkInView(initialSessionType: .painting)
+                .environmentObject(authVM)
+                .environmentObject(bookingsVM)
+        }
+        .sheet(isPresented: $showingPartyBooking) {
+            PartyBookingView()
+                .environmentObject(authVM)
+                .environmentObject(bookingsVM)
+        }
+        .sheet(isPresented: $showingNewBabyPrint) {
+            NewWalkInView(initialSessionType: .clayImprints)
+                .environmentObject(authVM)
+                .environmentObject(bookingsVM)
+        }
+        .sheet(isPresented: $showingExclusiveHire) {
+            NewWalkInView(initialSessionType: .exclusiveHire)
+                .environmentObject(authVM)
+                .environmentObject(bookingsVM)
         }
         .sheet(isPresented: $showingNotifications) {
             NotificationsView()
                 .environmentObject(authVM)
         }
         .task {
-            bookingsVM.loadFromCache()
-            if let staff = authVM.staff {
-                await bookingsVM.loadBookings(staff: staff)
-                bookingsVM.startRealtime(staff: staff)
-                await notificationsVM.refreshUnreadCount(staff: staff)
-                notificationsVM.startPolling(staff: staff)
-            }
+            // RootView handles all data loading and polling
+            // Don't start anything here to avoid duplicate API calls
         }
         .onDisappear {
             bookingsVM.stopRealtime()
             notificationsVM.stopPolling()
+        }
+        .onChange(of: scenePhase) { phase in
+            switch phase {
+            case .active:
+                if !wasActive, let staff = authVM.staff {
+                    // Resume polling and do an immediate refresh
+                    bookingsVM.startRealtime(staff: staff)
+                    notificationsVM.startPolling(staff: staff)
+                    Task {
+                        await bookingsVM.loadBookings(staff: staff)
+                        await notificationsVM.refreshUnreadCount(staff: staff)
+                    }
+                }
+                wasActive = true
+            case .inactive:
+                break
+            case .background:
+                wasActive = false
+                bookingsVM.stopRealtime()
+                notificationsVM.stopPolling()
+            @unknown default:
+                break
+            }
         }
     }
 }
@@ -119,6 +190,7 @@ struct WebTabBar: View {
         t.append((.ready, "Ready", nil))
         t.append((.collected, "Collected", nil))
         t.append((.scan, "Scan", nil))
+        t.append((.floorPlan, "Floor Plan", nil))
         if isSuperAdmin {
             t.append((.giftCards, "Gift Vouchers", nil))
             t.append((.analytics, "Analytics", nil))
@@ -127,6 +199,7 @@ struct WebTabBar: View {
             t.append((.emailTemplates, "Templates", nil))
             t.append((.audit, "Audit", nil))
             t.append((.webmaster, "Webmaster", nil))
+            t.append((.documentation, "Docs", nil))
             t.append((.settings, "Settings", nil))
         }
         return t
@@ -147,9 +220,9 @@ struct WebTabBar: View {
                             if item.tab == .scan {
                                 HStack(spacing: 4) {
                                     Image(systemName: "qrcode.viewfinder")
-                                        .font(.system(size: 13, weight: .bold))
+                                        .font(AppFont.body(13, weight: .bold))
                                     Text("SCANNER")
-                                        .font(.system(size: 11, weight: .heavy))
+                                        .font(AppFont.heading(11))
                                         .tracking(0.5)
                                 }
                                 .foregroundStyle(PPBrand.charcoal)
@@ -163,13 +236,13 @@ struct WebTabBar: View {
                                 )
                             } else {
                                 Text(item.label)
-                                    .font(.system(size: 13, weight: .bold))
+                                    .font(AppFont.body(13, weight: .bold))
                                     .tracking(0.5)
                             }
 
                             if let badge = item.badge, badge > 0 {
                                 Text(badge > 99 ? "99+" : "\(badge)")
-                                    .font(.system(size: 9, weight: .black))
+                                    .font(AppFont.heading(9))
                                     .foregroundStyle(.white)
                                     .padding(.horizontal, 5)
                                     .padding(.vertical, 2)
@@ -192,7 +265,7 @@ struct WebTabBar: View {
                 }
             }
         }
-        .background(Color.white)
+        .background(PPBrand.sage)
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(PPBrand.charcoal.opacity(0.1))
@@ -207,74 +280,231 @@ struct WebHeaderBar: View {
     let onLogout: () -> Void
     let onNotifications: () -> Void
     let unreadCount: Int
+    var canAddWalkIn: Bool = false
+    var onWalkIn: (() -> Void)? = nil
+    var onNewBooking: (() -> Void)? = nil
+    var onNewParty: (() -> Void)? = nil
+    var onNewBabyPrint: (() -> Void)? = nil
+    var onExclusiveHire: (() -> Void)? = nil
+    var onRedeemCard: (() -> Void)? = nil
+    var onEditor: (() -> Void)? = nil
+
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<12: return "Good Morning"
+        case 12..<17: return "Good Afternoon"
+        case 17..<22: return "Good Evening"
+        default: return "Good Night"
+        }
+    }
 
     var body: some View {
-        HStack(spacing: 12) {
-            // PP logo box
-            HStack(spacing: 10) {
-                Text("PP")
-                    .font(.system(size: 14, weight: .heavy, design: .rounded))
-                    .foregroundStyle(PPBrand.charcoal)
-                    .frame(width: 32, height: 32)
-                    .background(PPBrand.charcoal.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Pitter Potter")
-                        .font(.system(size: 14, weight: .heavy, design: .rounded))
-                        .foregroundStyle(PPBrand.charcoal)
+        VStack(spacing: 0) {
+            HStack {
+                // Left: logo + greeting + role
+                VStack(spacing: 2) {
+                    Image("BrandLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 28)
                     if let staff = staff {
-                        Text("\(staff.name) · \(staff.role == "super_admin" ? "Super Admin" : "Staff")")
-                            .font(.system(size: 10))
+                        Text("\(greeting), \(staff.name)")
+                            .font(AppFont.body(10))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.6))
                             .lineLimit(1)
+                        if staff.role == "super_admin" {
+                            Text("Super Admin")
+                                .font(AppFont.body(8, weight: .bold))
+                                .textCase(.uppercase)
+                                .tracking(0.5)
+                                .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                        }
                     }
                 }
-            }
 
-            Spacer()
+                Spacer()
 
-            // Notification bell
-            Button {
-                onNotifications()
-            } label: {
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: "bell")
-                        .font(.system(size: 18, weight: .medium))
+                // Right: Redeem Card, Editor, notifications, logout
+                HStack(spacing: 12) {
+                    // Redeem Card button
+                    if let onRedeemCard = onRedeemCard {
+                        Button {
+                            onRedeemCard()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "ticket")
+                                    .font(AppFont.body(11, weight: .bold))
+                                Text("Redeem")
+                                    .font(AppFont.body(11, weight: .bold))
+                            }
+                            .foregroundStyle(PPBrand.charcoal)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(PPBrand.sage)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    // Editor button (super admin only)
+                    if staff?.role == "super_admin", let onEditor = onEditor {
+                        Button {
+                            onEditor()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "globe")
+                                    .font(AppFont.body(11, weight: .bold))
+                                Text("Editor")
+                                    .font(AppFont.body(11, weight: .bold))
+                            }
+                            .foregroundStyle(PPBrand.charcoal)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(PPBrand.clay100)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    // Notification bell
+                    Button {
+                        onNotifications()
+                    } label: {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "bell")
+                                .font(AppFont.body(18, weight: .medium))
+                                .foregroundStyle(PPBrand.charcoal)
+                            if unreadCount > 0 {
+                                Text(unreadCount > 99 ? "99+" : "\(unreadCount)")
+                                    .font(AppFont.body(9, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 2)
+                                    .background(Color.red)
+                                    .clipShape(Capsule())
+                                    .offset(x: 8, y: -6)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+
+                    // Logout
+                    Button {
+                        onLogout()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(AppFont.body(14, weight: .bold))
+                            Text("Logout")
+                                .font(AppFont.body(12, weight: .bold))
+                        }
                         .foregroundStyle(PPBrand.charcoal)
-                    if unreadCount > 0 {
-                        Text(unreadCount > 99 ? "99+" : "\(unreadCount)")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 2)
-                            .background(Color.red)
-                            .clipShape(Capsule())
-                            .offset(x: 8, y: -6)
                     }
+                    .buttonStyle(.plain)
                 }
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
 
-            // Logout button
-            Button {
-                onLogout()
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                        .font(.system(size: 12, weight: .bold))
-                    Text("Logout")
-                        .font(.system(size: 12, weight: .bold))
+            // Quick action buttons (matching web header)
+            if canAddWalkIn {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        // Walk-in (charcoal)
+                        Button {
+                            onWalkIn?()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "person.2")
+                                    .font(AppFont.body(11, weight: .bold))
+                                Text("Walk-in")
+                                    .font(AppFont.body(11, weight: .bold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(PPBrand.charcoal)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+
+                        // New Booking (green)
+                        Button {
+                            onNewBooking?()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus")
+                                    .font(AppFont.body(11, weight: .bold))
+                                Text("New Booking")
+                                    .font(AppFont.body(11, weight: .bold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(red: 0.1, green: 0.7, blue: 0.4))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+
+                        // New Party (purple)
+                        Button {
+                            onNewParty?()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "gift")
+                                    .font(AppFont.body(11, weight: .bold))
+                                Text("New Party")
+                                    .font(AppFont.body(11, weight: .bold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(red: 0.6, green: 0.3, blue: 0.8))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+
+                        // New Baby Print (orange)
+                        Button {
+                            onNewBabyPrint?()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "plus")
+                                    .font(AppFont.body(11, weight: .bold))
+                                Text("New Baby Print")
+                                    .font(AppFont.body(11, weight: .bold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(red: 0.9, green: 0.5, blue: 0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+
+                        // Exclusive Hire (indigo)
+                        Button {
+                            onExclusiveHire?()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "clock")
+                                    .font(AppFont.body(11, weight: .bold))
+                                Text("Exclusive Hire")
+                                    .font(AppFont.body(11, weight: .bold))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(red: 0.3, green: 0.3, blue: 0.7))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 10)
                 }
-                .foregroundStyle(PPBrand.charcoal)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(PPBrand.charcoal.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(PPBrand.sage)
-        .shadow(color: Color.black.opacity(0.05), radius: 2, y: 1)
     }
 }

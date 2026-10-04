@@ -46,7 +46,7 @@ struct ClosuresView: View {
         Section(header: Text("School Holiday Periods"), footer: Text("Mondays within a holiday range will be open for bookings.")) {
             if schoolHolidays.isEmpty {
                 Text("No holiday periods set")
-                    .font(.caption)
+                    .font(AppFont.body(12, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
             ForEach(schoolHolidays.indices, id: \.self) { idx in
@@ -55,11 +55,11 @@ struct ClosuresView: View {
                     VStack(alignment: .leading) {
                         if let label = holiday.label, !label.isEmpty {
                             Text(label)
-                                .font(.subheadline)
+                                .font(AppFont.body(15, weight: .medium))
                                 .fontWeight(.medium)
                         }
                         Text("\(holiday.from) → \(holiday.to)")
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                     Spacer()
@@ -75,7 +75,7 @@ struct ClosuresView: View {
 
             VStack(spacing: 8) {
                 TextField("Label (e.g. Summer)", text: $newHolidayLabel)
-                    .font(.caption)
+                    .font(AppFont.body(12, weight: .medium))
                 HStack {
                     DatePicker("From", selection: $newHolidayFrom, displayedComponents: .date)
                         .labelsHidden()
@@ -88,7 +88,7 @@ struct ClosuresView: View {
                     addHoliday()
                 } label: {
                     Text("Add Period")
-                        .font(.caption)
+                        .font(AppFont.body(12, weight: .medium))
                         .fontWeight(.bold)
                         .frame(maxWidth: .infinity)
                 }
@@ -102,17 +102,17 @@ struct ClosuresView: View {
         Section(header: Text("Closed Dates"), footer: Text("No bookings will be accepted on these dates for the selected studio.")) {
             if closedDates.isEmpty {
                 Text("No closed dates set")
-                    .font(.caption)
+                    .font(AppFont.body(12, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
             ForEach(closedDates.indices, id: \.self) { idx in
                 let entry = closedDates[idx]
                 HStack {
                     Text(entry.date)
-                        .font(.subheadline)
+                        .font(AppFont.body(15, weight: .medium))
                     Spacer()
                     Text(entry.studio)
-                        .font(.caption2)
+                        .font(AppFont.body(11, weight: .medium))
                         .fontWeight(.bold)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -142,7 +142,7 @@ struct ClosuresView: View {
                     addClosedDate()
                 } label: {
                     Text("Add Closed Date")
-                        .font(.caption)
+                        .font(AppFont.body(12, weight: .medium))
                         .fontWeight(.bold)
                         .frame(maxWidth: .infinity)
                 }

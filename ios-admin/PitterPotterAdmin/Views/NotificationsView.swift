@@ -35,7 +35,7 @@ struct NotificationsView: View {
                                         Image(systemName: "checkmark.circle.fill")
                                             .foregroundStyle(.blue)
                                         Text("Mark all as read")
-                                            .font(.system(size: 14, weight: .semibold))
+                                            .font(AppFont.body(14, weight: .medium))
                                             .foregroundStyle(PPBrand.charcoal)
                                     }
                                 }
@@ -62,7 +62,7 @@ struct NotificationsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.body(16, weight: .medium))
                 }
             }
         }
@@ -84,14 +84,14 @@ private struct NotificationRow: View {
                     .fill(color.opacity(0.12))
                     .frame(width: 40, height: 40)
                 Image(systemName: notification.type.icon)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(AppFont.body(16, weight: .medium))
                     .foregroundStyle(color)
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(notification.title)
-                        .font(.system(size: 14, weight: .bold))
+                        .font(AppFont.body(14, weight: .bold))
                         .foregroundStyle(PPBrand.charcoal)
                         .lineLimit(1)
 
@@ -103,18 +103,18 @@ private struct NotificationRow: View {
                 }
 
                 Text(notification.message)
-                    .font(.system(size: 12))
+                    .font(AppFont.body(12))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     .lineLimit(2)
 
                 HStack(spacing: 6) {
                     Text(timeAgo(notification.createdAt))
-                        .font(.system(size: 10, weight: .medium))
+                        .font(AppFont.body(10, weight: .medium))
                         .foregroundStyle(.tertiary)
 
                     if let studio = notification.studio {
                         Text("· \(studio)")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(AppFont.body(10, weight: .medium))
                             .foregroundStyle(.tertiary)
                     }
                 }
@@ -150,8 +150,6 @@ private struct NotificationRow: View {
         if hours < 24 { return "\(hours)h ago" }
         let days = hours / 24
         if days < 7 { return "\(days)d ago" }
-        let df = DateFormatter()
-        df.dateFormat = "d MMM"
-        return df.string(from: date)
+        return PPDateDisplay.date(dateStr)
     }
 }

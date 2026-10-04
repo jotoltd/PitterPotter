@@ -1,19 +1,11 @@
 import { createClient } from 'supabase';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { isObject, isNonEmptyString, isOneOf, isNumber } from '../_shared/validate.ts';
 import { logAudit } from '../_shared/audit.ts';
 import type { AdminSupabaseClient, StaffRecord } from '../_shared/types.ts';
 import { verifyStaff } from '../_shared/auth.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
 import { createNotification } from '../_shared/notifications.ts';
-
-// Lazy-load pdf-lib only when needed for voucher generation
-let _pdfLib: typeof import('pdf-lib') | null = null;
-async function getPdfLib() {
-  if (!_pdfLib) {
-    _pdfLib = await import('pdf-lib');
-  }
-  return _pdfLib;
-}
 
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -51,7 +43,6 @@ interface GiftCardRow {
 }
 
 async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
-  const { PDFDocument, StandardFonts, rgb } = await getPdfLib();
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([600, 400]);
   const { width, height } = page.getSize();
@@ -160,7 +151,8 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
   const valueX = 160;
   const sanitize = (s: string | null, fallback: string) => {
     if (!s) return fallback;
-    return s.replace(/[^\x00-\xFF]/g, '').trim() || s.replace(/[^\x20-\x7E]/g, '').trim() || fallback;
+    // WinAnsi can't encode control chars (\n, \t) or non-Latin1 chars — strip both
+    return s.replace(/[^\x00-\xFF]/g, '').replace(/[\x00-\x1F\x7F-\x9F]+/g, ' ').trim() || fallback;
   };
 
   page.drawText('From:', { x: labelX, y, size: 10, font: fontRegular, color: grey });
@@ -195,7 +187,7 @@ async function generateVoucherPDF(giftCard: GiftCardRow): Promise<Uint8Array> {
     if (!safeMessage) {
       // skip message section if nothing left after sanitizing
     } else {
-    const words = safeMessage.split(' ');
+    const words = safeMessage.split(/\s+/);
     let line = '';
     for (const word of words) {
       const testLine = line ? `${line} ${word}` : word;
@@ -524,6 +516,47 @@ Deno.serve(async (req) => {
       if (error) throw error;
       await logAudit(supabase, staff, 'update_status', 'gift_card', id, { status });
       return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (action === 'unredeem') {
+      if (!isNonEmptyString(id)) {
+        return new Response(JSON.stringify({ error: 'Missing id' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { data: card, error: fetchError } = await supabase
+        .from('gift_cards')
+        .select('id, code, amount, balance, status')
+        .eq('id', id)
+        .single();
+      if (fetchError || !card) {
+        return new Response(JSON.stringify({ error: 'Gift card not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (card.status !== 'redeemed') {
+        return new Response(JSON.stringify({ error: `Card is not redeemed (status: ${card.status})` }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      // Restore full balance only if the redemption consumed it entirely
+      const restoredBalance = Number(card.balance) > 0 ? card.balance : card.amount;
+      const { error } = await supabase
+        .from('gift_cards')
+        .update({ status: 'active', balance: restoredBalance })
+        .eq('id', id);
+      if (error) throw error;
+      await logAudit(supabase, staff, 'unredeem', 'gift_card', id, {
+        code: card.code,
+        previous_balance: card.balance,
+        restored_balance: restoredBalance,
+      });
+      return new Response(JSON.stringify({ success: true, status: 'active', balance: restoredBalance }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

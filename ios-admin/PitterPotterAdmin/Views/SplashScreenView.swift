@@ -25,17 +25,17 @@ struct SplashScreenView: View {
 
                 VStack(spacing: 6) {
                     Text("ADMIN")
-                        .font(.system(size: 14, weight: .heavy))
+                        .font(AppFont.heading(14))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         .tracking(6)
                         .textCase(.uppercase)
                     Text("Pitter Potter")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(AppFont.body(22, weight: .bold))
                         .foregroundStyle(PPBrand.charcoal)
                         .offset(y: textOffset)
                         .opacity(textOpacity)
                     Text("Paint Your Own Pottery Studios")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.body(12, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.4))
                         .opacity(textOpacity)
                 }

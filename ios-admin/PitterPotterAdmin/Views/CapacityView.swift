@@ -96,15 +96,15 @@ struct CapacityRowView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(time)
-                    .font(.headline)
+                    .font(AppFont.body(17, weight: .semibold))
                 if capacity.hasPartyBooking {
                     Text("Party booked")
-                        .font(.caption)
+                        .font(AppFont.body(12, weight: .medium))
                         .foregroundStyle(.orange)
                 }
                 if capacity.conflict == "party_session_exists" {
                     Text("Party conflict")
-                        .font(.caption)
+                        .font(AppFont.body(12, weight: .medium))
                         .foregroundStyle(.red)
                 }
             }
@@ -113,11 +113,11 @@ struct CapacityRowView: View {
 
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(capacity.remaining) / \(capacity.max)")
-                    .font(.title3)
+                    .font(AppFont.heading(20))
                     .fontWeight(.bold)
                     .foregroundStyle(capacity.remaining > 0 ? .green : .red)
                 Text("\(capacity.booked) booked")
-                    .font(.caption)
+                    .font(AppFont.body(12, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
 

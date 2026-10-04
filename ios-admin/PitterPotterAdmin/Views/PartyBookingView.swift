@@ -84,7 +84,7 @@ struct PartyBookingView: View {
                     }
                     if partyTimeSlots.isEmpty {
                         Text("No slots available for this date")
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .foregroundStyle(.red)
                     } else {
                         Picker("Time", selection: $time) {
@@ -121,7 +121,7 @@ struct PartyBookingView: View {
                         }
                     } else {
                         Text("Select date, time and studio to check availability")
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                 }
@@ -132,7 +132,7 @@ struct PartyBookingView: View {
                         TextField("Deposit amount (£)", text: $depositAmount)
                             .keyboardType(.decimalPad)
                         Text("A deposit payment link will be emailed to the customer.")
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                 }

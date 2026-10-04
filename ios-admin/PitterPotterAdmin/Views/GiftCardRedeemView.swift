@@ -28,7 +28,7 @@ struct GiftCardRedeemView: View {
                             showingScanner = true
                         } label: {
                             Image(systemName: "qrcode.viewfinder")
-                                .font(.title2)
+                                .font(AppFont.heading(22))
                         }
                         .buttonStyle(.borderless)
                     }
@@ -60,7 +60,7 @@ struct GiftCardRedeemView: View {
                         Section(header: Text("Redeem")) {
                             HStack {
                                 Text("£")
-                                    .font(.headline)
+                                    .font(AppFont.body(17, weight: .semibold))
                                 TextField("Amount to redeem", text: $redeemAmount)
                                     .keyboardType(.decimalPad)
                             }
@@ -69,7 +69,7 @@ struct GiftCardRedeemView: View {
                                 redeemFullBalance()
                             } label: {
                                 Text("Redeem Full Balance (£\(String(format: "%.2f", balanceResult?.balance ?? 0)))")
-                                    .font(.caption)
+                                    .font(AppFont.body(12, weight: .medium))
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
@@ -104,7 +104,7 @@ struct GiftCardRedeemView: View {
                     Section {
                         Text(error)
                             .foregroundStyle(.red)
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                     }
                 }
             }

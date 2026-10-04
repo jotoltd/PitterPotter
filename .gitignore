@@ -15,3 +15,8 @@ ios-app/PitterPotter/DerivedData/
 xcuserdata/
 build/
 DerivedData/
+
+# Xcode release artifacts
+DerivedDataArchive/
+DerivedDataRel/
+*.xcarchive/

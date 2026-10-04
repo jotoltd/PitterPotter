@@ -12,7 +12,7 @@ struct PaymentReminderView: View {
             Form {
                 Section("Booking") {
                     LabeledContent("Name", value: booking.name)
-                    LabeledContent("Date", value: booking.date)
+                    LabeledContent("Date", value: PPDateDisplay.date(booking.date))
                     LabeledContent("Studio", value: booking.studio)
                     LabeledContent("Painters", value: "\(booking.paintersCount)")
                 }
@@ -24,7 +24,8 @@ struct PaymentReminderView: View {
                         LabeledContent("Deposit Paid", value: "£\(String(format: "%.2f", deposit))")
                     }
 
-                    let estimatedBalance = Double(finalSeats) * 25.0 - Double(booking.depositAmount ?? 0)
+                    let pricePerHead = 28.95
+                    let estimatedBalance = Double(finalSeats) * pricePerHead - Double(booking.depositAmount ?? 0)
                     LabeledContent("Est. Balance", value: "£\(String(format: "%.2f", max(0, estimatedBalance)))")
                 }
 

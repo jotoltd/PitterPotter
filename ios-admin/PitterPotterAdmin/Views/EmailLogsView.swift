@@ -51,29 +51,29 @@ struct EmailLogRow: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(log.typeLabel)
-                    .font(.headline)
+                    .font(AppFont.body(17, weight: .semibold))
                 Spacer()
                 if let createdAt = log.createdAt {
-                    Text(String(createdAt.prefix(16)))
-                        .font(.caption2)
+                    Text(PPDateDisplay.dateTime(createdAt))
+                        .font(AppFont.body(11, weight: .medium))
                         .foregroundStyle(.tertiary)
                 }
             }
             if let recipient = log.recipient {
                 Text(recipient)
-                    .font(.subheadline)
+                    .font(AppFont.body(15, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
             if let subject = log.subject {
                 Text(subject)
-                    .font(.caption)
+                    .font(AppFont.body(12, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     .lineLimit(2)
             }
             HStack {
                 if let status = log.status {
                     Text(status.capitalized)
-                        .font(.caption2)
+                        .font(AppFont.body(11, weight: .medium))
                         .fontWeight(.bold)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
@@ -83,7 +83,7 @@ struct EmailLogRow: View {
                 }
                 if let error = log.error, !error.isEmpty {
                     Text(error)
-                        .font(.caption2)
+                        .font(AppFont.body(11, weight: .medium))
                         .foregroundStyle(.red)
                         .lineLimit(1)
                 }

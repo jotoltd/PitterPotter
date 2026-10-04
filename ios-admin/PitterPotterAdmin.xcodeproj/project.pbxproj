@@ -37,6 +37,8 @@
 		A10028 /* EmailTemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20029 /* EmailTemplatesView.swift */; };
 		A10029 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20030 /* AnalyticsView.swift */; };
 		A10030 /* WebmasterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20031 /* WebmasterView.swift */; };
+		4EE74FA8 /* FloorPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 879322B0 /* FloorPlanView.swift */; };
+		236A96FF /* DocumentationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 392EFF99 /* DocumentationView.swift */; };
 		A10031 /* AdminSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20032 /* AdminSettingsView.swift */; };
 		A10032 /* CreateGiftCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20033 /* CreateGiftCardView.swift */; };
 		A10033 /* TimeSlotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20034 /* TimeSlotsView.swift */; };
@@ -44,6 +46,7 @@
 		A10035 /* GhostBookingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20036 /* GhostBookingView.swift */; };
 		A10036 /* CSVExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20037 /* CSVExporter.swift */; };
 		A10037 /* PPBrand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20038 /* PPBrand.swift */; };
+		A10051 /* PPDateDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20052 /* PPDateDisplay.swift */; };
 		A10038 /* GiftCardScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20039 /* GiftCardScannerView.swift */; };
 		A10039 /* GiftCardRedeemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20040 /* GiftCardRedeemView.swift */; };
 		A10040 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20041 /* SplashScreenView.swift */; };
@@ -55,6 +58,18 @@
 		A10046 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20047 /* NotificationSettingsView.swift */; };
 		A10050 /* PaintingScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20051 /* PaintingScannerView.swift */; };
 		C7D71A2EA55091BD991D7237 /* ToastManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1883213EE229183A001B1D8A /* ToastManager.swift */; };
+		0B896C3883DE492DB3124968 /* Montserrat-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3D7D71A0A9F34ED7A70EF014 /* Montserrat-Light.ttf */; };
+		C12A48073B3E456E97CB9507 /* Montserrat-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B386D8B53EFE46A8B2E3AFC9 /* Montserrat-Regular.ttf */; };
+		F40E40089474491287882844 /* Montserrat-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 98CAF264E9EE4B1DAB331ABC /* Montserrat-Medium.ttf */; };
+		CCC9F6E1A64A4D22A0CED869 /* Montserrat-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DE1B26CED177436AB6968553 /* Montserrat-SemiBold.ttf */; };
+		56B6F3661DEB409CB3897C68 /* Montserrat-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1B9D578E4949434298145A4A /* Montserrat-Bold.ttf */; };
+		AFBEE3D2DCAE439FA7FF6A19 /* Montserrat-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7277A6B239114346AE1A0105 /* Montserrat-Black.ttf */; };
+		F0FF2F1B3E2647BDB39C9307 /* DMSans-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 980F79026893466DAB9B34A8 /* DMSans-Regular.ttf */; };
+		7CE5818DF08946D1AD2FD4A3 /* DMSans-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 39C43AF008944907BBC0207B /* DMSans-Medium.ttf */; };
+		6A50D01CABE34FB8BCF4AFED /* DMSans-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 869516693FDD4814BDF84579 /* DMSans-Bold.ttf */; };
+		054C79EE59524FFA99FB7827 /* AppFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 451A4354047942CCBD57C1C5 /* AppFonts.swift */; };
+		9B8B30D511364B1D8EB3E703 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC08BDCDCC6B462397CBDF9D /* StatusBadge.swift */; };
+		FA67B581F27D4BF29E3512A5 /* ImageModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95740503475149A3BEAD655B /* ImageModal.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -90,6 +105,8 @@
 		A20029 /* EmailTemplatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailTemplatesView.swift; sourceTree = "<group>"; };
 		A20030 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
 		A20031 /* WebmasterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebmasterView.swift; sourceTree = "<group>"; };
+		879322B0 /* FloorPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloorPlanView.swift; sourceTree = "<group>"; };
+		392EFF99 /* DocumentationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentationView.swift; sourceTree = "<group>"; };
 		A20032 /* AdminSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminSettingsView.swift; sourceTree = "<group>"; };
 		A20033 /* CreateGiftCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGiftCardView.swift; sourceTree = "<group>"; };
 		A20034 /* TimeSlotsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeSlotsView.swift; sourceTree = "<group>"; };
@@ -97,6 +114,7 @@
 		A20036 /* GhostBookingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhostBookingView.swift; sourceTree = "<group>"; };
 		A20037 /* CSVExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVExporter.swift; sourceTree = "<group>"; };
 		A20038 /* PPBrand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PPBrand.swift; sourceTree = "<group>"; };
+		A20052 /* PPDateDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PPDateDisplay.swift; sourceTree = "<group>"; };
 		A20039 /* GiftCardScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiftCardScannerView.swift; sourceTree = "<group>"; };
 		A20051 /* PaintingScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaintingScannerView.swift; sourceTree = "<group>"; };
 		A20040 /* GiftCardRedeemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GiftCardRedeemView.swift; sourceTree = "<group>"; };
@@ -108,6 +126,18 @@
 		A20046 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
 		A20047 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
 		A30000 /* PitterPotterAdmin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PitterPotterAdmin.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D7D71A0A9F34ED7A70EF014 /* Montserrat-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file.ttf; path = Montserrat-Light.ttf; sourceTree = "<group>"; };
+		B386D8B53EFE46A8B2E3AFC9 /* Montserrat-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file.ttf; path = Montserrat-Regular.ttf; sourceTree = "<group>"; };
+		98CAF264E9EE4B1DAB331ABC /* Montserrat-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file.ttf; path = Montserrat-Medium.ttf; sourceTree = "<group>"; };
+		DE1B26CED177436AB6968553 /* Montserrat-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file.ttf; path = Montserrat-SemiBold.ttf; sourceTree = "<group>"; };
+		1B9D578E4949434298145A4A /* Montserrat-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file.ttf; path = Montserrat-Bold.ttf; sourceTree = "<group>"; };
+		7277A6B239114346AE1A0105 /* Montserrat-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file.ttf; path = Montserrat-Black.ttf; sourceTree = "<group>"; };
+		980F79026893466DAB9B34A8 /* DMSans-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file.ttf; path = DMSans-Regular.ttf; sourceTree = "<group>"; };
+		39C43AF008944907BBC0207B /* DMSans-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file.ttf; path = DMSans-Medium.ttf; sourceTree = "<group>"; };
+		869516693FDD4814BDF84579 /* DMSans-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file.ttf; path = DMSans-Bold.ttf; sourceTree = "<group>"; };
+		451A4354047942CCBD57C1C5 /* AppFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFonts.swift; sourceTree = "<group>"; };
+		FC08BDCDCC6B462397CBDF9D /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
+		95740503475149A3BEAD655B /* ImageModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageModal.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,6 +170,7 @@
 				A20011 /* Info.plist */,
 				A20012 /* Assets.xcassets */,
 				A50007 /* Utils */,
+				C755AA350BAC4D7A91BBBDF1 /* Fonts */,
 			);
 			path = PitterPotterAdmin;
 			sourceTree = "<group>";
@@ -203,6 +234,8 @@
 				A20029 /* EmailTemplatesView.swift */,
 				A20030 /* AnalyticsView.swift */,
 				A20031 /* WebmasterView.swift */,
+				879322B0 /* FloorPlanView.swift */,
+				392EFF99 /* DocumentationView.swift */,
 				A20032 /* AdminSettingsView.swift */,
 				A20033 /* CreateGiftCardView.swift */,
 				A20034 /* TimeSlotsView.swift */,
@@ -227,10 +260,30 @@
 				A20022 /* Analytics.swift */,
 				A20037 /* CSVExporter.swift */,
 				A20038 /* PPBrand.swift */,
+				A20052 /* PPDateDisplay.swift */,
 				A20044 /* CachedAsyncImage.swift */,
 				1883213EE229183A001B1D8A /* ToastManager.swift */,
+				451A4354047942CCBD57C1C5 /* AppFonts.swift */,
+				FC08BDCDCC6B462397CBDF9D /* StatusBadge.swift */,
+				95740503475149A3BEAD655B /* ImageModal.swift */,
 			);
 			path = Utils;
+			sourceTree = "<group>";
+		};
+		C755AA350BAC4D7A91BBBDF1 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				3D7D71A0A9F34ED7A70EF014 /* Montserrat-Light.ttf */,
+				B386D8B53EFE46A8B2E3AFC9 /* Montserrat-Regular.ttf */,
+				98CAF264E9EE4B1DAB331ABC /* Montserrat-Medium.ttf */,
+				DE1B26CED177436AB6968553 /* Montserrat-SemiBold.ttf */,
+				1B9D578E4949434298145A4A /* Montserrat-Bold.ttf */,
+				7277A6B239114346AE1A0105 /* Montserrat-Black.ttf */,
+				980F79026893466DAB9B34A8 /* DMSans-Regular.ttf */,
+				39C43AF008944907BBC0207B /* DMSans-Medium.ttf */,
+				869516693FDD4814BDF84579 /* DMSans-Bold.ttf */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -287,6 +340,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10011 /* Assets.xcassets in Resources */,
+				0B896C3883DE492DB3124968 /* Montserrat-Light.ttf in Resources */,
+				C12A48073B3E456E97CB9507 /* Montserrat-Regular.ttf in Resources */,
+				F40E40089474491287882844 /* Montserrat-Medium.ttf in Resources */,
+				CCC9F6E1A64A4D22A0CED869 /* Montserrat-SemiBold.ttf in Resources */,
+				56B6F3661DEB409CB3897C68 /* Montserrat-Bold.ttf in Resources */,
+				AFBEE3D2DCAE439FA7FF6A19 /* Montserrat-Black.ttf in Resources */,
+				F0FF2F1B3E2647BDB39C9307 /* DMSans-Regular.ttf in Resources */,
+				7CE5818DF08946D1AD2FD4A3 /* DMSans-Medium.ttf in Resources */,
+				6A50D01CABE34FB8BCF4AFED /* DMSans-Bold.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -326,6 +388,8 @@
 				A10028 /* EmailTemplatesView.swift in Sources */,
 				A10029 /* AnalyticsView.swift in Sources */,
 				A10030 /* WebmasterView.swift in Sources */,
+				4EE74FA8 /* FloorPlanView.swift in Sources */,
+				236A96FF /* DocumentationView.swift in Sources */,
 				A10031 /* AdminSettingsView.swift in Sources */,
 				A10032 /* CreateGiftCardView.swift in Sources */,
 				A10033 /* TimeSlotsView.swift in Sources */,
@@ -333,6 +397,7 @@
 				A10035 /* GhostBookingView.swift in Sources */,
 				A10036 /* CSVExporter.swift in Sources */,
 				A10037 /* PPBrand.swift in Sources */,
+				A10051 /* PPDateDisplay.swift in Sources */,
 				A10038 /* GiftCardScannerView.swift in Sources */,
 				A10050 /* PaintingScannerView.swift in Sources */,
 				A10039 /* GiftCardRedeemView.swift in Sources */,
@@ -341,6 +406,9 @@
 				A10042 /* SMSAdminView.swift in Sources */,
 				A10043 /* CachedAsyncImage.swift in Sources */,
 				C7D71A2EA55091BD991D7237 /* ToastManager.swift in Sources */,
+				054C79EE59524FFA99FB7827 /* AppFonts.swift in Sources */,
+				9B8B30D511364B1D8EB3E703 /* StatusBadge.swift in Sources */,
+				FA67B581F27D4BF29E3512A5 /* ImageModal.swift in Sources */,
 				A10044 /* NotificationsViewModel.swift in Sources */,
 				A10045 /* NotificationsView.swift in Sources */,
 				A10046 /* NotificationSettingsView.swift in Sources */,
@@ -398,7 +466,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 29;
 				DEVELOPMENT_TEAM = UUF5LG9UJS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PitterPotterAdmin/Info.plist;
@@ -410,7 +478,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pitterpotter.admin;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -428,7 +496,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 29;
 				DEVELOPMENT_TEAM = UUF5LG9UJS;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = PitterPotterAdmin/Info.plist;
@@ -440,7 +508,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pitterpotter.admin;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

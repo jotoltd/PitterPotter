@@ -14,6 +14,7 @@ struct BookingsListView: View {
     @State private var showingNewBooking = false
     @State private var showingNewBabyPrint = false
     @State private var showingGiftCardScanner = false
+    @State private var showingBulkDelete = false
     @State private var recentSearches: [String] = UserDefaults.standard.stringArray(forKey: "pp_recent_searches") ?? []
 
     var body: some View {
@@ -22,18 +23,18 @@ struct BookingsListView: View {
                 // Search bar
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
-                        .font(.system(size: 15, weight: .medium))
+                        .font(AppFont.body(15, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.3))
                     TextField("Search name, email, phone...", text: $bookingsVM.searchText)
                         .textInputAutocapitalization(.never)
-                        .font(.system(size: 15))
+                        .font(AppFont.body(15))
                         .foregroundStyle(PPBrand.charcoal)
                     if !bookingsVM.searchText.isEmpty {
                         Button {
                             bookingsVM.searchText = ""
                         } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 16))
+                                .font(AppFont.body(16))
                                 .foregroundStyle(PPBrand.charcoal.opacity(0.3))
                         }
                     }
@@ -48,7 +49,34 @@ struct BookingsListView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
 
-                // Active filters
+                // Session type tabs
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        SessionTabButton(title: "All", count: bookingsVM.bookings.count, isSelected: bookingsVM.selectedSessionType == nil) {
+                            bookingsVM.selectedSessionType = nil
+                        }
+                        SessionTabButton(title: "Painting", count: bookingsVM.bookings.filter { $0.sessionType == "painting" }.count, isSelected: bookingsVM.selectedSessionType == "painting") {
+                            bookingsVM.selectedSessionType = "painting"
+                        }
+                        SessionTabButton(title: "Baby Prints", count: bookingsVM.bookings.filter { $0.sessionType == "clay-imprints" }.count, isSelected: bookingsVM.selectedSessionType == "clay-imprints") {
+                            bookingsVM.selectedSessionType = "clay-imprints"
+                        }
+                        SessionTabButton(title: "Party", count: bookingsVM.bookings.filter { $0.sessionType == "birthday-party" }.count, isSelected: bookingsVM.selectedSessionType == "birthday-party") {
+                            bookingsVM.selectedSessionType = "birthday-party"
+                        }
+                        SessionTabButton(title: "Shower/Hen", count: bookingsVM.bookings.filter { $0.sessionType == "baby-shower-hen" }.count, isSelected: bookingsVM.selectedSessionType == "baby-shower-hen") {
+                            bookingsVM.selectedSessionType = "baby-shower-hen"
+                        }
+                        SessionTabButton(title: "Corporate", count: bookingsVM.bookings.filter { $0.sessionType == "corporate" }.count, isSelected: bookingsVM.selectedSessionType == "corporate") {
+                            bookingsVM.selectedSessionType = "corporate"
+                        }
+                        SessionTabButton(title: "Exclusive", count: bookingsVM.bookings.filter { $0.sessionType == "exclusive-hire" }.count, isSelected: bookingsVM.selectedSessionType == "exclusive-hire") {
+                            bookingsVM.selectedSessionType = "exclusive-hire"
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+                .padding(.top, 8)
                 if hasActiveFilters {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
@@ -80,9 +108,9 @@ struct BookingsListView: View {
                 if bookingsVM.isOffline {
                     HStack(spacing: 6) {
                         Image(systemName: "wifi.slash")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.body(13, weight: .medium))
                         Text("Offline — showing cached data")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(AppFont.body(13, weight: .medium))
                     }
                     .foregroundStyle(.orange)
                     .padding(.horizontal, 16)
@@ -103,7 +131,7 @@ struct BookingsListView: View {
                             .font(.largeTitle)
                             .foregroundStyle(.orange)
                         Text(error)
-                            .font(.subheadline)
+                            .font(AppFont.body(15, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         Button("Retry") {
                             if let staff = authVM.staff {
@@ -233,7 +261,7 @@ struct BookingsListView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Text("Bookings")
-                        .font(.system(size: 17, weight: .heavy))
+                        .font(AppFont.heading(17))
                         .foregroundStyle(PPBrand.charcoal)
                         .textCase(.uppercase)
                         .tracking(1)
@@ -266,7 +294,7 @@ struct BookingsListView: View {
                                 showingBulkActions = true
                             } label: {
                                 Text("\(bookingsVM.selectedBookingIds.count)")
-                                    .font(.headline)
+                                    .font(AppFont.body(17, weight: .semibold))
                                     .foregroundStyle(PPBrand.charcoal)
                             }
                         }
@@ -328,6 +356,7 @@ struct BookingsListView: View {
                 BookingDetailView(booking: booking)
                     .environmentObject(bookingsVM)
                     .environmentObject(authVM)
+                    .environmentObject(toastManager)
             }
             .sheet(isPresented: $showingFilters) {
                 FiltersView()
@@ -388,10 +417,37 @@ struct BookingsListView: View {
                         }
                     }
                 }
+                if authVM.staff?.role == "super_admin" {
+                    Button("Export Selected to CSV") {
+                        bookingsVM.exportSelectedCSV()
+                    }
+                }
+                if authVM.staff?.canDeleteBookings == true {
+                    Button("Delete Selected", role: .destructive) {
+                        showingBulkDelete = true
+                    }
+                }
                 Button("Cancel", role: .cancel) {
                     bookingsVM.selectedBookingIds.removeAll()
                     bookingsVM.isBulkSelectMode = false
                 }
+            }
+            .confirmationDialog(
+                "Delete \(bookingsVM.selectedBookingIds.count) bookings?",
+                isPresented: $showingBulkDelete,
+                titleVisibility: .visible
+            ) {
+                Button("Delete All", role: .destructive) {
+                    if let staff = authVM.staff {
+                        Task {
+                            await bookingsVM.bulkDelete(staff: staff)
+                            toastManager.success("Bookings deleted")
+                        }
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This action cannot be undone. All selected bookings will be permanently removed.")
             }
             .confirmationDialog(
                 "Delete booking for \(bookingToDelete?.name ?? "")?",
@@ -432,7 +488,7 @@ struct BookingsListView: View {
 func bookingShareText(_ booking: Booking) -> String {
     var lines: [String] = []
     lines.append("Booking: \(booking.name)")
-    lines.append("Date: \(booking.date) at \(booking.time)")
+    lines.append("Date: \(PPDateDisplay.date(booking.date)) at \(PPDateDisplay.time(booking.time))")
     lines.append("Studio: \(booking.studio)")
     lines.append("Painters: \(booking.paintersCount)")
     lines.append("Session: \(booking.sessionTypeEnum?.label ?? booking.sessionType)")
@@ -468,14 +524,17 @@ struct BookingRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .center, spacing: 2) {
-                Text(booking.date.prefix(5).description)
-                    .font(.system(size: 12, weight: .bold))
+                Text(PPDateDisplay.date(booking.date))
+                    .font(AppFont.body(10, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal)
-                Text(booking.time.split(separator: "-").first.map { String($0) } ?? booking.time)
-                    .font(.system(size: 11, weight: .medium))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+                Text(PPDateDisplay.startTime(booking.time))
+                    .font(AppFont.body(11, weight: .medium))
                     .foregroundStyle(PPBrand.clay300)
             }
-            .frame(width: 52)
+            .frame(width: 92)
             .padding(.vertical, 6)
             .background(PPBrand.charcoal.opacity(0.06))
             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -483,69 +542,87 @@ struct BookingRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
                     Text(booking.name)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(AppFont.body(16, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal)
                         .lineLimit(1)
                     if let photos = booking.photos, !photos.isEmpty {
                         Image(systemName: "camera.fill")
-                            .font(.system(size: 10))
+                            .font(AppFont.body(10))
                             .foregroundStyle(PPBrand.clay300)
                     }
                 }
                 HStack(spacing: 4) {
                     Image(systemName: "person.2.fill")
-                        .font(.system(size: 10))
+                        .font(AppFont.body(10))
                     Text("\(booking.paintersCount)")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.body(12, weight: .medium))
                     Text("\u{00B7}")
-                        .font(.system(size: 12))
+                        .font(AppFont.body(12))
                         .foregroundStyle(PPBrand.clay300)
                     Text(booking.studio)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(AppFont.body(12, weight: .medium))
                     Text("\u{00B7}")
-                        .font(.system(size: 12))
+                        .font(AppFont.body(12))
                         .foregroundStyle(PPBrand.clay300)
-                    Text(booking.sessionTypeEnum?.label ?? booking.sessionType)
-                        .font(.system(size: 12, weight: .medium))
-                        .lineLimit(1)
+                    SessionTypeBadge(sessionType: booking.sessionType)
                 }
                 .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             }
 
             Spacer()
 
-            StatusBadge(status: booking.bookingStatus ?? .pending)
+            let status = booking.bookingStatus ?? .pending
+            if booking.studio == "Wimbledon" && (booking.tableId ?? "").isEmpty && status != .cancelled && status != .noShow {
+                HStack(spacing: 3) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(AppFont.body(9, weight: .bold))
+                    Text("No table")
+                        .font(AppFont.body(10, weight: .bold))
+                }
+                .foregroundStyle(Color(red: 0.72, green: 0.25, blue: 0.05))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color(red: 1, green: 0.95, blue: 0.93))
+                .clipShape(Capsule())
+            }
+
+            StatusBadge(status: status)
         }
         .padding(.vertical, 6)
     }
 }
 
-// MARK: - Status Badge
+// MARK: - Status Badge (matching web pill badges with icons)
 
 struct StatusBadge: View {
     let status: BookingStatus
 
-    var body: some View {
-        Text(status.label)
-            .font(.system(size: 10, weight: .bold))
-            .textCase(.uppercase)
-            .tracking(0.3)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(color.opacity(0.15))
-            .foregroundStyle(color)
-            .clipShape(Capsule())
+    private var config: (label: String, icon: String, bg: Color, text: Color) {
+        switch status {
+        case .confirmed: return ("Confirmed", "checkmark.circle.fill", PPBrand.confirmedBadgeBg, PPBrand.confirmedBadgeText)
+        case .cancelled: return ("Cancelled", "xmark.circle.fill", PPBrand.cancelledBadgeBg, PPBrand.cancelledBadgeText)
+        case .seated: return ("Seated", "person.3.fill", PPBrand.seatedBadgeBg, PPBrand.seatedBadgeText)
+        case .completed: return ("Complete", "checkmark.circle.fill", PPBrand.completedBadgeBg, PPBrand.completedBadgeText)
+        case .pending: return ("Awaiting", "clock.fill", PPBrand.pendingBadgeBg, PPBrand.pendingBadgeText)
+        case .noShow: return ("No Show", "xmark.circle.fill", PPBrand.cancelledBadgeBg, PPBrand.cancelledBadgeText)
+        }
     }
 
-    private var color: Color {
-        switch status {
-        case .confirmed: return .green
-        case .cancelled: return .red
-        case .seated: return .orange
-        case .completed: return PPBrand.charcoal
-        case .pending: return .yellow
-        case .noShow: return .gray
+    var body: some View {
+        let cfg = config
+        HStack(spacing: 4) {
+            Image(systemName: cfg.icon)
+                .font(AppFont.body(9, weight: .bold))
+            Text(cfg.label)
+                .font(AppFont.body(10, weight: .bold))
+                .tracking(0.5)
         }
+        .textCase(.uppercase)
+        .foregroundStyle(cfg.text)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(cfg.bg)
+        .clipShape(Capsule())
     }
 }
 
@@ -560,13 +637,13 @@ struct FilterChip: View {
         HStack(spacing: 4) {
             if let icon {
                 Image(systemName: icon)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(AppFont.body(10, weight: .medium))
             }
             Text(text)
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.body(12, weight: .medium))
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 13))
+                    .font(AppFont.body(13))
             }
         }
         .foregroundStyle(PPBrand.charcoal)
@@ -581,7 +658,15 @@ struct FilterChip: View {
 
 struct FiltersView: View {
     @EnvironmentObject var bookingsVM: BookingsViewModel
+    @EnvironmentObject var authVM: AuthViewModel
     @Environment(\.dismiss) var dismiss
+
+    private var availableStudios: [Studio] {
+        if let allowed = authVM.staff?.allowedStudios, !allowed.isEmpty {
+            return Studio.allCases.filter { allowed.contains($0.rawValue) }
+        }
+        return Studio.allCases
+    }
 
     var body: some View {
         NavigationStack {
@@ -589,7 +674,7 @@ struct FiltersView: View {
                 Section("Studio") {
                     Picker("Studio", selection: $bookingsVM.selectedStudio) {
                         Text("All").tag(Studio?.none)
-                        ForEach(Studio.allCases, id: \.self) { studio in
+                        ForEach(availableStudios, id: \.self) { studio in
                             Text(studio.rawValue).tag(Studio?.some(studio))
                         }
                     }
@@ -662,5 +747,38 @@ struct FiltersView: View {
                 }
             }
         }
+    }
+}
+
+struct SessionTabButton: View {
+    let title: String
+    let count: Int
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Text(title)
+                    .font(AppFont.body(12, weight: .bold))
+                Text("\(count)")
+                    .font(AppFont.body(10, weight: .bold))
+                    .foregroundStyle(isSelected ? .white : PPBrand.charcoal.opacity(0.5))
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(isSelected ? Color.white.opacity(0.2) : PPBrand.charcoal.opacity(0.08))
+                    .clipShape(Capsule())
+            }
+            .foregroundStyle(isSelected ? .white : PPBrand.charcoal)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(isSelected ? PPBrand.charcoal : Color.clear)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(isSelected ? Color.clear : PPBrand.charcoal.opacity(0.15), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }

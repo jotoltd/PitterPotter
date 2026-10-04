@@ -60,7 +60,7 @@ struct ToastOverlay: View {
                     Image(systemName: toast.type.icon)
                         .foregroundStyle(.white)
                     Text(toast.message)
-                        .font(.subheadline)
+                        .font(AppFont.body(15, weight: .medium))
                         .fontWeight(.medium)
                         .foregroundStyle(.white)
                 }

@@ -1,5 +1,7 @@
 import Stripe from 'stripe';
 import { createClient } from 'supabase';
+import { allocateAndApply, persistAllocation } from '../_shared/allocation.ts';
+import { createNotification } from '../_shared/notifications.ts';
 
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -58,7 +60,7 @@ Deno.serve(async (req) => {
           if (!existing) {
             const managementToken = crypto.randomUUID();
 
-            const { error: insertError } = await supabase.from('bookings').insert({
+            const { data: insertedBooking, error: insertError } = await supabase.from('bookings').insert({
               booking_id: bookingId,
               studio: metadata.studio,
               name: metadata.name,
@@ -78,15 +80,51 @@ Deno.serve(async (req) => {
               payment_status: 'paid',
               stripe_payment_intent_id: obj.id,
               management_token: managementToken,
-            });
+            }).select('id').single();
 
             if (insertError) {
               if (insertError.code === '23505') {
                 console.log('Booking already exists for paymentIntent:', obj.id);
               } else {
+                // A paid deposit with no booking must never be silent — alert
+                // staff before letting the error bubble to Stripe retries.
+                console.error('Paid party deposit failed to create booking:', insertError);
+                try {
+                  await createNotification(supabase, {
+                    type: 'booking_failed',
+                    title: 'PAID deposit — booking NOT created',
+                    message: `${metadata.name || 'Customer'} paid a £${depositAmount} deposit for ${metadata.studio || '?'} on ${metadata.date || '?'} at ${metadata.time || '?'}, but the booking could not be created (${insertError.message || insertError.code || 'unknown error'}). Payment ${obj.id} — check Stripe and add the booking manually.`,
+                    entityType: 'booking',
+                    entityId: bookingId,
+                    studio: metadata.studio,
+                  });
+                } catch (notifyErr) {
+                  console.error('Failed to create failure notification:', notifyErr);
+                }
                 throw insertError;
               }
             } else {
+              // Wimbledon: allocate the physical party-area/tables this booking occupies.
+              // Payment is already taken, so allocation failure must not fail the webhook — warn only.
+              if (metadata.studio === 'Wimbledon' && insertedBooking?.id) {
+                try {
+                  const allocation = await allocateAndApply(supabase, {
+                    studio: 'Wimbledon',
+                    date: metadata.date,
+                    time: metadata.time,
+                    paintersCount: Number(metadata.paintersCount) || 1,
+                    sessionType: metadata.sessionType,
+                  });
+                  if (allocation.success) {
+                    await persistAllocation(supabase, insertedBooking.id, allocation);
+                  } else {
+                    console.warn('Party booking could not be auto-allocated:', allocation.reason);
+                  }
+                } catch (allocErr) {
+                  console.error('Allocation error for party booking:', allocErr);
+                }
+              }
+
               // Send confirmation email
               try {
                 await fetch(`${supabaseUrl}/functions/v1/send-booking-confirmation`, {

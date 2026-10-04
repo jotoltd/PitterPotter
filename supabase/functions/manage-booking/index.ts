@@ -2,6 +2,7 @@ import { createClient } from 'supabase';
 import { isObject, isNonEmptyString } from '../_shared/validate.ts';
 import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 import { computeCapacity, StudioName } from '../_shared/capacity.ts';
+import { allocateAndApply, persistAllocation } from '../_shared/allocation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +10,7 @@ const corsHeaders = {
 };
 
 interface BookingRow {
+  id: string;
   booking_id: string;
   name: string;
   email: string;
@@ -152,6 +154,7 @@ Deno.serve(async (req) => {
         newTime,
         booking.session_type,
         booking.booking_id,
+        booking.painters_count,
       );
 
       if (capacity.conflict === 'party_session_exists') {
@@ -184,6 +187,27 @@ Deno.serve(async (req) => {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+
+      // Re-allocate Wimbledon resources for the new date/time.
+      if (booking.studio === 'Wimbledon') {
+        try {
+          const allocation = await allocateAndApply(supabase, {
+            studio: 'Wimbledon',
+            date: newDate,
+            time: newTime,
+            paintersCount: booking.painters_count,
+            sessionType: booking.session_type,
+            excludeBookingId: booking.booking_id,
+          });
+          if (allocation.success) {
+            await persistAllocation(supabase, booking.id, allocation);
+          } else {
+            console.warn('Could not re-allocate resources after reschedule:', allocation.reason);
+          }
+        } catch (allocErr) {
+          console.error('Re-allocation error after reschedule:', allocErr);
+        }
       }
 
       return new Response(JSON.stringify({ success: true, message: 'Booking rescheduled successfully' }), {
@@ -228,6 +252,7 @@ Deno.serve(async (req) => {
         booking.time,
         booking.session_type,
         booking.booking_id,
+        guestCount,
       );
 
       if (capacity.remaining + booking.painters_count < guestCount) {
@@ -249,6 +274,27 @@ Deno.serve(async (req) => {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
+      }
+
+      // Re-allocate Wimbledon resources for the new guest count.
+      if (booking.studio === 'Wimbledon') {
+        try {
+          const allocation = await allocateAndApply(supabase, {
+            studio: 'Wimbledon',
+            date: booking.date,
+            time: booking.time,
+            paintersCount: guestCount,
+            sessionType: booking.session_type,
+            excludeBookingId: booking.booking_id,
+          });
+          if (allocation.success) {
+            await persistAllocation(supabase, booking.id, allocation);
+          } else {
+            console.warn('Could not re-allocate resources after changeGuests:', allocation.reason);
+          }
+        } catch (allocErr) {
+          console.error('Re-allocation error after changeGuests:', allocErr);
+        }
       }
 
       return new Response(JSON.stringify({ success: true, message: 'Number of guests updated successfully' }), {

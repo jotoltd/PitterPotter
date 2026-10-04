@@ -3,6 +3,7 @@ import SwiftUI
 struct AdminSettingsView: View {
     @EnvironmentObject var authVM: AuthViewModel
     @EnvironmentObject var bookingsVM: BookingsViewModel
+    @EnvironmentObject var toastManager: ToastManager
 
     // Settings state
     @State private var stripeMode = "sandbox"
@@ -26,10 +27,14 @@ struct AdminSettingsView: View {
     @State private var savingKey: String?
     @State private var settingsLoaded = false
 
+    // Change password
+    @State private var showingChangePassword = false
+
     var body: some View {
         NavigationStack {
             List {
                 if authVM.staff?.role == "super_admin" {
+                    staffManagementSection
                     generalSection
                     capacitySection
                     schedulingSection
@@ -39,11 +44,30 @@ struct AdminSettingsView: View {
                 } else {
                     staffInfoSection
                 }
+                changePasswordSection
                 appInfoSection
                 signOutSection
             }
             .navigationTitle("Settings")
             .onAppear { if !settingsLoaded { loadAllSettings() } }
+            .sheet(isPresented: $showingChangePassword) {
+                ChangePasswordView()
+                    .environmentObject(authVM)
+                    .environmentObject(toastManager)
+            }
+        }
+    }
+
+    // MARK: - Staff Management (super_admin only)
+
+    private var staffManagementSection: some View {
+        Section(header: Text("Staff")) {
+            NavigationLink {
+                StaffManagementView()
+                    .environmentObject(authVM)
+            } label: {
+                Label("Manage Staff", systemImage: "person.2")
+            }
         }
     }
 
@@ -62,7 +86,7 @@ struct AdminSettingsView: View {
 
             if stripeMode == "live" {
                 Label("Live mode — real payments", systemImage: "exclamationmark.triangle")
-                    .font(.caption)
+                    .font(AppFont.body(12, weight: .medium))
                     .foregroundStyle(.red)
             }
 
@@ -74,7 +98,7 @@ struct AdminSettingsView: View {
 
             if maintenanceMode {
                 Label("Site is in maintenance", systemImage: "wrench")
-                    .font(.caption)
+                    .font(AppFont.body(12, weight: .medium))
                     .foregroundStyle(.red)
             }
 
@@ -88,7 +112,7 @@ struct AdminSettingsView: View {
                 Button("Save") {
                     saveSetting("party_price", partyPrice)
                 }
-                .font(.caption)
+                .font(AppFont.body(12, weight: .medium))
             }
 
             // Party Guest Limits
@@ -101,7 +125,7 @@ struct AdminSettingsView: View {
                 Button("Save") {
                     saveSetting("party_guest_limit_putney", partyGuestLimitPutney)
                 }
-                .font(.caption)
+                .font(AppFont.body(12, weight: .medium))
             }
 
             HStack {
@@ -113,7 +137,7 @@ struct AdminSettingsView: View {
                 Button("Save") {
                     saveSetting("party_guest_limit_wimbledon", partyGuestLimitWimbledon)
                 }
-                .font(.caption)
+                .font(AppFont.body(12, weight: .medium))
             }
 
             // Deposit Notice Type
@@ -139,7 +163,7 @@ struct AdminSettingsView: View {
                 ForEach(capacityRows) { row in
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(row.studio) — \(row.sessionLabel)")
-                            .font(.subheadline)
+                            .font(AppFont.body(15, weight: .medium))
                             .fontWeight(.medium)
                         HStack {
                             TextField("Max", value: Binding(
@@ -162,7 +186,7 @@ struct AdminSettingsView: View {
                                     Text("Save")
                                 }
                             }
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .disabled(savingKey == row.id)
                         }
                     }
@@ -230,17 +254,32 @@ struct AdminSettingsView: View {
         Section(header: Text("Profile")) {
             HStack {
                 Image(systemName: "person.circle.fill")
-                    .font(.title)
+                    .font(AppFont.heading(28))
                     .foregroundStyle(PPBrand.charcoal)
                 VStack(alignment: .leading) {
                     Text(authVM.staff?.name ?? "")
-                        .font(.headline)
+                        .font(AppFont.body(17, weight: .semibold))
                     Text(authVM.staff?.username ?? "")
-                        .font(.caption)
+                        .font(AppFont.body(12, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
             }
             LabeledContent("Role", value: authVM.staff?.role.capitalized ?? "")
+        }
+    }
+
+    // MARK: - Change Password (all users)
+
+    private var changePasswordSection: some View {
+        Section(header: Text("Account")) {
+            Button {
+                showingChangePassword = true
+            } label: {
+                HStack {
+                    Image(systemName: "lock")
+                    Text("Change Password")
+                }
+            }
         }
     }
 
@@ -398,6 +437,108 @@ struct AdminSettingsView: View {
                     Image(systemName: "bell.fill")
                         .foregroundStyle(.orange)
                     Text("Notification Settings")
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Change Password View
+
+struct ChangePasswordView: View {
+    @EnvironmentObject var authVM: AuthViewModel
+    @EnvironmentObject var toastManager: ToastManager
+    @Environment(\.dismiss) var dismiss
+
+    @State private var currentPassword = ""
+    @State private var newPassword = ""
+    @State private var confirmPassword = ""
+    @State private var isSaving = false
+    @State private var errorMessage: String?
+
+    private var isValid: Bool {
+        !currentPassword.isEmpty &&
+        newPassword.count >= 6 &&
+        newPassword == confirmPassword
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(header: Text("Change Password")) {
+                    SecureField("Current Password", text: $currentPassword)
+                        .textInputAutocapitalization(.never)
+                    SecureField("New Password", text: $newPassword)
+                        .textInputAutocapitalization(.never)
+                    SecureField("Confirm New Password", text: $confirmPassword)
+                        .textInputAutocapitalization(.never)
+                }
+
+                if let errorMessage {
+                    Section {
+                        Text(errorMessage)
+                            .font(AppFont.body(13, weight: .medium))
+                            .foregroundStyle(.red)
+                    }
+                }
+
+                Section {
+                    Button {
+                        submit()
+                    } label: {
+                        if isSaving {
+                            HStack {
+                                ProgressView()
+                                Text("Saving...")
+                            }
+                        } else {
+                            Text("Change Password")
+                                .fontWeight(.bold)
+                        }
+                    }
+                    .disabled(!isValid || isSaving)
+                }
+            }
+            .navigationTitle("Change Password")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func submit() {
+        guard let staff = authVM.staff else { return }
+        isSaving = true
+        errorMessage = nil
+        Task {
+            do {
+                try await APIClient.shared.changeOwnPassword(
+                    currentPassword: currentPassword,
+                    newPassword: newPassword,
+                    staff: staff
+                )
+                await MainActor.run {
+                    isSaving = false
+                    Haptics.success()
+                    toastManager.success("Password changed successfully")
+                    dismiss()
+                }
+            } catch let err as APIError {
+                await MainActor.run {
+                    isSaving = false
+                    Haptics.error()
+                    errorMessage = err.errorDescription
+                    toastManager.error(err.errorDescription ?? "Failed to change password")
+                }
+            } catch let err {
+                await MainActor.run {
+                    isSaving = false
+                    Haptics.error()
+                    errorMessage = "Failed to change password: \(err.localizedDescription)"
+                    toastManager.error("Failed to change password")
                 }
             }
         }

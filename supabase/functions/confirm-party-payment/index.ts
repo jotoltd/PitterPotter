@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import { createClient } from 'supabase';
 import { isRateLimited, rateLimitResponse, getClientIp } from '../_shared/rate-limit.ts';
 import { createNotification } from '../_shared/notifications.ts';
+import { allocateAndApply, persistAllocation } from '../_shared/allocation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -110,7 +111,7 @@ Deno.serve(async (req) => {
       management_token: managementToken,
     };
 
-    const { error: insertError } = await supabase.from('bookings').insert(bookingRow);
+    const { data: insertedBooking, error: insertError } = await supabase.from('bookings').insert(bookingRow).select('id').single();
 
     if (insertError) {
       // Race condition: webhook may have already created the booking
@@ -127,10 +128,44 @@ Deno.serve(async (req) => {
         }
       }
       console.error('Booking insert error:', insertError);
+      // A paid deposit with no booking must never be silent — alert staff.
+      try {
+        await createNotification(supabase, {
+          type: 'booking_failed',
+          title: 'PAID deposit — booking NOT created',
+          message: `${metadata.name || 'Customer'} paid a £${depositAmount} deposit for ${metadata.studio || '?'} on ${metadata.date || '?'} at ${metadata.time || '?'}, but the booking could not be created (${insertError.message || insertError.code || 'unknown error'}). Payment ${paymentIntentId} — check Stripe and add the booking manually.`,
+          entityType: 'booking',
+          entityId: bookingId,
+          studio: metadata.studio,
+        });
+      } catch (notifyErr) {
+        console.error('Failed to create failure notification:', notifyErr);
+      }
       return new Response(JSON.stringify({ error: 'Failed to create booking' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Wimbledon: allocate the physical party-area/tables this booking occupies.
+    // Payment is already taken, so allocation failure must not fail the booking — warn only.
+    if (metadata.studio === 'Wimbledon' && insertedBooking?.id) {
+      try {
+        const allocation = await allocateAndApply(supabase, {
+          studio: 'Wimbledon',
+          date: metadata.date,
+          time: metadata.time,
+          paintersCount: Number(metadata.paintersCount) || 1,
+          sessionType: metadata.sessionType,
+        });
+        if (allocation.success) {
+          await persistAllocation(supabase, insertedBooking.id, allocation);
+        } else {
+          console.warn('Party booking could not be auto-allocated:', allocation.reason);
+        }
+      } catch (allocErr) {
+        console.error('Allocation error for party booking:', allocErr);
+      }
     }
 
     // Create admin notification

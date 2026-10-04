@@ -35,6 +35,7 @@ export function toBookingInquiry(row: any): BookingInquiry {
     managementToken: row.management_token || undefined,
     createdAt: row.created_at || undefined,
     photos: row.photos || undefined,
+    photoTags: row.photo_tags || undefined,
     collectionStatus: row.collection_status || undefined,
     collectedAt: row.collected_at || undefined,
   };
@@ -120,7 +121,7 @@ export async function getBusyDates(studio: 'Putney' | 'Wimbledon', year: number,
   return data.busyDates || [];
 }
 
-export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date: string, time: string, sessionType?: string): Promise<number> {
+export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date: string, time: string, sessionType?: string, paintersCount?: number): Promise<number> {
   if (!isSupabaseEnabled()) return DEFAULT_MAX_PAINTERS[studio];
   const response = await fetch(functionUrl('get-capacity'), {
     method: 'POST',
@@ -128,7 +129,7 @@ export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date:
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
     },
-    body: JSON.stringify({ studio, date, time, sessionType }),
+    body: JSON.stringify({ studio, date, time, sessionType, paintersCount }),
   });
   const data = await response.json();
   if (!response.ok || data.error) {
@@ -162,7 +163,7 @@ export async function createBooking(booking: BookingInquiry, staff?: Staff | nul
   if (!isSupabaseEnabled()) return null;
   if (!staff) throw new Error('Staff required');
 
-  const remaining = await getRemainingCapacity(booking.studio, booking.date, booking.time, booking.sessionType);
+  const remaining = await getRemainingCapacity(booking.studio, booking.date, booking.time, booking.sessionType, booking.paintersCount);
   if (remaining < booking.paintersCount) {
     throw new Error(`Not enough capacity. Only ${remaining} painter spots remaining for this slot.`);
   }

@@ -46,7 +46,7 @@ struct EmailTemplatesView: View {
                 if let vars = tpl.availableVariables, !vars.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Available Variables")
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         FlowLayout(spacing: 4) {
                             ForEach(vars, id: \.self) { v in
@@ -141,14 +141,14 @@ struct TemplateRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(tpl.name)
-                .font(.headline)
+                .font(AppFont.body(17, weight: .semibold))
             Text("Subject: \(tpl.subject)")
-                .font(.caption)
+                .font(AppFont.body(12, weight: .medium))
                 .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 .lineLimit(2)
             if let updatedAt = tpl.updatedAt {
-                Text("Updated: \(String(updatedAt.prefix(10)))")
-                    .font(.caption2)
+                Text("Updated: \(PPDateDisplay.dateTime(updatedAt))")
+                    .font(AppFont.body(11, weight: .medium))
                     .foregroundStyle(.tertiary)
             }
         }

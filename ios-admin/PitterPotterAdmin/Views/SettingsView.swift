@@ -10,17 +10,17 @@ struct SettingsView: View {
                 Section {
                     HStack {
                         Image(systemName: "person.circle.fill")
-                            .font(.title)
+                            .font(AppFont.heading(28))
                             .foregroundStyle(PPBrand.charcoal)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(authVM.staff?.name ?? "Unknown")
-                                .font(.headline)
+                                .font(AppFont.body(17, weight: .semibold))
                             Text(authVM.staff?.username ?? "")
-                                .font(.caption)
+                                .font(AppFont.body(12, weight: .medium))
                                 .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                             HStack(spacing: 6) {
                                 Text(authVM.staff?.role.capitalized ?? "")
-                                    .font(.caption2)
+                                    .font(AppFont.body(11, weight: .medium))
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 2)
                                     .background(PPBrand.charcoal.opacity(0.2))
@@ -28,7 +28,7 @@ struct SettingsView: View {
                                     .clipShape(Capsule())
                                 if let studios = authVM.staff?.allowedStudios, !studios.isEmpty {
                                     Text(studios.joined(separator: ", "))
-                                        .font(.caption2)
+                                        .font(AppFont.body(11, weight: .medium))
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 2)
                                         .background(Color.blue.opacity(0.2))
@@ -50,7 +50,7 @@ struct SettingsView: View {
                 Section("API Configuration") {
                     LabeledContent("Supabase URL") {
                         Text(String(APIConfig.supabaseURL.prefix(30)) + "...")
-                            .font(.caption)
+                            .font(AppFont.body(12, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                     }
                 }
@@ -87,7 +87,7 @@ struct PermissionRow: View {
             Spacer()
             Image(systemName: enabled ? "checkmark.circle.fill" : "xmark.circle")
                 .foregroundStyle(enabled ? .green : .secondary)
-                .font(.caption)
+                .font(AppFont.body(12, weight: .medium))
         }
     }
 }

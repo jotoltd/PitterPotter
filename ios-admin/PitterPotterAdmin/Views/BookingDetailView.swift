@@ -17,6 +17,14 @@ struct BookingDetailView: View {
     @State private var reminderFinalSeats = 1
     @State private var isSendingReminder = false
     @State private var currentBooking: Booking
+    @State private var commLogs: [EmailLog] = []
+    @State private var commLoading = false
+    @State private var tagMode = false
+    @State private var tagPopover: TagPopoverState?
+    @State private var modalImages: [String]? = nil
+    @State private var modalIndex: Int = 0
+    @State private var modalPhotoTags: [String: [PhotoTag]]? = nil
+    @State private var showingFloorPlan = false
 
     init(booking: Booking) {
         self.booking = booking
@@ -35,6 +43,7 @@ struct BookingDetailView: View {
                 }
                 notesCard
                 photosSection
+                communicationHistory
                 metaSection
             }
             .padding(20)
@@ -60,12 +69,56 @@ struct BookingDetailView: View {
         }
         .sheet(isPresented: $showingEdit) {
             EditBookingView(booking: currentBooking) { updated in
-                currentBooking = updated
-                if let staff = authVM.staff {
-                    Task { await bookingsVM.saveBooking(updated, staff: staff) }
+                guard let staff = authVM.staff else { return "Not signed in" }
+                let ok = await bookingsVM.saveBooking(updated, staff: staff)
+                if ok {
+                    currentBooking = updated
+                    toastManager.success("Booking saved")
+                    return nil
                 }
+                return bookingsVM.error ?? "Failed to save booking"
             }
             .environmentObject(authVM)
+        }
+        .sheet(isPresented: $showingFloorPlan) {
+            NavigationStack {
+                ScrollView {
+                    FloorPlanView(
+                        studio: currentBooking.studio,
+                        bookings: bookingsVM.bookings,
+                        selectedDate: currentBooking.date,
+                        selectedTime: currentBooking.time,
+                        highlightTableId: currentBooking.tableId,
+                        onAssign: { tableId in
+                            var updated = currentBooking
+                            updated.tableId = tableId
+                            if let staff = authVM.staff {
+                                Task {
+                                    let ok = await bookingsVM.saveBooking(updated, staff: staff)
+                                    await MainActor.run {
+                                        if ok {
+                                            currentBooking = updated
+                                            toastManager.success("Assigned to \(tableId)")
+                                        } else {
+                                            toastManager.error(bookingsVM.error ?? "Failed to assign table")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    )
+                    .environmentObject(bookingsVM)
+                    .environmentObject(authVM)
+                    .padding(16)
+                }
+                .navigationTitle("\(currentBooking.studio) Floor Plan")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") { showingFloorPlan = false }
+                    }
+                }
+            }
         }
         .onChange(of: selectedItems) { newItems in
             Task { await uploadPhotos(newItems) }
@@ -109,23 +162,42 @@ struct BookingDetailView: View {
             )
             .presentationDetents([.medium])
         }
+        .onAppear { loadCommLogs() }
+        .fullScreenCover(isPresented: Binding(
+            get: { modalImages != nil },
+            set: { if !$0 { modalImages = nil; modalPhotoTags = nil } }
+        )) {
+            if let images = modalImages {
+                ImageModal(
+                    images: images,
+                    initialIndex: modalIndex,
+                    onClose: { modalImages = nil; modalPhotoTags = nil },
+                    photoTags: modalPhotoTags
+                )
+            }
+        }
+        .sheet(item: $tagPopover) { state in
+            TagSelectionSheet { label, status in
+                addPhotoTag(photoIndex: state.photoIndex, label: label, status: status, x: state.x, y: state.y)
+                tagPopover = nil
+            }
+            .presentationDetents([.height(280)])
+        }
     }
 
     private var statusHeader: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(currentBooking.name)
-                    .font(.system(size: 22, weight: .heavy))
+                    .font(AppFont.heading(22))
                     .foregroundStyle(PPBrand.charcoal)
                 HStack(spacing: 6) {
-                    Text(currentBooking.sessionTypeEnum?.label ?? currentBooking.sessionType)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                    SessionTypeBadge(sessionType: currentBooking.sessionType)
                     Text("\u{00B7}")
-                        .font(.system(size: 13))
+                        .font(AppFont.body(13))
                         .foregroundStyle(PPBrand.clay300)
                     Text(currentBooking.studio)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(AppFont.body(13, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
             }
@@ -134,13 +206,29 @@ struct BookingDetailView: View {
                 StatusBadge(status: currentBooking.bookingStatus ?? .pending)
                 if let tableId = currentBooking.tableId {
                     Text(tableId)
-                        .font(.system(size: 11, weight: .bold))
+                        .font(AppFont.body(11, weight: .bold))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
                         .background(PPBrand.charcoal.opacity(0.1))
                         .foregroundStyle(PPBrand.charcoal)
                         .clipShape(Capsule())
                 }
+                Button {
+                    showingFloorPlan = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "table.furniture")
+                            .font(AppFont.body(10, weight: .bold))
+                        Text(currentBooking.tableId == nil ? "Assign Table" : "Floor Plan")
+                            .font(AppFont.body(10, weight: .bold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(PPBrand.charcoal)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(20)
@@ -157,9 +245,9 @@ struct BookingDetailView: View {
                     } label: {
                         VStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 18))
+                                .font(AppFont.body(18))
                             Text("Confirm")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(AppFont.body(11, weight: .bold))
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -174,9 +262,9 @@ struct BookingDetailView: View {
                     } label: {
                         VStack(spacing: 4) {
                             Image(systemName: "person.2.fill")
-                                .font(.system(size: 18))
+                                .font(AppFont.body(18))
                             Text("Seat")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(AppFont.body(11, weight: .bold))
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -191,9 +279,9 @@ struct BookingDetailView: View {
                     } label: {
                         VStack(spacing: 4) {
                             Image(systemName: "checkmark.seal.fill")
-                                .font(.system(size: 18))
+                                .font(AppFont.body(18))
                             Text("Complete")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(AppFont.body(11, weight: .bold))
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -208,14 +296,31 @@ struct BookingDetailView: View {
                     } label: {
                         VStack(spacing: 4) {
                             Image(systemName: "xmark.circle")
-                                .font(.system(size: 18))
+                                .font(AppFont.body(18))
                             Text("Cancel")
-                                .font(.system(size: 11, weight: .bold))
+                                .font(AppFont.body(11, weight: .bold))
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(.red.opacity(0.1))
                         .foregroundStyle(.red)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+                if currentBooking.status != "pending" && currentBooking.status != "completed" && currentBooking.status != "cancelled" {
+                    Button {
+                        updateStatus(.pending)
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "clock.arrow.circlepath")
+                                .font(AppFont.body(18))
+                            Text("Awaiting")
+                                .font(AppFont.body(11, weight: .bold))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(PPBrand.pendingBadgeBg)
+                        .foregroundStyle(PPBrand.pendingBadgeText)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                 }
@@ -242,10 +347,10 @@ struct BookingDetailView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 6) {
                 Image(systemName: "creditcard.fill")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFont.body(14, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Payment")
-                    .font(.system(size: 17, weight: .heavy))
+                    .font(AppFont.heading(17))
                     .foregroundStyle(PPBrand.charcoal)
                 Spacer()
             }
@@ -263,14 +368,14 @@ struct BookingDetailView: View {
             if let link = currentBooking.paymentLinkUrl {
                 InfoRow(icon: "link", label: "Payment Link", value: "Sent")
                 if let sentAt = currentBooking.paymentLinkSentAt {
-                    InfoRow(icon: "clock", label: "Sent At", value: sentAt.prefix(10).description)
+                    InfoRow(icon: "clock", label: "Sent At", value: PPDateDisplay.dateTime(sentAt))
                 }
                 ShareLink(item: URL(string: link) ?? URL(string: "https://pitterpotter.co.uk")!) {
                     HStack(spacing: 6) {
                         Image(systemName: "arrow.up.right.square")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.body(14, weight: .medium))
                         Text("Open Payment Link")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.body(14, weight: .medium))
                     }
                     .foregroundStyle(PPBrand.charcoal)
                     .padding(.horizontal, 16)
@@ -285,9 +390,9 @@ struct BookingDetailView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "envelope.badge")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.body(14, weight: .medium))
                         Text("Send Final Payment Reminder")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(AppFont.body(14, weight: .medium))
                     }
                     .foregroundStyle(.white)
                     .padding(.horizontal, 16)
@@ -304,15 +409,28 @@ struct BookingDetailView: View {
 
     private var bookingInfoCard: some View {
         VStack(spacing: 0) {
-            InfoRow(icon: "calendar", label: "Date", value: currentBooking.date)
+            InfoRow(icon: "calendar", label: "Date", value: PPDateDisplay.date(currentBooking.date))
             Divider().padding(.leading, 40)
-            InfoRow(icon: "clock", label: "Time", value: currentBooking.time)
+            InfoRow(icon: "clock", label: "Time", value: PPDateDisplay.time(currentBooking.time))
             Divider().padding(.leading, 40)
             InfoRow(icon: "building.2", label: "Studio", value: currentBooking.studio)
             Divider().padding(.leading, 40)
             InfoRow(icon: "person.2", label: "Painters", value: "\(currentBooking.paintersCount)")
             Divider().padding(.leading, 40)
-            InfoRow(icon: "paintpalette", label: "Session", value: currentBooking.sessionTypeEnum?.label ?? currentBooking.sessionType)
+            HStack(spacing: 12) {
+                Image(systemName: "paintpalette")
+                    .font(AppFont.body(14, weight: .medium))
+                    .frame(width: 28, height: 28)
+                    .background(PPBrand.charcoal.opacity(0.06))
+                    .foregroundStyle(PPBrand.charcoal)
+                    .clipShape(RoundedRectangle(cornerRadius: 7))
+                Text("Session")
+                    .font(AppFont.body(14, weight: .medium))
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+                Spacer()
+                SessionTypeBadge(sessionType: currentBooking.sessionType)
+            }
+            .padding(.vertical, 4)
             if let source = currentBooking.source {
                 Divider().padding(.leading, 40)
                 InfoRow(icon: "arrow.right.circle", label: "Source", value: source)
@@ -350,16 +468,16 @@ struct BookingDetailView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
                     Image(systemName: "note.text")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(AppFont.body(13, weight: .bold))
                         .foregroundStyle(.orange)
                     Text("Notes")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(AppFont.body(13, weight: .bold))
                         .foregroundStyle(.orange)
                         .textCase(.uppercase)
                         .tracking(0.5)
                 }
                 Text(notes)
-                    .font(.system(size: 15))
+                    .font(AppFont.body(15))
                     .foregroundStyle(PPBrand.charcoal)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -377,25 +495,40 @@ struct BookingDetailView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 6) {
                 Image(systemName: "camera.fill")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(AppFont.body(14, weight: .bold))
                     .foregroundStyle(PPBrand.charcoal)
                 Text("Painting Photos")
-                    .font(.system(size: 17, weight: .heavy))
+                    .font(AppFont.heading(17))
                     .foregroundStyle(PPBrand.charcoal)
                 Spacer()
+                if let photos = currentBooking.photos, !photos.isEmpty, authVM.staff?.canUpdateStatus == true {
+                    Button {
+                        tagMode.toggle()
+                    } label: {
+                        Text(tagMode ? "✓ Tag Mode ON" : "Tag Mode")
+                            .font(AppFont.body(10, weight: .bold))
+                            .textCase(.uppercase)
+                            .tracking(0.5)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(tagMode ? PPBrand.charcoal : PPBrand.clay100)
+                            .foregroundStyle(tagMode ? .white : PPBrand.charcoal)
+                            .clipShape(Capsule())
+                    }
+                }
                 if UIImagePickerController.isSourceTypeAvailable(.camera) {
                     Button {
                         showingCamera = true
                     } label: {
                         Image(systemName: "camera")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(AppFont.body(16, weight: .medium))
                             .foregroundStyle(PPBrand.charcoal)
                     }
                     .disabled(isUploading || authVM.staff?.canEditBookings != true)
                 }
                 PhotosPicker(selection: $selectedItems, maxSelectionCount: 10, matching: .images) {
                     Label("Gallery", systemImage: "photo.on.rectangle")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(AppFont.body(14, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal)
                 }
                 .disabled(isUploading || authVM.staff?.canEditBookings != true)
@@ -405,24 +538,68 @@ struct BookingDetailView: View {
                 HStack(spacing: 8) {
                     ProgressView()
                     Text("Uploading...")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(AppFont.body(14, weight: .medium))
                         .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
             }
 
             if let photos = currentBooking.photos, !photos.isEmpty {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-                    ForEach(Array(photos.enumerated()), id: \.offset) { index, url in
-                        photoThumbnail(url: url, index: index)
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                    ForEach(Array(photos.enumerated()), id: \.offset) { index, urlStr in
+                        if let url = URL(string: urlStr) {
+                            GeometryReader { geo in
+                                ZStack {
+                                    CachedAsyncImage(url: url, contentMode: .fit)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 140)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                                    if tagMode {
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(PPBrand.charcoal.opacity(0.5), lineWidth: 2)
+                                            .frame(height: 140)
+                                    }
+
+                                    let tags = currentBooking.photoTags?[String(index)] ?? []
+                                    ForEach(Array(tags.enumerated()), id: \.offset) { ti, tag in
+                                        PhotoTagBadge(tag: tag, canRemove: tagMode && authVM.staff?.canUpdateStatus == true) {
+                                            removePhotoTag(photoIndex: index, tagIndex: ti)
+                                        }
+                                        .position(
+                                            x: CGFloat(tag.x) / 100 * geo.size.width,
+                                            y: CGFloat(tag.y) / 100 * 140
+                                        )
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                                .onTapGesture { location in
+                                    if tagMode {
+                                        let x = Double(location.x)
+                                        let y = Double(location.y)
+                                        tagPopover = TagPopoverState(photoIndex: index, x: x, y: y)
+                                    } else {
+                                        modalImages = photos
+                                        modalIndex = index
+                                        modalPhotoTags = currentBooking.photoTags
+                                    }
+                                }
+                            }
+                            .frame(height: 140)
+                        }
                     }
+                }
+                if tagMode {
+                    Text("Tap a photo to add a location or status stamp")
+                        .font(AppFont.body(10, weight: .medium))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                 }
             } else {
                 HStack(spacing: 6) {
                     Image(systemName: "photo")
-                        .font(.system(size: 14))
+                        .font(AppFont.body(14))
                         .foregroundStyle(PPBrand.clay300)
                     Text("No photos uploaded yet")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(AppFont.body(14, weight: .medium))
                         .foregroundStyle(PPBrand.clay300)
                 }
             }
@@ -458,12 +635,23 @@ struct BookingDetailView: View {
 
     private var metaSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Booking ID: \(currentBooking.id)")
-                .font(.system(size: 11, weight: .medium, design: .monospaced))
-                .foregroundStyle(PPBrand.clay300)
+            HStack(spacing: 6) {
+                Text("Booking ID: \(currentBooking.id)")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundStyle(PPBrand.clay300)
+                Button {
+                    UIPasteboard.general.string = currentBooking.id
+                    Haptics.success()
+                    toastManager.success("Booking ID copied")
+                } label: {
+                    Image(systemName: "doc.on.doc")
+                        .font(AppFont.body(10, weight: .medium))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                }
+            }
             if let createdAt = currentBooking.createdAt {
-                Text("Created: \(createdAt)")
-                    .font(.system(size: 11, weight: .medium))
+                Text("Created: \(PPDateDisplay.dateTime(createdAt))")
+                    .font(AppFont.body(11, weight: .medium))
                     .foregroundStyle(PPBrand.clay300)
             }
         }
@@ -519,6 +707,103 @@ struct BookingDetailView: View {
         }
         isUploading = false
     }
+
+    // MARK: - Communication History
+
+    private func loadCommLogs() {
+        guard let staff = authVM.staff else { return }
+        commLoading = true
+        Task {
+            do {
+                let logs = try await APIClient.shared.loadEmailLogs(staff: staff, limit: 200)
+                await MainActor.run {
+                    commLogs = logs.filter { $0.bookingId == currentBooking.id }
+                    commLoading = false
+                }
+            } catch {
+                await MainActor.run { commLoading = false }
+            }
+        }
+    }
+
+    private var communicationHistory: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "envelope.arrow.triangle.branch")
+                    .font(AppFont.body(14, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
+                Text("Communication History")
+                    .font(AppFont.heading(15))
+                    .foregroundStyle(PPBrand.charcoal)
+            }
+
+            if commLoading {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("Loading...")
+                        .font(AppFont.body(13, weight: .medium))
+                        .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+                }
+            } else if commLogs.isEmpty {
+                Text("No emails or SMS sent for this booking.")
+                    .font(AppFont.body(13, weight: .medium))
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.4))
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(commLogs) { log in
+                        CommLogRow(log: log)
+                    }
+                }
+            }
+        }
+        .padding(20)
+        .webCard()
+    }
+
+    // MARK: - Photo Tagging
+
+    private func addPhotoTag(photoIndex: Int, label: String, status: String, x: Double, y: Double) {
+        guard let staff = authVM.staff else { return }
+        var updated = currentBooking
+        var tags = updated.photoTags ?? [:]
+        var existing = tags[String(photoIndex)] ?? []
+        existing.append(PhotoTag(id: nil, label: label.isEmpty ? nil : label, status: status, x: x, y: y))
+        tags[String(photoIndex)] = existing
+        updated.photoTags = tags
+        Task { await patchPhotoTags(updated: updated, staff: staff) }
+    }
+
+    private func removePhotoTag(photoIndex: Int, tagIndex: Int) {
+        guard let staff = authVM.staff else { return }
+        var updated = currentBooking
+        guard var tags = updated.photoTags, var existing = tags[String(photoIndex)] else { return }
+        existing.remove(at: tagIndex)
+        if existing.isEmpty {
+            tags.removeValue(forKey: String(photoIndex))
+        } else {
+            tags[String(photoIndex)] = existing
+        }
+        updated.photoTags = tags
+        Task { await patchPhotoTags(updated: updated, staff: staff) }
+    }
+
+    /// Patches only photo_tags on the server so a stale copy can't overwrite
+    /// notes or other fields, then refreshes local state on success.
+    private func patchPhotoTags(updated: Booking, staff: Staff) async {
+        guard let tagsObj = try? APIClient.jsonPatchValue(updated.photoTags) else { return }
+        let ok = await bookingsVM.patchBooking(
+            id: updated.id, studio: updated.studio,
+            fields: ["photoTags": tagsObj],
+            updated: updated, staff: staff
+        )
+        await MainActor.run {
+            if ok {
+                currentBooking = updated
+            } else {
+                toastManager.error(bookingsVM.error ?? "Failed to save tag")
+            }
+        }
+    }
 }
 
 // MARK: - Subviews
@@ -531,17 +816,17 @@ struct InfoRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .medium))
+                .font(AppFont.body(14, weight: .medium))
                 .frame(width: 28, height: 28)
                 .background(PPBrand.charcoal.opacity(0.06))
                 .foregroundStyle(PPBrand.charcoal)
                 .clipShape(RoundedRectangle(cornerRadius: 7))
             Text(label)
-                .font(.system(size: 14, weight: .medium))
+                .font(AppFont.body(14, weight: .medium))
                 .foregroundStyle(PPBrand.charcoal.opacity(0.5))
             Spacer()
             Text(value)
-                .font(.system(size: 14, weight: .semibold))
+                .font(AppFont.body(14, weight: .medium))
                 .foregroundStyle(PPBrand.charcoal)
         }
         .padding(.vertical, 4)
@@ -555,17 +840,17 @@ struct ContactRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .medium))
+                .font(AppFont.body(14, weight: .medium))
                 .frame(width: 28, height: 28)
                 .background(PPBrand.charcoal.opacity(0.06))
                 .foregroundStyle(PPBrand.charcoal)
                 .clipShape(RoundedRectangle(cornerRadius: 7))
             Text(text)
-                .font(.system(size: 15, weight: .medium))
+                .font(AppFont.body(15, weight: .medium))
                 .foregroundStyle(PPBrand.charcoal)
             Spacer()
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(AppFont.body(12, weight: .medium))
                 .foregroundStyle(PPBrand.clay300)
         }
         .padding(.vertical, 4)
@@ -576,11 +861,14 @@ struct ContactRow: View {
 
 struct EditBookingView: View {
     @State private var editingBooking: Booking
+    @State private var isSaving = false
+    @State private var saveError: String?
     @EnvironmentObject var authVM: AuthViewModel
     @Environment(\.dismiss) var dismiss
-    let onSave: (Booking) -> Void
+    /// Returns an error message on failure, nil on success.
+    let onSave: (Booking) async -> String?
 
-    init(booking: Booking, onSave: @escaping (Booking) -> Void) {
+    init(booking: Booking, onSave: @escaping (Booking) async -> String?) {
         _editingBooking = State(initialValue: booking)
         self.onSave = onSave
     }
@@ -588,6 +876,13 @@ struct EditBookingView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if let saveError {
+                    Section {
+                        Text(saveError)
+                            .font(AppFont.body(13, weight: .medium))
+                            .foregroundStyle(.red)
+                    }
+                }
                 Section("Customer") {
                     TextField("Name", text: bindingFor(\.name))
                     TextField("Email", text: bindingForOptional(\.email))
@@ -619,6 +914,12 @@ struct EditBookingView: View {
                     }
                     Picker("Status", selection: bindingFor(\.status)) {
                         ForEach(BookingStatus.allCases, id: \.self) { Text($0.label).tag($0.rawValue) }
+                    }
+                    Picker("Collection Status", selection: bindingForOptionalString(\.collectionStatus)) {
+                        Text("None").tag(String?.none)
+                        ForEach(CollectionStage.allCases, id: \.self) { stage in
+                            Text(stage.label).tag(Optional(stage.rawValue))
+                        }
                     }
                 }
 
@@ -670,13 +971,29 @@ struct EditBookingView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
+                        .disabled(isSaving)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") {
-                        onSave(editingBooking)
-                        dismiss()
+                    if isSaving {
+                        ProgressView()
+                    } else {
+                        Button("Save") {
+                            isSaving = true
+                            saveError = nil
+                            Task {
+                                let errorMessage = await onSave(editingBooking)
+                                isSaving = false
+                                if let errorMessage {
+                                    saveError = errorMessage
+                                    Haptics.error()
+                                } else {
+                                    Haptics.success()
+                                    dismiss()
+                                }
+                            }
+                        }
+                        .fontWeight(.bold)
                     }
-                    .fontWeight(.bold)
                 }
             }
         }
@@ -717,5 +1034,70 @@ struct EditBookingView: View {
             get: { editingBooking[keyPath: keyPath] },
             set: { editingBooking[keyPath: keyPath] = $0 }
         )
+    }
+
+    private func bindingForOptionalString(_ keyPath: WritableKeyPath<Booking, String?>) -> Binding<String?> {
+        Binding(
+            get: { editingBooking[keyPath: keyPath] },
+            set: { editingBooking[keyPath: keyPath] = $0 }
+        )
+    }
+}
+
+// MARK: - Communication Log Row
+
+struct CommLogRow: View {
+    let log: EmailLog
+
+    private var isSMS: Bool {
+        (log.emailType ?? "").contains("sms")
+    }
+
+    private var statusColors: (bg: Color, text: Color) {
+        switch log.status ?? "" {
+        case "delivered", "sent": return (PPBrand.confirmedBadgeBg, PPBrand.confirmedBadgeText)
+        case "failed", "bounced", "undelivered": return (PPBrand.cancelledBadgeBg, PPBrand.cancelledBadgeText)
+        case "opened", "clicked": return (PPBrand.partyBadgeBg, PPBrand.partyBadgeText)
+        default: return (PPBrand.clay100, PPBrand.charcoal.opacity(0.6))
+        }
+    }
+
+    private var formattedDate: String {
+        PPDateDisplay.dateTime(log.createdAt ?? "")
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(isSMS ? "SMS" : "Email")
+                .font(AppFont.body(9, weight: .bold))
+                .textCase(.uppercase)
+                .foregroundStyle(isSMS ? PPBrand.charcoal.opacity(0.6) : Color(hex: 0x1D4ED8))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(isSMS ? PPBrand.charcoal.opacity(0.1) : Color(hex: 0xDBEAFE))
+                .clipShape(Capsule())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text((log.emailType ?? "Unknown").replacingOccurrences(of: "_", with: " ").capitalized)
+                    .font(AppFont.body(12, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal)
+                Text(formattedDate)
+                    .font(AppFont.body(10, weight: .medium))
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.5))
+            }
+
+            Spacer()
+
+            let sc = statusColors
+            Text(log.status ?? "unknown")
+                .font(AppFont.body(9, weight: .bold))
+                .textCase(.uppercase)
+                .foregroundStyle(sc.text)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(sc.bg)
+                .clipShape(Capsule())
+        }
+        .padding(.vertical, 2)
     }
 }

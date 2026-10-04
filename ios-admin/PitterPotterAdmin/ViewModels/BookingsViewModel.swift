@@ -19,6 +19,7 @@ class BookingsViewModel: ObservableObject {
     @Published var dateRangeEnd: Date? = nil
     @Published var selectedBookingIds: Set<String> = []
     @Published var isBulkSelectMode: Bool = false
+    @Published var selectedSessionType: String? = nil
 
     enum SortOption: String, CaseIterable {
         case dateDesc = "Newest Date"
@@ -30,16 +31,21 @@ class BookingsViewModel: ObservableObject {
     }
 
     private let cacheURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("bookings_cache.json")
+    private static let sharedDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
 
     var filteredBookings: [Booking] {
-        bookings.filter { booking in
+        let todayStr = Self.sharedDateFormatter.string(from: Date())
+        return bookings.filter { booking in
             if showTodayOnly {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd"
-                if booking.date != formatter.string(from: Date()) { return false }
+                if booking.date != todayStr { return false }
             }
             if let studio = selectedStudio, booking.studio != studio.rawValue { return false }
             if let status = selectedStatus, booking.status != status.rawValue { return false }
+            if let sessionType = selectedSessionType, booking.sessionType != sessionType { return false }
             if !searchText.isEmpty {
                 let q = searchText.lowercased()
                 if !booking.name.lowercased().contains(q)
@@ -50,21 +56,15 @@ class BookingsViewModel: ObservableObject {
                 }
             }
             if let date = selectedDate {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd"
-                let dateStr = formatter.string(from: date)
+                let dateStr = Self.sharedDateFormatter.string(from: date)
                 if booking.date != dateStr { return false }
             }
             if let rangeStart = dateRangeStart {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd"
-                let startStr = formatter.string(from: rangeStart)
+                let startStr = Self.sharedDateFormatter.string(from: rangeStart)
                 if booking.date < startStr { return false }
             }
             if let rangeEnd = dateRangeEnd {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd"
-                let endStr = formatter.string(from: rangeEnd)
+                let endStr = Self.sharedDateFormatter.string(from: rangeEnd)
                 if booking.date > endStr { return false }
             }
             return true
@@ -112,9 +112,12 @@ class BookingsViewModel: ObservableObject {
         isLoading = true
         error = nil
         do {
-            bookings = try await APIClient.shared.loadBookings(staff: staff)
-            isOffline = false
+            let newBookings = try await APIClient.shared.loadBookings(staff: staff)
+            // Always replace — skipping on an unchanged ID set left stale copies
+            // (notes, tables, statuses edited elsewhere never refreshed).
+            bookings = newBookings
             saveToCache()
+            isOffline = false
         } catch let err as APIError {
             isOffline = true
             if bookings.isEmpty {
@@ -165,17 +168,38 @@ class BookingsViewModel: ObservableObject {
         }
     }
 
-    func saveBooking(_ booking: Booking, staff: Staff) async {
+    @discardableResult
+    func saveBooking(_ booking: Booking, staff: Staff) async -> Bool {
         do {
             try await APIClient.shared.updateBooking(booking, staff: staff)
             if let idx = bookings.firstIndex(where: { $0.id == booking.id }) {
                 bookings[idx] = booking
             }
+            error = nil
+            return true
         } catch let err as APIError {
             self.error = err.errorDescription
         } catch let err {
             self.error = "Failed to save: \(err.localizedDescription)"
         }
+        return false
+    }
+
+    /// Writes only `fields` to the server so unrelated columns can't be
+    /// clobbered by a stale copy, then applies `updated` locally on success.
+    @discardableResult
+    func patchBooking(id: String, studio: String, fields: [String: Any], updated: Booking, staff: Staff) async -> Bool {
+        do {
+            try await APIClient.shared.updateBookingFields(id: id, studio: studio, fields: fields, staff: staff)
+            updateBookingLocally(updated)
+            error = nil
+            return true
+        } catch let err as APIError {
+            self.error = err.errorDescription
+        } catch let err {
+            self.error = "Failed to save: \(err.localizedDescription)"
+        }
+        return false
     }
 
     func createWalkIn(_ booking: Booking, staff: Staff) async -> Bool {
@@ -264,6 +288,22 @@ class BookingsViewModel: ObservableObject {
         }
     }
 
+    func bulkDelete(staff: Staff) async {
+        let ids = Array(selectedBookingIds)
+        for id in ids {
+            if let booking = bookings.first(where: { $0.id == id }) {
+                await deleteBooking(booking, staff: staff)
+            }
+        }
+        selectedBookingIds.removeAll()
+        isBulkSelectMode = false
+    }
+
+    func exportSelectedCSV() {
+        let selected = bookings.filter { selectedBookingIds.contains($0.id) }
+        CSVExporter.exportBookings(selected)
+    }
+
     // MARK: - Optimistic Updates
 
     func updateBookingLocally(_ booking: Booking) {
@@ -277,6 +317,9 @@ class BookingsViewModel: ObservableObject {
     func updateBookingLocally(_ bookingId: String, collectionStatus: String) {
         if let idx = bookings.firstIndex(where: { $0.id == bookingId }) {
             bookings[idx].collectionStatus = collectionStatus
+            bookings[idx].collectedAt = collectionStatus == CollectionStage.collected.rawValue
+                ? ISO8601DateFormatter().string(from: Date())
+                : nil
         }
     }
 
@@ -319,9 +362,10 @@ class BookingsViewModel: ObservableObject {
     func loadBookingsWithRetry(staff: Staff, maxAttempts: Int = 3) async {
         for attempt in 1...maxAttempts {
             do {
-                bookings = try await APIClient.shared.loadBookings(staff: staff)
-                isOffline = false
+                let newBookings = try await APIClient.shared.loadBookings(staff: staff)
+                bookings = newBookings
                 saveToCache()
+                isOffline = false
                 error = nil
                 return
             } catch {
@@ -351,7 +395,7 @@ class BookingsViewModel: ObservableObject {
         let staffCopy = staff
         realtimeTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 30_000_000_000) // 30 seconds
+                try? await Task.sleep(nanoseconds: 60_000_000_000) // 60 seconds
                 guard !Task.isCancelled else { break }
                 await self?.loadBookings(staff: staffCopy)
             }
@@ -366,51 +410,19 @@ class BookingsViewModel: ObservableObject {
     func addPhoto(to booking: Booking, url: String, staff: Staff) async {
         var photos = booking.photos ?? []
         photos.append(url)
-        let updated = Booking(
-            id: booking.id, studio: booking.studio, name: booking.name,
-            email: booking.email, phone: booking.phone, date: booking.date,
-            time: booking.time, paintersCount: booking.paintersCount,
-            sessionType: booking.sessionType, notes: booking.notes,
-            status: booking.status, requestDate: booking.requestDate,
-            estimatedPrice: booking.estimatedPrice, source: booking.source,
-            giftCardCode: booking.giftCardCode, giftCardDiscount: booking.giftCardDiscount,
-            finalPrice: booking.finalPrice, tableId: booking.tableId,
-            depositAmount: booking.depositAmount, finalSeats: booking.finalSeats,
-            finalBalance: booking.finalBalance, paymentLinkUrl: booking.paymentLinkUrl,
-            paymentLinkSentAt: booking.paymentLinkSentAt, paymentStatus: booking.paymentStatus,
-            stripePaymentIntentId: booking.stripePaymentIntentId,
-            managementToken: booking.managementToken, createdAt: booking.createdAt,
-            photos: photos,
-            collectionStatus: booking.collectionStatus,
-            collectedAt: booking.collectedAt,
-            photoTags: booking.photoTags
-        )
-        await saveBooking(updated, staff: staff)
+        var updated = booking
+        updated.photos = photos
+        guard let photosObj = try? APIClient.jsonPatchValue(photos) else { return }
+        await patchBooking(id: booking.id, studio: booking.studio, fields: ["photos": photosObj], updated: updated, staff: staff)
     }
 
     func removePhoto(at index: Int, from booking: Booking, staff: Staff) async {
         var photos = booking.photos ?? []
         guard index < photos.count else { return }
         photos.remove(at: index)
-        let updated = Booking(
-            id: booking.id, studio: booking.studio, name: booking.name,
-            email: booking.email, phone: booking.phone, date: booking.date,
-            time: booking.time, paintersCount: booking.paintersCount,
-            sessionType: booking.sessionType, notes: booking.notes,
-            status: booking.status, requestDate: booking.requestDate,
-            estimatedPrice: booking.estimatedPrice, source: booking.source,
-            giftCardCode: booking.giftCardCode, giftCardDiscount: booking.giftCardDiscount,
-            finalPrice: booking.finalPrice, tableId: booking.tableId,
-            depositAmount: booking.depositAmount, finalSeats: booking.finalSeats,
-            finalBalance: booking.finalBalance, paymentLinkUrl: booking.paymentLinkUrl,
-            paymentLinkSentAt: booking.paymentLinkSentAt, paymentStatus: booking.paymentStatus,
-            stripePaymentIntentId: booking.stripePaymentIntentId,
-            managementToken: booking.managementToken, createdAt: booking.createdAt,
-            photos: photos.isEmpty ? nil : photos,
-            collectionStatus: booking.collectionStatus,
-            collectedAt: booking.collectedAt,
-            photoTags: booking.photoTags
-        )
-        await saveBooking(updated, staff: staff)
+        var updated = booking
+        updated.photos = photos
+        guard let photosObj = try? APIClient.jsonPatchValue(photos) else { return }
+        await patchBooking(id: booking.id, studio: booking.studio, fields: ["photos": photosObj], updated: updated, staff: staff)
     }
 }
