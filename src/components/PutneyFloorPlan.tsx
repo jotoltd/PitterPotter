@@ -26,6 +26,20 @@ function getBookingColour(index: number) {
 
 const firstName = (name: string) => name.trim().split(/\s+/)[0] || name;
 
+const sessionTag = (type?: string): string | null => {
+  switch (type) {
+    case 'birthday-party': return 'Party';
+    case 'baby-shower-hen': return 'Baby';
+    case 'clay-imprints': return 'Clay';
+    case 'corporate': return 'Corp';
+    case 'exclusive-hire': return 'Hire';
+    default: return null;
+  }
+};
+
+const byTimeThenName = (a: BookingInquiry, b: BookingInquiry) =>
+  a.time.localeCompare(b.time) || a.name.localeCompare(b.name);
+
 interface TableDef {
   id: number;
   size: TableSize;
@@ -206,7 +220,7 @@ function TableShape({ def, status, count, chairColours, occupantLabels, isDropTa
       <rect x={def.x} y={def.y} width={w} height={h} rx={4}
         fill={STATUS_FILL[status]} stroke={STATUS_STROKE[status]} strokeWidth={status === 'selected' ? 2.5 : 1.5} />
       <text x={def.x + w / 2} y={def.y + h / 2 - (occupantLabels.length ? 10 : 6)} textAnchor="middle" dominantBaseline="middle"
-        fontSize={11} fontWeight="800" fill={STATUS_TEXT[status]}>T{def.id}</text>
+        fontSize={11} fontWeight="800" fill={STATUS_TEXT[status]}>T{def.id}{occupiedCount > 0 ? ` · ${occupiedCount}/${totalSeats}` : ''}</text>
       {occupantLabels.length ? (
         occupantLabels.map((l, i) => (
           <text key={i} x={def.x + w / 2} y={def.y + h / 2 + 1 + i * 9} textAnchor="middle" dominantBaseline="middle"
@@ -334,6 +348,7 @@ export default function PutneyFloorPlan({
     const map = new Map<string, string>();
     bookings
       .filter(b => b.date === selectedDate && b.studio === 'Putney' && (!selectedTime || (b.time && overlapsTwoHours(b.time, selectedTime))))
+      .sort(byTimeThenName)
       .forEach((b, i) => { map.set(b.id, getBookingColour(i)); });
     return map;
   }, [bookings, selectedDate, selectedTime]);
@@ -341,7 +356,8 @@ export default function PutneyFloorPlan({
   const bookingLegend = useMemo(() => {
     return bookings
       .filter(b => b.date === selectedDate && b.studio === 'Putney' && (!selectedTime || (b.time && overlapsTwoHours(b.time, selectedTime))))
-      .map((b, i) => ({ id: b.id, name: firstName(b.name), painters: b.paintersCount, colour: getBookingColour(i), time: b.time }));
+      .sort(byTimeThenName)
+      .map((b, i) => ({ id: b.id, name: firstName(b.name), tag: sessionTag(b.sessionType), painters: b.paintersCount, colour: getBookingColour(i), time: b.time, tableId: b.tableId }));
   }, [bookings, selectedDate, selectedTime]);
 
   const handleDrop = (tid: string) => (e: React.DragEvent) => {
@@ -359,9 +375,9 @@ export default function PutneyFloorPlan({
     const totalSeats = t.chairs.length;
     const chairColours: (string | null)[] = Array(totalSeats).fill(null);
     let seatIdx = 0;
-    const relevantBookings = selectedTime
+    const relevantBookings = (selectedTime
       ? bookingsForTable.filter(b => b.time && overlapsTwoHours(b.time, selectedTime))
-      : bookingsForTable;
+      : bookingsForTable).sort(byTimeThenName);
     for (const b of relevantBookings) {
       const colour = bookingColourMap.get(b.id) ?? '#1B2D3C';
       for (let p = 0; p < b.paintersCount && seatIdx < totalSeats; p++, seatIdx++) {
@@ -434,12 +450,14 @@ export default function PutneyFloorPlan({
           {bookingLegend.map((b, i) => (
             <div
               key={i}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold text-white ${onMoveBooking ? 'cursor-grab' : ''}`}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold text-white ${onMoveBooking ? 'cursor-grab' : 'cursor-pointer'}`}
               style={{ backgroundColor: b.colour }}
               draggable={!!onMoveBooking}
               onDragStart={onMoveBooking ? (e) => e.dataTransfer.setData('text/plain', b.id) : undefined}
+              onClick={() => { const t = (b.tableId ?? '').split(',')[0]?.trim(); if (t) setLocalSelected(t); }}
+              title="Click to locate · drag onto a table to move"
             >
-              <span>{b.name}</span>
+              <span>{b.name}{b.tag ? ` · ${b.tag}` : ''}</span>
               <span className="opacity-70">· {b.painters}p</span>
               {!selectedTime && <span className="opacity-70">· {b.time}</span>}
             </div>
@@ -524,9 +542,20 @@ export default function PutneyFloorPlan({
                     <span className="text-xs font-semibold text-[#1B2D3C]">{firstName(b.name)}</span>
                     <span className="text-[10px] text-[#1B2D3C]/60 font-semibold">{b.paintersCount} painters · {b.sessionType}</span>
                   </div>
-                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${b.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                    {b.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${b.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {b.status}
+                    </span>
+                    {onMoveBooking && (
+                      <button
+                        onClick={() => onMoveBooking(b.id, '')}
+                        className="text-[10px] font-bold text-red-600 hover:text-red-800 cursor-pointer"
+                        title="Remove from table"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

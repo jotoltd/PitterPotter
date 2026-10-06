@@ -18,7 +18,7 @@ enum ChairSide: String, CaseIterable {
 }
 
 enum TableStatus {
-    case free, partial, selected
+    case free, partial, full, selected
 }
 
 // Same colours as the web floor plan (BOOKING_COLOURS in WimbledonFloorPlan.tsx)
@@ -35,6 +35,30 @@ private func bookingColour(_ index: Int) -> Color {
 private func firstName(_ name: String) -> String {
     let trimmed = name.trimmingCharacters(in: .whitespaces)
     return trimmed.components(separatedBy: .whitespaces).first ?? name
+}
+
+private func sessionTag(_ type: String) -> String? {
+    switch type {
+    case "birthday-party": return "Party"
+    case "baby-shower-hen": return "Baby"
+    case "clay-imprints": return "Clay"
+    case "corporate": return "Corp"
+    case "exclusive-hire": return "Hire"
+    default: return nil
+    }
+}
+
+// Matches overlapsTwoHours in the web floor plans.
+private func minutesOfDay(_ time: String) -> Int {
+    let start = time.split(separator: "-").first.map(String.init) ?? time
+    let parts = start.split(separator: ":")
+    let h = Int(parts.first ?? "") ?? 0
+    let m = parts.count > 1 ? (Int(parts[1]) ?? 0) : 0
+    return h * 60 + m
+}
+
+private func overlapsTwoHours(_ a: String, _ b: String) -> Bool {
+    abs(minutesOfDay(a) - minutesOfDay(b)) < 120
 }
 
 // All tables render at the same size on both platforms.
@@ -118,6 +142,7 @@ struct FloorPlanView: View {
 
     @State private var selectedTable: String? = nil
     @State private var zoomScale: CGFloat = 1.0
+    @State private var lastZoomScale: CGFloat = 1.0
     @State private var panOffset: CGSize = .zero
     @State private var lastPanOffset: CGSize = .zero
     @State private var dropTarget: String? = nil
@@ -144,13 +169,34 @@ struct FloorPlanView: View {
         }
     }
 
+    // Bookings relevant to the selected slot — matches the web plan's
+    // relevantBookings: all of the day's, or only overlapping ones when a
+    // time was passed (assign sheet / collection preview).
+    private func relevantBookings(_ tid: String) -> [Booking] {
+        let all = bookingsForTable(tid)
+        let filtered = selectedTime != nil
+            ? all.filter { !$0.time.isEmpty && overlapsTwoHours($0.time, selectedTime!) }
+            : all
+        return filtered.sorted { $0.time < $1.time }
+    }
+
+    // Bookings shown as chips / used for colours — overlap-filtered when a
+    // slot is selected, sorted like the web legend.
+    private var visibleBookings: [Booking] {
+        let all = dayBookings()
+        let filtered = selectedTime != nil
+            ? all.filter { !$0.time.isEmpty && overlapsTwoHours($0.time, selectedTime!) }
+            : all
+        return filtered.sorted { $0.time == $1.time ? $0.name < $1.name : $0.time < $1.time }
+    }
+
     private var unassignedBookings: [Booking] {
         dayBookings().filter { ($0.tableId ?? "").isEmpty }
     }
 
     private var bookingColourMap: [String: Color] {
         var map: [String: Color] = [:]
-        for (i, b) in dayBookings().enumerated() {
+        for (i, b) in visibleBookings.enumerated() {
             map[b.id] = bookingColour(i)
         }
         return map
@@ -169,13 +215,20 @@ struct FloorPlanView: View {
     private func status(for table: FloorTable) -> TableStatus {
         let tid = "T\(table.id)"
         if selectedTable == tid || highlightTableId == tid { return .selected }
-        return bookingsForTable(tid).isEmpty ? .free : .partial
+        let tableBookings = bookingsForTable(tid)
+        if tableBookings.isEmpty { return .free }
+        if selectedTime != nil,
+           tableBookings.contains(where: { !$0.time.isEmpty && overlapsTwoHours($0.time, selectedTime!) }) {
+            return .full
+        }
+        return .partial
     }
 
     private func statusColor(_ s: TableStatus) -> Color {
         switch s {
         case .free: return .white
         case .partial: return Color(hex: 0xFEF9C3)
+        case .full: return Color(hex: 0xEF4444)
         case .selected: return PPBrand.charcoal
         }
     }
@@ -184,6 +237,7 @@ struct FloorPlanView: View {
         switch s {
         case .free: return PPBrand.charcoal
         case .partial: return Color(hex: 0xCA8A04)
+        case .full: return Color(hex: 0xB91C1C)
         case .selected: return PPBrand.charcoal
         }
     }
@@ -192,6 +246,7 @@ struct FloorPlanView: View {
         switch s {
         case .free: return PPBrand.charcoal
         case .partial: return Color(hex: 0x854D0E)
+        case .full: return .white
         case .selected: return .white
         }
     }
@@ -267,13 +322,14 @@ struct FloorPlanView: View {
                 }
             }
 
-            // Booking colour legend — chips are draggable onto tables
-            if !dayBookings().isEmpty {
+            // Booking colour legend — chips are draggable onto tables,
+            // tap a chip to highlight the table it's on
+            if !visibleBookings.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
-                        ForEach(Array(dayBookings().enumerated()), id: \.element.id) { i, b in
+                        ForEach(Array(visibleBookings.enumerated()), id: \.element.id) { i, b in
                             HStack(spacing: 4) {
-                                Text(firstName(b.name))
+                                Text(firstName(b.name) + (sessionTag(b.sessionType).map { " · \($0)" } ?? ""))
                                 Text("· \(b.paintersCount)p · \(b.time)").opacity(0.7)
                             }
                             .font(AppFont.body(10, weight: .bold))
@@ -283,6 +339,11 @@ struct FloorPlanView: View {
                             .background(bookingColour(i))
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                             .draggable(b.id)
+                            .onTapGesture {
+                                if let t = (b.tableId ?? "").split(separator: ",").first {
+                                    selectedTable = t.trimmingCharacters(in: .whitespaces)
+                                }
+                            }
                         }
                     }
                 }
@@ -330,14 +391,29 @@ struct FloorPlanView: View {
                     TapGesture(count: 2)
                         .onEnded {
                             zoomScale = 1.0
+                            lastZoomScale = 1.0
                             panOffset = .zero
                             lastPanOffset = .zero
+                        }
+                )
+                .simultaneousGesture(
+                    MagnificationGesture()
+                        .onChanged { value in
+                            zoomScale = min(4.0, max(1.0, lastZoomScale * value))
+                        }
+                        .onEnded { _ in
+                            lastZoomScale = zoomScale
+                            if zoomScale == 1.0 {
+                                panOffset = .zero
+                                lastPanOffset = .zero
+                            }
                         }
                 )
                 .overlay(alignment: .bottom) {
                     HStack(spacing: 10) {
                         Button {
                             zoomScale = max(1.0, zoomScale - 0.25)
+                            lastZoomScale = zoomScale
                             panOffset = .zero
                             lastPanOffset = .zero
                         } label: {
@@ -353,6 +429,7 @@ struct FloorPlanView: View {
 
                         Button {
                             zoomScale = min(4.0, zoomScale + 0.25)
+                            lastZoomScale = zoomScale
                         } label: {
                             Image(systemName: "plus.magnifyingglass")
                                 .font(AppFont.body(16, weight: .bold))
@@ -362,6 +439,7 @@ struct FloorPlanView: View {
                         if zoomScale > 1.0 || panOffset != .zero {
                             Button {
                                 zoomScale = 1.0
+                                lastZoomScale = 1.0
                                 panOffset = .zero
                                 lastPanOffset = .zero
                             } label: {
@@ -383,30 +461,44 @@ struct FloorPlanView: View {
             // Selected table bookings
             if let sel = selectedTable {
                 let tableBookings = bookingsForTable(sel).sorted { $0.time < $1.time }
-                if !tableBookings.isEmpty {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("\(sel) — \(selectedDate ?? "")")
-                                .font(AppFont.heading(13))
-                                .foregroundStyle(PPBrand.charcoal)
-                            ForEach(tableBookings) { b in
-                                HStack {
-                                    Text(b.time).font(AppFont.body(11, weight: .bold))
-                                    Text(firstName(b.name)).font(AppFont.body(11))
-                                    Spacer()
-                                    Text("\(b.paintersCount)p").font(AppFont.body(10, weight: .bold))
-                                    StatusBadge(status: b.bookingStatus ?? .pending)
-                                }
-                                .padding(.vertical, 4)
-                            }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("\(sel) — \(selectedDate ?? "")")
+                            .font(AppFont.heading(13))
+                            .foregroundStyle(PPBrand.charcoal)
+                        if tableBookings.isEmpty {
+                            Text("No bookings on this table for the selected date.")
+                                .font(AppFont.body(11, weight: .semibold))
+                                .foregroundStyle(PPBrand.charcoal.opacity(0.5))
                         }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        ForEach(tableBookings) { b in
+                            HStack {
+                                Text(b.time).font(AppFont.body(11, weight: .bold))
+                                Text(firstName(b.name)).font(AppFont.body(11))
+                                Spacer()
+                                Text("\(b.paintersCount)p").font(AppFont.body(10, weight: .bold))
+                                StatusBadge(status: b.bookingStatus ?? .pending)
+                                if onMoveBooking != nil {
+                                    Button {
+                                        onMoveBooking?(b.id, "")
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(AppFont.body(13))
+                                            .foregroundStyle(Color(hex: 0xDC2626))
+                                    }
+                                    .buttonStyle(.plain)
+                                    .help("Remove from table")
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
                     }
-                    .frame(maxHeight: 110)
-                    .background(Color(red: 0.973, green: 0.98, blue: 0.984))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .frame(maxHeight: 130)
+                .background(Color(red: 0.973, green: 0.98, blue: 0.984))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
 
             // Assign button
@@ -576,18 +668,19 @@ struct FloorPlanView: View {
     private func tableGroup(_ table: FloorTable) -> some View {
         let tid = "T\(table.id)"
         let stat = status(for: table)
-        let tableBookings = bookingsForTable(tid)
+        let tableBookings = relevantBookings(tid)
         let positions = chairPositions(table)
         // Colour seats per booking, same as web
         var chairColours = [Color?](repeating: nil, count: positions.count)
         var seatIdx = 0
-        for b in tableBookings.sorted(by: { $0.time < $1.time }) {
+        for b in tableBookings {
             let colour = bookingColourMap[b.id] ?? PPBrand.charcoal
             for _ in 0..<b.paintersCount where seatIdx < positions.count {
                 chairColours[seatIdx] = colour
                 seatIdx += 1
             }
         }
+        let usedSeats = chairColours.filter { $0 != nil }.count
         let labels = occupantLabels(tableBookings)
 
         return ZStack {
@@ -618,7 +711,7 @@ struct FloorPlanView: View {
                 )
                 .overlay(
                     VStack(spacing: 1) {
-                        Text(tid)
+                        Text(usedSeats > 0 ? "\(tid) · \(usedSeats)/\(table.seats)" : tid)
                             .font(AppFont.heading(11, weight: .black))
                             .foregroundStyle(statusTextColor(stat))
                         if labels.isEmpty {
@@ -747,7 +840,7 @@ struct FloorPlanTabView: View {
               let idx = bookingsVM.bookings.firstIndex(where: { $0.id == bookingId }) else { return }
         let booking = bookingsVM.bookings[idx]
         var updated = booking
-        updated.tableId = tableId
+        updated.tableId = tableId.isEmpty ? nil : tableId
         Task {
             let ok = await bookingsVM.patchBooking(
                 id: bookingId, studio: booking.studio,
@@ -755,7 +848,7 @@ struct FloorPlanTabView: View {
                 updated: updated, staff: staff
             )
             if ok {
-                toastManager.success("\(booking.name) → \(tableId)")
+                toastManager.success(tableId.isEmpty ? "\(firstName(booking.name)) unassigned" : "\(firstName(booking.name)) → \(tableId)")
             } else {
                 toastManager.error(bookingsVM.error ?? "Failed to assign table")
             }
