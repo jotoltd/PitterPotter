@@ -32,6 +32,11 @@ private func bookingColour(_ index: Int) -> Color {
     BOOKING_COLOURS[index % BOOKING_COLOURS.count]
 }
 
+private func firstName(_ name: String) -> String {
+    let trimmed = name.trimmingCharacters(in: .whitespaces)
+    return trimmed.components(separatedBy: .whitespaces).first ?? name
+}
+
 // All tables render at the same size on both platforms.
 private let TABLE_W: CGFloat = 80
 private let TABLE_H: CGFloat = 52
@@ -194,7 +199,7 @@ struct FloorPlanView: View {
     private func occupantLabels(_ tableBookings: [Booking]) -> [String] {
         var labels = tableBookings.sorted { $0.time < $1.time }.prefix(2).map { b in
             let start = b.time.split(separator: "-").first.map { $0.trimmingCharacters(in: .whitespaces) } ?? b.time
-            return String("\(start) \(b.name)".prefix(16))
+            return String("\(start) \(firstName(b.name))".prefix(16))
         }
         if tableBookings.count > 2 { labels.append("+\(tableBookings.count - 2) more") }
         return labels
@@ -234,7 +239,7 @@ struct FloorPlanView: View {
                         .tracking(0.5)
                     ForEach(unassignedBookings) { b in
                         HStack {
-                            Text("\(b.name) · \(b.time) · \(b.paintersCount)p")
+                            Text("\(firstName(b.name)) · \(b.time) · \(b.paintersCount)p")
                                 .font(AppFont.body(10, weight: .semibold))
                                 .foregroundStyle(Color(hex: 0xB45309))
                             Spacer()
@@ -268,7 +273,7 @@ struct FloorPlanView: View {
                     HStack(spacing: 6) {
                         ForEach(Array(dayBookings().enumerated()), id: \.element.id) { i, b in
                             HStack(spacing: 4) {
-                                Text(b.name)
+                                Text(firstName(b.name))
                                 Text("· \(b.paintersCount)p · \(b.time)").opacity(0.7)
                             }
                             .font(AppFont.body(10, weight: .bold))
@@ -387,7 +392,7 @@ struct FloorPlanView: View {
                             ForEach(tableBookings) { b in
                                 HStack {
                                     Text(b.time).font(AppFont.body(11, weight: .bold))
-                                    Text(b.name).font(AppFont.body(11))
+                                    Text(firstName(b.name)).font(AppFont.body(11))
                                     Spacer()
                                     Text("\(b.paintersCount)p").font(AppFont.body(10, weight: .bold))
                                     StatusBadge(status: b.bookingStatus ?? .pending)

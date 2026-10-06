@@ -24,6 +24,8 @@ function getBookingColour(index: number) {
   return BOOKING_COLOURS[index % BOOKING_COLOURS.length];
 }
 
+const firstName = (name: string) => name.trim().split(/\s+/)[0] || name;
+
 interface TableDef {
   id: number;
   size: TableSize;
@@ -339,7 +341,7 @@ export default function PutneyFloorPlan({
   const bookingLegend = useMemo(() => {
     return bookings
       .filter(b => b.date === selectedDate && b.studio === 'Putney' && (!selectedTime || (b.time && overlapsTwoHours(b.time, selectedTime))))
-      .map((b, i) => ({ id: b.id, name: b.name, painters: b.paintersCount, colour: getBookingColour(i), time: b.time }));
+      .map((b, i) => ({ id: b.id, name: firstName(b.name), painters: b.paintersCount, colour: getBookingColour(i), time: b.time }));
   }, [bookings, selectedDate, selectedTime]);
 
   const handleDrop = (tid: string) => (e: React.DragEvent) => {
@@ -368,7 +370,7 @@ export default function PutneyFloorPlan({
     }
     const occupantLabels = relevantBookings
       .slice(0, 2)
-      .map(b => `${b.time.split('-')[0].trim()} ${b.name}`.slice(0, 16));
+      .map(b => `${b.time.split('-')[0].trim()} ${firstName(b.name)}`.slice(0, 16));
     if (relevantBookings.length > 2) occupantLabels.push(`+${relevantBookings.length - 2} more`);
     return (
       <g
@@ -418,7 +420,7 @@ export default function PutneyFloorPlan({
                 draggable={!!onMoveBooking}
                 onDragStart={onMoveBooking ? (e) => e.dataTransfer.setData('text/plain', b.id) : undefined}
               >
-                <span>{b.name} · {b.time} · {b.paintersCount}p</span>
+                <span>{firstName(b.name)} · {b.time} · {b.paintersCount}p</span>
                 <span className="text-amber-600">{onMoveBooking ? 'drag onto a table' : b.status}</span>
               </div>
             ))}
@@ -519,7 +521,7 @@ export default function PutneyFloorPlan({
                 <div key={b.id} className="flex items-center justify-between bg-white border border-[#1B2D3C]/10 rounded-lg px-3 py-2">
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold text-[#1B2D3C] bg-[#D6E2E9] px-2 py-0.5 rounded">{b.time}</span>
-                    <span className="text-xs font-semibold text-[#1B2D3C]">{b.name}</span>
+                    <span className="text-xs font-semibold text-[#1B2D3C]">{firstName(b.name)}</span>
                     <span className="text-[10px] text-[#1B2D3C]/60 font-semibold">{b.paintersCount} painters · {b.sessionType}</span>
                   </div>
                   <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${b.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
