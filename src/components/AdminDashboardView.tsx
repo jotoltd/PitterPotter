@@ -3486,8 +3486,14 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   onChange={(e) => setFloorPlanDate(e.target.value)}
                   className="px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-xs font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/50"
                 />
+                <button
+                  onClick={() => setFloorPlanDate(new Date().toISOString().split('T')[0])}
+                  className="px-2.5 py-2 text-[10px] font-bold text-[#1B2D3C]/70 border border-[#1B2D3C]/20 rounded-lg hover:bg-[#DBE7E4] cursor-pointer"
+                >
+                  Today
+                </button>
               </div>
-              <p className="text-[10px] text-[#1B2D3C]/40 font-semibold ml-auto">Drag a booking chip onto a table to assign it</p>
+              <p className="text-[10px] text-[#1B2D3C]/40 font-semibold ml-auto">Click a table or chip for details · click an unassigned booking then a table (or drag) to assign</p>
             </div>
             <div className="bg-white border border-[#1B2D3C]/10 p-4 rounded-xl overflow-x-auto">
               {floorPlanStudio === 'Wimbledon' ? (

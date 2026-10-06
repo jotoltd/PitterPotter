@@ -141,6 +141,7 @@ struct FloorPlanView: View {
     var onMoveBooking: ((String, String) -> Void)? = nil
 
     @State private var selectedTable: String? = nil
+    @State private var pendingAssign: Booking? = nil
     @State private var zoomScale: CGFloat = 1.0
     @State private var lastZoomScale: CGFloat = 1.0
     @State private var panOffset: CGSize = .zero
@@ -288,7 +289,25 @@ struct FloorPlanView: View {
                 }
             }
 
-            // Unassigned bookings warning — drag a row onto a table
+            // Pending assign banner — tap mode alternative to drag & drop
+            if let pending = pendingAssign {
+                HStack {
+                    Text("Assigning \(firstName(pending.name)) — tap a table")
+                        .font(AppFont.body(11, weight: .bold))
+                        .foregroundStyle(Color(hex: 0x065F46))
+                    Spacer()
+                    Button("Cancel") { pendingAssign = nil }
+                        .font(AppFont.body(10, weight: .bold))
+                        .foregroundStyle(Color(hex: 0x047857))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(hex: 0xECFDF5))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(hex: 0x6EE7B7), lineWidth: 1))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+
+            // Unassigned bookings warning — tap a row then a table, or drag
             if !unassignedBookings.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("\(unassignedBookings.count) booking\(unassignedBookings.count == 1 ? "" : "s") need table assignment")
@@ -300,15 +319,24 @@ struct FloorPlanView: View {
                         HStack {
                             Text("\(firstName(b.name)) · \(b.time) · \(b.paintersCount)p")
                                 .font(AppFont.body(10, weight: .semibold))
-                                .foregroundStyle(Color(hex: 0xB45309))
+                                .foregroundStyle(pendingAssign?.id == b.id ? Color(hex: 0x065F46) : Color(hex: 0xB45309))
                             Spacer()
                             if onMoveBooking != nil {
-                                Text("drag onto a table")
+                                Text(pendingAssign?.id == b.id ? "tap a table to assign" : "tap or drag onto a table")
                                     .font(AppFont.body(10))
                                     .foregroundStyle(Color(hex: 0xD97706))
                             }
                         }
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(pendingAssign?.id == b.id ? Color(hex: 0xD1FAE5) : .clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
                         .draggable(b.id)
+                        .onTapGesture {
+                            if onMoveBooking != nil {
+                                pendingAssign = pendingAssign?.id == b.id ? nil : b
+                            }
+                        }
                     }
                 }
                 .padding(10)
@@ -738,8 +766,14 @@ struct FloorPlanView: View {
                 .position(x: table.x + TABLE_W / 2, y: table.y + TABLE_H / 2)
                 .onTapGesture {
                     Haptics.light()
-                    selectedTable = selectedTable == tid ? nil : tid
-                    onAssign?(tid)
+                    if let pending = pendingAssign {
+                        onMoveBooking?(pending.id, tid)
+                        pendingAssign = nil
+                        selectedTable = tid
+                    } else {
+                        selectedTable = selectedTable == tid ? nil : tid
+                        onAssign?(tid)
+                    }
                 }
                 .dropDestination(for: String.self) { items, _ in
                     if let bookingId = items.first { onMoveBooking?(bookingId, tid) }
@@ -810,9 +844,16 @@ struct FloorPlanTabView: View {
                     .datePickerStyle(.compact)
                     .labelsHidden()
 
+                Button("Today") { date = Date() }
+                    .font(AppFont.body(10, weight: .bold))
+                    .foregroundStyle(PPBrand.charcoal.opacity(0.7))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(PPBrand.charcoal.opacity(0.2), lineWidth: 1))
+
                 Spacer()
 
-                Text("Tap a chip to locate it · drag a chip onto a table to move it")
+                Text("Tap a chip to locate it · tap an unassigned booking then a table to assign")
                     .font(AppFont.body(10, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.4))
             }

@@ -266,6 +266,7 @@ export default function PutneyFloorPlan({
 }: PutneyFloorPlanProps) {
   const [localSelected, setLocalSelected] = useState<string | null>(null);
   const [dragTarget, setDragTarget] = useState<string | null>(null);
+  const [pendingAssignId, setPendingAssignId] = useState<string | null>(null);
   const [blockedTables, setBlockedTables] = useState<BlockedTable[]>([]);
   const [blockReason, setBlockReason] = useState('');
   const [showBlockInput, setShowBlockInput] = useState(false);
@@ -316,7 +317,18 @@ export default function PutneyFloorPlan({
 
   const handleClick = (id: number) => {
     const tid = `T${id}`;
-    if (readOnly) { onTableClick?.(tid); return; }
+    if (pendingAssignId && onMoveBooking) {
+      onMoveBooking(pendingAssignId, tid);
+      setPendingAssignId(null);
+      setLocalSelected(tid);
+      onTableClick?.(tid);
+      return;
+    }
+    if (readOnly) {
+      setLocalSelected(prev => prev === tid ? null : tid);
+      onTableClick?.(tid);
+      return;
+    }
     if (blockedIdsForDate.has(tid)) return;
     setLocalSelected(prev => prev === tid ? null : tid);
     onTableClick?.(tid);
@@ -422,6 +434,21 @@ export default function PutneyFloorPlan({
         )}
       </div>
 
+      {/* Pending assign banner — click mode alternative to drag & drop */}
+      {pendingAssignId && (
+        <div className="flex items-center justify-between bg-emerald-50 border border-emerald-300 rounded-lg px-3 py-2">
+          <p className="text-[11px] font-bold text-emerald-800">
+            Assigning {firstName(bookings.find(b => b.id === pendingAssignId)?.name || 'booking')} — click a table
+          </p>
+          <button
+            onClick={() => setPendingAssignId(null)}
+            className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       {/* Unassigned bookings warning */}
       {unassignedBookings.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -432,12 +459,19 @@ export default function PutneyFloorPlan({
             {unassignedBookings.map(b => (
               <div
                 key={b.id}
-                className={`flex items-center justify-between text-[10px] text-amber-700 font-semibold ${onMoveBooking ? 'cursor-grab' : ''}`}
+                className={`flex items-center justify-between text-[10px] font-semibold rounded px-1 -mx-1 ${
+                  pendingAssignId === b.id
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : `text-amber-700 ${onMoveBooking ? 'cursor-pointer hover:bg-amber-100' : ''}`
+                }`}
                 draggable={!!onMoveBooking}
                 onDragStart={onMoveBooking ? (e) => e.dataTransfer.setData('text/plain', b.id) : undefined}
+                onClick={onMoveBooking ? () => setPendingAssignId(prev => prev === b.id ? null : b.id) : undefined}
               >
                 <span>{firstName(b.name)} · {b.time} · {b.paintersCount}p</span>
-                <span className="text-amber-600">{onMoveBooking ? 'drag onto a table' : b.status}</span>
+                <span className="text-amber-600">
+                  {onMoveBooking ? (pendingAssignId === b.id ? 'click a table to assign' : 'click or drag onto a table') : b.status}
+                </span>
               </div>
             ))}
           </div>
