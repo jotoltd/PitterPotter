@@ -212,9 +212,13 @@ struct FloorPlanView: View {
         return (used, PARTY_CAPACITY, max(0, PARTY_CAPACITY - used))
     }
 
+    private var highlightIds: Set<String> {
+        Set((highlightTableId ?? "").split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) })
+    }
+
     private func status(for table: FloorTable) -> TableStatus {
         let tid = "T\(table.id)"
-        if selectedTable == tid || highlightTableId == tid { return .selected }
+        if selectedTable == tid || highlightIds.contains(tid) { return .selected }
         let tableBookings = bookingsForTable(tid)
         if tableBookings.isEmpty { return .free }
         if selectedTime != nil,
@@ -351,6 +355,7 @@ struct FloorPlanView: View {
                 HStack(spacing: 12) {
                     legendItem(color: .white, stroke: PPBrand.charcoal, label: "Free")
                     legendItem(color: Color(hex: 0xFEF9C3), stroke: Color(hex: 0xCA8A04), label: "Has bookings")
+                    legendItem(color: Color(hex: 0xEF4444), stroke: Color(hex: 0xB91C1C), label: "Slot taken")
                     legendItem(color: PPBrand.charcoal, stroke: PPBrand.charcoal, label: "Selected")
                     Spacer()
                 }
@@ -807,7 +812,7 @@ struct FloorPlanTabView: View {
 
                 Spacer()
 
-                Text("Drag a booking chip onto a table to assign it")
+                Text("Tap a chip to locate it · drag a chip onto a table to move it")
                     .font(AppFont.body(10, weight: .medium))
                     .foregroundStyle(PPBrand.charcoal.opacity(0.4))
             }
