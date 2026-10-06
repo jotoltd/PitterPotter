@@ -669,6 +669,13 @@ struct FloorPlanTabView: View {
     @State private var studio: Studio = .Wimbledon
     @State private var date: Date = Date()
 
+    private var availableStudios: [Studio] {
+        if let allowed = authVM.staff?.allowedStudios, !allowed.isEmpty {
+            return allowed.compactMap { Studio(rawValue: $0) }
+        }
+        return Studio.allCases
+    }
+
     private var dateString: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -678,13 +685,23 @@ struct FloorPlanTabView: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack(spacing: 16) {
-                Picker("Studio", selection: $studio) {
-                    ForEach(Studio.allCases, id: \.self) { s in
-                        Text(s.rawValue).tag(s)
+                if availableStudios.count > 1 {
+                    Picker("Studio", selection: $studio) {
+                        ForEach(availableStudios, id: \.self) { s in
+                            Text(s.rawValue).tag(s)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .frame(width: 220)
+                } else {
+                    Text(studio.rawValue)
+                        .font(AppFont.body(13, weight: .bold))
+                        .foregroundStyle(PPBrand.charcoal)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(PPBrand.sage)
+                        .clipShape(Capsule())
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 220)
 
                 DatePicker("Date", selection: $date, displayedComponents: [.date])
                     .datePickerStyle(.compact)
@@ -713,6 +730,11 @@ struct FloorPlanTabView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(PPBrand.sage.opacity(0.3))
+        .onAppear {
+            if let first = availableStudios.first, !availableStudios.contains(studio) {
+                studio = first
+            }
+        }
     }
 
     private func moveBooking(_ bookingId: String, to tableId: String) {

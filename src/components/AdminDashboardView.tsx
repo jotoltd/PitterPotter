@@ -3461,17 +3461,23 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3 bg-white border border-[#1B2D3C]/10 p-4 rounded-xl">
               <h2 className="font-heading text-lg font-black text-[#1B2D3C] mr-2">Floor Plan</h2>
-              <div className="flex items-center gap-2">
-                <label className="text-xs font-bold uppercase text-[#1B2D3C]/60">Studio</label>
-                <select
-                  value={floorPlanStudio}
-                  onChange={(e) => setFloorPlanStudio(e.target.value as 'Putney' | 'Wimbledon')}
-                  className="px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-xs font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/50 cursor-pointer"
-                >
-                  <option value="Putney">Putney</option>
-                  <option value="Wimbledon">Wimbledon</option>
-                </select>
-              </div>
+              {(() => {
+                const floorPlanStudios = (staff.allowedStudios && staff.allowedStudios.length > 0
+                  ? staff.allowedStudios
+                  : ['Putney', 'Wimbledon']) as ('Putney' | 'Wimbledon')[];
+                return floorPlanStudios.length > 1 ? (
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-bold uppercase text-[#1B2D3C]/60">Studio</label>
+                    <select
+                      value={floorPlanStudio}
+                      onChange={(e) => setFloorPlanStudio(e.target.value as 'Putney' | 'Wimbledon')}
+                      className="px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-xs font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/50 cursor-pointer"
+                    >
+                      {floorPlanStudios.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                ) : null;
+              })()}
               <div className="flex items-center gap-2">
                 <label className="text-xs font-bold uppercase text-[#1B2D3C]/60">Date</label>
                 <input
