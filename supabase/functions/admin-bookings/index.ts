@@ -5,7 +5,7 @@ import type { AdminSupabaseClient, StaffRecord } from '../_shared/types.ts';
 import { verifyStaff } from '../_shared/auth.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
 import { capacityWarning } from '../_shared/capacity.ts';
-import { allocateAndApply, persistAllocation, clearBookingResources } from '../_shared/allocation.ts';
+import { allocateAndApply, persistAllocation, clearBookingResources, getRequestWindow, loadStudioConfigFromDb } from '../_shared/allocation.ts';
 import { createNotification } from '../_shared/notifications.ts';
 
 // deno-lint-ignore no-explicit-any
@@ -350,6 +350,46 @@ Deno.serve(async (req) => {
       }
       const { error } = await supabase.from('bookings').update(bookingRow).eq('booking_id', booking.id);
       if (error) throw error;
+
+      // Manual table (re)assignment (e.g. drag & drop on the floor plan):
+      // move the physical reservation so capacity checks match the new tables.
+      if ('table_id' in bookingRow && prevRow?.id) {
+        try {
+          await clearBookingResources(supabase, prevRow.id);
+          const tables = String(bookingRow.table_id ?? '').split(',').map(t => t.trim()).filter(Boolean);
+          if (tables.length) {
+            const studio = (prevRow.studio === 'Putney' ? 'Putney' : 'Wimbledon') as 'Putney' | 'Wimbledon';
+            const config = await loadStudioConfigFromDb(supabase, studio);
+            const window = getRequestWindow({
+              studio,
+              date: prevRow.date as string,
+              time: prevRow.time as string,
+              paintersCount: Number(prevRow.painters_count) || 1,
+              sessionType: prevRow.session_type as string,
+            }, config);
+            await supabase.from('booking_resources').insert(tables.map(tid => ({
+              booking_id: prevRow.id,
+              table_configuration_id: null,
+              table_id: tid,
+              blocked_start: window.start.toISOString(),
+              blocked_end: window.end.toISOString(),
+            })));
+            await supabase.from('bookings').update({
+              resources: tables.map(tid => ({
+                table_id: tid,
+                table_configuration_id: null,
+                configuration_name: null,
+                blocked_start: window.start.toISOString(),
+                blocked_end: window.end.toISOString(),
+              })),
+            }).eq('id', prevRow.id);
+          } else {
+            await supabase.from('bookings').update({ resources: null }).eq('id', prevRow.id);
+          }
+        } catch (resErr) {
+          console.error('Failed to sync booking_resources on manual table assign:', resErr);
+        }
+      }
 
       await logAudit(supabase, staff, 'patch', 'booking', booking.id as string, { fields: Object.keys(bookingRow) });
 

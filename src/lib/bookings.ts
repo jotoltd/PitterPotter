@@ -216,6 +216,31 @@ export async function updateBooking(booking: BookingInquiry, staff?: Staff | nul
   return data.warning ?? null;
 }
 
+export async function patchBooking(id: string, fields: { studio?: string } & Record<string, unknown>, staff?: Staff | null): Promise<void> {
+  if (!isSupabaseEnabled()) return;
+  if (!staff) throw new Error('Staff required');
+
+  const response = await fetch(functionUrl('admin-bookings'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({
+      action: 'patch',
+      username: staff.username,
+      sessionToken: staff.sessionToken,
+      booking: { id, ...fields },
+    }),
+  });
+
+  const data = await response.json();
+  if (!response.ok || data.error) {
+    console.error('Failed to patch booking:', data.error);
+    throw new Error(data.error || 'Failed to update booking');
+  }
+}
+
 export async function updateBookingStatus(id: string, status: 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show', staff?: Staff | null): Promise<void> {
   if (!isSupabaseEnabled()) return;
   if (!staff) throw new Error('Staff required');

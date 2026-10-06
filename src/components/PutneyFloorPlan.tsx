@@ -43,6 +43,7 @@ export interface PutneyFloorPlanProps {
   selectedTime?: string;
   highlightTableId?: string;
   onAssign?: (tableId: string) => void;
+  onMoveBooking?: (bookingId: string, tableId: string) => void;
   readOnly?: boolean;
   showTablePanel?: boolean;
   onTableClick?: (tableId: string) => void;
@@ -54,10 +55,9 @@ interface BlockedTable {
   reason: string;
 }
 
-const SMALL_W = 52;
-const SMALL_H = 52;
-const LARGE_W = 88;
-const LARGE_H = 52;
+// Every table renders at the same size — matches the iOS floor plan.
+const TABLE_W = 80;
+const TABLE_H = 52;
 const CHAIR_R = 9;
 const CHAIR_GAP = 5;
 const BLOCKED_STORAGE_KEY = 'pitter_potter_blocked_tables_putney';
@@ -75,8 +75,8 @@ const STATUS_SUB: Record<TableStatus, string> = {
   free: '#1B2D3C99', partial: '#a16207', full: '#fecaca', blocked: '#d1d5db', selected: '#D6E2E9',
 };
 
-function tableWidth(size: TableSize) { return size === 'small' ? SMALL_W : LARGE_W; }
-function tableHeight(size: TableSize) { return size === 'small' ? SMALL_H : LARGE_H; }
+function tableWidth(_size: TableSize) { return TABLE_W; }
+function tableHeight(_size: TableSize) { return TABLE_H; }
 
 function loadBlockedTables(): BlockedTable[] {
   try { return JSON.parse(localStorage.getItem(BLOCKED_STORAGE_KEY) || '[]'); } catch { return []; }
@@ -165,8 +165,8 @@ function Chair({ cx, cy, status, colour }: { cx: number; cy: number; status: Tab
   );
 }
 
-function TableShape({ def, status, count, chairColours, onClick }: {
-  def: PositionedTable; status: TableStatus; count: number; chairColours: (string | null)[]; onClick: () => void;
+function TableShape({ def, status, count, chairColours, occupantLabels, isDropTarget, onClick }: {
+  def: PositionedTable; status: TableStatus; count: number; chairColours: (string | null)[]; occupantLabels: string[]; isDropTarget?: boolean; onClick: () => void;
 }) {
   const w = tableWidth(def.size);
   const h = tableHeight(def.size);
@@ -197,12 +197,23 @@ function TableShape({ def, status, count, chairColours, onClick }: {
   return (
     <g onClick={onClick} className="cursor-pointer" role="button" aria-label={`Table ${def.id}`}>
       {chairs.map((c, i) => <Chair key={i} cx={c.cx} cy={c.cy} status={status} colour={chairColours[i] ?? null} />)}
+      {isDropTarget && (
+        <rect x={def.x - 4} y={def.y - 4} width={w + 8} height={h + 8} rx={6}
+          fill="#16a34a22" stroke="#16a34a" strokeWidth={2} strokeDasharray="5 3" />
+      )}
       <rect x={def.x} y={def.y} width={w} height={h} rx={4}
         fill={STATUS_FILL[status]} stroke={STATUS_STROKE[status]} strokeWidth={status === 'selected' ? 2.5 : 1.5} />
-      <text x={def.x + w / 2} y={def.y + h / 2 - 6} textAnchor="middle" dominantBaseline="middle"
+      <text x={def.x + w / 2} y={def.y + h / 2 - (occupantLabels.length ? 10 : 6)} textAnchor="middle" dominantBaseline="middle"
         fontSize={11} fontWeight="800" fill={STATUS_TEXT[status]}>T{def.id}</text>
-      <text x={def.x + w / 2} y={def.y + h / 2 + 7} textAnchor="middle" dominantBaseline="middle"
-        fontSize={8} fill={STATUS_SUB[status]}>{label}</text>
+      {occupantLabels.length ? (
+        occupantLabels.map((l, i) => (
+          <text key={i} x={def.x + w / 2} y={def.y + h / 2 + 1 + i * 9} textAnchor="middle" dominantBaseline="middle"
+            fontSize={7} fontWeight="700" fill={STATUS_TEXT[status]}>{l}</text>
+        ))
+      ) : (
+        <text x={def.x + w / 2} y={def.y + h / 2 + 7} textAnchor="middle" dominantBaseline="middle"
+          fontSize={8} fill={STATUS_SUB[status]}>{label}</text>
+      )}
     </g>
   );
 }
@@ -223,7 +234,7 @@ const PARTY_TABLES: PositionedTable[] = [
   { id: 7,  size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party', label: 'T7',  x: 30,  y: 560 },
   { id: 8,  size: 'small', chairs: ['top', 'bottom'],                   area: 'party', label: 'T8',  x: 165, y: 560 },
   { id: 9,  size: 'small', chairs: ['top', 'bottom'],                   area: 'party', label: 'T9',  x: 255, y: 560 },
-  { id: 10, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party', label: 'T10', x: 330, y: 560 },
+  { id: 10, size: 'large', chairs: ['top', 'top', 'bottom', 'bottom'], area: 'party', label: 'T10', x: 340, y: 560 },
 ];
 
 export default function PutneyFloorPlan({
@@ -232,11 +243,13 @@ export default function PutneyFloorPlan({
   selectedTime,
   highlightTableId,
   onAssign,
+  onMoveBooking,
   readOnly = false,
   showTablePanel = true,
   onTableClick,
 }: PutneyFloorPlanProps) {
   const [localSelected, setLocalSelected] = useState<string | null>(null);
+  const [dragTarget, setDragTarget] = useState<string | null>(null);
   const [blockedTables, setBlockedTables] = useState<BlockedTable[]>([]);
   const [blockReason, setBlockReason] = useState('');
   const [showBlockInput, setShowBlockInput] = useState(false);
@@ -326,8 +339,15 @@ export default function PutneyFloorPlan({
   const bookingLegend = useMemo(() => {
     return bookings
       .filter(b => b.date === selectedDate && b.studio === 'Putney' && (!selectedTime || (b.time && overlapsTwoHours(b.time, selectedTime))))
-      .map((b, i) => ({ name: b.name, painters: b.paintersCount, colour: getBookingColour(i), time: b.time }));
+      .map((b, i) => ({ id: b.id, name: b.name, painters: b.paintersCount, colour: getBookingColour(i), time: b.time }));
   }, [bookings, selectedDate, selectedTime]);
+
+  const handleDrop = (tid: string) => (e: React.DragEvent) => {
+    e.preventDefault();
+    const bookingId = e.dataTransfer.getData('text/plain');
+    if (bookingId && onMoveBooking) onMoveBooking(bookingId, tid);
+    setDragTarget(null);
+  };
 
   const renderTable = (t: PositionedTable) => {
     const tid = `T${t.id}`;
@@ -346,8 +366,27 @@ export default function PutneyFloorPlan({
         chairColours[seatIdx] = colour;
       }
     }
+    const occupantLabels = relevantBookings
+      .slice(0, 2)
+      .map(b => `${b.time.split('-')[0].trim()} ${b.name}`.slice(0, 16));
+    if (relevantBookings.length > 2) occupantLabels.push(`+${relevantBookings.length - 2} more`);
     return (
-      <TableShape key={t.id} def={t} status={status} count={count} chairColours={chairColours} onClick={() => handleClick(t.id)} />
+      <g
+        key={t.id}
+        onDragOver={onMoveBooking ? (e) => { e.preventDefault(); setDragTarget(tid); } : undefined}
+        onDragLeave={onMoveBooking ? () => setDragTarget(null) : undefined}
+        onDrop={onMoveBooking ? handleDrop(tid) : undefined}
+      >
+        <TableShape
+          def={t}
+          status={status}
+          count={count}
+          chairColours={chairColours}
+          occupantLabels={occupantLabels}
+          isDropTarget={dragTarget === tid}
+          onClick={() => handleClick(t.id)}
+        />
+      </g>
     );
   };
 
@@ -373,9 +412,14 @@ export default function PutneyFloorPlan({
           </p>
           <div className="space-y-1">
             {unassignedBookings.map(b => (
-              <div key={b.id} className="flex items-center justify-between text-[10px] text-amber-700 font-semibold">
+              <div
+                key={b.id}
+                className={`flex items-center justify-between text-[10px] text-amber-700 font-semibold ${onMoveBooking ? 'cursor-grab' : ''}`}
+                draggable={!!onMoveBooking}
+                onDragStart={onMoveBooking ? (e) => e.dataTransfer.setData('text/plain', b.id) : undefined}
+              >
                 <span>{b.name} · {b.time} · {b.paintersCount}p</span>
-                <span className="text-amber-600">{b.status}</span>
+                <span className="text-amber-600">{onMoveBooking ? 'drag onto a table' : b.status}</span>
               </div>
             ))}
           </div>
@@ -386,7 +430,13 @@ export default function PutneyFloorPlan({
       {bookingLegend.length > 0 ? (
         <div className="flex flex-wrap gap-2">
           {bookingLegend.map((b, i) => (
-            <div key={i} className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold text-white" style={{ backgroundColor: b.colour }}>
+            <div
+              key={i}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold text-white ${onMoveBooking ? 'cursor-grab' : ''}`}
+              style={{ backgroundColor: b.colour }}
+              draggable={!!onMoveBooking}
+              onDragStart={onMoveBooking ? (e) => e.dataTransfer.setData('text/plain', b.id) : undefined}
+            >
               <span>{b.name}</span>
               <span className="opacity-70">· {b.painters}p</span>
               {!selectedTime && <span className="opacity-70">· {b.time}</span>}

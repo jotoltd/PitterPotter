@@ -11,7 +11,7 @@ import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO, getDay } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow, EmailTemplate, SMSTemplate, EmailLog } from '../types';
 import { supabase, isSupabaseEnabled } from '../lib/supabase';
-import { loadBookings, createBooking, updateBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
+import { loadBookings, createBooking, updateBooking, patchBooking, updateBookingStatus, deleteBooking, getRemainingCapacity } from '../lib/bookings';
 import { compressImage } from '../lib/imageCompression';
 import QRScanner from './QRScanner';
 import { getAllSlots, getSlots, setSlots, DEFAULT_SLOTS, SlotSessionType, Studio, TimeSlotsData, getStudioSlots, sortSlots, loadSlotsFromSupabase, saveSlotsToSupabase, DayType } from '../lib/timeSlots';
@@ -87,7 +87,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'painted' | 'ready' | 'collected' | 'gift-cards' | 'floor-plan' | 'settings' | 'analytics' | 'audit-logs' | 'webmaster' | 'email-logs' | 'email-templates' | 'sms' | 'documentation'>(staff.role === 'super_admin' ? 'dashboard' : 'bookings');
   const [floorPlanStudio, setFloorPlanStudio] = useState<'Putney' | 'Wimbledon'>(staff.allowedStudios?.[0] === 'Putney' ? 'Putney' : 'Wimbledon');
   const [floorPlanDate, setFloorPlanDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [floorPlanTime, setFloorPlanTime] = useState<string>('12:00');
+
   const [collectionUploadingId, setCollectionUploadingId] = useState<string | null>(null);
   const [stripeMode, setStripeMode] = useState<'sandbox' | 'live'>('sandbox');
   const [maintenanceMode, setMaintenanceModeState] = useState(false);
@@ -1405,7 +1405,9 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       const booking = inquiries.find(i => i.id === bookingId);
       if (!booking) return;
       const updated = { ...booking, tableId: tableId ?? undefined };
-      await updateBooking(updated, staff);
+      // Patch only table_id — a full update would run Wimbledon re-allocation
+      // and overwrite the staff's manual table pick.
+      await patchBooking(bookingId, { studio: booking.studio, tableId }, staff);
       setInquiries(inquiries.map(i => i.id === bookingId ? updated : i));
       setAssignModalBooking(null);
       showToast(tableId ? `Table ${tableId} assigned` : 'Table unassigned', 'success');
@@ -3479,30 +3481,22 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   className="px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-xs font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/50"
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <label className="text-xs font-bold uppercase text-[#1B2D3C]/60">Time</label>
-                <input
-                  type="time"
-                  value={floorPlanTime}
-                  onChange={(e) => setFloorPlanTime(e.target.value)}
-                  className="px-3 py-2 border border-[#1B2D3C]/20 rounded-lg text-xs font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/50"
-                />
-              </div>
+              <p className="text-[10px] text-[#1B2D3C]/40 font-semibold ml-auto">Drag a booking chip onto a table to assign it</p>
             </div>
             <div className="bg-white border border-[#1B2D3C]/10 p-4 rounded-xl overflow-x-auto">
               {floorPlanStudio === 'Wimbledon' ? (
                 <WimbledonFloorPlan
                   bookings={inquiries}
                   selectedDate={floorPlanDate}
-                  selectedTime={floorPlanTime}
                   readOnly
+                  onMoveBooking={(bookingId, tableId) => updateBookingTable(bookingId, tableId)}
                 />
               ) : (
                 <PutneyFloorPlan
                   bookings={inquiries}
                   selectedDate={floorPlanDate}
-                  selectedTime={floorPlanTime}
                   readOnly
+                  onMoveBooking={(bookingId, tableId) => updateBookingTable(bookingId, tableId)}
                 />
               )}
             </div>

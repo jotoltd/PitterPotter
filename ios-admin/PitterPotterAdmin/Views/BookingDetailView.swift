@@ -94,7 +94,13 @@ struct BookingDetailView: View {
                             updated.tableId = tableId
                             if let staff = authVM.staff {
                                 Task {
-                                    let ok = await bookingsVM.saveBooking(updated, staff: staff)
+                                    // Patch only table_id — a full update would run
+                                    // re-allocation and overwrite the manual pick.
+                                    let ok = await bookingsVM.patchBooking(
+                                        id: updated.id, studio: updated.studio,
+                                        fields: ["tableId": tableId],
+                                        updated: updated, staff: staff
+                                    )
                                     await MainActor.run {
                                         if ok {
                                             currentBooking = updated

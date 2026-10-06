@@ -34,6 +34,7 @@ export interface WimbledonFloorPlanProps {
   selectedTime?: string;
   highlightTableId?: string;
   onAssign?: (tableId: string) => void;
+  onMoveBooking?: (bookingId: string, tableId: string) => void;
   readOnly?: boolean;
   showTablePanel?: boolean;
   onTableClick?: (tableId: string) => void;
@@ -45,10 +46,9 @@ interface BlockedTable {
   reason: string;
 }
 
-const SMALL_W = 52;
-const SMALL_H = 52;
-const LARGE_W = 88;
-const LARGE_H = 52;
+// Every table renders at the same size — matches the iOS floor plan.
+const TABLE_W = 80;
+const TABLE_H = 52;
 const CHAIR_R = 9;
 const CHAIR_GAP = 5;
 const BLOCKED_STORAGE_KEY = 'pitter_potter_blocked_tables';
@@ -84,8 +84,8 @@ const STATUS_SUB: Record<TableStatus, string> = {
   selected: '#D6E2E9',
 };
 
-function tableWidth(size: TableSize) { return size === 'small' ? SMALL_W : LARGE_W; }
-function tableHeight(size: TableSize) { return size === 'small' ? SMALL_H : LARGE_H; }
+function tableWidth(_size: TableSize) { return TABLE_W; }
+function tableHeight(_size: TableSize) { return TABLE_H; }
 
 function loadBlockedTables(): BlockedTable[] {
   try {
@@ -218,13 +218,14 @@ function Chair({ cx, cy, status, colour }: { cx: number; cy: number; status: Tab
 }
 
 function TableShape({
-  def, status, count, chairColours, occupantLabels, onClick,
+  def, status, count, chairColours, occupantLabels, isDropTarget, onClick,
 }: {
   def: PositionedTable;
   status: TableStatus;
   count: number;
   chairColours: (string | null)[];
   occupantLabels: string[];
+  isDropTarget?: boolean;
   onClick: () => void;
 }) {
   const w = tableWidth(def.size);
@@ -260,6 +261,10 @@ function TableShape({
   return (
     <g onClick={onClick} className="cursor-pointer" role="button" aria-label={`Table ${def.id}`}>
       {chairs.map((c, i) => <Chair key={i} cx={c.cx} cy={c.cy} status={status} colour={chairColours[i] ?? null} />)}
+      {isDropTarget && (
+        <rect x={def.x - 4} y={def.y - 4} width={w + 8} height={h + 8} rx={6}
+          fill="#16a34a22" stroke="#16a34a" strokeWidth={2} strokeDasharray="5 3" />
+      )}
       <rect
         x={def.x} y={def.y} width={w} height={h} rx={4}
         fill={STATUS_FILL[status]}
@@ -331,11 +336,13 @@ export default function WimbledonFloorPlan({
   selectedTime,
   highlightTableId,
   onAssign,
+  onMoveBooking,
   readOnly = false,
   showTablePanel = true,
   onTableClick,
 }: WimbledonFloorPlanProps) {
   const [localSelected, setLocalSelected] = useState<string | null>(null);
+  const [dragTarget, setDragTarget] = useState<string | null>(null);
   const [blockedTables, setBlockedTables] = useState<BlockedTable[]>([]);
   const [blockReason, setBlockReason] = useState('');
   const [showBlockInput, setShowBlockInput] = useState(false);
@@ -434,8 +441,15 @@ export default function WimbledonFloorPlan({
   const bookingLegend = useMemo(() => {
     return bookings
       .filter(b => b.date === selectedDate && b.studio === 'Wimbledon' && b.status !== 'cancelled' && b.status !== 'no_show' && (!selectedTime || (b.time && overlapsTwoHours(b.time, selectedTime))))
-      .map((b, i) => ({ name: b.name, painters: b.paintersCount, colour: getBookingColour(i), time: b.time }));
+      .map((b, i) => ({ id: b.id, name: b.name, painters: b.paintersCount, colour: getBookingColour(i), time: b.time }));
   }, [bookings, selectedDate, selectedTime]);
+
+  const handleDrop = (tid: string) => (e: React.DragEvent) => {
+    e.preventDefault();
+    const bookingId = e.dataTransfer.getData('text/plain');
+    if (bookingId && onMoveBooking) onMoveBooking(bookingId, tid);
+    setDragTarget(null);
+  };
 
   const renderTable = (t: PositionedTable) => {
     const tid = `T${t.id}`;
@@ -459,15 +473,22 @@ export default function WimbledonFloorPlan({
       .map(b => `${b.time.split('-')[0].trim()} ${b.name}`.slice(0, 16));
     if (relevantBookings.length > 2) occupantLabels.push(`+${relevantBookings.length - 2} more`);
     return (
-      <TableShape
+      <g
         key={t.id}
-        def={t}
-        status={status}
-        count={count}
-        chairColours={chairColours}
-        occupantLabels={occupantLabels}
-        onClick={() => handleClick(t.id)}
-      />
+        onDragOver={onMoveBooking ? (e) => { e.preventDefault(); setDragTarget(tid); } : undefined}
+        onDragLeave={onMoveBooking ? () => setDragTarget(null) : undefined}
+        onDrop={onMoveBooking ? handleDrop(tid) : undefined}
+      >
+        <TableShape
+          def={t}
+          status={status}
+          count={count}
+          chairColours={chairColours}
+          occupantLabels={occupantLabels}
+          isDropTarget={dragTarget === tid}
+          onClick={() => handleClick(t.id)}
+        />
+      </g>
     );
   };
 
@@ -493,9 +514,14 @@ export default function WimbledonFloorPlan({
           </p>
           <div className="space-y-1">
             {unassignedBookings.map(b => (
-              <div key={b.id} className="flex items-center justify-between text-[10px] text-amber-700 font-semibold">
+              <div
+                key={b.id}
+                className={`flex items-center justify-between text-[10px] text-amber-700 font-semibold ${onMoveBooking ? 'cursor-grab' : ''}`}
+                draggable={!!onMoveBooking}
+                onDragStart={onMoveBooking ? (e) => e.dataTransfer.setData('text/plain', b.id) : undefined}
+              >
                 <span>{b.name} · {b.time} · {b.paintersCount}p</span>
-                <span className="text-amber-600">{b.status}</span>
+                <span className="text-amber-600">{onMoveBooking ? 'drag onto a table' : b.status}</span>
               </div>
             ))}
           </div>
@@ -536,7 +562,13 @@ export default function WimbledonFloorPlan({
       {bookingLegend.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {bookingLegend.map((b, i) => (
-            <div key={i} className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold text-white" style={{ backgroundColor: b.colour }}>
+            <div
+              key={i}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold text-white ${onMoveBooking ? 'cursor-grab' : ''}`}
+              style={{ backgroundColor: b.colour }}
+              draggable={!!onMoveBooking}
+              onDragStart={onMoveBooking ? (e) => e.dataTransfer.setData('text/plain', b.id) : undefined}
+            >
               <span>{b.name}</span>
               <span className="opacity-70">· {b.painters}p</span>
               {!selectedTime && <span className="opacity-70">· {b.time}</span>}
