@@ -2,6 +2,7 @@ import { createClient } from 'supabase';
 import { isObject, isNonEmptyString, isString } from '../_shared/validate.ts';
 import { verifyStaff } from '../_shared/auth.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
+import { sendPureSMS } from '../_shared/puresms.ts';
 
 interface StaffPayload {
   username: string;
@@ -85,15 +86,25 @@ async function getTwilioUsage(days: number = 30): Promise<{ count: number; total
   }
 }
 
-async function sendTestSMS(to: string, body: string, studio?: string): Promise<{ success: boolean; error?: string; sid?: string }> {
+async function sendTestSMS(to: string, body: string, studio?: string): Promise<{ success: boolean; error?: string; sid?: string; id?: string }> {
+  const puresmsKey = Deno.env.get('PURESMS_API_KEY');
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  if (!accountSid || !authToken) return { success: false, error: 'Twilio not configured' };
+  const usePureSMS = !!puresmsKey;
+
+  if (!usePureSMS && (!accountSid || !authToken)) {
+    return { success: false, error: 'SMS provider not configured' };
+  }
 
   const fromNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
   const senderId = studio
     ? (studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP')
     : (fromNumber || 'PitterPotP');
+
+  if (usePureSMS) {
+    const result = await sendPureSMS(to, body, senderId);
+    return { success: result.success, error: result.error, id: result.id };
+  }
 
   try {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
@@ -206,7 +217,7 @@ Deno.serve(async (req) => {
           recipient: to,
           subject: 'Admin Test SMS',
           body: message,
-          resend_id: result.sid || null,
+          resend_id: result.sid || result.id || null,
           status: result.success ? 'sent' : 'failed',
         });
       } catch (logErr) {
@@ -308,7 +319,7 @@ Deno.serve(async (req) => {
           recipient: logEntry.recipient,
           subject: logEntry.subject || 'Resent SMS',
           body: messageBody,
-          resend_id: result.sid || null,
+          resend_id: result.sid || result.id || null,
           status: result.success ? 'sent' : 'failed',
           booking_id: logEntry.booking_id || null,
         });

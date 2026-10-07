@@ -5,6 +5,7 @@ import { loadSMSTemplate } from '../_shared/sms-template.ts';
 import { getStudioInfo } from '../_shared/studio-info.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
 import { createNotification } from '../_shared/notifications.ts';
+import { sendPureSMS } from '../_shared/puresms.ts';
 
 const SESSION_LABELS: Record<string, string> = {
   'painting': 'Pottery Painting',
@@ -44,11 +45,14 @@ async function sendReadySMS(
     studio: string;
     management_token: string | null;
   }
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; id?: string }> {
+  const puresmsKey = Deno.env.get('PURESMS_API_KEY');
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  if (!accountSid || !authToken) {
-    console.warn('Twilio not configured; skipping SMS');
+  const usePureSMS = !!puresmsKey;
+
+  if (!usePureSMS && (!accountSid || !authToken)) {
+    console.warn('No SMS provider configured; skipping SMS');
     return { success: false, error: 'SMS service not configured' };
   }
 
@@ -112,34 +116,45 @@ async function sendReadySMS(
 
   const senderId = booking.studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP';
 
+  let sendResult: { success: boolean; error?: string; id?: string } = { success: false, error: 'Unknown' };
+
   try {
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-    const body = new URLSearchParams();
-    body.append('From', senderId);
-    body.append('To', toNumber);
-    body.append('Body', message);
+    if (usePureSMS) {
+      sendResult = await sendPureSMS(toNumber, message, senderId);
+    } else {
+      const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+      const body = new URLSearchParams();
+      body.append('From', senderId);
+      body.append('To', toNumber);
+      body.append('Body', message);
 
-    const projectUrl = Deno.env.get('SUPABASE_URL');
-    if (projectUrl) {
-      body.append('StatusCallback', `${projectUrl}/functions/v1/twilio-webhook`);
+      const projectUrl = Deno.env.get('SUPABASE_URL');
+      if (projectUrl) {
+        body.append('StatusCallback', `${projectUrl}/functions/v1/twilio-webhook`);
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: body.toString(),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        console.error('Twilio error:', errorData);
+        sendResult = { success: false, error: errorData.message || 'Failed to send SMS' };
+      } else {
+        const twilioData = await response.json().catch(() => ({}));
+        sendResult = { success: true, id: twilioData.sid };
+      }
     }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: body.toString(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-      console.error('Twilio error:', errorData);
-      return { success: false, error: errorData.message || 'Failed to send SMS' };
+    if (!sendResult.success) {
+      return sendResult;
     }
-
-    const twilioData = await response.json().catch(() => ({}));
 
     try {
       const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -151,7 +166,7 @@ async function sendReadySMS(
           recipient: booking.phone,
           subject: 'Collection Ready SMS',
           body: message,
-          resend_id: twilioData.sid || null,
+          resend_id: sendResult.id || null,
           status: 'sent',
           booking_id: booking.booking_id,
         });
@@ -160,7 +175,7 @@ async function sendReadySMS(
       console.error('Failed to log SMS:', logErr);
     }
 
-    return { success: true };
+    return { success: true, id: sendResult.id };
   } catch (err) {
     console.error('Send collection-ready SMS error:', err);
     return { success: false, error: 'Failed to send SMS' };
