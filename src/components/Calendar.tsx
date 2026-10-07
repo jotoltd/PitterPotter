@@ -67,6 +67,7 @@ export default function Calendar({
     <div className="w-full select-none">
       <div className="flex items-center justify-between mb-4 px-2">
         <button
+          type="button"
           onClick={() => onMonthChange(subMonths(month, 1))}
           className="p-2 rounded-full hover:bg-[#D6E2E9] transition-colors"
           aria-label="Previous month"
@@ -77,6 +78,7 @@ export default function Calendar({
           {format(month, 'MMMM yyyy')}
         </h2>
         <button
+          type="button"
           onClick={() => onMonthChange(addMonths(month, 1))}
           className="p-2 rounded-full hover:bg-[#D6E2E9] transition-colors"
           aria-label="Next month"
@@ -105,6 +107,7 @@ export default function Calendar({
           const mark = hasMark(day);
           return (
             <button
+              type="button"
               key={day.toISOString()}
               onClick={() => !disabledDay && onSelect(day)}
               disabled={disabledDay}
