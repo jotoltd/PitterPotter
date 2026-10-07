@@ -185,6 +185,16 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === 'provider') {
+      const puresmsKey = Deno.env.get('PURESMS_API_KEY');
+      const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+      const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+      const provider = puresmsKey ? 'puresms' : (accountSid && authToken ? 'twilio' : 'none');
+      return new Response(JSON.stringify({ provider }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (action === 'balance') {
       const result = await getTwilioBalance();
       return new Response(JSON.stringify(result), {

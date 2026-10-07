@@ -66,6 +66,8 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
   const [lowBalanceAlert, setLowBalanceAlert] = useState<string | null>(null);
   const [webhookHealth, setWebhookHealth] = useState<{ resendLast: string | null; twilioLast: string | null; totalEvents: number; alerts: string[] } | null>(null);
   const [webhookHealthLoading, setWebhookHealthLoading] = useState(false);
+  const [provider, setProvider] = useState<'twilio' | 'puresms' | 'none' | null>(null);
+  const [providerLoading, setProviderLoading] = useState(true);
 
   const fetchSmsLogs = useCallback(async () => {
     setSmsLogsLoading(true);
@@ -79,6 +81,27 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
       const data = await res.json();
       if (data.logs) setSmsLogs(data.logs);
     } catch { /* ignore */ } finally { setSmsLogsLoading(false); }
+  }, [staff]);
+
+  const fetchProvider = useCallback(async () => {
+    setProviderLoading(true);
+    try {
+      if (!isSupabaseEnabled() || !staff.sessionToken) {
+        setProvider('none');
+        return;
+      }
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'provider', staff: { username: staff.username, sessionToken: staff.sessionToken } }),
+      });
+      const data = await res.json();
+      setProvider(data.provider || 'none');
+    } catch {
+      setProvider('none');
+    } finally {
+      setProviderLoading(false);
+    }
   }, [staff]);
 
   const fetchBalance = useCallback(async () => {
@@ -134,10 +157,16 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
   }, [staff]);
 
   useEffect(() => {
-    fetchBalance();
-    fetchUsage(usageDays);
+    fetchProvider();
     fetchSmsLogs();
-  }, [fetchBalance, fetchUsage, fetchSmsLogs, usageDays]);
+  }, [fetchProvider, fetchSmsLogs]);
+
+  useEffect(() => {
+    if (provider === 'twilio') {
+      fetchBalance();
+      fetchUsage(usageDays);
+    }
+  }, [provider, fetchBalance, fetchUsage, usageDays]);
 
   useEffect(() => {
     if (balance && parseFloat(balance.balance) < 10) {
@@ -220,15 +249,27 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-heading text-xl font-black text-[#1B2D3C] flex items-center gap-2">
-          <MessageSquare className="w-5 h-5" /> SMS Management
-        </h2>
+        <div className="flex items-center gap-3">
+          <h2 className="font-heading text-xl font-black text-[#1B2D3C] flex items-center gap-2">
+            <MessageSquare className="w-5 h-5" /> SMS Management
+          </h2>
+          {!providerLoading && provider && (
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+              provider === 'puresms' ? 'bg-pink-50 text-pink-700' :
+              provider === 'twilio' ? 'bg-red-50 text-red-700' :
+              'bg-stone-100 text-stone-600'
+            }`}>
+              {provider === 'puresms' ? 'PureSMS' : provider === 'twilio' ? 'Twilio' : 'Not configured'}
+            </span>
+          )}
+        </div>
         <p className="text-xs text-[#1B2D3C]/60 mt-1">
-          Send test SMS, check balance, and view usage via Twilio.
+          Send test SMS and view delivery logs. Balance/usage shown when Twilio is active.
         </p>
       </div>
 
       {/* Balance card */}
+      {(providerLoading || provider === 'twilio') && (
       <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5">
@@ -255,6 +296,7 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
           </div>
         ) : null}
       </div>
+      )}
 
       {/* Send test SMS */}
       <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-5">
@@ -459,6 +501,7 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
       </div>
 
       {/* Usage */}
+      {(providerLoading || provider === 'twilio') && (
       <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5">
@@ -544,6 +587,7 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
           </>
         ) : null}
       </div>
+      )}
     </div>
   );
 }
