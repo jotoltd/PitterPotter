@@ -250,7 +250,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                   }`}>
                     {isDone ? '✓' : num}
                   </div>
-                  <span className={`text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${
+                  <span className={`font-heading text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${
                     isActive ? 'text-[#1B2D3C]' : isDone ? 'text-[#1B2D3C]/60' : 'text-[#1B2D3C]/30'
                   }`}>{label}</span>
                 </div>
@@ -320,9 +320,9 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                       }`}>
                       <div className={`mt-0.5 ${sessionType === opt.value ? 'text-[#1B2D3C]' : 'text-[#1B2D3C]/40'}`}>{opt.icon}</div>
                       <div>
-                        <p className="font-bold text-sm">{opt.label}</p>
+                        <p className="font-heading font-bold text-sm">{opt.label}</p>
                         <p className={`text-[11px] font-semibold mt-0.5 ${sessionType === opt.value ? 'text-[#1B2D3C]/80' : 'text-[#1B2D3C]/50'}`}>{opt.description}</p>
-                        {opt.isParty && <p className="text-[10px] font-bold text-purple-600 mt-1 uppercase tracking-wider">Deposit required</p>}
+                        {opt.isParty && <p className="font-heading text-[10px] font-bold text-purple-600 mt-1 uppercase tracking-wider">Deposit required</p>}
                       </div>
                     </button>
                   ))}
@@ -364,7 +364,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
 
                 {date && timeSlots.length > 0 && (
                   <div className="space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Available slots</span>
+                    <span className="font-heading text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Available slots</span>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {timeSlots.map((slot) => {
                         const remaining = slotCapacity[slot] ?? MAX_CAPACITY;
@@ -395,7 +395,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                 {sessionType === 'clay-imprints' ? (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">How many babies?</label>
+                      <label className="block font-heading text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">How many babies?</label>
                       <div className="flex items-center border border-[#1B2D3C]/20 bg-white overflow-hidden rounded-lg">
                         <button type="button" onClick={() => setBabiesCount(c => Math.max(1, c - 1))} className="px-4 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 cursor-pointer select-none">-</button>
                         <span className="flex-1 text-center text-sm font-black text-[#1B2D3C]">{babiesCount}</span>
@@ -403,7 +403,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">How many adults?</label>
+                      <label className="block font-heading text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">How many adults?</label>
                       <div className="flex items-center border border-[#1B2D3C]/20 bg-white overflow-hidden rounded-lg">
                         <button type="button" onClick={() => setAdultsCount(c => Math.max(0, c - 1))} className="px-4 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 cursor-pointer select-none">-</button>
                         <span className="flex-1 text-center text-sm font-black text-[#1B2D3C]">{adultsCount}</span>
@@ -413,7 +413,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Number of seats</label>
+                    <label className="block font-heading text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]">Number of seats</label>
                     <div className="flex items-center border border-[#1B2D3C]/20 bg-white overflow-hidden rounded-lg max-w-[180px]">
                       <button type="button" onClick={() => setPaintersCount(p => Math.max(1, p - 1))} className="px-5 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 cursor-pointer select-none">-</button>
                       <span className="flex-1 text-center text-sm font-black text-[#1B2D3C]">{paintersCount}</span>
@@ -450,26 +450,26 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                 </div>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Full Name *</label>
+                    <label className="block font-heading text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Full Name *</label>
                     <input type="text" value={name} onChange={(e) => setName(e.target.value)}
                       placeholder="Enter your full name"
                       className="w-full py-3 px-4 border border-[#1B2D3C]/20 rounded-lg bg-white text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/60" />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Email Address *</label>
+                    <label className="block font-heading text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Email Address *</label>
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                       placeholder="your@email.com"
                       className="w-full py-3 px-4 border border-[#1B2D3C]/20 rounded-lg bg-white text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/60" />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Phone Number *</label>
+                    <label className="block font-heading text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Phone Number *</label>
                     <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
                       placeholder="07xxx xxx xxx"
                       className="w-full py-3 px-4 border border-[#1B2D3C]/20 rounded-lg bg-white text-sm font-bold text-[#1B2D3C] focus:outline-none focus:border-[#1B2D3C]/60" />
                   </div>
                   {sessionType === 'clay-imprints' && (
                     <div className="space-y-2">
-                      <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Additional Notes <span className="text-[#1B2D3C]/40 font-semibold normal-case tracking-normal">(optional)</span></label>
+                      <label className="block font-heading text-[10px] font-bold text-[#1B2D3C] uppercase tracking-widest">Additional Notes <span className="text-[#1B2D3C]/40 font-semibold normal-case tracking-normal">(optional)</span></label>
                       <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
                         placeholder="Anything else we should know?"
                         rows={3}
@@ -499,14 +499,14 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                 </div>
                 <div className="bg-[#D6E2E9]/40 border border-[#1B2D3C]/15 rounded-xl p-5 space-y-3">
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs font-semibold text-[#1B2D3C]">
-                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Studio</span>{studio}</div>
-                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Session</span>{SESSION_TYPE_LABELS[sessionType]}</div>
-                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Date</span>{date ? format(date, 'EEE d MMM yyyy') : '-'}</div>
-                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Time</span>{time} - {parseInt(time.split(':')[0], 10) + 2}:00</div>
-                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Seats</span>{seatsCount}</div>
-                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Name</span>{name}</div>
-                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Email</span>{email || '-'}</div>
-                    <div><span className="text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Phone</span>{phone}</div>
+                    <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Studio</span>{studio}</div>
+                    <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Session</span>{SESSION_TYPE_LABELS[sessionType]}</div>
+                    <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Date</span>{date ? format(date, 'EEE d MMM yyyy') : '-'}</div>
+                    <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Time</span>{time} - {parseInt(time.split(':')[0], 10) + 2}:00</div>
+                    <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Seats</span>{seatsCount}</div>
+                    <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Name</span>{name}</div>
+                    <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Email</span>{email || '-'}</div>
+                    <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Phone</span>{phone}</div>
                   </div>
                 </div>
                 <div className="flex gap-3">

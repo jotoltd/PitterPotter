@@ -14,7 +14,7 @@ export default function SipAndPaintView({ setCurrentPage }: SipAndPaintViewProps
         <h1 className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight">
           Sip & Paint
         </h1>
-        <p className="text-lg text-[#1B2D3C]/60 font-semibold">
+        <p className="font-heading text-lg text-[#1B2D3C]/60 font-semibold">
           More info coming soon
         </p>
         <p className="text-sm text-[#1B2D3C]/50 leading-relaxed max-w-md mx-auto">
