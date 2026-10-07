@@ -16,6 +16,7 @@ export const DEFAULT_RESTRICTED_MAX_BOOKINGS: Record<StudioName, number> = { Put
 export const DEFAULT_OPEN_CAPACITY: Record<StudioName, number> = { Putney: 32, Wimbledon: 58 };
 export const DEFAULT_OPEN_RESTRICTED_CAPACITY: Record<StudioName, number> = { Putney: 15, Wimbledon: 32 };
 export const DEFAULT_PARTY_CAPACITY: Record<StudioName, number> = { Putney: 20, Wimbledon: 26 };
+export const DEFAULT_SIP_AND_PAINT_CAPACITY: Record<StudioName, number> = { Putney: 32, Wimbledon: 58 };
 export const DEFAULT_MAX_CONCURRENT_PARTIES: Record<StudioName, number> = { Putney: 1, Wimbledon: 1 };
 
 // deno-lint-ignore no-explicit-any
@@ -155,8 +156,10 @@ export async function computeCapacity(
       .filter((r: BookingRow) => r.time != null && overlapsTwoHours(r.time, time));
 
     const partyRows = rows.filter(isPartyRow);
-    const openRows = rows.filter((r) => !isPartyRow(r));
+    const sipRows = rows.filter((r) => r.session_type === 'sip-and-paint');
+    const openRows = rows.filter((r) => !isPartyRow(r) && r.session_type !== 'sip-and-paint');
     const hasPartyBooking = partyRows.length > 0;
+    const isSipAndPaint = sessionType === 'sip-and-paint';
 
     // Business rule: at most one party per overlapping slot, per studio —
     // regardless of whether a second party area is physically free.
@@ -173,15 +176,40 @@ export async function computeCapacity(
       };
     }
 
+    // Determine max capacity from DB overrides or defaults.
+    const { data: capacityRows } = await supabase
+      .from('capacity')
+      .select('session_type, max_painters')
+      .eq('studio', studio)
+      .in('session_type', ['open', 'open_restricted', 'party', 'sip_and_paint']);
+
+    const findMax = (type: string, fallback: number) =>
+      (capacityRows || []).find((r: { session_type: string; max_painters: number }) => r.session_type === type)
+        ?.max_painters ?? fallback;
+
+    const openFullMax = findMax('open', DEFAULT_OPEN_CAPACITY[studio]);
+    const openRestrictedMax = findMax('open_restricted', DEFAULT_OPEN_RESTRICTED_CAPACITY[studio]);
+    const sipMax = findMax('sip_and_paint', DEFAULT_SIP_AND_PAINT_CAPACITY[studio]);
+
     if (!allocation.success) {
+      let displayMax = 0;
+      if (incomingIsParty) {
+        displayMax = partyCap.total;
+      } else if (isSipAndPaint) {
+        displayMax = sipMax;
+      } else {
+        displayMax = hasPartyBooking ? openRestrictedMax : openFullMax;
+      }
       return {
         // Even if this exact size can't be seated, report the largest party
         // configuration that IS free so the UI can show partial availability.
         remaining: incomingIsParty ? partyCap.available : 0,
-        max: incomingIsParty ? partyCap.total : 0,
+        max: displayMax,
         booked: incomingIsParty
           ? partyRows.reduce((sum, r) => sum + (r.painters_count || 1), 0)
-          : openRows.reduce((sum, r) => sum + (r.painters_count || 1), 0),
+          : isSipAndPaint
+            ? sipRows.reduce((sum, r) => sum + (r.painters_count || 1), 0)
+            : openRows.reduce((sum, r) => sum + (r.painters_count || 1), 0) + sipRows.reduce((sum, r) => sum + (r.painters_count || 1), 0),
         hasPartyBooking,
         remainingBookings: 0,
         maxBookings: incomingIsParty ? DEFAULT_MAX_CONCURRENT_PARTIES[studio] : (hasPartyBooking ? DEFAULT_RESTRICTED_MAX_BOOKINGS[studio] : DEFAULT_MAX_BOOKINGS[studio]),
@@ -195,12 +223,19 @@ export async function computeCapacity(
     // count so the coarse heuristic does not produce a false warning.
     // For parties, remaining seats = largest party area still free (table
     // conflicts already account for what's been booked).
-    const baseMax = incomingIsParty
-      ? (partyCap.total || DEFAULT_PARTY_CAPACITY[studio])
-      : (hasPartyBooking ? DEFAULT_OPEN_RESTRICTED_CAPACITY[studio] : DEFAULT_OPEN_CAPACITY[studio]);
+    let baseMax: number;
+    if (incomingIsParty) {
+      baseMax = partyCap.total || DEFAULT_PARTY_CAPACITY[studio];
+    } else if (isSipAndPaint) {
+      baseMax = sipMax;
+    } else {
+      baseMax = hasPartyBooking ? openRestrictedMax : openFullMax;
+    }
     const booked = incomingIsParty
       ? partyRows.reduce((sum, r) => sum + (r.painters_count || 1), 0)
-      : openRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
+      : isSipAndPaint
+        ? sipRows.reduce((sum, r) => sum + (r.painters_count || 1), 0)
+        : openRows.reduce((sum, r) => sum + (r.painters_count || 1), 0) + sipRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
     const maxBookings = incomingIsParty
       ? DEFAULT_MAX_CONCURRENT_PARTIES[studio]
       : (hasPartyBooking ? DEFAULT_RESTRICTED_MAX_BOOKINGS[studio] : DEFAULT_MAX_BOOKINGS[studio]);
@@ -213,7 +248,7 @@ export async function computeCapacity(
       max: baseMax,
       booked,
       hasPartyBooking,
-      remainingBookings: Math.max(0, maxBookings - (incomingIsParty ? partyRows.length : openRows.length)),
+      remainingBookings: Math.max(0, maxBookings - (incomingIsParty ? partyRows.length : openRows.length + sipRows.length)),
       maxBookings,
     };
   }
@@ -233,8 +268,10 @@ export async function computeCapacity(
     .filter((r: BookingRow) => r.time != null && overlapsTwoHours(r.time, time));
 
   const incomingIsParty = sessionType ? PARTY_SESSION_TYPES.includes(sessionType) : false;
+  const isSipAndPaint = sessionType === 'sip-and-paint';
   const partyRows = rows.filter((r) => PARTY_SESSION_TYPES.includes(r.session_type ?? ''));
-  const openRows = rows.filter((r) => !PARTY_SESSION_TYPES.includes(r.session_type ?? ''));
+  const sipRows = rows.filter((r) => r.session_type === 'sip-and-paint');
+  const openRows = rows.filter((r) => !PARTY_SESSION_TYPES.includes(r.session_type ?? '') && r.session_type !== 'sip-and-paint');
   const hasPartyBooking = partyRows.length > 0;
 
   const maxConcurrentParties = DEFAULT_MAX_CONCURRENT_PARTIES[studio];
@@ -254,7 +291,7 @@ export async function computeCapacity(
     .from('capacity')
     .select('session_type, max_painters')
     .eq('studio', studio)
-    .in('session_type', ['open', 'open_restricted', 'party']);
+    .in('session_type', ['open', 'open_restricted', 'party', 'sip_and_paint']);
 
   const findMax = (type: string, fallback: number) =>
     (capacityRows || []).find((r: { session_type: string; max_painters: number }) => r.session_type === type)
@@ -263,6 +300,7 @@ export async function computeCapacity(
   const openFullMax = findMax('open', DEFAULT_OPEN_CAPACITY[studio]);
   const openRestrictedMax = findMax('open_restricted', DEFAULT_OPEN_RESTRICTED_CAPACITY[studio]);
   const partyMax = findMax('party', DEFAULT_PARTY_CAPACITY[studio]);
+  const sipMax = findMax('sip_and_paint', DEFAULT_SIP_AND_PAINT_CAPACITY[studio]);
 
   if (incomingIsParty) {
     const booked = partyRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
@@ -276,10 +314,23 @@ export async function computeCapacity(
     };
   }
 
+  if (isSipAndPaint) {
+    const booked = sipRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
+    const maxBookings = hasPartyBooking ? DEFAULT_RESTRICTED_MAX_BOOKINGS[studio] : DEFAULT_MAX_BOOKINGS[studio];
+    return {
+      remaining: Math.max(0, sipMax - booked),
+      max: sipMax,
+      booked,
+      hasPartyBooking,
+      remainingBookings: Math.max(0, maxBookings - sipRows.length),
+      maxBookings,
+    };
+  }
+
   const max = hasPartyBooking ? openRestrictedMax : openFullMax;
-  const booked = openRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
+  const booked = openRows.reduce((sum, r) => sum + (r.painters_count || 1), 0) + sipRows.reduce((sum, r) => sum + (r.painters_count || 1), 0);
   const maxBookings = hasPartyBooking ? DEFAULT_RESTRICTED_MAX_BOOKINGS[studio] : DEFAULT_MAX_BOOKINGS[studio];
   const remainingSeats = Math.max(0, max - booked);
-  const remainingBookings = Math.max(0, maxBookings - openRows.length);
+  const remainingBookings = Math.max(0, maxBookings - (openRows.length + sipRows.length));
   return { remaining: remainingSeats, max, booked, hasPartyBooking, remainingBookings, maxBookings };
 }

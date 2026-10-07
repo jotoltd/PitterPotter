@@ -162,11 +162,14 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
   }, [fetchProvider, fetchSmsLogs]);
 
   useEffect(() => {
+    fetchUsage(usageDays);
+  }, [fetchUsage, usageDays]);
+
+  useEffect(() => {
     if (provider === 'twilio') {
       fetchBalance();
-      fetchUsage(usageDays);
     }
-  }, [provider, fetchBalance, fetchUsage, usageDays]);
+  }, [provider, fetchBalance]);
 
   useEffect(() => {
     if (balance && parseFloat(balance.balance) < 10) {
@@ -501,7 +504,7 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
       </div>
 
       {/* Usage */}
-      {(providerLoading || provider === 'twilio') && (
+      {provider !== 'none' && (
       <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5">

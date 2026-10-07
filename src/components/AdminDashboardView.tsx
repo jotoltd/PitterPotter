@@ -47,11 +47,13 @@ const CAPACITY_LABEL: Record<string, string> = {
   open: 'Painting — Full Studio',
   open_restricted: 'Painting — Front Tables Only',
   party: 'Party (Back Tables)',
+  sip_and_paint: 'Sip & Paint',
 };
 const CAPACITY_HINT: Record<string, string> = {
   open: 'Used when no party is booked in the slot (front + back tables).',
   open_restricted: 'Used when a party IS booked in the slot (front tables only; back reserved for the party).',
   party: 'Maximum guests for a party booking (back tables).',
+  sip_and_paint: 'Maximum guests for Sip & Paint sessions (uses normal painting tables).',
 };
 
 interface SortHeaderProps {
@@ -704,7 +706,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         console.error('Failed to load capacity:', data.error);
         return;
       }
-      const order: Record<string, number> = { open: 0, open_restricted: 1, party: 2 };
+      const order: Record<string, number> = { open: 0, open_restricted: 1, party: 2, sip_and_paint: 3 };
       const sorted = [...(data.capacity || [])].sort((a, b) => {
         if (a.studio !== b.studio) return a.studio.localeCompare(b.studio);
         return (order[a.session_type] ?? 99) - (order[b.session_type] ?? 99);

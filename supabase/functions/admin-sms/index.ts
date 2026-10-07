@@ -2,7 +2,7 @@ import { createClient } from 'supabase';
 import { isObject, isNonEmptyString, isString } from '../_shared/validate.ts';
 import { verifyStaff } from '../_shared/auth.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
-import { sendPureSMS } from '../_shared/puresms.ts';
+import { sendPureSMS, getPureSMSUsage } from '../_shared/puresms.ts';
 
 interface StaffPayload {
   username: string;
@@ -196,15 +196,36 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'balance') {
-      const result = await getTwilioBalance();
-      return new Response(JSON.stringify(result), {
+      const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+      const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+      if (accountSid && authToken) {
+        const result = await getTwilioBalance();
+        return new Response(JSON.stringify(result), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (Deno.env.get('PURESMS_API_KEY')) {
+        return new Response(JSON.stringify({ provider: 'puresms', balance: 'N/A', currency: 'N/A' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ error: 'SMS provider not configured' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     if (action === 'usage') {
       const days = typeof body.days === 'number' ? body.days : 30;
-      const result = await getTwilioUsage(days);
+      const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+      const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+      let result;
+      if (accountSid && authToken) {
+        result = await getTwilioUsage(days);
+      } else if (Deno.env.get('PURESMS_API_KEY')) {
+        result = await getPureSMSUsage(days);
+      } else {
+        result = { error: 'SMS provider not configured' };
+      }
       return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
