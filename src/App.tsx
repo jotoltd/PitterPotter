@@ -36,6 +36,7 @@ const PartyBookingView = lazy(() => import('./components/PartyBookingView'));
 const PartyDetailView = lazy(() => import('./components/PartyDetailView'));
 const PriceListView = lazy(() => import('./components/PriceListView'));
 const PotteryPaintingView = lazy(() => import('./components/PotteryPaintingView'));
+const SipAndPaintView = lazy(() => import('./components/SipAndPaintView'));
 const FoodDrinkView = lazy(() => import('./components/FoodDrinkView'));
 const MaintenanceView = lazy(() => import('./components/MaintenanceView'));
 const PrivacyPolicyView = lazy(() => import('./components/PrivacyPolicyView'));
@@ -51,6 +52,7 @@ const PAGE_TO_PATH: Record<Page, string> = {
   'food-drink': '/food-drink',
   'price-list': '/price-list',
   'pottery-painting': '/pottery-painting',
+  'sip-and-paint': '/sip-and-paint',
   'faqs': '/faqs',
   'gallery': '/gallery',
   'contact': '/contact',
@@ -345,6 +347,8 @@ case 'price-list':
  return <PriceListView adminMode={adminMode} />;
 case 'pottery-painting':
  return <PotteryPaintingView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
+case 'sip-and-paint':
+ return <SipAndPaintView setCurrentPage={setCurrentPage} adminMode={adminMode} />;
  case 'gallery':
  return <GalleryView adminMode={adminMode} />;
  case 'faqs':

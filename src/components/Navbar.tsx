@@ -29,7 +29,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
     { label: 'Pottery Painting', value: 'pottery-painting', keyPrefix: 'pottery_painting' },
     { label: 'Baby Prints', value: 'baby-prints', keyPrefix: 'baby_prints' },
     { label: 'Parties & Events', value: 'parties', keyPrefix: 'parties' },
-    { label: 'Sip & Paint', value: 'book', keyPrefix: 'sip_paint' },
+    { label: 'Sip & Paint', value: 'sip-and-paint', keyPrefix: 'sip_paint' },
     { label: 'Prices', value: 'pricing', keyPrefix: 'pricing' },
     { label: 'Price List', value: 'price-list', keyPrefix: 'price_list' },
     { label: 'Food & Drink', value: 'food-drink', keyPrefix: 'food_drink' },
