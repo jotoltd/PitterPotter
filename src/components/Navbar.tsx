@@ -17,9 +17,15 @@ interface NavbarProps {
 export default function Navbar({ currentPage, setCurrentPage, currentStaff, adminMode, setAdminMode, disabledPages = new Set() }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showCallOptions, setShowCallOptions] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
 
-  const navItems: { label: string; value: Page; keyPrefix: string }[] = [
+  const navItems: { label: string; value: Page; keyPrefix: string; children?: { label: string; value: Page }[] }[] = [
     { label: 'Home', value: 'home', keyPrefix: 'home' },
+    { label: 'Location', value: 'putney', keyPrefix: 'location', children: [
+      { label: 'Putney', value: 'putney' },
+      { label: 'Wimbledon', value: 'wimbledon' },
+    ] },
     { label: 'Pottery Painting', value: 'pottery-painting', keyPrefix: 'pottery_painting' },
     { label: 'Baby Prints', value: 'baby-prints', keyPrefix: 'baby_prints' },
     { label: 'Parties & Events', value: 'parties', keyPrefix: 'parties' },
@@ -30,8 +36,6 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
     { label: 'Gift Cards', value: 'buy-gift-card', keyPrefix: 'gift_cards' },
     { label: 'FAQs', value: 'faqs', keyPrefix: 'faqs' },
     { label: 'Gallery', value: 'gallery', keyPrefix: 'gallery' },
-    { label: 'Putney Studio', value: 'putney', keyPrefix: 'putney' },
-    { label: 'Wimbledon Studio', value: 'wimbledon', keyPrefix: 'wimbledon' },
     { label: 'Contact', value: 'contact-info', keyPrefix: 'contact' },
   ];
 
@@ -67,7 +71,40 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center">
-              {visibleNavItems.map((item) => (
+              {visibleNavItems.map((item) =>
+                item.children ? (
+                  <div
+                    key={item.keyPrefix}
+                    className="relative"
+                    onMouseEnter={() => setOpenDropdown(item.keyPrefix)}
+                    onMouseLeave={() => setOpenDropdown(null)}
+                  >
+                    <button
+                      id={`nav-link-${item.keyPrefix}`}
+                      className={`group px-3.5 py-2 text-[13px] font-normal uppercase tracking-widest transition-all relative ${
+                        item.children.some(c => isActive(c.value)) ? 'text-[#1B2D3C]' : 'text-[#1B2D3C] hover:text-[#1B2D3C]'
+                      }`}
+                    >
+                      <EditableText contentKey={`nav_${item.keyPrefix}_label`} page="nav" defaultValue={item.label} adminMode={adminMode} className="text-[13px] font-normal uppercase tracking-widest" />
+                      <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-[#1B2D3C] transition-all duration-300 ${item.children.some(c => isActive(c.value)) ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+                    </button>
+                    {openDropdown === item.keyPrefix && (
+                      <div className="absolute top-full left-0 mt-0 bg-white border border-[#1B2D3C]/10 shadow-lg rounded-lg overflow-hidden min-w-[160px] z-50">
+                        {item.children.map((child) => (
+                          <button
+                            key={child.value}
+                            onClick={() => { handleNavClick(child.value); setOpenDropdown(null); }}
+                            className={`w-full text-left px-5 py-3 text-[13px] font-normal uppercase tracking-widest transition-all ${
+                              isActive(child.value) ? 'bg-[#D6E2E9] text-[#1B2D3C]' : 'text-[#1B2D3C] hover:bg-[#D6E2E9]/30'
+                            }`}
+                          >
+                            {child.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
                 <button
                   key={item.value}
                   id={`nav-link-${item.value}`}
@@ -81,7 +118,8 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                   <EditableText contentKey={`nav_${item.keyPrefix}_label`} page="nav" defaultValue={item.label} adminMode={adminMode} className="text-[13px] font-normal uppercase tracking-widest" />
                   <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-[#1B2D3C] transition-all duration-300 ${isActive(item.value) ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
                 </button>
-              ))}
+                )
+              )}
               <button
                 onClick={() => handleNavClick('book')}
                 className="ml-4 inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#DBE7E4] text-[#1B2D3C] text-sm uppercase tracking-widest hover:bg-[#D6E2E9] transition-all rounded-lg cursor-pointer"
@@ -121,7 +159,40 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
         {isOpen && (
           <div className="md:hidden bg-[#FFFFFF] border-b border-[#1B2D3C]/10">
             <div className="px-4 py-3 space-y-1">
-              {visibleNavItems.map((item) => (
+              {visibleNavItems.map((item) =>
+                item.children ? (
+                  <div key={item.keyPrefix}>
+                    <button
+                      id={`mobile-nav-link-${item.keyPrefix}`}
+                      onClick={() => setMobileExpanded(mobileExpanded === item.keyPrefix ? null : item.keyPrefix)}
+                      className={`w-full text-left px-5 py-4 text-lg font-normal uppercase tracking-widest transition-all flex items-center justify-between ${
+                        item.children.some(c => isActive(c.value))
+                          ? 'bg-[#D6E2E9] text-[#1B2D3C] border border-[#1B2D3C] pl-6'
+                          : 'text-[#1B2D3C] hover:bg-[#D6E2E9]/20 pl-5'
+                      }`}
+                    >
+                      <EditableText contentKey={`nav_${item.keyPrefix}_label`} page="nav" defaultValue={item.label} adminMode={adminMode} className="text-lg font-normal uppercase tracking-widest" />
+                      <span className={`text-xs transition-transform ${mobileExpanded === item.keyPrefix ? 'rotate-180' : ''}`}>&#9660;</span>
+                    </button>
+                    {mobileExpanded === item.keyPrefix && (
+                      <div className="pl-8 space-y-1 py-1">
+                        {item.children.map((child) => (
+                          <button
+                            key={child.value}
+                            onClick={() => handleNavClick(child.value)}
+                            className={`w-full text-left px-5 py-3 text-base font-normal uppercase tracking-widest transition-all ${
+                              isActive(child.value)
+                                ? 'bg-[#D6E2E9] text-[#1B2D3C]'
+                                : 'text-[#1B2D3C] hover:bg-[#D6E2E9]/20'
+                            }`}
+                          >
+                            {child.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
                 <button
                   key={item.value}
                   id={`mobile-nav-link-${item.value}`}
@@ -134,7 +205,8 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
                 >
                   <EditableText contentKey={`nav_${item.keyPrefix}_label`} page="nav" defaultValue={item.label} adminMode={adminMode} className="text-lg font-normal uppercase tracking-widest" />
                 </button>
-              ))}
+                )
+              )}
               <div className="pt-2">
                 <button
                   id="mobile-cta-book"
