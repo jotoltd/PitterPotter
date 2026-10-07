@@ -514,9 +514,9 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                     <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Date</span>{date ? format(date, 'EEE d MMM yyyy') : '-'}</div>
                     <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Time</span>{time} - {parseInt(time.split(':')[0], 10) + 2}:00</div>
                     <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Seats</span>{seatsCount}</div>
-                    <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Name</span>{name}</div>
-                    <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Email</span>{email || '-'}</div>
-                    <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Phone</span>{phone}</div>
+                    <div><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Name</span><span className="break-all">{name}</span></div>
+                    <div className="col-span-2"><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Email</span><span className="break-all">{email || '-'}</span></div>
+                    <div className="col-span-2"><span className="font-heading text-[10px] font-black uppercase tracking-wider text-[#1B2D3C]/50 block mb-0.5">Phone</span>{phone}</div>
                   </div>
                 </div>
                 <div className="flex gap-3">
