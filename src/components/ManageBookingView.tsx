@@ -487,8 +487,8 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
           </div>
         )}
 
-        {/* QR Code & Collection — shown prominently for completed bookings, smaller for upcoming */}
-        {token && !isCancelled && (
+        {/* QR Code & Collection — only for completed/ready/collected bookings */}
+        {token && !isCancelled && (booking.status === 'completed' || booking.collectionStatus === 'ready' || booking.collectionStatus === 'collected') && (
           <div className={`bg-white rounded-2xl border border-[#1B2D3C]/20 p-6 mb-4 text-center shadow-sm ${booking.status !== 'completed' ? 'mt-4' : ''}`}>
             <div
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-4"
@@ -498,18 +498,16 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
               }}
             >
               <Package className="w-3.5 h-3.5" />
-              {booking.collectionStatus === 'ready' ? 'Ready for Collection' : booking.collectionStatus === 'collected' ? 'Collected' : booking.status === 'completed' ? 'Pottery Being Glazed & Fired' : 'Your QR Code'}
+              {booking.collectionStatus === 'ready' ? 'Ready for Collection' : booking.collectionStatus === 'collected' ? 'Collected' : 'Pottery Being Glazed & Fired'}
             </div>
 
             <h2 className="font-heading text-xl font-black text-[#1B2D3C] mb-1">
-              {booking.collectionStatus === 'ready' ? 'Your Pottery is Ready!' : booking.status === 'completed' ? 'Collection QR Code' : 'Check-In QR Code'}
+              {booking.collectionStatus === 'ready' ? 'Your Pottery is Ready!' : 'Collection QR Code'}
             </h2>
             <p className="text-xs text-[#1B2D3C]/70 mb-4 max-w-sm mx-auto">
               {booking.collectionStatus === 'ready'
                 ? 'Show this QR code to staff at the studio counter to pick up your pottery.'
-                : booking.status === 'completed'
-                  ? 'Show this QR code at the studio to collect your pottery.'
-                  : 'Show this QR code when you arrive at the studio.'}
+                : 'Show this QR code at the studio to collect your pottery.'}
             </p>
 
             <div className="inline-block p-4 bg-white rounded-2xl border-2 border-[#1B2D3C]/15 shadow-inner mb-4">
