@@ -6,7 +6,7 @@ import WimbledonFloorPlan from './WimbledonFloorPlan';
 import PutneyFloorPlan from './PutneyFloorPlan';
 import { allocateResources as allocateResourcesFromBookings, formatResources, isPartySessionType } from '../lib/allocation';
 import { findAvailablePutneyTable, findMultiplePutneyTables } from './PutneyFloorPlan';
-import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock, Camera, ScanLine, AlertCircle, Package, Check } from 'lucide-react';
+import { Calendar, Clock, Users, Mail, Phone, LogOut, Trash2, CheckCircle, XCircle, Plus, Copy, Inbox, Gift, ChevronUp, ChevronDown, X as XIcon, Pencil, Lock, Camera, ScanLine, AlertCircle, Package, Check, Wine } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
 import { format, isSameDay, parseISO, getDay } from 'date-fns';
 import { BookingInquiry, GiftCard, Staff, AuditLog, GiftCardApiRow, StaffApiRow, EmailTemplate, SMSTemplate, EmailLog } from '../types';
@@ -2655,6 +2655,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <button
                   onClick={() => {
                     setActiveTab('dashboard');
+                    setNewBooking(prev => ({ ...prev, sessionType: 'sip-and-paint' }));
+                    setLockedSessionType('sip-and-paint');
+                    setShowAddModal(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold rounded-lg transition-all cursor-pointer min-h-[44px]"
+                >
+                  <Wine className="w-4 h-4" /> <span className="hidden sm:inline">New Sip & Paint</span><span className="sm:hidden">Sip & Paint</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveTab('dashboard');
                     setNewBooking(prev => ({ ...prev, sessionType: 'exclusive-hire', time: '' }));
                     setLockedSessionType(null);
                     setShowAddModal(true);
@@ -3701,6 +3712,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     'baby-shower-hen': 'Baby Shower / Hen Party',
                     'corporate': 'Corporate Event',
                     'clay-imprints': 'Baby Prints',
+                    'sip-and-paint': 'Sip & Paint',
                   }[lockedSessionType] ?? lockedSessionType}
                 </div>
               ) : (
@@ -4050,6 +4062,22 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   onChange={(e) => setEditingBooking({ ...editingBooking, phone: e.target.value })}
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
                 />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Session Type *</label>
+                <select
+                  value={editingBooking.sessionType}
+                  onChange={(e) => setEditingBooking({ ...editingBooking, sessionType: e.target.value as BookingInquiry['sessionType'], time: undefined })}
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20"
+                >
+                  <option value="painting">Painting</option>
+                  <option value="sip-and-paint">Sip & Paint</option>
+                  <option value="birthday-party">Birthday Party</option>
+                  <option value="baby-shower-hen">Baby Shower / Hen Party</option>
+                  <option value="corporate">Corporate Event</option>
+                  <option value="clay-imprints">Baby Prints</option>
+                  <option value="exclusive-hire">Exclusive Hire (Private / Evening)</option>
+                </select>
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Date</label>
