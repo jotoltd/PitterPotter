@@ -77,7 +77,7 @@ export default function PutneyView({ setCurrentPage, adminMode = false }: Putney
               <EditableText contentKey="putney_book_description" page="putney" defaultValue="Choose from Pottery Painting, Baby Prints, Parties and more — all in one place." adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" />
             </p>
             <button
-              onClick={() => setCurrentPage('book')}
+              onClick={() => { localStorage.setItem('pp_book_studio', 'Putney'); setCurrentPage('book'); }}
               className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <EditableText contentKey="putney_book_button" page="putney" defaultValue="Book at Putney" adminMode={adminMode} className="text-xs uppercase tracking-widest text-[#1B2D3C]" /> <ArrowRight className="w-4 h-4" />

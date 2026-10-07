@@ -93,6 +93,16 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
 
   useEffect(() => { loadClosuresFromSupabase().then(setClosures); }, []);
 
+  // If a studio was pre-selected (e.g. from the Putney/Wimbledon page), skip location step
+  useEffect(() => {
+    const preSelected = localStorage.getItem('pp_book_studio') as Studio | null;
+    if (preSelected && (preSelected === 'Putney' || preSelected === 'Wimbledon')) {
+      setStudio(preSelected);
+      setStep(2);
+      localStorage.removeItem('pp_book_studio');
+    }
+  }, []);
+
   useEffect(() => {
     getBusyDates(studio, calendarMonth.getFullYear(), calendarMonth.getMonth()).then((dates) => {
       setBusyDates(dates.map((d) => new Date(d)));

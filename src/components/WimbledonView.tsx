@@ -77,7 +77,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
               <EditableText contentKey="wimbledon_book_description" page="wimbledon" defaultValue="Choose from Pottery Painting, Baby Prints, Sip & Paint, and more — all in one place." adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" />
             </p>
             <button
-              onClick={() => setCurrentPage('book')}
+              onClick={() => { localStorage.setItem('pp_book_studio', 'Wimbledon'); setCurrentPage('book'); }}
               className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <EditableText contentKey="wimbledon_book_button" page="wimbledon" defaultValue="Book at Wimbledon" adminMode={adminMode} className="text-xs uppercase tracking-widest" /> <ArrowRight className="w-4 h-4" />
