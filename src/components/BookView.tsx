@@ -23,6 +23,7 @@ interface SessionOption {
   icon: React.ReactNode;
   studios: Studio[];
   isParty?: boolean;
+  contactOnly?: boolean;
 }
 
 const SESSION_OPTIONS: SessionOption[] = [
@@ -31,7 +32,7 @@ const SESSION_OPTIONS: SessionOption[] = [
   { value: 'sip-and-paint', label: 'Sip & Paint', description: 'Paint pottery with a glass in hand — the perfect creative night out.', icon: <Wine className="w-5 h-5" />, studios: ['Wimbledon'] },
   { value: 'birthday-party', label: 'Birthday Party', description: 'A creative, mess-free birthday with dedicated party hosts.', icon: <PartyPopper className="w-5 h-5" />, studios: ['Putney', 'Wimbledon'], isParty: true },
   { value: 'baby-shower-hen', label: 'Baby Shower / Hen Party', description: 'A fun, creative group experience for showers and hens.', icon: <PartyPopper className="w-5 h-5" />, studios: ['Putney', 'Wimbledon'], isParty: true },
-  { value: 'corporate', label: 'Corporate Event', description: 'Team building and client events with a creative twist.', icon: <Briefcase className="w-5 h-5" />, studios: ['Putney', 'Wimbledon'], isParty: true },
+  { value: 'corporate', label: 'Corporate Event', description: 'Team building and client events with a creative twist.', icon: <Briefcase className="w-5 h-5" />, studios: ['Putney', 'Wimbledon'], contactOnly: true },
 ];
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
@@ -138,8 +139,13 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
     if (step === 1) {
       setStep(2);
     } else if (step === 2) {
-      // For party types, redirect to the party booking page
       const opt = SESSION_OPTIONS.find(s => s.value === sessionType);
+      // Corporate / contact-only: no calendar, just show enquiry info
+      if (opt?.contactOnly) {
+        setStep(6); // special contact-enquiry step
+        return;
+      }
+      // For party types, redirect to the party booking page
       if (opt?.isParty) {
         const partyTypeKey = sessionType === 'birthday-party' ? 'birthday' : sessionType === 'baby-shower-hen' ? 'babyshower' : 'corporate';
         const studioKey = studio.toLowerCase();
@@ -513,6 +519,37 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                     {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : <>Confirm Booking <ArrowRight className="w-4 h-4" /></>}
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* ── STEP 6: Contact-only enquiry (Corporate) ── */}
+            {step === 6 && (
+              <div className="space-y-6">
+                <div className="border-b-2 border-[#1B2D3C]/10 pb-3">
+                  <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Corporate Events</h2>
+                  <p className="text-xs text-stone-500 mt-1 font-semibold">{studio} Studio</p>
+                </div>
+                <div className="bg-[#D6E2E9]/40 border border-[#1B2D3C]/15 rounded-xl p-6 text-center space-y-4">
+                  <Briefcase className="w-10 h-10 text-[#1B2D3C] mx-auto" />
+                  <h3 className="font-heading text-lg font-black text-[#1B2D3C]">Contact us to enquire</h3>
+                  <p className="text-sm text-[#1B2D3C]/70 font-medium leading-relaxed max-w-md mx-auto">
+                    Corporate events are tailored to your group. Get in touch and we'll put together the perfect creative experience for your team.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                    <a href="mailto:info@pitterpotter.co.uk"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all">
+                      Email Us
+                    </a>
+                    <a href="tel:02037704499"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9]/40 transition-all">
+                      Call Us
+                    </a>
+                  </div>
+                </div>
+                <button type="button" onClick={() => { setStep(2); setError(''); }}
+                  className="flex items-center gap-2 px-5 py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#D6E2E9]/40 transition-all cursor-pointer">
+                  <ArrowLeft className="w-3.5 h-3.5" /> Back
+                </button>
               </div>
             )}
 
