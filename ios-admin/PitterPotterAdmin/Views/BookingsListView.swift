@@ -73,6 +73,9 @@ struct BookingsListView: View {
                         SessionTabButton(title: "Exclusive", count: bookingsVM.bookings.filter { $0.sessionType == "exclusive-hire" }.count, isSelected: bookingsVM.selectedSessionType == "exclusive-hire") {
                             bookingsVM.selectedSessionType = "exclusive-hire"
                         }
+                        SessionTabButton(title: "Sip & Paint", count: bookingsVM.bookings.filter { $0.sessionType == "sip-and-paint" }.count, isSelected: bookingsVM.selectedSessionType == "sip-and-paint") {
+                            bookingsVM.selectedSessionType = "sip-and-paint"
+                        }
                     }
                     .padding(.horizontal, 16)
                 }

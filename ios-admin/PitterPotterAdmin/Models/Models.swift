@@ -93,6 +93,7 @@ enum SessionType: String, Codable, CaseIterable {
     case clayImprints = "clay-imprints"
     case corporate
     case exclusiveHire = "exclusive-hire"
+    case sipAndPaint = "sip-and-paint"
 
     var label: String {
         switch self {
@@ -102,6 +103,7 @@ enum SessionType: String, Codable, CaseIterable {
         case .clayImprints: return "Baby Prints"
         case .corporate: return "Corporate"
         case .exclusiveHire: return "Exclusive Hire"
+        case .sipAndPaint: return "Sip & Paint"
         }
     }
 }

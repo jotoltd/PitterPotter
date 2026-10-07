@@ -68,6 +68,7 @@ export default function ContactView({ initialPainters = 1, adminMode = false, se
     'baby-shower-hen': 'Baby Shower / Hen Party',
     'clay-imprints': 'Baby Prints',
     'corporate': 'Corporate Event',
+    'sip-and-paint': 'Sip & Paint',
   };
 
   const saveDraft = () => {

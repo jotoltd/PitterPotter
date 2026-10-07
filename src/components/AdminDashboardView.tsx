@@ -1553,7 +1553,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
         inq.id.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
       const dateMatch = (!dateRange.start || inq.date >= dateRange.start) && (!dateRange.end || inq.date <= dateRange.end);
       const typeMatch = bookingTypeTab === 'all' ||
-        (bookingTypeTab === 'painting' && inq.sessionType === 'painting') ||
+        (bookingTypeTab === 'painting' && ['painting', 'sip-and-paint'].includes(inq.sessionType || '')) ||
         (bookingTypeTab === 'baby-prints' && inq.sessionType === 'clay-imprints') ||
         (bookingTypeTab === 'party' && ['birthday-party', 'baby-shower-hen', 'corporate'].includes(inq.sessionType || ''));
       return statusMatch && studioMatch && searchMatch && dateMatch && typeMatch;
@@ -3047,7 +3047,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
             { value: 'party', label: 'Party' },
           ] as const).map(({ value, label }) => {
             const count = value === 'all' ? inquiries.length
-              : value === 'painting' ? inquiries.filter(i => i.sessionType === 'painting').length
+              : value === 'painting' ? inquiries.filter(i => ['painting', 'sip-and-paint'].includes(i.sessionType || '')).length
               : value === 'baby-prints' ? inquiries.filter(i => i.sessionType === 'clay-imprints').length
               : inquiries.filter(i => ['birthday-party','baby-shower-hen','corporate'].includes(i.sessionType || '')).length;
             return (
@@ -3717,6 +3717,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                     <option value="corporate">Corporate Event</option>
                     <option value="clay-imprints">Baby Prints</option>
                     <option value="exclusive-hire">Exclusive Hire (Private / Evening)</option>
+                    <option value="sip-and-paint">Sip & Paint</option>
                   </select>
                 </div>
               )}

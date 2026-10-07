@@ -11,7 +11,7 @@ const corsHeaders = {
 };
 
 const VALID_STUDIOS = ['Putney', 'Wimbledon'];
-const VALID_SESSION_TYPES = ['painting', 'birthday-party', 'baby-shower-hen', 'clay-imprints', 'corporate'];
+const VALID_SESSION_TYPES = ['painting', 'birthday-party', 'baby-shower-hen', 'clay-imprints', 'corporate', 'sip-and-paint'];
 const VALID_STATUSES = ['pending', 'confirmed', 'cancelled'];
 
 Deno.serve(async (req) => {

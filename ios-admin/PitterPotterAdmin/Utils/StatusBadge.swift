@@ -87,6 +87,8 @@ struct SessionTypeBadge: View {
             return ("Corporate", PPBrand.partyBadgeBg, PPBrand.partyBadgeText)
         case "exclusive-hire":
             return ("Exclusive", PPBrand.exclusiveBadgeBg, PPBrand.exclusiveBadgeText)
+        case "sip-and-paint":
+            return ("Sip & Paint", PPBrand.sipPaintBadgeBg, PPBrand.sipPaintBadgeText)
         default:
             return (sessionType, PPBrand.clay100, PPBrand.charcoal)
         }

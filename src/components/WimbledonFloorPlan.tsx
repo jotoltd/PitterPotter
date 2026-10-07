@@ -24,6 +24,7 @@ const sessionTag = (type?: string): string | null => {
     case 'clay-imprints': return 'Clay';
     case 'corporate': return 'Corp';
     case 'exclusive-hire': return 'Hire';
+    case 'sip-and-paint': return 'Sip';
     default: return null;
   }
 };

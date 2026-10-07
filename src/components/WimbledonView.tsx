@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Images } from '../images';
 import { Page } from '../types';
-import Calendar from './Calendar';
-import { format, getDay, startOfDay } from 'date-fns';
+import { format } from 'date-fns';
 import {Clock, Calendar as CalendarIcon, ArrowRight} from 'lucide-react';
-import { getRemainingCapacity, getBusyDates } from '../lib/bookings';
-import { getSlots, filterPastSlots, DayType } from '../lib/timeSlots';
-import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange, getClosedDatesForStudio } from '../lib/closures';
-import { useToast } from './ToastContext';
+import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange } from '../lib/closures';
 import EditableText from './EditableText';
 import EditableImage from './EditableImage';
 import LocationGallery from './LocationGallery';
@@ -17,97 +13,18 @@ interface WimbledonViewProps {
   adminMode?: boolean;
 }
 
-const MAX_PAINTERS = 65;
-
 const BASE_OPENING_HOURS = [
   { day: 'Tuesday - Saturday', time: '10:00am - 6:00pm' },
   { day: 'Sunday', time: '11:00am - 5:00pm' },
 ];
 
-function getTimeSlots(date: Date, closures: ClosureDates): string[] {
-  const day = getDay(date);
-  const dateStr = format(date, 'yyyy-MM-dd');
-  const isHoliday = isDateInHolidayRange(dateStr, closures.schoolHolidays);
-  if (day >= 2 || day === 0 || (day === 1 && isHoliday)) {
-    const dayType: DayType = (day === 0 || day === 6) ? 'weekend' : 'weekday';
-    return filterPastSlots(getSlots('painting', 'Wimbledon', dayType), date);
-  }
-  return [];
-}
-
 
 export default function WimbledonView({ setCurrentPage, adminMode = false }: WimbledonViewProps) {
-  const { showToast } = useToast();
-
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [time, setTime] = useState<string | undefined>(undefined);
-  const [painters, setPainters] = useState<number | ''>(1);
-  const [slotCapacity, setSlotCapacity] = useState<Record<string, number>>({});
-  const [busyDates, setBusyDates] = useState<Date[]>([]);
-  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [closures, setClosures] = useState<ClosureDates>(getClosureDates());
 
   useEffect(() => {
     loadClosuresFromSupabase().then(setClosures);
   }, []);
-
-  const handleDateSelect = (selectedDate: Date | undefined) => {
-    setDate(selectedDate);
-    setTime(undefined);
-  };
-
-  useEffect(() => {
-    if (!date) {
-      setSlotCapacity({});
-      return;
-    }
-    const slots = getTimeSlots(date, closures);
-    const dateStr = format(date, 'yyyy-MM-dd');
-    Promise.all(slots.map(async (slot) => ({
-      slot,
-      remaining: await getRemainingCapacity('Wimbledon', dateStr, slot, 'painting'),
-    }))).then((results) => {
-      const map: Record<string, number> = {};
-      results.forEach(({ slot, remaining }) => {
-        map[slot] = remaining;
-      });
-      setSlotCapacity(map);
-    });
-  }, [date]);
-
-  useEffect(() => {
-    getBusyDates('Wimbledon', calendarMonth.getFullYear(), calendarMonth.getMonth()).then((dates) => {
-      setBusyDates(dates.map((d) => new Date(d)));
-    });
-  }, [calendarMonth]);
-
-  const handleBookDate = async () => {
-    if (!date || !time) return;
-
-    const existing = localStorage.getItem('pp_booking_draft');
-    const remaining = await getRemainingCapacity('Wimbledon', format(date, 'yyyy-MM-dd'), time, 'painting');
-    const paintersCount = painters === '' ? 1 : painters;
-    if (paintersCount > remaining) {
-      showToast(`This session only has room for ${remaining} more seat${remaining === 1 ? "" : "s"}. Please choose a different time or reduce the number of seats.`, 'error');
-      return;
-    }
-
-    const draft = existing ? JSON.parse(existing) : {};
-    draft.studio = 'Wimbledon';
-    draft.date = format(date, 'yyyy-MM-dd');
-    draft.time = time;
-    draft.sessionType = draft.sessionType || 'painting';
-    draft.paintersCount = painters === '' ? 1 : painters;
-    draft.currentStep = 1;
-    localStorage.setItem('pp_booking_draft', JSON.stringify(draft));
-    localStorage.setItem('pp_selected_studio', 'Wimbledon');
-
-    setCurrentPage('contact');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const closedDatesAsDate = getClosedDatesForStudio(closures.closedDates, 'Wimbledon').map(d => new Date(d + 'T00:00:00'));
-  const timeSlots = date ? getTimeSlots(date, closures) : [];
 
   return (
     <div className="min-h-screen bg-[#FFFFFF]">
@@ -148,7 +65,7 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
             <EditableText contentKey="wimbledon_description" page="wimbledon" defaultValue="Our cozy, high-street studio on Wimbledon Hill Road, ideal for baby prints, friendly gatherings, and relaxed creative sessions." adminMode={adminMode} className="text-[#1B2D3C] text-sm md:text-base leading-relaxed font-medium" />
           </div>
 
-                    {/* Booking Calendar Section */}
+                    {/* Book a Session CTA */}
           <div className="border-t border-[#1B2D3C]/10 pt-6 space-y-4">
             <div className="flex items-center gap-2">
               <CalendarIcon className="w-5 h-5 text-[#1B2D3C]" />
@@ -156,80 +73,14 @@ export default function WimbledonView({ setCurrentPage, adminMode = false }: Wim
                 <EditableText contentKey="wimbledon_book_heading" page="wimbledon" defaultValue="Book a Session" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" />
               </h3>
             </div>
-
-            <div className="bg-[#FFFFFF] p-3 flex items-start justify-center">
-              <Calendar
-                selected={date}
-                onSelect={handleDateSelect}
-                month={calendarMonth}
-                onMonthChange={setCalendarMonth}
-                disabled={[...busyDates, ...closedDatesAsDate]}
-                minDate={startOfDay(new Date())}
-                dayOfWeekDisabled={[1]}
-                schoolHolidayDates={closures.schoolHolidays}
-                marks={busyDates}
-              />
-            </div>
-
-            {timeSlots.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="wimbledon_slots_label" page="wimbledon" defaultValue="Available 2-hour slots" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {timeSlots.map((slot) => {
-                    const remaining = slotCapacity[slot] ?? MAX_PAINTERS;
-                    const isFull = remaining === 0;
-                    return (
-                      <button
-                        key={slot}
-                        onClick={() => !isFull && setTime(slot)}
-                        disabled={isFull}
-                        className={`py-3 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer ${
-                          time === slot
-                            ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
-                            : isFull
-                              ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
-                              : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
-                        }`}
-                      >
-                        {slot}
-                        {isFull && (
-                          <span className="block text-[9px] font-normal normal-case tracking-normal mt-0.5">Full</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="block text-[10px] font-black uppercase tracking-widest text-[#1B2D3C]"><EditableText contentKey="wimbledon_painters_label" page="wimbledon" defaultValue="Number of Seats" adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" /></label>
-              <div className="flex items-center border border-[#1B2D3C]/20 bg-white overflow-hidden">
-                <button type="button" onClick={() => setPainters(p => Math.max(1, (p === '' ? 1 : p) - 1))} className="px-4 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">−</button>
-                <span className="flex-1 text-center text-sm font-black text-[#1B2D3C]">{painters === '' ? 1 : painters}</span>
-                <button type="button" onClick={() => setPainters(p => Math.min(MAX_PAINTERS, (p === '' ? 1 : p) + 1))} className="px-4 py-3 text-lg font-black text-[#1B2D3C] hover:bg-[#D6E2E9]/40 transition-all cursor-pointer select-none">+</button>
-              </div>
-            </div>
-
-            {date && time && (
-              <div className="bg-[#D6E2E9]/50 p-3 text-sm font-bold text-[#1B2D3C]">
-                <p>{format(date, 'EEEE, do MMMM yyyy')} · {time} – {parseInt(time.split(':')[0], 10) + 2}:00 · {painters === '' ? 1 : painters} seat{(painters === '' ? 1 : painters) !== 1 ? 's' : ''}</p>
-              </div>
-            )}
-
-            <button
-              onClick={handleBookDate}
-              disabled={!date || !time}
-              className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <EditableText contentKey="wimbledon_book_button" page="wimbledon" defaultValue="Book This Session" adminMode={adminMode} className="text-xs uppercase tracking-widest" /> <ArrowRight className="w-4 h-4" />
-            </button>
-
+            <p className="text-sm text-[#1B2D3C]/80 font-medium">
+              <EditableText contentKey="wimbledon_book_description" page="wimbledon" defaultValue="Choose from Pottery Painting, Baby Prints, Sip & Paint, and more — all in one place." adminMode={adminMode} className="text-sm text-[#1B2D3C]/80" />
+            </p>
             <button
               onClick={() => setCurrentPage('book')}
-              className="w-full py-3 bg-white text-[#1B2D3C] font-bold text-xs uppercase tracking-widest border border-[#1B2D3C]/20 hover:bg-[#FFFFFF] transition-all cursor-pointer"
+              className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <EditableText contentKey="wimbledon_choose_studio_button" page="wimbledon" defaultValue="Choose a Different Studio" adminMode={adminMode} className="text-xs uppercase tracking-widest" />
+              <EditableText contentKey="wimbledon_book_button" page="wimbledon" defaultValue="Book at Wimbledon" adminMode={adminMode} className="text-xs uppercase tracking-widest" /> <ArrowRight className="w-4 h-4" />
             </button>
           </div>
           <div className="border-t border-[#1B2D3C]/10 pt-8 space-y-6">

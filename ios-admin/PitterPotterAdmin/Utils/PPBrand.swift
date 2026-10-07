@@ -70,6 +70,8 @@ enum PPBrand {
     static let babyPrintBadgeText = Color(hex: 0xC2410C)  // orange-700
     static let exclusiveBadgeBg = Color(hex: 0xEEF2FF)    // indigo-50
     static let exclusiveBadgeText = Color(hex: 0x4338CA)  // indigo-700
+    static let sipPaintBadgeBg = Color(hex: 0xFDF2F8)    // pink-50
+    static let sipPaintBadgeText = Color(hex: 0xBE185D)  // pink-700
 }
 
 extension Color {

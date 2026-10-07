@@ -44,6 +44,7 @@ private func sessionTag(_ type: String) -> String? {
     case "clay-imprints": return "Clay"
     case "corporate": return "Corp"
     case "exclusive-hire": return "Hire"
+    case "sip-and-paint": return "Sip"
     default: return nil
     }
 }
