@@ -20,6 +20,6 @@ INSERT INTO sms_templates (template_key, name, body, available_variables) VALUES
 (
   'collection_ready',
   'Collection Ready Notification',
-  'Hi {{name}}, your pottery from Pitter Potter {{studio}} is ready to collect! Please bring your booking ref {{bookingId}}. Our address: {{studioAddress}}. Call us: {{studioPhone}}. Thanks!',
-  ARRAY['name', 'studio', 'bookingId', 'studioAddress', 'studioPhone']
+  'Dear {{firstName}}, your pottery is ready to collect. Please bring a bag and collect within 6 weeks. Collection QR code {{manageUrl}}',
+  ARRAY['name', 'firstName', 'manageUrl']
 );

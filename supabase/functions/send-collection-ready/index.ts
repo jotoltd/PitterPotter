@@ -68,6 +68,8 @@ async function sendReadySMS(
     ? `${siteUrl}/manage-booking?token=${booking.management_token}`
     : '';
 
+  const firstName = booking.name?.split(' ')[0]?.trim() || booking.name || 'there';
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   let manageUrl = fullManageUrl;
@@ -93,6 +95,7 @@ async function sendReadySMS(
   if (smsTemplate) {
     message = renderTemplate(smsTemplate.body, {
       name: booking.name,
+      firstName,
       studio: booking.studio,
       bookingId: booking.booking_id,
       studioAddress: studioInfo.address,
@@ -100,7 +103,7 @@ async function sendReadySMS(
       manageUrl,
     }).replace(/\\n/g, '\n');
   } else {
-    message = `Dear ${booking.name}, your pottery from ${studioName} is ready to collect!\n\nPlease collect within 6 WEEKS, after this period your item(s) may be donated to charity.\n\nClosed on Mondays except school holidays.\n\nPlease bring your own bag if you can.\n\nClick here to show the QR code for collection: ${manageUrl}`;
+    message = `Dear ${firstName}, your pottery is ready to collect. Please bring a bag and collect within 6 weeks. Collection QR code ${manageUrl}`;
   }
 
   if (message.length > 160) {
