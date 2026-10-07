@@ -295,8 +295,8 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {(['Putney', 'Wimbledon'] as const).map((loc) => (
                     <button key={loc} type="button" onClick={() => { setStudio(loc); setError(''); }}
-                      className={`p-5 border-2 text-left transition-all cursor-pointer rounded-xl ${
-                        studio === loc ? 'border-[#1B2D3C] bg-[#DBE7E4] text-[#1B2D3C]' : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
+                      className={`p-5 border text-left transition-all cursor-pointer rounded-xl ${
+                        studio === loc ? 'border-[#1B2D3C]/40 bg-[#DBE7E4] text-[#1B2D3C]' : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
                       }`}>
                       <div className="flex items-center gap-2 mb-1">
                         <MapPin className="w-4 h-4" />
