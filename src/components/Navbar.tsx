@@ -233,16 +233,20 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
               <EditableText contentKey="nav_call_label" page="nav" defaultValue="Call us" adminMode={adminMode} className="text-[9px] font-normal uppercase tracking-wider" />
             </span>
           </button>
-          <div className="w-px h-8 bg-[#1B2D3C]/10" />
-          <button
-            onClick={() => handleNavClick('book')}
-            className="flex flex-col items-center justify-center py-3 px-4 flex-1 min-w-0 bg-[#DBE7E4] text-[#1B2D3C] transition-all cursor-pointer active:bg-[#D6E2E9]"
-          >
-            <Calendar className="w-5 h-5 mb-1" />
-            <span className="text-[9px] font-normal uppercase tracking-wider truncate w-full text-center">
-              <EditableText contentKey="nav_book_label" page="nav" defaultValue="Book" adminMode={adminMode} className="text-[9px] font-normal uppercase tracking-wider" />
-            </span>
-          </button>
+          {currentPage !== 'book' && currentPage !== 'contact' && currentPage !== 'baby-prints-book' && (
+            <>
+              <div className="w-px h-8 bg-[#1B2D3C]/10" />
+              <button
+                onClick={() => handleNavClick('book')}
+                className="flex flex-col items-center justify-center py-3 px-4 flex-1 min-w-0 bg-[#DBE7E4] text-[#1B2D3C] transition-all cursor-pointer active:bg-[#D6E2E9]"
+              >
+                <Calendar className="w-5 h-5 mb-1" />
+                <span className="text-[9px] font-normal uppercase tracking-wider truncate w-full text-center">
+                  <EditableText contentKey="nav_book_label" page="nav" defaultValue="Book" adminMode={adminMode} className="text-[9px] font-normal uppercase tracking-wider" />
+                </span>
+              </button>
+            </>
+          )}
         </div>
       </div>
       {/* Call Options Modal */}
