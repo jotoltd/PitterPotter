@@ -38,6 +38,7 @@ interface BookingData {
 const SESSION_LABELS: Record<string, string> = {
   'painting': 'Pottery Painting',
   'clay-imprints': 'Baby Prints',
+  'sip-and-paint': 'Sip & Paint',
   'birthday-party': 'Birthday Party',
   'baby-shower-hen': 'Baby Shower / Hen Do',
   'corporate': 'Corporate Event',
@@ -265,71 +266,8 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
           </div>
         )}
 
-        {/* QR Code & Collection Card */}
-        {token && !isCancelled && (
-          <div className="bg-white rounded-2xl border border-[#1B2D3C]/20 p-6 mb-4 text-center shadow-sm">
-            <div
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-4"
-              style={{
-                backgroundColor: booking.collectionStatus === 'ready' ? '#D1FAE5' : booking.collectionStatus === 'collected' ? '#E2E8F0' : '#FEF3C7',
-                color: booking.collectionStatus === 'ready' ? '#065F46' : booking.collectionStatus === 'collected' ? '#334155' : '#92400E'
-              }}
-            >
-              <Package className="w-3.5 h-3.5" />
-              {booking.collectionStatus === 'ready' ? 'Ready for Collection' : booking.collectionStatus === 'collected' ? 'Collected' : booking.status === 'completed' ? 'Pottery Being Glazed & Fired' : 'Booking Check-In'}
-            </div>
-
-            <h2 className="font-heading text-xl font-black text-[#1B2D3C] mb-1">
-              {booking.collectionStatus === 'ready' ? 'Your Pottery is Ready!' : 'Collection QR Code'}
-            </h2>
-            <p className="text-xs text-[#1B2D3C]/70 mb-4 max-w-sm mx-auto">
-              {booking.collectionStatus === 'ready'
-                ? 'Show this QR code to staff at the studio counter to pick up your pottery.'
-                : 'Show this QR code upon arrival at Pitter Potter.'}
-            </p>
-
-            {/* QR Code Image */}
-            <div className="inline-block p-4 bg-white rounded-2xl border-2 border-[#1B2D3C]/15 shadow-inner mb-4">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=8&data=${encodeURIComponent(window.location.origin + '/manage-booking?token=' + token)}`}
-                alt="Collection QR Code"
-                className="w-48 h-48 mx-auto rounded-lg"
-              />
-              <p className="text-[11px] font-mono font-bold text-[#1B2D3C]/60 mt-2">
-                Ref: {booking.bookingId.slice(0, 8).toUpperCase()}
-              </p>
-            </div>
-
-            {/* Photos of pottery if uploaded */}
-            {booking.photos && booking.photos.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-[#1B2D3C]/10 text-left">
-                <p className="text-[10px] font-bold text-[#1B2D3C]/50 uppercase tracking-wider mb-2">
-                  Your Pieces ({booking.photos.length})
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {booking.photos.map((photoUrl, idx) => (
-                    <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/10">
-                      <img src={photoUrl} alt={`Pottery piece ${idx + 1}`} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Collection Instructions */}
-            <div className="mt-4 p-3.5 bg-[#FFF8F0] rounded-xl text-left space-y-1.5 border border-[#1B2D3C]/10">
-              <p className="text-xs font-bold text-[#1B2D3C]">Collection Information:</p>
-              <ul className="text-xs text-[#1B2D3C]/75 space-y-1 list-disc list-inside">
-                <li>Please collect within <strong>6 weeks</strong> of notification.</li>
-                <li>Closed on Mondays except during school holidays.</li>
-                <li>Please bring your own bag if possible.</li>
-              </ul>
-            </div>
-          </div>
-        )}
-
-        {/* Booking details card (hidden for completed/collection bookings) */}
-        {booking.status !== 'completed' && (
+        {/* Booking details card */}
+        {booking.status !== 'completed' && !isCancelled && (
         <div className="bg-white rounded-2xl border border-[#1B2D3C]/20 p-6 mb-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-heading text-xl font-black text-[#1B2D3C]">Booking Details</h2>
@@ -546,6 +484,70 @@ export default function ManageBookingView({ setCurrentPage }: ManageBookingViewP
             >
               <XCircle className="w-4 h-4" /> Cancel Booking
             </button>
+          </div>
+        )}
+
+        {/* QR Code & Collection — shown prominently for completed bookings, smaller for upcoming */}
+        {token && !isCancelled && (
+          <div className={`bg-white rounded-2xl border border-[#1B2D3C]/20 p-6 mb-4 text-center shadow-sm ${booking.status !== 'completed' ? 'mt-4' : ''}`}>
+            <div
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider mb-4"
+              style={{
+                backgroundColor: booking.collectionStatus === 'ready' ? '#D1FAE5' : booking.collectionStatus === 'collected' ? '#E2E8F0' : '#FEF3C7',
+                color: booking.collectionStatus === 'ready' ? '#065F46' : booking.collectionStatus === 'collected' ? '#334155' : '#92400E'
+              }}
+            >
+              <Package className="w-3.5 h-3.5" />
+              {booking.collectionStatus === 'ready' ? 'Ready for Collection' : booking.collectionStatus === 'collected' ? 'Collected' : booking.status === 'completed' ? 'Pottery Being Glazed & Fired' : 'Your QR Code'}
+            </div>
+
+            <h2 className="font-heading text-xl font-black text-[#1B2D3C] mb-1">
+              {booking.collectionStatus === 'ready' ? 'Your Pottery is Ready!' : booking.status === 'completed' ? 'Collection QR Code' : 'Check-In QR Code'}
+            </h2>
+            <p className="text-xs text-[#1B2D3C]/70 mb-4 max-w-sm mx-auto">
+              {booking.collectionStatus === 'ready'
+                ? 'Show this QR code to staff at the studio counter to pick up your pottery.'
+                : booking.status === 'completed'
+                  ? 'Show this QR code at the studio to collect your pottery.'
+                  : 'Show this QR code when you arrive at the studio.'}
+            </p>
+
+            <div className="inline-block p-4 bg-white rounded-2xl border-2 border-[#1B2D3C]/15 shadow-inner mb-4">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=8&data=${encodeURIComponent(window.location.origin + '/manage-booking?token=' + token)}`}
+                alt="QR Code"
+                className="w-48 h-48 mx-auto rounded-lg"
+              />
+              <p className="text-[11px] font-mono font-bold text-[#1B2D3C]/60 mt-2">
+                Ref: {booking.bookingId.slice(0, 8).toUpperCase()}
+              </p>
+            </div>
+
+            {booking.photos && booking.photos.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-[#1B2D3C]/10 text-left">
+                <p className="text-[10px] font-bold text-[#1B2D3C]/50 uppercase tracking-wider mb-2">
+                  Your Pieces ({booking.photos.length})
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {booking.photos.map((photoUrl, idx) => (
+                    <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-[#1B2D3C]/10">
+                      <img src={photoUrl} alt={`Pottery piece ${idx + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(booking.status === 'completed' || booking.collectionStatus === 'ready') && (
+              <div className="mt-4 p-3.5 bg-[#FFF8F0] rounded-xl text-left space-y-1.5 border border-[#1B2D3C]/10">
+                <p className="text-xs font-bold text-[#1B2D3C]">Collection Information:</p>
+                <ul className="text-xs text-[#1B2D3C]/75 space-y-1 list-disc list-inside">
+                  <li>Please collect within <strong>6 weeks</strong> of notification.</li>
+                  <li>Closed on Mondays except during school holidays.</li>
+                  <li>Please bring your own bag if possible.</li>
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
