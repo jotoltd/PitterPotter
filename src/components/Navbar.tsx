@@ -22,7 +22,7 @@ export default function Navbar({ currentPage, setCurrentPage, currentStaff, admi
 
   const navItems: { label: string; value: Page; keyPrefix: string; children?: { label: string; value: Page }[] }[] = [
     { label: 'Home', value: 'home', keyPrefix: 'home' },
-    { label: 'Location', value: 'putney', keyPrefix: 'location', children: [
+    { label: 'Locations', value: 'putney', keyPrefix: 'location', children: [
       { label: 'Putney', value: 'putney' },
       { label: 'Wimbledon', value: 'wimbledon' },
     ] },
