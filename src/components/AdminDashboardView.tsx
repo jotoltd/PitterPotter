@@ -4119,12 +4119,22 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Notes</label>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Customer Notes</label>
                 <textarea
                   rows={2}
                   value={editingBooking.notes ?? ''}
                   onChange={(e) => setEditingBooking({ ...editingBooking, notes: e.target.value })}
                   placeholder="Allergies, special requests, etc."
+                  className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-[#1B2D3C] uppercase tracking-wider mb-1">Staff Notes</label>
+                <textarea
+                  rows={2}
+                  value={editingBooking.staffNotes ?? ''}
+                  onChange={(e) => setEditingBooking({ ...editingBooking, staffNotes: e.target.value })}
+                  placeholder="Internal notes — only visible to staff"
                   className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 resize-none"
                 />
               </div>
