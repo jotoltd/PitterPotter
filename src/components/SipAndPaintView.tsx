@@ -30,7 +30,11 @@ export default function SipAndPaintView({ setCurrentPage, adminMode = false }: S
               <EditableText contentKey="sip_intro_3" page="sip-and-paint" defaultValue="Whether it’s a catch-up with friends, date night, birthday celebration or simply an excuse to do something creative, choose a piece of pottery, pour yourself a glass and enjoy an evening of painting at your own pace." adminMode={adminMode} className="text-sm text-[#1B2D3C]/75 leading-relaxed" />
             </p>
             <button
-              onClick={() => setCurrentPage('book')}
+              onClick={() => {
+                localStorage.setItem('pp_book_session_type', 'sip-and-paint');
+                localStorage.setItem('pp_book_studio', 'Wimbledon');
+                setCurrentPage('book');
+              }}
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-black uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-xl cursor-pointer"
             >
               Book a Session
@@ -94,7 +98,11 @@ export default function SipAndPaintView({ setCurrentPage, adminMode = false }: S
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 text-center">
         <button
-          onClick={() => setCurrentPage('book')}
+          onClick={() => {
+            localStorage.setItem('pp_book_session_type', 'sip-and-paint');
+            localStorage.setItem('pp_book_studio', 'Wimbledon');
+            setCurrentPage('book');
+          }}
           className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-black uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-xl cursor-pointer"
         >
           Book a Sip & Paint Session

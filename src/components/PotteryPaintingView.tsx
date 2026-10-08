@@ -34,7 +34,10 @@ export default function PotteryPaintingView({ setCurrentPage, adminMode = false 
             </p>
             <div className="flex flex-wrap gap-3">
               <button
-                onClick={() => setCurrentPage('book')}
+                onClick={() => {
+                  localStorage.setItem('pp_book_session_type', 'painting');
+                  setCurrentPage('book');
+                }}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] text-xs font-black uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-xl cursor-pointer"
               >
                 Book a Session <ArrowRight className="w-4 h-4" />
@@ -116,7 +119,10 @@ export default function PotteryPaintingView({ setCurrentPage, adminMode = false 
               </div>
             </div>
             <button
-              onClick={() => setCurrentPage('book')}
+              onClick={() => {
+                localStorage.setItem('pp_book_session_type', 'painting');
+                setCurrentPage('book');
+              }}
               className="w-full py-3.5 bg-[#DBE7E4] text-[#1B2D3C] font-black text-xs uppercase tracking-widest hover:bg-[#D6E2E9] transition-colors rounded-xl cursor-pointer"
             >
               Book a Session

@@ -109,13 +109,26 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
 
   useEffect(() => { loadClosuresFromSupabase().then(setClosures); }, []);
 
-  // If a studio was pre-selected (e.g. from the Putney/Wimbledon page), skip location step
+  // Pre-select studio/session from other pages and skip the relevant steps
   useEffect(() => {
-    const preSelected = localStorage.getItem('pp_book_studio') as Studio | null;
-    if (preSelected && (preSelected === 'Putney' || preSelected === 'Wimbledon')) {
-      setStudio(preSelected);
-      setStep(2);
+    let nextStep = 1;
+    const preSelectedStudio = localStorage.getItem('pp_book_studio') as Studio | null;
+    if (preSelectedStudio && (preSelectedStudio === 'Putney' || preSelectedStudio === 'Wimbledon')) {
+      setStudio(preSelectedStudio);
+      nextStep = 2;
       localStorage.removeItem('pp_book_studio');
+    }
+    const preSelectedSession = localStorage.getItem('pp_book_session_type') as SessionTypeValue | null;
+    if (preSelectedSession && SESSION_OPTIONS.some(s => s.value === preSelectedSession)) {
+      setSessionType(preSelectedSession);
+      nextStep = Math.max(nextStep, 2);
+      localStorage.removeItem('pp_book_session_type');
+    }
+    if (preSelectedStudio && preSelectedSession) {
+      nextStep = 3;
+    }
+    if (nextStep > 1) {
+      setStep(nextStep);
     }
   }, []);
 
