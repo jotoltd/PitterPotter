@@ -208,6 +208,16 @@ struct DashboardOverviewView: View {
             .task {
                 await loadGiftCards()
             }
+            .onAppear {
+                guard let staff = authVM.staff else { return }
+                Task {
+                    await bookingsVM.loadBookings(staff: staff)
+                    bookingsVM.startRealtime(staff: staff)
+                }
+            }
+            .onDisappear {
+                bookingsVM.stopRealtime()
+            }
             .sheet(isPresented: $showingNewWalkIn) {
                 NewWalkInView()
                     .environmentObject(authVM)
