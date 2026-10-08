@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, FormEvent } from 'react';
+import { useState, useEffect, useMemo, useRef, FormEvent } from 'react';
 import { format, getDay, startOfDay, isBefore } from 'date-fns';
 import { Page, BookingInquiry } from '../types';
 import Calendar from './Calendar';
@@ -106,6 +106,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
   const [error, setError] = useState('');
   const [submittedBooking, setSubmittedBooking] = useState<BookingInquiry | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const preselectedSessionRef = useRef<string | null>(null);
 
   useEffect(() => { loadClosuresFromSupabase().then(setClosures); }, []);
 
@@ -121,7 +122,12 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
     const preSelectedSession = localStorage.getItem('pp_book_session_type') as SessionTypeValue | null;
     if (preSelectedSession && SESSION_OPTIONS.some(s => s.value === preSelectedSession)) {
       setSessionType(preSelectedSession);
-      nextStep = Math.max(nextStep, 2);
+      preselectedSessionRef.current = preSelectedSession;
+      // If only a session was preselected, start at location (step 1) and then
+      // jump past session selection to date/time.
+      if (!preSelectedStudio) {
+        nextStep = 1;
+      }
       localStorage.removeItem('pp_book_session_type');
     }
     if (preSelectedStudio && preSelectedSession) {
@@ -178,7 +184,11 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
   const handleNext = () => {
     setError('');
     if (step === 1) {
-      setStep(2);
+      if (preselectedSessionRef.current) {
+        setStep(3);
+      } else {
+        setStep(2);
+      }
     } else if (step === 2) {
       const opt = SESSION_OPTIONS.find(s => s.value === sessionType);
       // Corporate / contact-only: no calendar, just show enquiry info
@@ -468,7 +478,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                 )}
 
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => { setStep(2); setError(''); }}
+                  <button type="button" onClick={() => { setStep(preselectedSessionRef.current ? 1 : 2); setError(''); }}
                     className="flex items-center gap-2 px-5 py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#D6E2E9]/40 transition-all cursor-pointer">
                     Back
                   </button>
