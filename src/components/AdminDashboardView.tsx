@@ -203,6 +203,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [confirmingIds, setConfirmingIds] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [drawerBooking, setDrawerBooking] = useState<BookingInquiry | null>(null);
+  const [staffNotesDraft, setStaffNotesDraft] = useState('');
   const [drawerCommLogs, setDrawerCommLogs] = useState<EmailLog[]>([]);
   const [drawerCommLoading, setDrawerCommLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -301,6 +302,13 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     }
     return () => { isMounted = false; };
   }, [activeTab, staff.role]);
+
+  // Keep staff-notes draft in sync with the opened booking
+  useEffect(() => {
+    if (drawerBooking) {
+      setStaffNotesDraft(drawerBooking.staffNotes || '');
+    }
+  }, [drawerBooking]);
 
   // Fetch communication logs when drawer opens
   useEffect(() => {
@@ -1845,6 +1853,20 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       showToast(`Tagged ${successCount} booking(s), ${failCount} failed`, 'error');
     } else {
       showToast(`Tagged all photos in ${successCount} booking(s)`, 'success');
+    }
+  };
+
+  const saveStaffNotes = async () => {
+    if (!drawerBooking || !staff) return;
+    if (!canManageBooking(drawerBooking)) { showToast('You can only manage bookings for your assigned studio', 'error'); return; }
+    const updated = { ...drawerBooking, staffNotes: staffNotesDraft };
+    try {
+      await updateBooking(updated, staff);
+      setInquiries(prev => prev.map(i => i.id === updated.id ? updated : i));
+      setDrawerBooking(updated);
+      showToast('Staff notes saved', 'success');
+    } catch {
+      showToast('Failed to save staff notes', 'error');
     }
   };
 
@@ -5705,8 +5727,28 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               {/* Notes */}
               {drawerBooking.notes && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-1">Notes</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-1">Customer Notes</p>
                   <p className="text-xs text-amber-900">{drawerBooking.notes}</p>
+                </div>
+              )}
+
+              {/* Staff Notes */}
+              {canEdit && (
+                <div className="bg-[#F8FAFA] rounded-lg p-3 space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-1">Staff Notes</p>
+                  <textarea
+                    rows={3}
+                    value={staffNotesDraft}
+                    onChange={(e) => setStaffNotesDraft(e.target.value)}
+                    placeholder="Internal notes — only visible to staff"
+                    className="w-full px-3 py-2 border border-[#1B2D3C]/20 text-xs text-[#1B2D3C] font-bold rounded-lg focus:outline-none focus:bg-[#D6E2E9]/20 resize-none"
+                  />
+                  <button
+                    onClick={saveStaffNotes}
+                    className="w-full py-2 bg-[#DBE7E4] hover:bg-[#D6E2E9] text-[#1B2D3C] text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer"
+                  >
+                    Save staff notes
+                  </button>
                 </div>
               )}
 
