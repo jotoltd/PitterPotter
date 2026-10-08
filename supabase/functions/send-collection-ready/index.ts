@@ -38,7 +38,6 @@ async function createShortUrl(supabase: ReturnType<typeof createClient>, targetU
 }
 
 async function sendReadySMS(
-  supabase: ReturnType<typeof createClient>,
   booking: {
     booking_id: string;
     name: string;
@@ -47,7 +46,7 @@ async function sendReadySMS(
     management_token: string | null;
   }
 ): Promise<{ success: boolean; error?: string; id?: string }> {
-  const provider = await getConfiguredSMSProvider(supabase);
+  const provider = getConfiguredSMSProvider();
   if (provider === 'none') {
     console.warn('No SMS provider configured; skipping SMS');
     return { success: false, error: 'SMS service not configured' };
@@ -113,12 +112,10 @@ async function sendReadySMS(
 
   const senderId = booking.studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP';
 
-  const projectUrl = Deno.env.get('SUPABASE_URL');
-  const sendResult = await sendSMS(provider, {
+  const sendResult = await sendSMS({
     to: toNumber,
     body: message,
     senderId,
-    statusCallback: provider === 'twilio' && projectUrl ? `${projectUrl}/functions/v1/twilio-webhook` : undefined,
   });
 
   try {
@@ -404,7 +401,7 @@ Deno.serve(async (req) => {
     }
 
     if (booking.phone) {
-      results.sms = await sendReadySMS(supabase, {
+      results.sms = await sendReadySMS({
         booking_id: booking.booking_id,
         name: booking.name,
         phone: booking.phone,

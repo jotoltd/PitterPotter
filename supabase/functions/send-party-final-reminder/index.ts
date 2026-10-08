@@ -157,7 +157,7 @@ async function sendReminderSMS(
   }
   const optOutClient = createClient(supabaseUrl, supabaseServiceKey);
 
-  const provider = await getConfiguredSMSProvider(optOutClient);
+  const provider = getConfiguredSMSProvider();
   if (provider === 'none') {
     console.warn('No SMS provider configured; skipping reminder SMS');
     return { success: false, error: 'SMS service not configured' };
@@ -216,16 +216,14 @@ async function sendReminderSMS(
   }
 
   try {
-    const projectUrl = Deno.env.get('SUPABASE_URL');
-    const result = await sendSMS(provider, {
+    const result = await sendSMS({
       to: toNumber,
       body: message,
       senderId,
-      statusCallback: provider === 'twilio' && projectUrl ? `${projectUrl}/functions/v1/twilio-webhook` : undefined,
     });
 
     if (!result.success) {
-      console.error(`${provider} SMS error:`, result.error);
+      console.error('PureSMS SMS error:', result.error);
       return { success: false, error: result.error || 'Failed to send SMS' };
     }
 

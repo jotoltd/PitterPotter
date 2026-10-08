@@ -2732,6 +2732,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               { value: 'collected', label: 'Collected', badge: null },
               ...(isSuperAdmin ? [{ value: 'gift-cards', label: 'Gift Vouchers', badge: null }] : []),
               { value: 'floor-plan', label: 'Floor Plan', badge: null },
+              ...(isSuperAdmin ? [{ value: 'sms', label: 'SMS', badge: null }] : []),
             ].map((tab) => (
               <button
                 key={tab.value}
@@ -6182,7 +6183,6 @@ function LogsDropdown({
     { value: 'audit-logs', label: 'Audit Logs' },
     { value: 'email-logs', label: 'Email Logs' },
     { value: 'email-templates', label: 'Email & SMS Templates' },
-    ...(isSuperAdmin ? [{ value: 'sms' as TabValue, label: 'SMS Dashboard' }] : []),
   ];
   return <NavDropdown label="Logs" items={items} activeTab={activeTab} setActiveTab={setActiveTab} />;
 }

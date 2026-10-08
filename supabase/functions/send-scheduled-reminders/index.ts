@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     if (typeof body.daysBefore === 'number') daysBefore = body.daysBefore;
   } catch { /* ignore */ }
 
-  const provider = await getConfiguredSMSProvider(supabase);
+  const provider = getConfiguredSMSProvider();
   if (provider === 'none') {
     return new Response(JSON.stringify({ error: 'SMS provider not configured' }), { status: 500 });
   }
@@ -122,16 +122,14 @@ Deno.serve(async (req) => {
     const senderId = booking.studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP';
 
     try {
-      const projectUrl = Deno.env.get('SUPABASE_URL');
-      const result = await sendSMS(provider, {
+      const result = await sendSMS({
         to: toNumber,
         body: message,
         senderId,
-        statusCallback: provider === 'twilio' && projectUrl ? `${projectUrl}/functions/v1/twilio-webhook` : undefined,
       });
 
       if (!result.success) {
-        console.error(`${provider} error:`, result.error);
+        console.error('PureSMS error:', result.error);
         failed++;
         continue;
       }
