@@ -128,9 +128,6 @@ export default function Calendar({
               `}>
                 {format(day, 'd')}
               </span>
-              {isClosedDay && inMonth && (
-                <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-stone-400">Closed</span>
-              )}
               {holidayMonday && !isPast && inMonth && !selectedDay && (
                 <span className="mt-1 text-[9px] font-medium uppercase tracking-wider text-emerald-600">Open</span>
               )}
