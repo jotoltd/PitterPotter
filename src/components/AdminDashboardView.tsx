@@ -4876,11 +4876,26 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
 
               const currentSlots = timeSlotConfig[timeSlotStudio][type].slots[timeSlotDayType];
               const currentDays = timeSlotConfig[timeSlotStudio][type].availableDays;
+              const currentEnabled = timeSlotConfig[timeSlotStudio][type].enabled ?? true;
 
               return (
-                <div key={`${timeSlotStudio}-${timeSlotDayType}-${type}`} className="space-y-3">
+                <div key={`${timeSlotStudio}-${timeSlotDayType}-${type}`} className={`space-y-3 ${currentEnabled ? '' : 'opacity-60'}`}>
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">{labels[type]}</h3>
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider">{labels[type]}</h3>
+                      <button
+                        onClick={() => {
+                          const nextConfig = { ...timeSlotConfig, [timeSlotStudio]: { ...timeSlotConfig[timeSlotStudio], [type]: { ...timeSlotConfig[timeSlotStudio][type], enabled: !currentEnabled } } };
+                          applyConfigChange(nextConfig);
+                          showToast(`${labels[type]} ${currentEnabled ? 'disabled' : 'enabled'} for ${timeSlotStudio}`, 'success');
+                        }}
+                        className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg border transition-colors cursor-pointer ${
+                          currentEnabled ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-stone-100 text-stone-500 border-stone-300'
+                        }`}
+                      >
+                        {currentEnabled ? 'Enabled' : 'Disabled'}
+                      </button>
+                    </div>
                     <button
                       onClick={() => {
                         const reset = DEFAULT_SLOTS[timeSlotStudio][type].slots[timeSlotDayType];

@@ -87,6 +87,12 @@ struct TimeSlotsView: View {
         Form {
             ForEach(sessionTypes, id: \.key) { session in
                 Section(header: Text(session.label)) {
+                    Toggle("Enabled", isOn: Binding(
+                        get: { isEnabled(for: session.key) },
+                        set: { setEnabled($0, session: session.key) }
+                    ))
+                    .tint(PPBrand.charcoal)
+
                     let currentDays = getAvailableDays(for: session.key)
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Available days")
@@ -161,6 +167,17 @@ struct TimeSlotsView: View {
             return config
         }
         return TimeSlotsData.defaultConfig(for: session)
+    }
+
+    private func isEnabled(for session: String) -> Bool {
+        let config = getConfig(for: session)
+        return (config["enabled"] as? Bool) ?? true
+    }
+
+    private func setEnabled(_ enabled: Bool, session: String) {
+        var config = getConfig(for: session)
+        config["enabled"] = enabled
+        setConfig(config, session: session)
     }
 
     private func getSlots(for session: String) -> [String] {
@@ -318,6 +335,7 @@ struct TimeSlotsData {
         [
             "slots": defaultSlots(for: session),
             "availableDays": defaultAvailableDays(for: session),
+            "enabled": true,
         ]
     }
 
@@ -340,6 +358,11 @@ struct TimeSlotsData {
                     } else {
                         config["availableDays"] = defaultAvailableDays(for: sessionKey)
                     }
+                    if let enabled = newConfig["enabled"] as? Bool {
+                        config["enabled"] = enabled
+                    } else {
+                        config["enabled"] = true
+                    }
                     if config["slots"] != nil {
                         studio[sessionKey] = config
                     }
@@ -347,6 +370,7 @@ struct TimeSlotsData {
                     studio[sessionKey] = [
                         "slots": oldSlots,
                         "availableDays": defaultAvailableDays(for: sessionKey),
+                        "enabled": true,
                     ]
                 }
             }

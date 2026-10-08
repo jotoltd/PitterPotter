@@ -3,7 +3,7 @@ import { format, getDay, startOfDay, isBefore } from 'date-fns';
 import { Page, BookingInquiry } from '../types';
 import Calendar from './Calendar';
 import { getRemainingCapacity, getBusyDates, createPublicBooking } from '../lib/bookings';
-import { getSlots, getAvailableDays, filterPastSlots, DayType } from '../lib/timeSlots';
+import { getSlots, getAvailableDays, isSessionEnabled, filterPastSlots, DayType } from '../lib/timeSlots';
 import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange, getClosedDatesForStudio } from '../lib/closures';
 import { useToast } from './ToastContext';
 
@@ -27,7 +27,7 @@ interface SessionOption {
 const SESSION_OPTIONS: SessionOption[] = [
   { value: 'painting', label: 'Pottery Painting', description: 'Pick a piece, paint it your way — we glaze and fire it for you.', studios: ['Putney', 'Wimbledon'] },
   { value: 'clay-imprints', label: 'Baby Prints', description: 'Capture tiny hands and feet in beautiful keepsakes.', studios: ['Putney', 'Wimbledon'] },
-  { value: 'sip-and-paint', label: 'Sip & Paint', description: 'Paint pottery with a glass in hand — the perfect creative night out.', studios: ['Wimbledon'] },
+  { value: 'sip-and-paint', label: 'Sip & Paint', description: 'Paint pottery with a glass in hand — the perfect creative night out.', studios: ['Putney', 'Wimbledon'] },
   { value: 'birthday-party', label: 'Birthday Party', description: 'A creative, mess-free birthday with dedicated party hosts.', studios: ['Putney', 'Wimbledon'], isParty: true },
   { value: 'baby-shower-hen', label: 'Baby Shower / Hen Party', description: 'A fun, creative group experience for showers and hens.', studios: ['Putney', 'Wimbledon'], isParty: true },
   { value: 'corporate', label: 'Corporate Event', description: 'Team building and client events with a creative twist.', studios: ['Putney', 'Wimbledon'], contactOnly: true },
@@ -143,7 +143,10 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
   const closedDatesAsDate = useMemo(() => getClosedDatesForStudio(closures.closedDates, studio).map(d => new Date(d + 'T00:00:00')), [closures.closedDates, studio]);
   const timeSlots = date ? getTimeSlots(date, closures, studio, sessionType) : [];
 
-  const availableSessionTypes = useMemo(() => SESSION_OPTIONS.filter(s => s.studios.includes(studio)), [studio]);
+  const availableSessionTypes = useMemo(() => SESSION_OPTIONS.filter(s => {
+    if (!s.studios.includes(studio)) return false;
+    return isSessionEnabled(SLOT_SESSION_KEY(s.value), studio);
+  }), [studio]);
 
   // When studio changes, reset session if not available
   useEffect(() => {

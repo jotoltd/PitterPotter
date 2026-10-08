@@ -7,6 +7,7 @@ export type DayType = 'weekday' | 'weekend';
 export interface SlotConfig {
   slots: Record<DayType, string[]>;
   availableDays: number[];
+  enabled: boolean;
 }
 
 export type StudioSlots = Record<SlotSessionType, SlotConfig>;
@@ -29,6 +30,7 @@ const SINGLE_STUDIO_DEFAULTS: StudioSlots = {
       weekend: ['10:00', '10:30', '12:00', '12:30', '14:00', '14:30', '16:00', '16:30'],
     },
     availableDays: DEFAULT_AVAILABLE_DAYS.painting,
+    enabled: true,
   },
   'sip-and-paint': {
     slots: {
@@ -36,6 +38,7 @@ const SINGLE_STUDIO_DEFAULTS: StudioSlots = {
       weekend: ['18:00', '18:30', '19:00'],
     },
     availableDays: DEFAULT_AVAILABLE_DAYS['sip-and-paint'],
+    enabled: true,
   },
   'baby-prints': {
     slots: {
@@ -43,6 +46,7 @@ const SINGLE_STUDIO_DEFAULTS: StudioSlots = {
       weekend: ['10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'],
     },
     availableDays: DEFAULT_AVAILABLE_DAYS['baby-prints'],
+    enabled: true,
   },
   party: {
     slots: {
@@ -50,6 +54,7 @@ const SINGLE_STUDIO_DEFAULTS: StudioSlots = {
       weekend: ['10:00-12:00', '12:30-14:30', '15:00-17:00'],
     },
     availableDays: DEFAULT_AVAILABLE_DAYS.party,
+    enabled: true,
   },
 };
 
@@ -75,7 +80,7 @@ function isDayTypeSlots(value: unknown): value is Partial<Record<DayType, string
   return Array.isArray(v.weekday) || Array.isArray(v.weekend);
 }
 
-function isSessionConfig(value: unknown): value is { slots: Record<DayType, string[]>; availableDays: number[] } {
+function isSessionConfig(value: unknown): value is { slots: Record<DayType, string[]>; availableDays: number[]; enabled?: boolean } {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
   const slots = v.slots;
@@ -116,11 +121,13 @@ function migrateSessionConfig(session: unknown, defaults: SlotConfig): SlotConfi
       availableDays: Array.isArray(session.availableDays) && session.availableDays.length > 0
         ? session.availableDays
         : defaults.availableDays,
+      enabled: typeof session.enabled === 'boolean' ? session.enabled : defaults.enabled,
     };
   }
   return {
     slots: migrateSessionSlots(session, defaults.slots.weekday),
     availableDays: defaults.availableDays,
+    enabled: defaults.enabled,
   };
 }
 
@@ -182,6 +189,10 @@ export function getAvailableDays(type: SlotSessionType, studio: Studio): number[
   return [...loadAll()[studio][type].availableDays];
 }
 
+export function isSessionEnabled(type: SlotSessionType, studio: Studio): boolean {
+  return loadAll()[studio][type].enabled ?? true;
+}
+
 export function filterPastSlots(slots: string[], date: Date, minHoursAhead: number = 0): string[] {
   const now = new Date();
   const isSameDay = now.getFullYear() === date.getFullYear() &&
@@ -208,6 +219,12 @@ export function setSlots(type: SlotSessionType, dayType: DayType, slots: string[
 export function setAvailableDays(type: SlotSessionType, days: number[], studio: Studio): void {
   const all = loadAll();
   all[studio][type].availableDays = [...days].sort((a, b) => a - b);
+  saveAllToLocalStorage(all);
+}
+
+export function setSessionEnabled(type: SlotSessionType, enabled: boolean, studio: Studio): void {
+  const all = loadAll();
+  all[studio][type].enabled = enabled;
   saveAllToLocalStorage(all);
 }
 
