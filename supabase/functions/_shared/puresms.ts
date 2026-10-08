@@ -14,8 +14,8 @@ export async function sendPureSMS(
     return { success: false, error: 'PureSMS API key not configured' };
   }
 
-  const defaultSender = Deno.env.get('PURESMS_SENDER') || 'PitterPotter';
-  const from = sender?.trim() || defaultSender;
+  const defaultSender = Deno.env.get('PURESMS_SENDER') || 'PitterPotP';
+  const from = (sender?.trim() || defaultSender).slice(0, 11);
 
   try {
     const response = await fetch('https://connect-api.divergent.cloud/sms/send', {
@@ -37,7 +37,11 @@ export async function sendPureSMS(
 
     if (!response.ok) {
       console.error('PureSMS error:', data);
-      return { success: false, error: data.message || `HTTP ${response.status}` };
+      const detail =
+        data.errors?.generalErrors?.join(', ') ||
+        (data.errors ? Object.values(data.errors).flat().join(', ') : '') ||
+        data.message;
+      return { success: false, error: detail || `HTTP ${response.status}` };
     }
 
     return { success: true, id: data.id || data.batchId };
