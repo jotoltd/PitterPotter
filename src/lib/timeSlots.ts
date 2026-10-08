@@ -35,7 +35,7 @@ const SINGLE_STUDIO_DEFAULTS: StudioSlots = {
   'sip-and-paint': {
     slots: {
       weekday: ['18:00', '18:30', '19:00'],
-      weekend: ['18:00', '18:30', '19:00'],
+      weekend: ['18:30', '19:00'],
     },
     availableDays: DEFAULT_AVAILABLE_DAYS['sip-and-paint'],
     enabled: true,
@@ -182,7 +182,12 @@ function saveAllToLocalStorage(all: TimeSlotsData): void {
 }
 
 export function getSlots(type: SlotSessionType, studio: Studio, dayType: DayType = 'weekday'): string[] {
-  return sortSlots(loadAll()[studio][type].slots[dayType]);
+  const slots = loadAll()[studio][type].slots[dayType];
+  // 18:00 is not offered for Sip & Paint on weekend days
+  if (type === 'sip-and-paint' && dayType === 'weekend') {
+    return sortSlots(slots.filter((s) => s !== '18:00'));
+  }
+  return sortSlots(slots);
 }
 
 export function getAvailableDays(type: SlotSessionType, studio: Studio): number[] {

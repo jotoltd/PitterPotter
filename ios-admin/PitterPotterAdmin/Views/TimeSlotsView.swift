@@ -183,7 +183,12 @@ struct TimeSlotsView: View {
     private func getSlots(for session: String) -> [String] {
         let config = getConfig(for: session)
         guard let slotsByDay = config["slots"] as? [String: [String]] else { return [] }
-        return sortSlots(slotsByDay[selectedDayType] ?? [])
+        var slots = sortSlots(slotsByDay[selectedDayType] ?? [])
+        // 18:00 is not offered for Sip & Paint on weekend days
+        if session == "sip-and-paint" && selectedDayType == "weekend" {
+            slots.removeAll { $0 == "18:00" }
+        }
+        return slots
     }
 
     private func getAvailableDays(for session: String) -> [Int] {
@@ -315,7 +320,8 @@ struct TimeSlotsData {
 
     static func defaultSlots(for session: String) -> [String: [String]] {
         let painting = ["10:00", "10:30", "12:00", "12:30", "14:00", "14:30", "16:00", "16:30"]
-        let sipAndPaint = ["18:00", "18:30", "19:00"]
+        let sipAndPaintWeekday = ["18:00", "18:30", "19:00"]
+        let sipAndPaintWeekend = ["18:30", "19:00"]
         let babyPrints = ["10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00"]
         let party = ["10:00-12:00", "12:30-14:30", "15:00-17:00"]
         switch session {
@@ -323,7 +329,7 @@ struct TimeSlotsData {
             let slots = session == "painting" ? painting : babyPrints
             return ["weekday": slots, "weekend": slots]
         case "sip-and-paint":
-            return ["weekday": sipAndPaint, "weekend": sipAndPaint]
+            return ["weekday": sipAndPaintWeekday, "weekend": sipAndPaintWeekend]
         case "party":
             return ["weekday": party, "weekend": party]
         default:
