@@ -7,7 +7,6 @@ struct TimeSlotsView: View {
     @State private var selectedDayType: String = "weekday"
     @State private var newSlotInputs: [String: String] = [:]
     @State private var isLoading = false
-    @State private var isSaving = false
 
     private let sessionTypes: [(key: String, label: String)] = [
         ("painting", "Painting"),
@@ -21,6 +20,7 @@ struct TimeSlotsView: View {
         ("weekday", "Weekdays"),
         ("weekend", "Weekends"),
     ]
+    private let dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
     var body: some View {
         NavigationStack {
@@ -87,6 +87,31 @@ struct TimeSlotsView: View {
         Form {
             ForEach(sessionTypes, id: \.key) { session in
                 Section(header: Text(session.label)) {
+                    let currentDays = getAvailableDays(for: session.key)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Available days")
+                            .font(AppFont.body(12, weight: .medium))
+                            .foregroundStyle(PPBrand.charcoal.opacity(0.7))
+                        HStack(spacing: 8) {
+                            ForEach(0..<7, id: \.self) { idx in
+                                let active = currentDays.contains(idx)
+                                Button {
+                                    toggleDay(idx, session: session.key)
+                                } label: {
+                                    Text(dayLabels[idx])
+                                        .font(AppFont.body(10, weight: .medium))
+                                        .fontWeight(.bold)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(active ? PPBrand.charcoal : Color(.secondarySystemBackground))
+                                        .foregroundStyle(active ? .white : .primary)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
+
                     let currentSlots = getSlots(for: session.key)
                     if currentSlots.isEmpty {
                         Text("No slots configured")
@@ -130,19 +155,51 @@ struct TimeSlotsView: View {
         }
     }
 
-    private func getSlots(for session: String) -> [String] {
+    private func getConfig(for session: String) -> [String: Any] {
         let studio = slots.dict[selectedStudio] ?? [:]
-        let sessionSlots = studio[session] ?? [:]
-        return sortSlots(sessionSlots[selectedDayType] ?? [])
+        if let config = studio[session] as? [String: Any] {
+            return config
+        }
+        return TimeSlotsData.defaultConfig(for: session)
+    }
+
+    private func getSlots(for session: String) -> [String] {
+        let config = getConfig(for: session)
+        guard let slotsByDay = config["slots"] as? [String: [String]] else { return [] }
+        return sortSlots(slotsByDay[selectedDayType] ?? [])
+    }
+
+    private func getAvailableDays(for session: String) -> [Int] {
+        let config = getConfig(for: session)
+        guard let days = config["availableDays"] as? [Int] else { return TimeSlotsData.defaultAvailableDays(for: session) }
+        return days
+    }
+
+    private func setConfig(_ config: [String: Any], session: String) {
+        var studio = slots.dict[selectedStudio] ?? [:]
+        studio[session] = config
+        slots.dict[selectedStudio] = studio
+        saveSlots()
     }
 
     private func setSlots(_ updated: [String], session: String) {
-        var studio = slots.dict[selectedStudio] ?? [:]
-        var sessionSlots = studio[session] ?? [:]
-        sessionSlots[selectedDayType] = sortSlots(updated)
-        studio[session] = sessionSlots
-        slots.dict[selectedStudio] = studio
-        saveSlots()
+        var config = getConfig(for: session)
+        var slotsByDay = (config["slots"] as? [String: [String]]) ?? [:]
+        slotsByDay[selectedDayType] = sortSlots(updated)
+        config["slots"] = slotsByDay
+        setConfig(config, session: session)
+    }
+
+    private func toggleDay(_ day: Int, session: String) {
+        var config = getConfig(for: session)
+        var days = getAvailableDays(for: session)
+        if days.contains(day) {
+            days.removeAll { $0 == day }
+        } else {
+            days.append(day)
+        }
+        config["availableDays"] = days.sorted()
+        setConfig(config, session: session)
     }
 
     private func addSlot(session: String) {
@@ -218,55 +275,94 @@ struct TimeSlotsView: View {
 }
 
 struct TimeSlotsData {
-    var dict: [String: [String: [String: [String]]]]
+    var dict: [String: [String: [String: Any]]]
 
     static let `default`: TimeSlotsData = {
-        let painting = ["10:00", "10:30", "12:00", "12:30", "14:00", "14:30", "16:00", "16:30"]
-        let sipAndPaint = ["18:00", "18:30", "19:00"]
-        let babyPrints = ["10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00"]
-        let party = ["10:00-12:00", "12:30-14:30", "15:00-17:00"]
-        let studio: [String: [String: [String]]] = [
-            "painting": ["weekday": painting, "weekend": painting],
-            "sip-and-paint": ["weekday": sipAndPaint, "weekend": sipAndPaint],
-            "baby-prints": ["weekday": babyPrints, "weekend": babyPrints],
-            "party": ["weekday": party, "weekend": party],
+        let studio: [String: [String: Any]] = [
+            "painting": defaultConfig(for: "painting"),
+            "sip-and-paint": defaultConfig(for: "sip-and-paint"),
+            "baby-prints": defaultConfig(for: "baby-prints"),
+            "party": defaultConfig(for: "party"),
         ]
         return TimeSlotsData(dict: ["Putney": studio, "Wimbledon": studio])
     }()
 
+    static func defaultAvailableDays(for session: String) -> [Int] {
+        switch session {
+        case "sip-and-paint":
+            return [4, 5, 6]
+        default:
+            return [0, 2, 3, 4, 5, 6]
+        }
+    }
+
+    static func defaultSlots(for session: String) -> [String: [String]] {
+        let painting = ["10:00", "10:30", "12:00", "12:30", "14:00", "14:30", "16:00", "16:30"]
+        let sipAndPaint = ["18:00", "18:30", "19:00"]
+        let babyPrints = ["10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00"]
+        let party = ["10:00-12:00", "12:30-14:30", "15:00-17:00"]
+        switch session {
+        case "painting", "baby-prints":
+            let slots = session == "painting" ? painting : babyPrints
+            return ["weekday": slots, "weekend": slots]
+        case "sip-and-paint":
+            return ["weekday": sipAndPaint, "weekend": sipAndPaint]
+        case "party":
+            return ["weekday": party, "weekend": party]
+        default:
+            return ["weekday": painting, "weekend": painting]
+        }
+    }
+
+    static func defaultConfig(for session: String) -> [String: Any] {
+        [
+            "slots": defaultSlots(for: session),
+            "availableDays": defaultAvailableDays(for: session),
+        ]
+    }
+
     static func fromDict(_ raw: [String: Any]) -> TimeSlotsData {
         var result = TimeSlotsData.default
         for (studioKey, studioVal) in raw {
-            guard let studioSlots = studioVal as? [String: Any] else { continue }
-            var studio: [String: [String: [String]]] = [:]
-            for (sessionKey, sessionVal) in studioSlots {
-                guard let daySlots = sessionVal as? [String: Any] else { continue }
-                var session: [String: [String]] = [:]
-                for (dayKey, dayVal) in daySlots {
-                    if let arr = dayVal as? [String] {
-                        session[dayKey] = arr
+            guard let studioSessions = studioVal as? [String: Any] else { continue }
+            var studio: [String: [String: Any]] = [:]
+
+            for (sessionKey, sessionVal) in studioSessions {
+                if let newConfig = sessionVal as? [String: Any] {
+                    var config: [String: Any] = [:]
+                    if let slots = newConfig["slots"] as? [String: [String]] {
+                        config["slots"] = slots
+                    } else if let oldSlots = sessionVal as? [String: [String]] {
+                        config["slots"] = oldSlots
                     }
+                    if let days = newConfig["availableDays"] as? [Int] {
+                        config["availableDays"] = days
+                    } else {
+                        config["availableDays"] = defaultAvailableDays(for: sessionKey)
+                    }
+                    if config["slots"] != nil {
+                        studio[sessionKey] = config
+                    }
+                } else if let oldSlots = sessionVal as? [String: [String]] {
+                    studio[sessionKey] = [
+                        "slots": oldSlots,
+                        "availableDays": defaultAvailableDays(for: sessionKey),
+                    ]
                 }
-                studio[sessionKey] = session
             }
+
+            for sessionType in ["painting", "sip-and-paint", "baby-prints", "party"] {
+                if studio[sessionType] == nil {
+                    studio[sessionType] = defaultConfig(for: sessionType)
+                }
+            }
+
             result.dict[studioKey] = studio
         }
         return result
     }
 
     func toDict() -> [String: Any] {
-        var result: [String: Any] = [:]
-        for (studioKey, studio) in dict {
-            var studioDict: [String: Any] = [:]
-            for (sessionKey, session) in studio {
-                var sessionDict: [String: Any] = [:]
-                for (dayKey, slots) in session {
-                    sessionDict[dayKey] = slots
-                }
-                studioDict[sessionKey] = sessionDict
-            }
-            result[studioKey] = studioDict
-        }
-        return result
+        dict
     }
 }

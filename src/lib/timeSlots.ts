@@ -4,28 +4,52 @@ export type SlotSessionType = 'painting' | 'baby-prints' | 'party' | 'sip-and-pa
 export type Studio = 'Putney' | 'Wimbledon';
 export type DayType = 'weekday' | 'weekend';
 
-export type StudioSlots = Record<SlotSessionType, Record<DayType, string[]>>;
+export interface SlotConfig {
+  slots: Record<DayType, string[]>;
+  availableDays: number[];
+}
+
+export type StudioSlots = Record<SlotSessionType, SlotConfig>;
 export type TimeSlotsData = Record<Studio, StudioSlots>;
 
 const STORAGE_KEY = 'pp_time_slots';
 const SUPABASE_SETTING_KEY = 'time_slots';
 
+const DEFAULT_AVAILABLE_DAYS: Record<SlotSessionType, number[]> = {
+  painting: [0, 2, 3, 4, 5, 6],
+  'baby-prints': [0, 2, 3, 4, 5, 6],
+  party: [0, 2, 3, 4, 5, 6],
+  'sip-and-paint': [4, 5, 6],
+};
+
 const SINGLE_STUDIO_DEFAULTS: StudioSlots = {
   painting: {
-    weekday: ['10:00', '10:30', '12:00', '12:30', '14:00', '14:30', '16:00', '16:30'],
-    weekend: ['10:00', '10:30', '12:00', '12:30', '14:00', '14:30', '16:00', '16:30'],
+    slots: {
+      weekday: ['10:00', '10:30', '12:00', '12:30', '14:00', '14:30', '16:00', '16:30'],
+      weekend: ['10:00', '10:30', '12:00', '12:30', '14:00', '14:30', '16:00', '16:30'],
+    },
+    availableDays: DEFAULT_AVAILABLE_DAYS.painting,
   },
   'sip-and-paint': {
-    weekday: ['18:00', '18:30', '19:00'],
-    weekend: ['18:00', '18:30', '19:00'],
+    slots: {
+      weekday: ['18:00', '18:30', '19:00'],
+      weekend: ['18:00', '18:30', '19:00'],
+    },
+    availableDays: DEFAULT_AVAILABLE_DAYS['sip-and-paint'],
   },
   'baby-prints': {
-    weekday: ['10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'],
-    weekend: ['10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'],
+    slots: {
+      weekday: ['10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'],
+      weekend: ['10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'],
+    },
+    availableDays: DEFAULT_AVAILABLE_DAYS['baby-prints'],
   },
   party: {
-    weekday: ['10:00-12:00', '12:30-14:30', '15:00-17:00'],
-    weekend: ['10:00-12:00', '12:30-14:30', '15:00-17:00'],
+    slots: {
+      weekday: ['10:00-12:00', '12:30-14:30', '15:00-17:00'],
+      weekend: ['10:00-12:00', '12:30-14:30', '15:00-17:00'],
+    },
+    availableDays: DEFAULT_AVAILABLE_DAYS.party,
   },
 };
 
@@ -51,6 +75,15 @@ function isDayTypeSlots(value: unknown): value is Partial<Record<DayType, string
   return Array.isArray(v.weekday) || Array.isArray(v.weekend);
 }
 
+function isSessionConfig(value: unknown): value is { slots: Record<DayType, string[]>; availableDays: number[] } {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Record<string, unknown>;
+  const slots = v.slots;
+  if (typeof slots !== 'object' || slots === null) return false;
+  const s = slots as Record<string, unknown>;
+  return (Array.isArray(s.weekday) || Array.isArray(s.weekend)) && Array.isArray(v.availableDays);
+}
+
 function isStudioSlots(value: unknown): value is Partial<TimeSlotsData> {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
@@ -60,25 +93,43 @@ function isStudioSlots(value: unknown): value is Partial<TimeSlotsData> {
   );
 }
 
-function migrateOldSessionSlots(slots: unknown, defaults: string[]): Record<DayType, string[]> {
+function migrateSessionSlots(slots: unknown, defaultSlots: string[]): Record<DayType, string[]> {
   if (Array.isArray(slots)) {
     return { weekday: sortSlots(slots), weekend: sortSlots(slots) };
   }
   if (isDayTypeSlots(slots)) {
     return {
-      weekday: sortSlots(Array.isArray(slots.weekday) ? slots.weekday : defaults),
-      weekend: sortSlots(Array.isArray(slots.weekend) ? slots.weekend : defaults),
+      weekday: sortSlots(Array.isArray(slots.weekday) ? slots.weekday : defaultSlots),
+      weekend: sortSlots(Array.isArray(slots.weekend) ? slots.weekend : defaultSlots),
     };
   }
-  return { weekday: sortSlots(defaults), weekend: sortSlots(defaults) };
+  return { weekday: sortSlots(defaultSlots), weekend: sortSlots(defaultSlots) };
+}
+
+function migrateSessionConfig(session: unknown, defaults: SlotConfig): SlotConfig {
+  if (isSessionConfig(session)) {
+    return {
+      slots: {
+        weekday: sortSlots(session.slots.weekday ?? defaults.slots.weekday),
+        weekend: sortSlots(session.slots.weekend ?? defaults.slots.weekend),
+      },
+      availableDays: Array.isArray(session.availableDays) && session.availableDays.length > 0
+        ? session.availableDays
+        : defaults.availableDays,
+    };
+  }
+  return {
+    slots: migrateSessionSlots(session, defaults.slots.weekday),
+    availableDays: defaults.availableDays,
+  };
 }
 
 function migrateOldStudioSlots(studio: Partial<Record<SlotSessionType, unknown>> | undefined, defaults: StudioSlots): StudioSlots {
   return {
-    painting: migrateOldSessionSlots(studio?.painting, defaults.painting.weekday),
-    'sip-and-paint': migrateOldSessionSlots(studio?.['sip-and-paint'], defaults['sip-and-paint'].weekday),
-    'baby-prints': migrateOldSessionSlots(studio?.['baby-prints'], defaults['baby-prints'].weekday),
-    party: migrateOldSessionSlots(studio?.party, defaults.party.weekday),
+    painting: migrateSessionConfig(studio?.painting, defaults.painting),
+    'sip-and-paint': migrateSessionConfig(studio?.['sip-and-paint'], defaults['sip-and-paint']),
+    'baby-prints': migrateSessionConfig(studio?.['baby-prints'], defaults['baby-prints']),
+    party: migrateSessionConfig(studio?.party, defaults.party),
   };
 }
 
@@ -105,10 +156,10 @@ function loadAll(): TimeSlotsData {
       }
       if (isLegacySlots(parsed)) {
         const merged: StudioSlots = {
-          painting: migrateOldSessionSlots(parsed.painting, DEFAULT_SLOTS.Putney.painting.weekday),
-          'sip-and-paint': migrateOldSessionSlots(parsed['sip-and-paint'], DEFAULT_SLOTS.Putney['sip-and-paint'].weekday),
-          'baby-prints': migrateOldSessionSlots(parsed['baby-prints'], DEFAULT_SLOTS.Putney['baby-prints'].weekday),
-          party: migrateOldSessionSlots(parsed.party, DEFAULT_SLOTS.Putney.party.weekday),
+          painting: migrateSessionConfig(parsed.painting, DEFAULT_SLOTS.Putney.painting),
+          'sip-and-paint': migrateSessionConfig(parsed['sip-and-paint'], DEFAULT_SLOTS.Putney['sip-and-paint']),
+          'baby-prints': migrateSessionConfig(parsed['baby-prints'], DEFAULT_SLOTS.Putney['baby-prints']),
+          party: migrateSessionConfig(parsed.party, DEFAULT_SLOTS.Putney.party),
         };
         return { Putney: JSON.parse(JSON.stringify(merged)), Wimbledon: JSON.parse(JSON.stringify(merged)) };
       }
@@ -124,7 +175,11 @@ function saveAllToLocalStorage(all: TimeSlotsData): void {
 }
 
 export function getSlots(type: SlotSessionType, studio: Studio, dayType: DayType = 'weekday'): string[] {
-  return sortSlots(loadAll()[studio][type][dayType]);
+  return sortSlots(loadAll()[studio][type].slots[dayType]);
+}
+
+export function getAvailableDays(type: SlotSessionType, studio: Studio): number[] {
+  return [...loadAll()[studio][type].availableDays];
 }
 
 export function filterPastSlots(slots: string[], date: Date, minHoursAhead: number = 0): string[] {
@@ -146,7 +201,13 @@ export function filterPastSlots(slots: string[], date: Date, minHoursAhead: numb
 
 export function setSlots(type: SlotSessionType, dayType: DayType, slots: string[], studio: Studio): void {
   const all = loadAll();
-  all[studio][type][dayType] = sortSlots(slots);
+  all[studio][type].slots[dayType] = sortSlots(slots);
+  saveAllToLocalStorage(all);
+}
+
+export function setAvailableDays(type: SlotSessionType, days: number[], studio: Studio): void {
+  const all = loadAll();
+  all[studio][type].availableDays = [...days].sort((a, b) => a - b);
   saveAllToLocalStorage(all);
 }
 
@@ -182,10 +243,10 @@ export async function loadSlotsFromSupabase(): Promise<TimeSlotsData> {
       }
       if (isLegacySlots(parsed)) {
         const studioSlots: StudioSlots = {
-          painting: migrateOldSessionSlots(parsed.painting, DEFAULT_SLOTS.Putney.painting.weekday),
-          'sip-and-paint': migrateOldSessionSlots(parsed['sip-and-paint'], DEFAULT_SLOTS.Putney['sip-and-paint'].weekday),
-          'baby-prints': migrateOldSessionSlots(parsed['baby-prints'], DEFAULT_SLOTS.Putney['baby-prints'].weekday),
-          party: migrateOldSessionSlots(parsed.party, DEFAULT_SLOTS.Putney.party.weekday),
+          painting: migrateSessionConfig(parsed.painting, DEFAULT_SLOTS.Putney.painting),
+          'sip-and-paint': migrateSessionConfig(parsed['sip-and-paint'], DEFAULT_SLOTS.Putney['sip-and-paint']),
+          'baby-prints': migrateSessionConfig(parsed['baby-prints'], DEFAULT_SLOTS.Putney['baby-prints']),
+          party: migrateSessionConfig(parsed.party, DEFAULT_SLOTS.Putney.party),
         };
         const migrated: TimeSlotsData = { Putney: JSON.parse(JSON.stringify(studioSlots)), Wimbledon: JSON.parse(JSON.stringify(studioSlots)) };
         saveAllToLocalStorage(migrated);

@@ -35,8 +35,10 @@ struct PartyBookingView: View {
         let weekday = calendar.component(.weekday, from: date)
         let isWeekend = weekday == 1 || weekday == 7
         let dayType = isWeekend ? "weekend" : "weekday"
-        if let loaded = loadedSlots, let studio = loaded.dict[studioKey], 
-           let party = studio["party"], let slots = party[dayType] {
+        if let loaded = loadedSlots, let studio = loaded.dict[studioKey],
+           let party = studio["party"] as? [String: Any],
+           let slotsByDay = party["slots"] as? [String: [String]],
+           let slots = slotsByDay[dayType] {
             return filteredSlots(slots)
         }
         let defaults = ["10:00-12:00", "12:30-14:30", "15:00-17:00"]

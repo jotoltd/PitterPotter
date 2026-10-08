@@ -3,7 +3,7 @@ import { format, getDay, startOfDay, isBefore } from 'date-fns';
 import { Page, BookingInquiry } from '../types';
 import Calendar from './Calendar';
 import { getRemainingCapacity, getBusyDates, createPublicBooking } from '../lib/bookings';
-import { getSlots, filterPastSlots, DayType } from '../lib/timeSlots';
+import { getSlots, getAvailableDays, filterPastSlots, DayType } from '../lib/timeSlots';
 import { loadClosuresFromSupabase, getClosureDates, ClosureDates, isDateInHolidayRange, getClosedDatesForStudio } from '../lib/closures';
 import { useToast } from './ToastContext';
 
@@ -49,23 +49,32 @@ const SLOT_SESSION_KEY = (sessionType: SessionTypeValue): 'painting' | 'baby-pri
   return 'painting';
 };
 
+function disabledWeekDays(sessionType: SessionTypeValue, studio: Studio): number[] {
+  const available = getAvailableDays(SLOT_SESSION_KEY(sessionType), studio);
+  const disabled = [0, 1, 2, 3, 4, 5, 6].filter((d) => !available.includes(d));
+  // For painting-style sessions, keep Monday in the disabled list unless the
+  // admin explicitly made it available; the calendar will still enable holiday
+  // Mondays through its school-holiday override.
+  if (sessionType !== 'sip-and-paint' && !disabled.includes(1) && !available.includes(1)) {
+    disabled.push(1);
+  }
+  return disabled.sort((a, b) => a - b);
+}
+
 function getTimeSlots(date: Date, closures: ClosureDates, studio: Studio, sessionType: SessionTypeValue): string[] {
   const day = getDay(date);
   const dateStr = format(date, 'yyyy-MM-dd');
   const isHoliday = isDateInHolidayRange(dateStr, closures.schoolHolidays);
+  const availableDays = getAvailableDays(SLOT_SESSION_KEY(sessionType), studio);
 
-  // Sip & Paint only runs Thursday / Friday / Saturday
-  if (sessionType === 'sip-and-paint') {
-    if (![4, 5, 6].includes(day)) return [];
-    const dayType: DayType = (day === 6) ? 'weekend' : 'weekday';
-    return filterPastSlots(getSlots(SLOT_SESSION_KEY(sessionType), studio, dayType), date);
-  }
+  const baseAvailable = availableDays.includes(day);
+  // Painting-style sessions can open on school-holiday Mondays even if
+  // Monday is not normally in their available days.
+  const holidayMondayAvailable = sessionType !== 'sip-and-paint' && day === 1 && isHoliday;
+  if (!baseAvailable && !holidayMondayAvailable) return [];
 
-  if (day >= 2 || day === 0 || (day === 1 && isHoliday)) {
-    const dayType: DayType = (day === 0 || day === 6) ? 'weekend' : 'weekday';
-    return filterPastSlots(getSlots(SLOT_SESSION_KEY(sessionType), studio, dayType), date);
-  }
-  return [];
+  const dayType: DayType = (day === 0 || day === 6) ? 'weekend' : 'weekday';
+  return filterPastSlots(getSlots(SLOT_SESSION_KEY(sessionType), studio, dayType), date);
 }
 
 const STEPS = ['Location', 'Session', 'Date & Time', 'Your Details', 'Review'];
@@ -369,7 +378,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                     onMonthChange={setCalendarMonth}
                     disabled={[...busyDates, ...closedDatesAsDate]}
                     minDate={minDate}
-                    dayOfWeekDisabled={sessionType === 'sip-and-paint' ? [0, 1, 2, 3] : [1]}
+                    dayOfWeekDisabled={disabledWeekDays(sessionType, studio)}
                     schoolHolidayDates={closures.schoolHolidays}
                     marks={busyDates}
                   />
