@@ -41,12 +41,13 @@ export default function AdminCalendar({
   }, [month]);
 
   const bookingsByDate = useMemo(() => {
-    const map: Record<string, { painting: boolean; babyPrints: boolean; party: boolean; painters: number; bookings: number }> = {};
+    const map: Record<string, { painting: boolean; babyPrints: boolean; sipAndPaint: boolean; party: boolean; painters: number; bookings: number }> = {};
     for (const b of bookings) {
       if (b.status === 'cancelled' || b.status === 'no_show') continue;
-      if (!map[b.date]) map[b.date] = { painting: false, babyPrints: false, party: false, painters: 0, bookings: 0 };
+      if (!map[b.date]) map[b.date] = { painting: false, babyPrints: false, sipAndPaint: false, party: false, painters: 0, bookings: 0 };
       if (b.sessionType === 'painting') map[b.date].painting = true;
       else if (b.sessionType === 'clay-imprints') map[b.date].babyPrints = true;
+      else if (b.sessionType === 'sip-and-paint') map[b.date].sipAndPaint = true;
       else if (PARTY_TYPES.has(b.sessionType)) map[b.date].party = true;
       map[b.date].painters += b.paintersCount;
       map[b.date].bookings += 1;
@@ -64,6 +65,7 @@ export default function AdminCalendar({
           <div className="hidden sm:flex items-center gap-3">
             <span className="flex items-center gap-1 text-[10px] font-bold text-[#1B2D3C]/60"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />Painting</span>
             <span className="flex items-center gap-1 text-[10px] font-bold text-[#1B2D3C]/60"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block" />Baby Prints</span>
+            <span className="flex items-center gap-1 text-[10px] font-bold text-[#1B2D3C]/60"><span className="w-2 h-2 rounded-full bg-pink-500 inline-block" />Sip &amp; Paint</span>
             <span className="flex items-center gap-1 text-[10px] font-bold text-[#1B2D3C]/60"><span className="w-2 h-2 rounded-full bg-purple-500 inline-block" />Party</span>
           </div>
         </div>
@@ -130,6 +132,7 @@ export default function AdminCalendar({
                 <div className="flex gap-0.5 mt-1 flex-wrap items-center">
                   {types.painting && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
                   {types.babyPrints && <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />}
+                  {types.sipAndPaint && <span className="w-1.5 h-1.5 rounded-full bg-pink-500" />}
                   {types.party && <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
                   {types.painters > 0 && (
                     <span className="text-[8px] font-black ml-0.5 text-[#1B2D3C]/40">
