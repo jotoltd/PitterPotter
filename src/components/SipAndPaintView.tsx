@@ -15,13 +15,19 @@ export default function SipAndPaintView({ setCurrentPage, adminMode = false }: S
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
             <p className="text-xs font-black uppercase tracking-widest text-[#1B2D3C]/50">
-              <EditableText contentKey="sip_subtitle" page="sip-and-paint" defaultValue="Creative Nights Out" adminMode={adminMode} className="text-xs text-[#1B2D3C]/50" />
+              <EditableText contentKey="sip_subtitle" page="sip-and-paint" defaultValue="Pottery painting, with a glass in hand." adminMode={adminMode} className="text-xs text-[#1B2D3C]/50" />
             </p>
             <h1 className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight leading-tight">
-              <EditableText contentKey="sip_title" page="sip-and-paint" defaultValue="Sip & Paint" adminMode={adminMode} className="font-heading text-4xl md:text-5xl text-[#1B2D3C]" />
+              <EditableText contentKey="sip_title" page="sip-and-paint" defaultValue="SIP & PAINT 🍷" adminMode={adminMode} className="font-heading text-4xl md:text-5xl text-[#1B2D3C]" />
             </h1>
             <p className="text-sm text-[#1B2D3C]/75 leading-relaxed">
-              <EditableText contentKey="sip_intro" page="sip-and-paint" defaultValue="Paint pottery with a glass in hand — the perfect creative night out. Enjoy a relaxed evening of painting, drinks and great company while we glaze and fire your piece ready to collect." adminMode={adminMode} className="text-sm text-[#1B2D3C]/75 leading-relaxed" />
+              <EditableText contentKey="sip_intro_1" page="sip-and-paint" defaultValue="Looking for something a little different for your evening?" adminMode={adminMode} className="text-sm text-[#1B2D3C]/75 leading-relaxed" />
+            </p>
+            <p className="text-sm text-[#1B2D3C]/75 leading-relaxed">
+              <EditableText contentKey="sip_intro_2" page="sip-and-paint" defaultValue="Join us at Pitter Potter Wimbledon for our adults-only Sip & Paint evenings — a relaxed night of pottery painting, drinks and good company." adminMode={adminMode} className="text-sm text-[#1B2D3C]/75 leading-relaxed" />
+            </p>
+            <p className="text-sm text-[#1B2D3C]/75 leading-relaxed">
+              <EditableText contentKey="sip_intro_3" page="sip-and-paint" defaultValue="Whether it’s a catch-up with friends, date night, birthday celebration or simply an excuse to do something creative, choose a piece of pottery, pour yourself a glass and enjoy an evening of painting at your own pace." adminMode={adminMode} className="text-sm text-[#1B2D3C]/75 leading-relaxed" />
             </p>
             <button
               onClick={() => setCurrentPage('book')}
@@ -32,6 +38,27 @@ export default function SipAndPaintView({ setCurrentPage, adminMode = false }: S
           </div>
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
             <EditableImage contentKey="sip_hero_image" page="sip-and-paint" defaultSrc={Images.potteryGallery} alt="Sip and paint evening" className="w-full h-full object-cover rounded-2xl" adminMode={adminMode} />
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-pink-50 border border-pink-200 rounded-2xl p-8 text-center space-y-3">
+            <p className="text-xs font-black uppercase tracking-widest text-pink-800/60">
+              <EditableText contentKey="sip_days_label" page="sip-and-paint" defaultValue="When we run" adminMode={adminMode} className="text-xs text-pink-800/60" />
+            </p>
+            <p className="font-heading text-2xl md:text-3xl font-black text-pink-900">
+              <EditableText contentKey="sip_days" page="sip-and-paint" defaultValue="THURSDAY • FRIDAY • SATURDAY" adminMode={adminMode} className="font-heading text-2xl md:text-3xl text-pink-900" />
+            </p>
+          </div>
+          <div className="bg-pink-50 border border-pink-200 rounded-2xl p-8 text-center space-y-3">
+            <p className="text-xs font-black uppercase tracking-widest text-pink-800/60">
+              <EditableText contentKey="sip_time_label" page="sip-and-paint" defaultValue="Evening sessions" adminMode={adminMode} className="text-xs text-pink-800/60" />
+            </p>
+            <p className="font-heading text-2xl md:text-3xl font-black text-pink-900">
+              <EditableText contentKey="sip_time" page="sip-and-paint" defaultValue="6PM – 9PM | PITTER POTTER WIMBLEDON | 18+" adminMode={adminMode} className="font-heading text-2xl md:text-3xl text-pink-900" />
+            </p>
           </div>
         </div>
       </section>
