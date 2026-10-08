@@ -28,6 +28,7 @@ interface CalendarProps {
   dayOfWeekDisabled?: number[];
   schoolHolidayDates?: HolidayRange[];
   disableHolidayMonday?: boolean;
+  accentClass?: string;
 }
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -44,6 +45,7 @@ export default function Calendar({
   dayOfWeekDisabled = [],
   schoolHolidayDates = [],
   disableHolidayMonday = false,
+  accentClass = 'bg-[#DBE7E4] hover:bg-[#D6E2E9]',
 }: CalendarProps) {
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(month), { weekStartsOn });
@@ -116,8 +118,8 @@ export default function Calendar({
                 relative flex flex-col items-center justify-center min-h-[4.5rem] border-r border-b border-[#1B2D3C]/5 transition-colors
                 ${!inMonth ? 'opacity-0 pointer-events-none bg-white' : ''}
                 ${disabledDay && inMonth ? 'bg-white cursor-not-allowed' : ''}
-                ${!disabledDay && inMonth ? 'text-[#1B2D3C] cursor-pointer hover:bg-[#D6E2E9]/30' : ''}
-                ${selectedDay && inMonth ? 'bg-[#DBE7E4] text-[#1B2D3C] hover:bg-[#D6E2E9]' : ''}
+                ${!disabledDay && inMonth && !selectedDay ? 'text-[#1B2D3C] cursor-pointer hover:bg-[#D6E2E9]/30' : ''}
+                ${selectedDay && inMonth ? `${accentClass} text-[#1B2D3C]` : ''}
                 ${today && !selectedDay && inMonth ? 'bg-[#D6E2E9]/50 font-black' : ''}
               `}
             >

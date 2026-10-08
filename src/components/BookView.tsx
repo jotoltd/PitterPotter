@@ -42,6 +42,14 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
   'corporate': 'Corporate Event',
 };
 
+const isSipSession = (sessionType: SessionTypeValue) => sessionType === 'sip-and-paint';
+const accentClass = (sessionType: SessionTypeValue) => isSipSession(sessionType)
+  ? 'bg-pink-300 hover:bg-pink-400'
+  : 'bg-[#DBE7E4] hover:bg-[#D6E2E9]';
+const accentBorderClass = (sessionType: SessionTypeValue) => isSipSession(sessionType)
+  ? 'border-pink-400'
+  : 'border-[#1B2D3C]';
+
 const SLOT_SESSION_KEY = (sessionType: SessionTypeValue): 'painting' | 'baby-prints' | 'party' | 'sip-and-paint' => {
   if (['birthday-party', 'baby-shower-hen', 'corporate'].includes(sessionType)) return 'party';
   if (sessionType === 'clay-imprints') return 'baby-prints';
@@ -325,7 +333,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                   ))}
                 </div>
                 <button type="button" onClick={handleNext}
-                  className="w-full py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer">
+                  className="w-full py-4 ${accentClass(sessionType)} text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer">
                   Continue
                 </button>
               </div>
@@ -342,7 +350,9 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                   {availableSessionTypes.map((opt) => (
                     <button key={opt.value} type="button" onClick={() => { setSessionType(opt.value); setError(''); }}
                       className={`p-4 border-2 text-left transition-all cursor-pointer rounded-xl ${
-                        sessionType === opt.value ? 'border-[#1B2D3C] bg-[#DBE7E4] text-[#1B2D3C]' : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
+                        sessionType === opt.value
+                          ? `${accentClass(opt.value)} ${accentBorderClass(opt.value)} text-[#1B2D3C]`
+                          : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
                       }`}>
                       <div>
                         <p className="font-heading font-bold text-sm">{opt.label}</p>
@@ -358,7 +368,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                     Back
                   </button>
                   <button type="button" onClick={handleNext}
-                    className="flex-1 py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2">
+                    className="flex-1 py-4 ${accentClass(sessionType)} text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2">
                     Continue
                   </button>
                 </div>
@@ -383,7 +393,8 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                     minDate={minDate}
                     dayOfWeekDisabled={disabledWeekDays(sessionType, studio)}
                     schoolHolidayDates={closures.schoolHolidays}
-                    disableHolidayMonday={sessionType === 'sip-and-paint'}
+                    disableHolidayMonday={isSipSession(sessionType)}
+                    accentClass={accentClass(sessionType)}
                     marks={busyDates}
                   />
                 </div>
@@ -400,7 +411,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                             onClick={() => !isFull && setTime(slot)}
                             disabled={isFull}
                             className={`py-3 text-xs font-bold uppercase tracking-wider border transition-all cursor-pointer rounded-lg ${
-                              time === slot ? 'bg-[#DBE7E4] text-[#1B2D3C] border-[#1B2D3C]'
+                              time === slot ? `${accentClass(sessionType)} text-[#1B2D3C] ${accentBorderClass(sessionType)}`
                               : isFull ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
                               : 'bg-white text-[#1B2D3C] border-[#1B2D3C]/20 hover:border-[#1B2D3C]'
                             }`}>
@@ -449,7 +460,11 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                 )}
 
                 {date && time && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs font-bold text-emerald-800">
+                  <div className={`rounded-lg p-3 text-xs font-bold ${
+                    isSipSession(sessionType)
+                      ? 'bg-pink-50 border border-pink-200 text-pink-800'
+                      : 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                  }`}>
                     {format(date, 'EEEE, do MMMM yyyy')} &middot; {time} &ndash; {parseInt(time.split(':')[0], 10) + 2}:00 &middot; {seatsCount} seat{seatsCount !== 1 ? 's' : ''}
                   </div>
                 )}
@@ -460,7 +475,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                     Back
                   </button>
                   <button type="button" onClick={handleNext}
-                    className="flex-1 py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2">
+                    className="flex-1 py-4 ${accentClass(sessionType)} text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2">
                     Continue
                   </button>
                 </div>
@@ -509,7 +524,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                     Back
                   </button>
                   <button type="button" onClick={handleNext}
-                    className="flex-1 py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2">
+                    className="flex-1 py-4 ${accentClass(sessionType)} text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2">
                     Review Booking
                   </button>
                 </div>
@@ -541,7 +556,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                     Back
                   </button>
                   <button type="submit" disabled={submitting}
-                    className="flex-1 py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-sm uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                    className={`flex-1 py-4 ${accentClass(sessionType)} text-[#1B2D3C] font-bold text-sm uppercase tracking-widest rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed`}>
                     {submitting ? 'Submitting...' : 'Confirm Booking'}
                   </button>
                 </div>
@@ -562,7 +577,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                     <a href="mailto:info@pitterpotter.co.uk"
-                      className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all">
+                      className={`inline-flex items-center justify-center gap-2 px-6 py-3 ${accentClass(sessionType)} text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl transition-all`}>
                       Email Us
                     </a>
                     <a href="tel:02037704499"
@@ -600,7 +615,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                 setShowSuccess(false);
                 setCurrentPage('home');
               }}
-              className="w-full py-3 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest border border-[#1B2D3C]/20 rounded-lg hover:bg-[#D6E2E9] transition-all cursor-pointer"
+              className={`w-full py-3 ${accentClass(sessionType)} text-[#1B2D3C] font-bold text-xs uppercase tracking-widest border border-[#1B2D3C]/20 rounded-lg transition-all cursor-pointer`}
             >
               Back to Home
             </button>
