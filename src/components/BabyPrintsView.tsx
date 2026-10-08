@@ -171,7 +171,12 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
     <div id="baby-prints-view" className="space-y-20 pb-20 max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6">
       {/* Page Title Header */}
       <div className="text-center space-y-4 max-w-3xl mx-auto">
-        <EditableText contentKey="babyprints_title" page="baby-prints" defaultValue="Baby Prints" adminMode={adminMode} className="font-heading text-3xl md:text-4xl font-black text-[#1B2D3C] tracking-tight" />
+        <p className="text-xs font-black uppercase tracking-widest text-[#1B2D3C]/50">
+          <EditableText contentKey="babyprints_subtitle" page="baby-prints" defaultValue="Lasting Keepsakes" adminMode={adminMode} className="text-xs text-[#1B2D3C]/50" />
+        </p>
+        <h1 className="font-heading text-4xl md:text-5xl font-black text-[#1B2D3C] tracking-tight leading-tight">
+          <EditableText contentKey="babyprints_title" page="baby-prints" defaultValue="Baby Prints" adminMode={adminMode} className="font-heading text-4xl md:text-5xl text-[#1B2D3C]" />
+        </h1>
       </div>
 
       {/* Hero Image */}
@@ -193,12 +198,12 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
           <h2 className="font-heading text-3xl font-black text-[#1B2D3C]">
             <EditableText contentKey="what_to_expect_heading" page="baby-prints" defaultValue="A Keepsake to Treasure" adminMode={adminMode} className="font-heading text-3xl text-[#1B2D3C]" />
           </h2>
-          <div className="space-y-4 text-[#1B2D3C]/85 leading-relaxed">
+          <div className="space-y-4 text-sm text-[#1B2D3C]/85 leading-relaxed">
             <p>
-              <EditableText contentKey="what_to_expect_p1" page="baby-prints" defaultValue="Our baby print sessions are calm, friendly and designed around your little one. We take impressions of tiny hands and feet into soft clay, which is then fired and finished into a lasting keepsake you can display at home." adminMode={adminMode} className="text-[#1B2D3C]/85 leading-relaxed" />
+              <EditableText contentKey="what_to_expect_p1" page="baby-prints" defaultValue="Our baby print sessions are calm, friendly and designed around your little one. We take impressions of tiny hands and feet into soft clay, which is then fired and finished into a lasting keepsake you can display at home." adminMode={adminMode} className="text-sm text-[#1B2D3C]/85 leading-relaxed" />
             </p>
             <p>
-              <EditableText contentKey="what_to_expect_p2" page="baby-prints" defaultValue="Suitable from newborn onwards, the process is quick and gentle. You choose the shape, glaze colour and any personal wording you'd like added. We handle the rest and let you know when your piece is ready to collect." adminMode={adminMode} className="text-[#1B2D3C]/85 leading-relaxed" />
+              <EditableText contentKey="what_to_expect_p2" page="baby-prints" defaultValue="Suitable from newborn onwards, the process is quick and gentle. You choose the shape, glaze colour and any personal wording you'd like added. We handle the rest and let you know when your piece is ready to collect." adminMode={adminMode} className="text-sm text-[#1B2D3C]/85 leading-relaxed" />
             </p>
           </div>
         </div>
@@ -206,22 +211,22 @@ export default function BabyPrintsView({ setCurrentPage, adminMode = false }: Ba
           <h3 className="font-heading text-xl text-[#1B2D3C]">
             <EditableText contentKey="how_it_works_heading" page="baby-prints" defaultValue="How It Works" adminMode={adminMode} className="font-heading text-xl text-[#1B2D3C]" />
           </h3>
-          <ol className="space-y-4 text-[#1B2D3C]/85">
+          <ol className="space-y-4 text-sm text-[#1B2D3C]/85">
             <li className="flex gap-3">
               <span className="text-[#1B2D3C]">1.</span>
-              <span><EditableText contentKey="how_it_works_step1" page="baby-prints" defaultValue="Book a baby print session at either studio." adminMode={adminMode} className="text-[#1B2D3C]/85" /></span>
+              <span><EditableText contentKey="how_it_works_step1" page="baby-prints" defaultValue="Book a baby print session at either studio." adminMode={adminMode} className="text-sm text-[#1B2D3C]/85" /></span>
             </li>
             <li className="flex gap-3">
               <span className="text-[#1B2D3C]">2.</span>
-              <span><EditableText contentKey="how_it_works_step2" page="baby-prints" defaultValue="We take hand and foot impressions in soft clay." adminMode={adminMode} className="text-[#1B2D3C]/85" /></span>
+              <span><EditableText contentKey="how_it_works_step2" page="baby-prints" defaultValue="We take hand and foot impressions in soft clay." adminMode={adminMode} className="text-sm text-[#1B2D3C]/85" /></span>
             </li>
             <li className="flex gap-3">
               <span className="text-[#1B2D3C]">3.</span>
-              <span><EditableText contentKey="how_it_works_step3" page="baby-prints" defaultValue="Choose your shape, glaze colour and any wording." adminMode={adminMode} className="text-[#1B2D3C]/85" /></span>
+              <span><EditableText contentKey="how_it_works_step3" page="baby-prints" defaultValue="Choose your shape, glaze colour and any wording." adminMode={adminMode} className="text-sm text-[#1B2D3C]/85" /></span>
             </li>
             <li className="flex gap-3">
               <span className="text-[#1B2D3C]">4.</span>
-              <span><EditableText contentKey="how_it_works_step4" page="baby-prints" defaultValue="We fire and finish your keepsake, ready to collect." adminMode={adminMode} className="text-[#1B2D3C]/85" /></span>
+              <span><EditableText contentKey="how_it_works_step4" page="baby-prints" defaultValue="We fire and finish your keepsake, ready to collect." adminMode={adminMode} className="text-sm text-[#1B2D3C]/85" /></span>
             </li>
           </ol>
         </div>
