@@ -186,7 +186,7 @@ export default function HomeView({ setCurrentPage, adminMode = false, disabledPa
  { keyPrefix: 'paint', title: 'Pottery Painting', desc: 'Choose from 150+ shapes and paint with premium glazes.', image: Images.potteryGallery, page: 'pottery-painting' as Page },
  { keyPrefix: 'baby', title: 'Baby Prints', desc: 'Capture tiny hand and foot impressions in clay keepsakes.', image: Images.clayImprint, page: 'baby-prints' as Page },
  { keyPrefix: 'parties', title: 'Parties & Events', desc: 'Birthdays, hen parties, baby showers and corporate groups.', image: Images.birthdayParties, page: 'parties' as Page },
- { keyPrefix: 'workshops', title: 'More Workshops', desc: 'Coming soon...', badge: 'Coming Soon', image: Images.studioHero },
+ { keyPrefix: 'sip', title: 'Sip & Paint', desc: 'Paint pottery with a glass in hand — relaxed evenings for adults.', image: Images.potteryGallery, page: 'sip-and-paint' as Page },
  { keyPrefix: 'giftcards', title: 'Gift Cards', desc: 'Give the gift of creativity with a Pitter Potter gift card.', image: Images.potteryGallery, page: 'buy-gift-card' as Page },
  ].filter(item => !item.page || !disabledPages.has(item.page) || adminMode).map((item) => (
  <div
@@ -208,11 +208,7 @@ export default function HomeView({ setCurrentPage, adminMode = false, disabledPa
  className="w-full h-full object-cover rounded-lg"
  adminMode={adminMode}
  />
- {item.badge && (
- <span className="absolute top-3 left-3 px-2.5 py-1 bg-[#D6E2E9]/90 text-[#1B2D3C] text-[10px] uppercase tracking-widest">
- <EditableText contentKey={`${item.keyPrefix}_badge`} page="home" defaultValue={item.badge} adminMode={adminMode} className="text-[10px] uppercase tracking-widest text-[#1B2D3C]" />
- </span>
- )}
+
  </div>
  <div className="p-6 flex-1">
  <p className="card-body text-[#1B2D3C] leading-relaxed">
