@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    const { studio, date, time, sessionType, paintersCount } = body;
+    const { studio, date, time, sessionType, paintersCount, excludeBookingId } = body;
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const result = await computeCapacity(supabase, studio as StudioName, date, time, sessionType, undefined, Number(paintersCount) || 1);
+    const result = await computeCapacity(supabase, studio as StudioName, date, time, sessionType, excludeBookingId, Number(paintersCount) || 1);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

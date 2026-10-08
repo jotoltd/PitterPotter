@@ -121,7 +121,7 @@ export async function getBusyDates(studio: 'Putney' | 'Wimbledon', year: number,
   return data.busyDates || [];
 }
 
-export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date: string, time: string, sessionType?: string, paintersCount?: number): Promise<number> {
+export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date: string, time: string, sessionType?: string, paintersCount?: number, excludeBookingId?: string): Promise<number> {
   if (!isSupabaseEnabled()) return DEFAULT_MAX_PAINTERS[studio];
   const response = await fetch(functionUrl('get-capacity'), {
     method: 'POST',
@@ -129,7 +129,7 @@ export async function getRemainingCapacity(studio: 'Putney' | 'Wimbledon', date:
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
     },
-    body: JSON.stringify({ studio, date, time, sessionType, paintersCount }),
+    body: JSON.stringify({ studio, date, time, sessionType, paintersCount, excludeBookingId }),
   });
   const data = await response.json();
   if (!response.ok || data.error) {

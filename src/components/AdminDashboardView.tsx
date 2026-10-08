@@ -1913,7 +1913,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     const oldBooking = inquiries.find((i) => i.id === updatedBooking.id);
     let remaining = 0;
     try {
-      remaining = await getRemainingCapacity(updatedBooking.studio, updatedBooking.date, updatedBooking.time, updatedBooking.sessionType, updatedBooking.paintersCount);
+      remaining = await getRemainingCapacity(updatedBooking.studio, updatedBooking.date, updatedBooking.time, updatedBooking.sessionType, updatedBooking.paintersCount, updatedBooking.id);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Cannot save: time slot conflict', 'error');
       return;
