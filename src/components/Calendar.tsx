@@ -27,6 +27,7 @@ interface CalendarProps {
   minDate?: Date;
   dayOfWeekDisabled?: number[];
   schoolHolidayDates?: HolidayRange[];
+  disableHolidayMonday?: boolean;
 }
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -42,6 +43,7 @@ export default function Calendar({
   minDate,
   dayOfWeekDisabled = [],
   schoolHolidayDates = [],
+  disableHolidayMonday = false,
 }: CalendarProps) {
   const days = useMemo(() => {
     const start = startOfWeek(startOfMonth(month), { weekStartsOn });
@@ -50,7 +52,7 @@ export default function Calendar({
   }, [month, weekStartsOn]);
 
   const isSchoolHolidayMonday = (day: Date) => {
-    return getDay(day) === 1 && isDateInHolidayRange(format(day, 'yyyy-MM-dd'), schoolHolidayDates);
+    return getDay(day) === 1 && !disableHolidayMonday && isDateInHolidayRange(format(day, 'yyyy-MM-dd'), schoolHolidayDates);
   };
 
   const isDisabled = (day: Date) => {

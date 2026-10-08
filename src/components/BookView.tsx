@@ -383,6 +383,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                     minDate={minDate}
                     dayOfWeekDisabled={disabledWeekDays(sessionType, studio)}
                     schoolHolidayDates={closures.schoolHolidays}
+                    disableHolidayMonday={sessionType === 'sip-and-paint'}
                     marks={busyDates}
                   />
                 </div>
