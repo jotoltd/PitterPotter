@@ -1,6 +1,7 @@
 import { createClient } from 'supabase';
 import { getStudioInfo } from '../_shared/studio-info.ts';
 import { loadSMSTemplate, renderTemplate } from '../_shared/sms-template.ts';
+import { getConfiguredSMSProvider, sendSMS } from '../_shared/sms-provider.ts';
 
 const PARTY_TYPES = ['birthday-party', 'baby-shower-hen', 'corporate'];
 
@@ -29,10 +30,9 @@ Deno.serve(async (req) => {
     if (typeof body.daysBefore === 'number') daysBefore = body.daysBefore;
   } catch { /* ignore */ }
 
-  const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  if (!accountSid || !authToken) {
-    return new Response(JSON.stringify({ error: 'Twilio not configured' }), { status: 500 });
+  const provider = await getConfiguredSMSProvider(supabase);
+  if (provider === 'none') {
+    return new Response(JSON.stringify({ error: 'SMS provider not configured' }), { status: 500 });
   }
 
   // Calculate target date (X days from now)
@@ -122,33 +122,19 @@ Deno.serve(async (req) => {
     const senderId = booking.studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP';
 
     try {
-      const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-      const params = new URLSearchParams();
-      params.append('From', senderId);
-      params.append('To', toNumber);
-      params.append('Body', message);
       const projectUrl = Deno.env.get('SUPABASE_URL');
-      if (projectUrl) {
-        params.append('StatusCallback', `${projectUrl}/functions/v1/twilio-webhook`);
-      }
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: params.toString(),
+      const result = await sendSMS(provider, {
+        to: toNumber,
+        body: message,
+        senderId,
+        statusCallback: provider === 'twilio' && projectUrl ? `${projectUrl}/functions/v1/twilio-webhook` : undefined,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        console.error('Twilio error:', errorData);
+      if (!result.success) {
+        console.error(`${provider} error:`, result.error);
         failed++;
         continue;
       }
-
-      const data = await response.json();
 
       // Log to email_logs
       try {
@@ -157,7 +143,7 @@ Deno.serve(async (req) => {
           recipient: toNumber,
           subject: 'Party reminder SMS',
           body: message,
-          resend_id: data.sid || null,
+          resend_id: result.id || null,
           status: 'sent',
           booking_id: booking.booking_id,
         });

@@ -1,8 +1,16 @@
 import { createClient } from 'supabase';
 import { isObject, isNonEmptyString, isString } from '../_shared/validate.ts';
 import { verifyStaff } from '../_shared/auth.ts';
+import { logAudit } from '../_shared/audit.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
-import { sendPureSMS, getPureSMSUsage } from '../_shared/puresms.ts';
+import {
+  getConfiguredSMSProvider,
+  getTwilioBalance,
+  getTwilioUsage,
+  sendSMS,
+  type SMSProvider,
+} from '../_shared/sms-provider.ts';
+import { getPureSMSUsage } from '../_shared/puresms.ts';
 
 interface StaffPayload {
   username: string;
@@ -10,89 +18,13 @@ interface StaffPayload {
   role: string;
 }
 
-async function getTwilioBalance(): Promise<{ balance: string; currency: string } | { error: string }> {
-  const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  if (!accountSid || !authToken) return { error: 'Twilio not configured' };
-
-  try {
-    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Balance.json`, {
-      headers: { 'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}` },
-    });
-    if (!response.ok) return { error: 'Failed to fetch balance' };
-    const data = await response.json();
-    return { balance: data.balance, currency: data.currency };
-  } catch {
-    return { error: 'Failed to fetch balance' };
-  }
-}
-
-async function getTwilioUsage(days: number = 30): Promise<{ count: number; totalCost: string; currency: string; recent: any[] } | { error: string }> {
-  const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  if (!accountSid || !authToken) return { error: 'Twilio not configured' };
-
-  try {
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-
-    const params = new URLSearchParams({
-      'Category': 'sms',
-      'StartDate': startDate.toISOString().split('T')[0],
-      'EndDate': endDate.toISOString().split('T')[0],
-    });
-
-    const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Usage/Records.json?${params}`,
-      { headers: { 'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}` } }
-    );
-    if (!response.ok) return { error: 'Failed to fetch usage' };
-    const data = await response.json();
-    const records = data.usage_records || [];
-    const total = records.reduce((sum: number, r: any) => sum + parseFloat(r.price || '0'), 0);
-    const count = records.reduce((sum: number, r: any) => sum + (r.count || 0), 0);
-
-    const msgParams = new URLSearchParams({
-      'PageSize': '20',
-    });
-    const msgResponse = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json?${msgParams}`,
-      { headers: { 'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}` } }
-    );
-    let recent: any[] = [];
-    if (msgResponse.ok) {
-      const msgData = await msgResponse.json();
-      recent = (msgData.messages || []).map((m: any) => ({
-        to: m.to,
-        body: m.body,
-        status: m.status,
-        direction: m.direction,
-        dateSent: m.date_sent,
-        price: m.price,
-        errorCode: m.error_code,
-        errorMessage: m.error_message,
-      }));
-    }
-
-    return {
-      count,
-      totalCost: total.toFixed(4),
-      currency: records[0]?.price_unit || 'USD',
-      recent,
-    };
-  } catch {
-    return { error: 'Failed to fetch usage' };
-  }
-}
-
-async function sendTestSMS(to: string, body: string, studio?: string): Promise<{ success: boolean; error?: string; sid?: string; id?: string }> {
-  const puresmsKey = Deno.env.get('PURESMS_API_KEY');
-  const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const usePureSMS = !!puresmsKey;
-
-  if (!usePureSMS && (!accountSid || !authToken)) {
+async function sendTestSMS(
+  provider: SMSProvider,
+  to: string,
+  body: string,
+  studio?: string,
+): Promise<{ success: boolean; error?: string; sid?: string; id?: string }> {
+  if (provider === 'none') {
     return { success: false, error: 'SMS provider not configured' };
   }
 
@@ -101,41 +33,14 @@ async function sendTestSMS(to: string, body: string, studio?: string): Promise<{
     ? (studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP')
     : (fromNumber || 'PitterPotP');
 
-  if (usePureSMS) {
-    const result = await sendPureSMS(to, body, senderId);
-    return { success: result.success, error: result.error, id: result.id };
-  }
-
-  try {
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-    const params = new URLSearchParams();
-    params.append('From', senderId);
-    params.append('To', to);
-    params.append('Body', body);
-    const projectUrl = Deno.env.get('SUPABASE_URL');
-    if (projectUrl) {
-      params.append('StatusCallback', `${projectUrl}/functions/v1/twilio-webhook`);
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-      return { success: false, error: errorData.message || 'Failed to send SMS' };
-    }
-
-    const data = await response.json();
-    return { success: true, sid: data.sid };
-  } catch (err) {
-    return { success: false, error: 'Failed to send SMS' };
-  }
+  const projectUrl = Deno.env.get('SUPABASE_URL');
+  const result = await sendSMS(provider, {
+    to,
+    body,
+    senderId,
+    statusCallback: provider === 'twilio' && projectUrl ? `${projectUrl}/functions/v1/twilio-webhook` : undefined,
+  });
+  return { success: result.success, error: result.error, sid: result.id, id: result.id };
 }
 
 Deno.serve(async (req) => {
@@ -186,47 +91,66 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'provider') {
-      const puresmsKey = Deno.env.get('PURESMS_API_KEY');
-      const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-      const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-      const provider = puresmsKey ? 'puresms' : (accountSid && authToken ? 'twilio' : 'none');
+      const provider = await getConfiguredSMSProvider(supabase);
       return new Response(JSON.stringify({ provider }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    if (action === 'setProvider') {
+      const { provider: requestedProvider } = body as { provider?: string };
+      if (requestedProvider !== 'twilio' && requestedProvider !== 'puresms') {
+        return new Response(JSON.stringify({ error: 'Provider must be twilio or puresms' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const envKey = requestedProvider === 'puresms' ? 'PURESMS_API_KEY' : 'TWILIO_ACCOUNT_SID';
+      if (!Deno.env.get(envKey)) {
+        return new Response(JSON.stringify({ error: `${requestedProvider} is not configured` }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { error } = await supabase.from('settings').upsert({
+        key: 'sms_provider',
+        value: requestedProvider,
+        updated_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+      await logAudit(supabase, staff, 'update', 'settings', 'sms_provider', { value: requestedProvider });
+      return new Response(JSON.stringify({ success: true, provider: requestedProvider }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     if (action === 'balance') {
+      const activeProvider = await getConfiguredSMSProvider(supabase);
       const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
       const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
       if (accountSid && authToken) {
         const result = await getTwilioBalance();
-        return new Response(JSON.stringify(result), {
+        return new Response(JSON.stringify({ activeProvider, ...result }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (Deno.env.get('PURESMS_API_KEY')) {
-        return new Response(JSON.stringify({ provider: 'puresms', balance: 'N/A', currency: 'N/A' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      return new Response(JSON.stringify({ error: 'SMS provider not configured' }), {
+      return new Response(JSON.stringify({ activeProvider, error: 'Twilio not configured' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     if (action === 'usage') {
       const days = typeof body.days === 'number' ? body.days : 30;
-      const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-      const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+      const requestedProvider = typeof body.provider === 'string' ? body.provider : await getConfiguredSMSProvider(supabase);
       let result;
-      if (accountSid && authToken) {
+      if (requestedProvider === 'twilio') {
         result = await getTwilioUsage(days);
-      } else if (Deno.env.get('PURESMS_API_KEY')) {
+      } else if (requestedProvider === 'puresms') {
         result = await getPureSMSUsage(days);
       } else {
         result = { error: 'SMS provider not configured' };
       }
-      return new Response(JSON.stringify(result), {
+      return new Response(JSON.stringify({ provider: requestedProvider, ...result }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -240,7 +164,8 @@ Deno.serve(async (req) => {
         });
       }
 
-      const result = await sendTestSMS(to, message, studio);
+      const provider = await getConfiguredSMSProvider(supabase);
+      const result = await sendTestSMS(provider, to, message, studio);
 
       try {
         await supabase.from('email_logs').insert({
@@ -343,7 +268,8 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const result = await sendTestSMS(logEntry.recipient, messageBody);
+      const provider = await getConfiguredSMSProvider(supabase);
+      const result = await sendTestSMS(provider, logEntry.recipient, messageBody);
       try {
         await supabase.from('email_logs').insert({
           email_type: logEntry.email_type,

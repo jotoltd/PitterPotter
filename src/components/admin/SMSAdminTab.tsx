@@ -43,14 +43,99 @@ interface SMSLog {
   created_at: string;
 }
 
+function UsageCard({
+  title,
+  usage,
+  loading,
+  error,
+  days,
+}: {
+  title: string;
+  usage: UsageData | null;
+  loading: boolean;
+  error: string | null;
+  days: number;
+}) {
+  return (
+    <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5">
+          <BarChart3 className="w-4 h-4" /> {title}
+        </h3>
+      </div>
+      {loading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-8" />
+          <Skeleton className="h-8" />
+          <Skeleton className="h-8" />
+        </div>
+      ) : error ? (
+        <div className="flex items-center gap-2 text-sm text-red-600 font-semibold">
+          <AlertCircle className="w-4 h-4" /> {error}
+        </div>
+      ) : usage ? (
+        <>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-[#D6E2E9]/30 p-3 rounded-lg">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C]/60">SMS Sent ({days}d)</p>
+              <p className="text-2xl font-black text-[#1B2D3C]">{usage.count}</p>
+            </div>
+            <div className="bg-[#D6E2E9]/30 p-3 rounded-lg">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C]/60">Total Cost</p>
+              <p className="text-2xl font-black text-[#1B2D3C]">{usage.currency === 'USD' ? '$' : usage.currency + ' '}{usage.totalCost}</p>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-2">Recent Messages</h4>
+            {usage.recent.length === 0 ? (
+              <p className="text-xs text-[#1B2D3C]/40 font-semibold py-4 text-center">No messages sent yet</p>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {usage.recent.map((msg, i) => (
+                  <div key={i} className="border border-[#1B2D3C]/10 rounded-lg p-3 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-3 h-3 text-[#1B2D3C]/40" />
+                        <span className="text-xs font-bold text-[#1B2D3C]">{msg.to}</span>
+                      </div>
+                      <span className={`px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full ${
+                        msg.status === 'delivered' ? 'bg-emerald-100 text-emerald-800'
+                        : msg.status === 'sent' ? 'bg-blue-100 text-blue-800'
+                        : msg.status === 'queued' ? 'bg-amber-100 text-amber-800'
+                        : msg.status === 'failed' || msg.status === 'undelivered' ? 'bg-red-100 text-red-700'
+                        : 'bg-stone-100 text-stone-600'
+                      }`}>
+                        {msg.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#1B2D3C]/70 line-clamp-2">{msg.body}</p>
+                    <div className="flex items-center gap-3 text-[10px] text-[#1B2D3C]/40 font-semibold">
+                      <span>{msg.dateSent ? new Date(msg.dateSent).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Pending'}</span>
+                      {msg.price && <span>Cost: {msg.price}</span>}
+                      {msg.direction && <span className="uppercase">{msg.direction}</span>}
+                    </div>
+                    {msg.errorMessage && (
+                      <p className="text-[10px] text-red-600 font-semibold flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> {msg.errorMessage}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
   const [balance, setBalance] = useState<BalanceData | null>(null);
   const [balanceError, setBalanceError] = useState<string | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(true);
 
-  const [usage, setUsage] = useState<UsageData | null>(null);
-  const [usageError, setUsageError] = useState<string | null>(null);
-  const [usageLoading, setUsageLoading] = useState(true);
   const [usageDays, setUsageDays] = useState(30);
 
   const [testPhone, setTestPhone] = useState('');
@@ -68,6 +153,14 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
   const [webhookHealthLoading, setWebhookHealthLoading] = useState(false);
   const [provider, setProvider] = useState<'twilio' | 'puresms' | 'none' | null>(null);
   const [providerLoading, setProviderLoading] = useState(true);
+  const [providerSaving, setProviderSaving] = useState(false);
+
+  const [twilioUsage, setTwilioUsage] = useState<UsageData | null>(null);
+  const [twilioUsageError, setTwilioUsageError] = useState<string | null>(null);
+  const [twilioUsageLoading, setTwilioUsageLoading] = useState(true);
+  const [puresmsUsage, setPuresmsUsage] = useState<UsageData | null>(null);
+  const [puresmsUsageError, setPuresmsUsageError] = useState<string | null>(null);
+  const [puresmsUsageLoading, setPuresmsUsageLoading] = useState(true);
 
   const fetchSmsLogs = useCallback(async () => {
     setSmsLogsLoading(true);
@@ -130,46 +223,67 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
     }
   }, [staff]);
 
-  const fetchUsage = useCallback(async (days: number) => {
-    setUsageLoading(true);
-    setUsageError(null);
+  const fetchUsage = useCallback(async (days: number, provider: 'twilio' | 'puresms') => {
+    const setLoading = provider === 'twilio' ? setTwilioUsageLoading : setPuresmsUsageLoading;
+    const setError = provider === 'twilio' ? setTwilioUsageError : setPuresmsUsageError;
+    const setUsage = provider === 'twilio' ? setTwilioUsage : setPuresmsUsage;
+    setLoading(true);
+    setError(null);
     try {
       if (!isSupabaseEnabled() || !staff.sessionToken) {
-        setUsageError('Supabase not configured');
+        setError('Supabase not configured');
         return;
       }
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-sms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ action: 'usage', days, staff: { username: staff.username, sessionToken: staff.sessionToken } }),
+        body: JSON.stringify({ action: 'usage', days, provider, staff: { username: staff.username, sessionToken: staff.sessionToken } }),
       });
       const data = await res.json();
       if (data.error) {
-        setUsageError(data.error);
+        setError(data.error);
       } else {
         setUsage(data);
       }
     } catch {
-      setUsageError('Failed to fetch usage');
+      setError('Failed to fetch usage');
     } finally {
-      setUsageLoading(false);
+      setLoading(false);
     }
   }, [staff]);
+
+  const saveProvider = async (next: 'twilio' | 'puresms') => {
+    if (!isSupabaseEnabled() || !staff.sessionToken) return;
+    setProviderSaving(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ action: 'setProvider', provider: next, staff: { username: staff.username, sessionToken: staff.sessionToken } }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert(data.error);
+      } else {
+        setProvider(next);
+      }
+    } catch {
+      alert('Failed to update SMS provider');
+    } finally {
+      setProviderSaving(false);
+    }
+  };
 
   useEffect(() => {
     fetchProvider();
     fetchSmsLogs();
-  }, [fetchProvider, fetchSmsLogs]);
+    fetchBalance();
+  }, [fetchProvider, fetchSmsLogs, fetchBalance]);
 
   useEffect(() => {
-    fetchUsage(usageDays);
+    fetchUsage(usageDays, 'twilio');
+    fetchUsage(usageDays, 'puresms');
   }, [fetchUsage, usageDays]);
-
-  useEffect(() => {
-    if (provider === 'twilio') {
-      fetchBalance();
-    }
-  }, [provider, fetchBalance]);
 
   useEffect(() => {
     if (balance && parseFloat(balance.balance) < 10) {
@@ -208,7 +322,7 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
       });
       const data = await res.json();
       setSmsResendResult({ id: log.id, success: data.success !== false, message: data.success !== false ? 'SMS resent successfully' : (data.error || 'Failed to resend') });
-      if (data.success !== false) { fetchSmsLogs(); fetchBalance(); }
+      if (data.success !== false) { fetchSmsLogs(); fetchBalance(); fetchUsage(usageDays, 'twilio'); fetchUsage(usageDays, 'puresms'); }
     } catch {
       setSmsResendResult({ id: log.id, success: false, message: 'Failed to resend' });
     } finally {
@@ -235,7 +349,8 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
       const data = await res.json();
       if (data.success) {
         setSendResult({ success: true, message: 'SMS sent successfully!' });
-        fetchUsage(usageDays);
+        fetchUsage(usageDays, 'twilio');
+        fetchUsage(usageDays, 'puresms');
         fetchBalance();
       } else {
         setSendResult({ success: false, message: data.error || 'Failed to send SMS' });
@@ -267,12 +382,45 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
           )}
         </div>
         <p className="text-xs text-[#1B2D3C]/60 mt-1">
-          Send test SMS and view delivery logs. Balance/usage shown when Twilio is active.
+          Choose the SMS provider, send test SMS and view delivery logs and usage for both providers.
         </p>
       </div>
 
+      {/* Provider selector */}
+      {!providerLoading && provider !== 'none' && (
+        <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5">
+              <MessageSquare className="w-4 h-4" /> SMS Provider
+            </h3>
+          </div>
+          <div className="flex rounded-lg border border-[#1B2D3C]/15 overflow-hidden">
+            <button
+              onClick={() => saveProvider('twilio')}
+              disabled={providerSaving || provider === 'twilio'}
+              className={`flex-1 px-3 py-2 text-[10px] font-bold transition-all cursor-pointer disabled:opacity-40 ${
+                provider === 'twilio' ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'
+              }`}
+            >
+              Twilio
+            </button>
+            <button
+              onClick={() => saveProvider('puresms')}
+              disabled={providerSaving || provider === 'puresms'}
+              className={`flex-1 px-3 py-2 text-[10px] font-bold transition-all cursor-pointer disabled:opacity-40 ${
+                provider === 'puresms' ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'
+              }`}
+            >
+              PureSMS
+            </button>
+          </div>
+          <p className="text-[10px] text-[#1B2D3C]/40 mt-1">
+            Active provider: {provider === 'twilio' ? 'Twilio' : provider === 'puresms' ? 'PureSMS' : 'None'}
+          </p>
+        </div>
+      )}
+
       {/* Balance card */}
-      {(providerLoading || provider === 'twilio') && (
       <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5">
@@ -299,7 +447,6 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
           </div>
         ) : null}
       </div>
-      )}
 
       {/* Send test SMS */}
       <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-5">
@@ -504,93 +651,28 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
       </div>
 
       {/* Usage */}
-      {provider !== 'none' && (
-      <div className="bg-white border border-[#1B2D3C]/15 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5">
-            <BarChart3 className="w-4 h-4" /> SMS Usage
-          </h3>
-          <div className="flex rounded-lg border border-[#1B2D3C]/15 overflow-hidden">
-            {[7, 30, 90].map(d => (
-              <button
-                key={d}
-                onClick={() => setUsageDays(d)}
-                className={`px-2.5 py-1 text-[10px] font-bold transition-all cursor-pointer ${
-                  usageDays === d ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'
-                }`}
-              >
-                {d}d
-              </button>
-            ))}
-          </div>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-black text-[#1B2D3C] uppercase tracking-wider flex items-center gap-1.5">
+          <BarChart3 className="w-4 h-4" /> SMS Usage
+        </h3>
+        <div className="flex rounded-lg border border-[#1B2D3C]/15 overflow-hidden">
+          {[7, 30, 90].map(d => (
+            <button
+              key={d}
+              onClick={() => setUsageDays(d)}
+              className={`px-2.5 py-1 text-[10px] font-bold transition-all cursor-pointer ${
+                usageDays === d ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'
+              }`}
+            >
+              {d}d
+            </button>
+          ))}
         </div>
-
-        {usageLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-8" />
-            <Skeleton className="h-8" />
-            <Skeleton className="h-8" />
-          </div>
-        ) : usageError ? (
-          <div className="flex items-center gap-2 text-sm text-red-600 font-semibold">
-            <AlertCircle className="w-4 h-4" /> {usageError}
-          </div>
-        ) : usage ? (
-          <>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="bg-[#D6E2E9]/30 p-3 rounded-lg">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C]/60">SMS Sent ({usageDays}d)</p>
-                <p className="text-2xl font-black text-[#1B2D3C]">{usage.count}</p>
-              </div>
-              <div className="bg-[#D6E2E9]/30 p-3 rounded-lg">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-[#1B2D3C]/60">Total Cost</p>
-                <p className="text-2xl font-black text-[#1B2D3C]">{usage.currency === 'USD' ? '$' : usage.currency + ' '}{usage.totalCost}</p>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-2">Recent Messages</h4>
-              {usage.recent.length === 0 ? (
-                <p className="text-xs text-[#1B2D3C]/40 font-semibold py-4 text-center">No messages sent yet</p>
-              ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {usage.recent.map((msg, i) => (
-                    <div key={i} className="border border-[#1B2D3C]/10 rounded-lg p-3 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-3 h-3 text-[#1B2D3C]/40" />
-                          <span className="text-xs font-bold text-[#1B2D3C]">{msg.to}</span>
-                        </div>
-                        <span className={`px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-full ${
-                          msg.status === 'delivered' ? 'bg-emerald-100 text-emerald-800'
-                          : msg.status === 'sent' ? 'bg-blue-100 text-blue-800'
-                          : msg.status === 'queued' ? 'bg-amber-100 text-amber-800'
-                          : msg.status === 'failed' || msg.status === 'undelivered' ? 'bg-red-100 text-red-700'
-                          : 'bg-stone-100 text-stone-600'
-                        }`}>
-                          {msg.status}
-                        </span>
-                      </div>
-                      <p className="text-xs text-[#1B2D3C]/70 line-clamp-2">{msg.body}</p>
-                      <div className="flex items-center gap-3 text-[10px] text-[#1B2D3C]/40 font-semibold">
-                        <span>{msg.dateSent ? new Date(msg.dateSent).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Pending'}</span>
-                        {msg.price && <span>Cost: {msg.price}</span>}
-                        {msg.direction && <span className="uppercase">{msg.direction}</span>}
-                      </div>
-                      {msg.errorMessage && (
-                        <p className="text-[10px] text-red-600 font-semibold flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" /> {msg.errorMessage}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        ) : null}
       </div>
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <UsageCard title="Twilio" usage={twilioUsage} loading={twilioUsageLoading} error={twilioUsageError} days={usageDays} />
+        <UsageCard title="PureSMS" usage={puresmsUsage} loading={puresmsUsageLoading} error={puresmsUsageError} days={usageDays} />
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { loadEmailTemplate, renderTemplate } from '../_shared/email-template.ts'
 import { loadSMSTemplate } from '../_shared/sms-template.ts';
 import { getStudioInfo } from '../_shared/studio-info.ts';
 import { corsHeaders as makeCorsHeaders, optionsResponse } from '../_shared/cors.ts';
+import { getConfiguredSMSProvider, sendSMS } from '../_shared/sms-provider.ts';
 
 const PARTY_TYPES = ['birthday-party', 'baby-shower-hen', 'corporate'];
 
@@ -149,10 +150,16 @@ async function sendReminderSMS(
     paymentLinkUrl: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
-  const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  if (!accountSid || !authToken) {
-    console.warn('Twilio not configured; skipping reminder SMS');
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return { success: false, error: 'Supabase not configured' };
+  }
+  const optOutClient = createClient(supabaseUrl, supabaseServiceKey);
+
+  const provider = await getConfiguredSMSProvider(optOutClient);
+  if (provider === 'none') {
+    console.warn('No SMS provider configured; skipping reminder SMS');
     return { success: false, error: 'SMS service not configured' };
   }
 
@@ -169,10 +176,7 @@ async function sendReminderSMS(
   const studioInfo = getStudioInfo(details.studio);
 
   // Check SMS opt-out
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (supabaseUrl && supabaseServiceKey) {
-    const optOutClient = createClient(supabaseUrl, supabaseServiceKey);
+  {
     const { data: optOut } = await optOutClient.from('sms_opt_outs')
       .select('phone').eq('phone', toNumber).is('opted_in_at', null).limit(1);
     if (optOut && optOut.length > 0) {
@@ -212,49 +216,29 @@ async function sendReminderSMS(
   }
 
   try {
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-    const body = new URLSearchParams();
-    body.append('From', senderId);
-    body.append('To', toNumber);
-    body.append('Body', message);
-
     const projectUrl = Deno.env.get('SUPABASE_URL');
-    if (projectUrl) {
-      body.append('StatusCallback', `${projectUrl}/functions/v1/twilio-webhook`);
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${btoa(`${accountSid}:${authToken}`)}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: body.toString(),
+    const result = await sendSMS(provider, {
+      to: toNumber,
+      body: message,
+      senderId,
+      statusCallback: provider === 'twilio' && projectUrl ? `${projectUrl}/functions/v1/twilio-webhook` : undefined,
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-      console.error('Twilio SMS error:', errorData);
-      return { success: false, error: errorData.message || 'Failed to send SMS' };
+    if (!result.success) {
+      console.error(`${provider} SMS error:`, result.error);
+      return { success: false, error: result.error || 'Failed to send SMS' };
     }
 
-    const data = await response.json();
-
     try {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL');
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-      if (supabaseUrl && supabaseServiceKey) {
-        const logClient = createClient(supabaseUrl, supabaseServiceKey);
-        await logClient.from('email_logs').insert({
-          email_type: 'party_final_reminder_sms',
-          recipient: toNumber,
-          subject: 'Party final reminder SMS',
-          body: message,
-          resend_id: data.sid || null,
-          status: 'sent',
-          booking_id: details.bookingId,
-        });
-      }
+      await optOutClient.from('email_logs').insert({
+        email_type: 'party_final_reminder_sms',
+        recipient: toNumber,
+        subject: 'Party final reminder SMS',
+        body: message,
+        resend_id: result.id || null,
+        status: 'sent',
+        booking_id: details.bookingId,
+      });
     } catch (logErr) {
       console.error('Failed to log SMS:', logErr);
     }
