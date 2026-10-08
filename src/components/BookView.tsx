@@ -27,7 +27,7 @@ interface SessionOption {
 const SESSION_OPTIONS: SessionOption[] = [
   { value: 'painting', label: 'Pottery Painting', description: 'Pick a piece, paint it your way — we glaze and fire it for you.', studios: ['Putney', 'Wimbledon'] },
   { value: 'clay-imprints', label: 'Baby Prints', description: 'Capture tiny hands and feet in beautiful keepsakes.', studios: ['Putney', 'Wimbledon'] },
-  { value: 'sip-and-paint', label: 'Sip & Paint', description: 'Paint pottery with a glass in hand — the perfect creative night out.', studios: ['Putney', 'Wimbledon'] },
+  { value: 'sip-and-paint', label: 'Sip & Paint', description: 'Paint pottery with a glass in hand — the perfect creative night out.', studios: ['Wimbledon'] },
   { value: 'birthday-party', label: 'Birthday Party', description: 'A creative, mess-free birthday with dedicated party hosts.', studios: ['Putney', 'Wimbledon'], isParty: true },
   { value: 'baby-shower-hen', label: 'Baby Shower / Hen Party', description: 'A fun, creative group experience for showers and hens.', studios: ['Putney', 'Wimbledon'], isParty: true },
   { value: 'corporate', label: 'Corporate Event', description: 'Team building and client events with a creative twist.', studios: ['Putney', 'Wimbledon'], contactOnly: true },

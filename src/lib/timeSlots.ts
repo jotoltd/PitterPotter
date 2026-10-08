@@ -62,6 +62,7 @@ export const DEFAULT_SLOTS: TimeSlotsData = {
   Putney: JSON.parse(JSON.stringify(SINGLE_STUDIO_DEFAULTS)),
   Wimbledon: JSON.parse(JSON.stringify(SINGLE_STUDIO_DEFAULTS)),
 };
+DEFAULT_SLOTS.Putney['sip-and-paint'].enabled = false;
 
 function isLegacySlots(value: unknown): value is Partial<Record<SlotSessionType, string[]>> {
   if (typeof value !== 'object' || value === null) return false;

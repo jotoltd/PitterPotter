@@ -2669,7 +2669,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 <button
                   onClick={() => {
                     setActiveTab('dashboard');
-                    setNewBooking(prev => ({ ...prev, sessionType: 'sip-and-paint' }));
+                    setNewBooking(prev => ({ ...prev, studio: 'Wimbledon', sessionType: 'sip-and-paint' }));
                     setLockedSessionType('sip-and-paint');
                     setShowAddModal(true);
                   }}

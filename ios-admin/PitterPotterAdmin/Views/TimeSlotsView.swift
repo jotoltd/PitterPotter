@@ -300,13 +300,20 @@ struct TimeSlotsData {
     var dict: [String: [String: [String: Any]]]
 
     static let `default`: TimeSlotsData = {
-        let studio: [String: [String: Any]] = [
+        var putneyStudio: [String: [String: Any]] = [
             "painting": defaultConfig(for: "painting"),
             "sip-and-paint": defaultConfig(for: "sip-and-paint"),
             "baby-prints": defaultConfig(for: "baby-prints"),
             "party": defaultConfig(for: "party"),
         ]
-        return TimeSlotsData(dict: ["Putney": studio, "Wimbledon": studio])
+        putneyStudio["sip-and-paint"]?["enabled"] = false
+        let wimbledonStudio: [String: [String: Any]] = [
+            "painting": defaultConfig(for: "painting"),
+            "sip-and-paint": defaultConfig(for: "sip-and-paint"),
+            "baby-prints": defaultConfig(for: "baby-prints"),
+            "party": defaultConfig(for: "party"),
+        ]
+        return TimeSlotsData(dict: ["Putney": putneyStudio, "Wimbledon": wimbledonStudio])
     }()
 
     static func defaultAvailableDays(for session: String) -> [Int] {
