@@ -361,15 +361,15 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                   <h2 className="font-heading text-xl font-black text-[#1B2D3C]">What would you like to do?</h2>
                   <p className="text-xs text-stone-500 mt-1 font-semibold">Choose your session type at {studio}.</p>
                 </div>
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {availableSessionTypes.map((opt) => (
                     <button key={opt.value} type="button" onClick={() => { setSessionType(opt.value); setError(''); }}
-                      className={`p-4 border-2 text-left transition-all cursor-pointer rounded-xl ${
-                        sessionType === opt.value ? 'border-[#1B2D3C] bg-[#DBE7E4] text-[#1B2D3C]' : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
+                      className={`p-5 border text-left transition-all cursor-pointer rounded-xl ${
+                        sessionType === opt.value ? 'border-[#1B2D3C]/40 bg-[#DBE7E4] text-[#1B2D3C]' : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
                       }`}>
                       <div>
-                        <p className="font-heading font-bold text-sm">{opt.label}</p>
-                        <p className={`text-[11px] font-semibold mt-0.5 ${sessionType === opt.value ? 'text-[#1B2D3C]/80' : 'text-[#1B2D3C]/50'}`}>{opt.description}</p>
+                        <p className="font-heading font-black text-base">{opt.label}</p>
+                        <p className={`text-[11px] font-semibold mt-1 ${sessionType === opt.value ? 'text-[#1B2D3C]/80' : 'text-[#1B2D3C]/50'}`}>{opt.description}</p>
                         {opt.isParty && <p className="font-heading text-[10px] font-bold text-purple-600 mt-1 uppercase tracking-wider">Deposit required</p>}
                       </div>
                     </button>
