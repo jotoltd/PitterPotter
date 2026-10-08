@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, FormEvent } from 'react';
-import { format, getDay, startOfDay, isBefore } from 'date-fns';
+import { format, getDay, startOfDay, isBefore, addDays, subDays, isSameDay } from 'date-fns';
 import { Page, BookingInquiry } from '../types';
 import Calendar from './Calendar';
 import { getRemainingCapacity, getBusyDates, createPublicBooking } from '../lib/bookings';
@@ -61,10 +61,26 @@ function disabledWeekDays(sessionType: SessionTypeValue, studio: Studio): number
   return disabled.sort((a, b) => a - b);
 }
 
+function isThisWeekend(date: Date): boolean {
+  const today = startOfDay(new Date());
+  const day = today.getDay();
+  const saturday = day === 0
+    ? subDays(today, 1)
+    : day === 6
+      ? today
+      : addDays(today, 6 - day);
+  const sunday = addDays(saturday, 1);
+  const d = startOfDay(date);
+  return d >= saturday && d <= sunday;
+}
+
 function getTimeSlots(date: Date, closures: ClosureDates, studio: Studio, sessionType: SessionTypeValue): string[] {
   const day = getDay(date);
   const dateStr = format(date, 'yyyy-MM-dd');
   const isHoliday = isDateInHolidayRange(dateStr, closures.schoolHolidays);
+  if (sessionType === 'sip-and-paint' && studio === 'Wimbledon' && isThisWeekend(date)) {
+    return [];
+  }
   const availableDays = getAvailableDays(SLOT_SESSION_KEY(sessionType), studio);
 
   const baseAvailable = availableDays.includes(day);
