@@ -1971,9 +1971,21 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       return;
     }
 
+    const isParty = ['birthday-party', 'baby-shower-hen', 'corporate'].includes(updatedBooking.sessionType);
+    const bookingToSave = isParty ? updatedBooking : {
+      ...updatedBooking,
+      depositAmount: undefined,
+      finalSeats: undefined,
+      finalBalance: undefined,
+      paymentStatus: undefined,
+      paymentLinkUrl: undefined,
+      paymentLinkSentAt: undefined,
+      stripePaymentIntentId: undefined,
+    };
+
     try {
-      const warning = await updateBooking(updatedBooking, staff);
-      setInquiries(inquiries.map((i) => i.id === updatedBooking.id ? updatedBooking : i));
+      const warning = await updateBooking(bookingToSave, staff);
+      setInquiries(inquiries.map((i) => i.id === bookingToSave.id ? bookingToSave : i));
       setShowEditModal(false);
       setEditingBooking(null);
       showToast(warning ? `Booking updated — ${warning}` : 'Booking updated', warning ? 'error' : 'success');

@@ -257,6 +257,17 @@ Deno.serve(async (req) => {
       if (bookingRow.status === 'completed' && !prevRow?.collection_status && !bookingRow.collection_status) {
         bookingRow.collection_status = 'painted';
       }
+      // Non-party bookings should never carry party-payment fields
+      const isPartyBooking = ['birthday-party', 'baby-shower-hen', 'corporate'].includes(bookingRow.session_type);
+      if (!isPartyBooking) {
+        bookingRow.deposit_amount = null;
+        bookingRow.final_seats = null;
+        bookingRow.final_balance = null;
+        bookingRow.payment_status = null;
+        bookingRow.payment_link_url = null;
+        bookingRow.payment_link_sent_at = null;
+        bookingRow.stripe_payment_intent_id = null;
+      }
       // Remove undefined fields so partial updates don't wipe existing data
       for (const key of Object.keys(bookingRow)) {
         if (bookingRow[key] === undefined) delete bookingRow[key];
