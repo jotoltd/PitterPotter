@@ -46,7 +46,6 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
 
   const [testPhone, setTestPhone] = useState('');
   const [testMessage, setTestMessage] = useState('Test from Pitter Potter admin — your SMS is working!');
-  const [testStudio, setTestStudio] = useState<'Putney' | 'Wimbledon'>('Putney');
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null);
 
@@ -152,7 +151,6 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
         action: 'send',
         to: testPhone.trim(),
         message: testMessage.trim(),
-        studio: testStudio,
       });
       if (data.success) {
         setSendResult({ success: true, message: 'SMS sent successfully!' });
@@ -275,21 +273,11 @@ export default function SMSAdminTab({ staff }: SMSAdminTabProps) {
               <p className="text-[10px] text-[#1B2D3C]/40 mt-1">Include country code (e.g. +44 for UK)</p>
             </div>
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-1 block">Send from</label>
-              <div className="flex rounded-lg border border-[#1B2D3C]/15 overflow-hidden">
-                {(['Putney', 'Wimbledon'] as const).map(s => (
-                  <button
-                    key={s}
-                    onClick={() => setTestStudio(s)}
-                    className={`px-3 py-2 text-[10px] font-bold transition-all cursor-pointer ${
-                      testStudio === s ? 'bg-[#DBE7E4] text-[#1B2D3C]' : 'bg-white text-[#1B2D3C]/50 hover:text-[#1B2D3C]'
-                    }`}
-                  >
-                    {s === 'Putney' ? 'PitterPotP' : 'PitterPotW'}
-                  </button>
-                ))}
+              <label className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-1 block">Sender ID</label>
+              <div className="px-3 py-2 text-xs font-bold text-[#1B2D3C] bg-stone-50 border border-[#1B2D3C]/10 rounded-lg">
+                PitterPotte
               </div>
-              <p className="text-[10px] text-[#1B2D3C]/40 mt-1">Alphanumeric sender ID shown on recipient's phone</p>
+              <p className="text-[10px] text-[#1B2D3C]/40 mt-1">Approved sender name shown on the recipient's phone</p>
             </div>
             <div>
               <label className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-1 block">Message</label>

@@ -14,7 +14,7 @@ export async function sendPureSMS(
     return { success: false, error: 'PureSMS API key not configured' };
   }
 
-  const defaultSender = Deno.env.get('PURESMS_SENDER') || 'PitterPotP';
+  const defaultSender = Deno.env.get('PURESMS_SENDER') || 'PitterPotte';
   const from = (sender?.trim() || defaultSender).slice(0, 11);
 
   try {

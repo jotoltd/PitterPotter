@@ -110,7 +110,7 @@ async function sendReadySMS(
     console.warn(`SMS message is ${message.length} chars, will be split into multiple segments`);
   }
 
-  const senderId = booking.studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP';
+  const senderId = 'PitterPotte';
 
   const sendResult = await sendSMS({
     to: toNumber,

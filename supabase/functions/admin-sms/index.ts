@@ -14,15 +14,12 @@ interface StaffPayload {
 async function sendTestSMS(
   to: string,
   body: string,
-  studio?: string,
 ): Promise<{ success: boolean; error?: string; sid?: string; id?: string }> {
   if (getConfiguredSMSProvider() === 'none') {
     return { success: false, error: 'SMS provider not configured' };
   }
 
-  const senderId = studio
-    ? (studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP')
-    : (Deno.env.get('PURESMS_SENDER') || 'PitterPotP');
+  const senderId = Deno.env.get('PURESMS_SENDER') || 'PitterPotte';
 
   const result = await sendSMS({ to, body, senderId });
   return { success: result.success, error: result.error, sid: result.id, id: result.id };
@@ -97,7 +94,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'send') {
-      const { to, message, studio } = body as { to: string; message: string; studio?: string };
+      const { to, message } = body as { to: string; message: string };
       if (!isNonEmptyString(to) || !isNonEmptyString(message)) {
         return new Response(JSON.stringify({ error: 'Missing phone number or message' }), {
           status: 400,
@@ -105,7 +102,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const result = await sendTestSMS(to, message, studio);
+      const result = await sendTestSMS(to, message);
 
       try {
         await supabase.from('email_logs').insert({

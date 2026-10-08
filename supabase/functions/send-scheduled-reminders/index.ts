@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
       toNumber = '+44' + toNumber;
     }
 
-    const senderId = booking.studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP';
+    const senderId = 'PitterPotte';
 
     try {
       const result = await sendSMS({

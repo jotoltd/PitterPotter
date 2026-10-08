@@ -184,7 +184,7 @@ async function sendReminderSMS(
       return { success: false, error: 'Recipient has opted out of SMS' };
     }
   }
-  const senderId = details.studio.toLowerCase().includes('wimbledon') ? 'PitterPotW' : 'PitterPotP';
+  const senderId = 'PitterPotte';
 
   const formatDate = (d: string) => {
     const parts = d.split('-');
