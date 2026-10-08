@@ -43,27 +43,6 @@ export default function SipAndPaintView({ setCurrentPage, adminMode = false }: S
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-pink-50 border border-pink-200 rounded-2xl p-8 text-center space-y-3">
-            <p className="text-xs font-black uppercase tracking-widest text-pink-800/60">
-              <EditableText contentKey="sip_days_label" page="sip-and-paint" defaultValue="When we run" adminMode={adminMode} className="text-xs text-pink-800/60" />
-            </p>
-            <p className="font-heading text-2xl md:text-3xl font-black text-pink-900">
-              <EditableText contentKey="sip_days" page="sip-and-paint" defaultValue="THURSDAY • FRIDAY • SATURDAY" adminMode={adminMode} className="font-heading text-2xl md:text-3xl text-pink-900" />
-            </p>
-          </div>
-          <div className="bg-pink-50 border border-pink-200 rounded-2xl p-8 text-center space-y-3">
-            <p className="text-xs font-black uppercase tracking-widest text-pink-800/60">
-              <EditableText contentKey="sip_time_label" page="sip-and-paint" defaultValue="Evening sessions" adminMode={adminMode} className="text-xs text-pink-800/60" />
-            </p>
-            <p className="font-heading text-2xl md:text-3xl font-black text-pink-900">
-              <EditableText contentKey="sip_time" page="sip-and-paint" defaultValue="6PM – 9PM | PITTER POTTER WIMBLEDON | 18+" adminMode={adminMode} className="font-heading text-2xl md:text-3xl text-pink-900" />
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <h2 className="font-heading text-3xl font-black text-[#1B2D3C] mb-10 tracking-tight">
           <EditableText contentKey="sip_steps_title" page="sip-and-paint" defaultValue="How It Works" adminMode={adminMode} className="font-heading text-3xl text-[#1B2D3C]" />
         </h2>
