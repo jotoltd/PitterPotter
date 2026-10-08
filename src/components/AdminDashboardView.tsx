@@ -5904,6 +5904,55 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                 </button>
               </div>
 
+              {/* Payment Info */}
+              {(drawerBooking.estimatedPrice != null || drawerBooking.finalPrice != null || drawerBooking.giftCardCode || drawerBooking.depositAmount != null || drawerBooking.finalBalance != null || drawerBooking.paymentStatus || drawerBooking.stripePaymentIntentId || drawerBooking.paymentLinkUrl) && (
+                <div className="bg-[#F8FAFA] rounded-lg p-3 space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#1B2D3C]/50 mb-1">Payment Info</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-[#1B2D3C]">
+                    {drawerBooking.estimatedPrice != null && (
+                      <div><span className="text-[#1B2D3C]/50">Estimated</span> £{drawerBooking.estimatedPrice.toFixed(2)}</div>
+                    )}
+                    {drawerBooking.finalPrice != null && (
+                      <div><span className="text-[#1B2D3C]/50">Final price</span> £{drawerBooking.finalPrice.toFixed(2)}</div>
+                    )}
+                    {drawerBooking.giftCardDiscount != null && (
+                      <div><span className="text-[#1B2D3C]/50">Gift card discount</span> -£{drawerBooking.giftCardDiscount.toFixed(2)}</div>
+                    )}
+                    {drawerBooking.depositAmount != null && (
+                      <div><span className="text-[#1B2D3C]/50">Deposit</span> £{drawerBooking.depositAmount.toFixed(2)}</div>
+                    )}
+                    {drawerBooking.finalBalance != null && (
+                      <div><span className="text-[#1B2D3C]/50">Balance</span> £{drawerBooking.finalBalance.toFixed(2)}</div>
+                    )}
+                    {drawerBooking.paymentStatus && (
+                      <div><span className="text-[#1B2D3C]/50">Status</span> <span className={`capitalize ${drawerBooking.paymentStatus === 'paid' ? 'text-emerald-700' : drawerBooking.paymentStatus === 'refunded' ? 'text-red-700' : 'text-amber-700'}`}>{drawerBooking.paymentStatus}</span></div>
+                    )}
+                  </div>
+                  {drawerBooking.giftCardCode && (
+                    <p className="text-[10px] text-[#1B2D3C]/60 font-medium">Gift card: <span className="font-mono text-[#1B2D3C]">{drawerBooking.giftCardCode}</span></p>
+                  )}
+                  {drawerBooking.stripePaymentIntentId && (
+                    <div className="text-[10px] text-[#1B2D3C]/60 font-medium space-y-0.5">
+                      <p className="font-mono break-all">{drawerBooking.stripePaymentIntentId}</p>
+                      <a
+                        href={`https://dashboard.stripe.com/payments/${drawerBooking.stripePaymentIntentId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >View in Stripe</a>
+                    </div>
+                  )}
+                  {drawerBooking.paymentLinkUrl && (
+                    <div className="text-[10px] text-[#1B2D3C]/60 font-medium space-y-0.5">
+                      <a href={drawerBooking.paymentLinkUrl} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">Payment link</a>
+                      {drawerBooking.paymentLinkSentAt && (
+                        <p>Sent {new Date(drawerBooking.paymentLinkSentAt).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Party payment */}
               {['birthday-party', 'baby-shower-hen', 'corporate'].includes(drawerBooking.sessionType) && (
                 <div className="bg-[#F8FAFA] rounded-lg p-3 space-y-2">
