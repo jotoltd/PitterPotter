@@ -61,24 +61,19 @@ function disabledWeekDays(sessionType: SessionTypeValue, studio: Studio): number
   return disabled.sort((a, b) => a - b);
 }
 
-function isThisWeekend(date: Date): boolean {
+function isBlockedThisWeek(date: Date): boolean {
   const today = startOfDay(new Date());
   const day = today.getDay();
-  const saturday = day === 0
-    ? subDays(today, 1)
-    : day === 6
-      ? today
-      : addDays(today, 6 - day);
-  const sunday = addDays(saturday, 1);
+  const thisSunday = addDays(today, day === 0 ? 0 : 7 - day);
   const d = startOfDay(date);
-  return d >= saturday && d <= sunday;
+  return d >= today && d <= thisSunday;
 }
 
 function getTimeSlots(date: Date, closures: ClosureDates, studio: Studio, sessionType: SessionTypeValue): string[] {
   const day = getDay(date);
   const dateStr = format(date, 'yyyy-MM-dd');
   const isHoliday = isDateInHolidayRange(dateStr, closures.schoolHolidays);
-  if (sessionType === 'sip-and-paint' && studio === 'Wimbledon' && isThisWeekend(date)) {
+  if (sessionType === 'sip-and-paint' && studio === 'Wimbledon' && isBlockedThisWeek(date)) {
     return [];
   }
   const availableDays = getAvailableDays(SLOT_SESSION_KEY(sessionType), studio);
