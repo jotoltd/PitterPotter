@@ -17,7 +17,7 @@ export const DEFAULT_OPEN_CAPACITY: Record<StudioName, number> = { Putney: 32, W
 export const DEFAULT_OPEN_RESTRICTED_CAPACITY: Record<StudioName, number> = { Putney: 15, Wimbledon: 32 };
 export const DEFAULT_PARTY_CAPACITY: Record<StudioName, number> = { Putney: 20, Wimbledon: 26 };
 export const DEFAULT_SIP_AND_PAINT_CAPACITY: Record<StudioName, number> = { Putney: 32, Wimbledon: 58 };
-export const DEFAULT_MAX_CONCURRENT_PARTIES: Record<StudioName, number> = { Putney: 1, Wimbledon: 1 };
+export const DEFAULT_MAX_CONCURRENT_PARTIES: Record<StudioName, number> = { Putney: 1, Wimbledon: 2 };
 
 // deno-lint-ignore no-explicit-any
 type SupabaseClient = any;
@@ -161,8 +161,8 @@ export async function computeCapacity(
     const hasPartyBooking = partyRows.length > 0;
     const isSipAndPaint = sessionType === 'sip-and-paint';
 
-    // Business rule: at most one party per overlapping slot, per studio —
-    // regardless of whether a second party area is physically free.
+    // Wimbledon has two party areas, so up to two parties can run at the same
+    // time (one per area). Putney has one party area, so one at a time.
     const maxConcurrentParties = DEFAULT_MAX_CONCURRENT_PARTIES[studio];
     if (incomingIsParty && partyRows.length >= maxConcurrentParties) {
       return {
@@ -274,6 +274,8 @@ export async function computeCapacity(
   const openRows = rows.filter((r) => !PARTY_SESSION_TYPES.includes(r.session_type ?? '') && r.session_type !== 'sip-and-paint');
   const hasPartyBooking = partyRows.length > 0;
 
+  // Wimbledon has two party areas, so up to two parties can run at the same
+  // time (one per area). Putney has one party area, so one at a time.
   const maxConcurrentParties = DEFAULT_MAX_CONCURRENT_PARTIES[studio];
   if (incomingIsParty && partyRows.length >= maxConcurrentParties) {
     return {
