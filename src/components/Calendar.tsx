@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   startOfMonth,
   endOfMonth,
@@ -69,10 +68,10 @@ export default function Calendar({
         <button
           type="button"
           onClick={() => onMonthChange(subMonths(month, 1))}
-          className="p-2 rounded-full hover:bg-[#D6E2E9] transition-colors"
+          className="p-2 rounded-full hover:bg-[#D6E2E9] transition-colors text-[#1B2D3C] font-bold"
           aria-label="Previous month"
         >
-          <ChevronLeft className="w-5 h-5 text-[#1B2D3C]" />
+          &lsaquo;
         </button>
         <h2 className="font-heading text-2xl font-black text-[#1B2D3C]">
           {format(month, 'MMMM yyyy')}
@@ -80,10 +79,10 @@ export default function Calendar({
         <button
           type="button"
           onClick={() => onMonthChange(addMonths(month, 1))}
-          className="p-2 rounded-full hover:bg-[#D6E2E9] transition-colors"
+          className="p-2 rounded-full hover:bg-[#D6E2E9] transition-colors text-[#1B2D3C] font-bold"
           aria-label="Next month"
         >
-          <ChevronRight className="w-5 h-5 text-[#1B2D3C]" />
+          &rsaquo;
         </button>
       </div>
 

@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, FormEvent } from 'react';
-import { ArrowRight, ArrowLeft, CheckCircle2, Loader2, MapPin } from 'lucide-react';
 import { format, getDay, startOfDay, isBefore } from 'date-fns';
 import { Page, BookingInquiry } from '../types';
 import Calendar from './Calendar';
@@ -305,7 +304,6 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                         studio === loc ? 'border-[#1B2D3C]/40 bg-[#DBE7E4] text-[#1B2D3C]' : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
                       }`}>
                       <div className="flex items-center gap-2 mb-1">
-                        <MapPin className="w-4 h-4" />
                         <span className="font-heading font-black text-base">{loc} Studio</span>
                       </div>
                       <p className={`text-[11px] font-semibold ${studio === loc ? 'text-[#1B2D3C]' : 'text-[#1B2D3C]/50'}`}>
@@ -315,8 +313,8 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                   ))}
                 </div>
                 <button type="button" onClick={handleNext}
-                  className="w-full py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2">
-                  Continue <ArrowRight className="w-4 h-4" />
+                  className="w-full py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer">
+                  Continue
                 </button>
               </div>
             )}
@@ -345,11 +343,11 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                 <div className="flex gap-3">
                   <button type="button" onClick={() => { setStep(1); setError(''); }}
                     className="flex items-center gap-2 px-5 py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#D6E2E9]/40 transition-all cursor-pointer">
-                    <ArrowLeft className="w-3.5 h-3.5" /> Back
+                    Back
                   </button>
                   <button type="button" onClick={handleNext}
                     className="flex-1 py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2">
-                    Continue <ArrowRight className="w-4 h-4" />
+                    Continue
                   </button>
                 </div>
               </div>
@@ -446,11 +444,11 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                 <div className="flex gap-3">
                   <button type="button" onClick={() => { setStep(2); setError(''); }}
                     className="flex items-center gap-2 px-5 py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#D6E2E9]/40 transition-all cursor-pointer">
-                    <ArrowLeft className="w-3.5 h-3.5" /> Back
+                    Back
                   </button>
                   <button type="button" onClick={handleNext}
                     className="flex-1 py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2">
-                    Continue <ArrowRight className="w-4 h-4" />
+                    Continue
                   </button>
                 </div>
               </div>
@@ -495,11 +493,11 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                 <div className="flex gap-3">
                   <button type="button" onClick={() => { setStep(3); setError(''); }}
                     className="flex items-center gap-2 px-5 py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#D6E2E9]/40 transition-all cursor-pointer">
-                    <ArrowLeft className="w-3.5 h-3.5" /> Back
+                    Back
                   </button>
                   <button type="button" onClick={handleNext}
                     className="flex-1 py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2">
-                    Review Booking <ArrowRight className="w-4 h-4" />
+                    Review Booking
                   </button>
                 </div>
               </div>
@@ -527,11 +525,11 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                 <div className="flex gap-3">
                   <button type="button" onClick={() => { setStep(4); setError(''); }}
                     className="flex items-center gap-2 px-5 py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#D6E2E9]/40 transition-all cursor-pointer">
-                    <ArrowLeft className="w-3.5 h-3.5" /> Back
+                    Back
                   </button>
                   <button type="submit" disabled={submitting}
                     className="flex-1 py-4 bg-[#DBE7E4] text-[#1B2D3C] font-bold text-sm uppercase tracking-widest rounded-xl hover:bg-[#D6E2E9] transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                    {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</> : <>Confirm Booking <ArrowRight className="w-4 h-4" /></>}
+                    {submitting ? 'Submitting...' : 'Confirm Booking'}
                   </button>
                 </div>
               </div>
@@ -562,7 +560,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                 </div>
                 <button type="button" onClick={() => { setStep(2); setError(''); }}
                   className="flex items-center gap-2 px-5 py-3 border border-[#1B2D3C]/20 text-[#1B2D3C] text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-[#D6E2E9]/40 transition-all cursor-pointer">
-                  <ArrowLeft className="w-3.5 h-3.5" /> Back
+                  Back
                 </button>
               </div>
             )}
@@ -576,7 +574,6 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
         <div className="fixed inset-0 bg-[#1B2D3C]/80 flex items-center justify-center z-50 p-4">
           <div className="bg-white border border-[#1B2D3C]/20 p-8 max-w-md w-full space-y-4 rounded-xl">
             <div className="text-center">
-              <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto mb-4" />
               <h3 className="font-heading text-2xl font-black text-[#1B2D3C] mb-2">Booking Confirmed!</h3>
               <p className="text-xs text-[#1B2D3C] font-semibold leading-relaxed">
                 Thank you {submittedBooking.name}! Your {SESSION_TYPE_LABELS[submittedBooking.sessionType]} session at {submittedBooking.studio} on {format(new Date(submittedBooking.date), 'PPP')} at {submittedBooking.time} is confirmed.
