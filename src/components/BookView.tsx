@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, FormEvent } from 'react';
-import { ArrowRight, ArrowLeft, CheckCircle2, Loader2, MapPin, Wine, Palette, Baby, PartyPopper, Briefcase } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2, Loader2, MapPin } from 'lucide-react';
 import { format, getDay, startOfDay, isBefore } from 'date-fns';
 import { Page, BookingInquiry } from '../types';
 import Calendar from './Calendar';
@@ -20,19 +20,18 @@ interface SessionOption {
   value: SessionTypeValue;
   label: string;
   description: string;
-  icon: React.ReactNode;
   studios: Studio[];
   isParty?: boolean;
   contactOnly?: boolean;
 }
 
 const SESSION_OPTIONS: SessionOption[] = [
-  { value: 'painting', label: 'Pottery Painting', description: 'Pick a piece, paint it your way — we glaze and fire it for you.', icon: <Palette className="w-5 h-5" />, studios: ['Putney', 'Wimbledon'] },
-  { value: 'clay-imprints', label: 'Baby Prints', description: 'Capture tiny hands and feet in beautiful keepsakes.', icon: <Baby className="w-5 h-5" />, studios: ['Putney', 'Wimbledon'] },
-  { value: 'sip-and-paint', label: 'Sip & Paint', description: 'Paint pottery with a glass in hand — the perfect creative night out.', icon: <Wine className="w-5 h-5" />, studios: ['Wimbledon'] },
-  { value: 'birthday-party', label: 'Birthday Party', description: 'A creative, mess-free birthday with dedicated party hosts.', icon: <PartyPopper className="w-5 h-5" />, studios: ['Putney', 'Wimbledon'], isParty: true },
-  { value: 'baby-shower-hen', label: 'Baby Shower / Hen Party', description: 'A fun, creative group experience for showers and hens.', icon: <PartyPopper className="w-5 h-5" />, studios: ['Putney', 'Wimbledon'], isParty: true },
-  { value: 'corporate', label: 'Corporate Event', description: 'Team building and client events with a creative twist.', icon: <Briefcase className="w-5 h-5" />, studios: ['Putney', 'Wimbledon'], contactOnly: true },
+  { value: 'painting', label: 'Pottery Painting', description: 'Pick a piece, paint it your way — we glaze and fire it for you.', studios: ['Putney', 'Wimbledon'] },
+  { value: 'clay-imprints', label: 'Baby Prints', description: 'Capture tiny hands and feet in beautiful keepsakes.', studios: ['Putney', 'Wimbledon'] },
+  { value: 'sip-and-paint', label: 'Sip & Paint', description: 'Paint pottery with a glass in hand — the perfect creative night out.', studios: ['Wimbledon'] },
+  { value: 'birthday-party', label: 'Birthday Party', description: 'A creative, mess-free birthday with dedicated party hosts.', studios: ['Putney', 'Wimbledon'], isParty: true },
+  { value: 'baby-shower-hen', label: 'Baby Shower / Hen Party', description: 'A fun, creative group experience for showers and hens.', studios: ['Putney', 'Wimbledon'], isParty: true },
+  { value: 'corporate', label: 'Corporate Event', description: 'Team building and client events with a creative twist.', studios: ['Putney', 'Wimbledon'], contactOnly: true },
 ];
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
@@ -332,10 +331,9 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                 <div className="grid grid-cols-1 gap-3">
                   {availableSessionTypes.map((opt) => (
                     <button key={opt.value} type="button" onClick={() => { setSessionType(opt.value); setError(''); }}
-                      className={`p-4 border-2 text-left transition-all cursor-pointer rounded-xl flex items-start gap-3 ${
+                      className={`p-4 border-2 text-left transition-all cursor-pointer rounded-xl ${
                         sessionType === opt.value ? 'border-[#1B2D3C] bg-[#DBE7E4] text-[#1B2D3C]' : 'border-[#1B2D3C]/20 bg-white text-[#1B2D3C] hover:border-[#1B2D3C]/60'
                       }`}>
-                      <div className={`mt-0.5 ${sessionType === opt.value ? 'text-[#1B2D3C]' : 'text-[#1B2D3C]/40'}`}>{opt.icon}</div>
                       <div>
                         <p className="font-heading font-bold text-sm">{opt.label}</p>
                         <p className={`text-[11px] font-semibold mt-0.5 ${sessionType === opt.value ? 'text-[#1B2D3C]/80' : 'text-[#1B2D3C]/50'}`}>{opt.description}</p>
@@ -547,7 +545,6 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                   <p className="text-xs text-stone-500 mt-1 font-semibold">{studio} Studio</p>
                 </div>
                 <div className="bg-[#D6E2E9]/40 border border-[#1B2D3C]/15 rounded-xl p-6 text-center space-y-4">
-                  <Briefcase className="w-10 h-10 text-[#1B2D3C] mx-auto" />
                   <h3 className="font-heading text-lg font-black text-[#1B2D3C]">Contact us to enquire</h3>
                   <p className="text-sm text-[#1B2D3C]/70 font-medium leading-relaxed max-w-md mx-auto">
                     Corporate events are tailored to your group. Get in touch and we'll put together the perfect creative experience for your team.
