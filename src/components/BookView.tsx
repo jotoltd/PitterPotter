@@ -265,7 +265,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                     : isActive ? 'bg-white border-[#1B2D3C] text-[#1B2D3C]'
                     : 'bg-white border-[#1B2D3C]/20 text-[#1B2D3C]/30'
                   }`}>
-                    {isDone ? '✓' : num}
+                    {num}
                   </div>
                   <span className={`font-heading text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${
                     isActive ? 'text-[#1B2D3C]' : isDone ? 'text-[#1B2D3C]/60' : 'text-[#1B2D3C]/30'
