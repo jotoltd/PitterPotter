@@ -269,12 +269,17 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
     let isMounted = true;
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([loadInquiries(), loadGiftCards(), loadStripeMode(), loadPartyPrice(), loadTablePlanEnabled(), loadPartyBuffers()]);
+      await Promise.all([loadInquiries(), loadGiftCards(), loadStripeMode(), loadPartyPrice(), loadTablePlanEnabled()]);
       if (isMounted) setLoading(false);
     };
     loadData();
     return () => { isMounted = false; };
   }, []);
+
+  // Load party buffers once staff is authenticated (initial effect runs before staff is ready)
+  useEffect(() => {
+    if (staff?.sessionToken) loadPartyBuffers();
+  }, [staff?.sessionToken]);
 
   useEffect(() => {
     let isMounted = true;
@@ -282,6 +287,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
       loadCapacity();
       loadPageSettings();
       loadStaffList();
+      loadPartyBuffers();
       loadSlotsFromSupabase().then(slots => setTimeSlotConfig(slots));
       loadClosuresFromSupabase().then(setClosures);
     }
