@@ -107,7 +107,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
   const [timeSlotConfig, setTimeSlotConfig] = useState<TimeSlotsData>(() => getAllSlots());
   const [timeSlotStudio, setTimeSlotStudio] = useState<Studio>('Putney');
   const [timeSlotDayType, setTimeSlotDayType] = useState<DayType>('weekday');
-  const [newSlotInput, setNewSlotInput] = useState<Record<SlotSessionType, string>>({ painting: '', 'baby-prints': '', party: '' });
+  const [newSlotInput, setNewSlotInput] = useState<Record<SlotSessionType, string>>({ painting: '', 'sip-and-paint': '', 'baby-prints': '', party: '' });
   const [closures, setClosures] = useState<ClosureDates>(getClosureDates());
   const [newHolidayFrom, setNewHolidayFrom] = useState('');
   const [newHolidayTo, setNewHolidayTo] = useState('');
@@ -3752,7 +3752,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   >
                     {(() => {
                       const sType = newBooking.sessionType || 'painting';
-                      const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : 'painting';
+                      const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : sType === 'sip-and-paint' ? 'sip-and-paint' : 'painting';
                       const dt: DayType = newBooking.date ? ((d => d === 0 || d === 6)(getDay(parseISO(newBooking.date))) ? 'weekend' : 'weekday') : 'weekday';
                       return getSlots(slotKey, newBooking.studio || 'Putney', dt).map(s => <option key={s} value={s}>{s}</option>);
                     })()}
@@ -4108,7 +4108,7 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
                   >
                     {(() => {
                       const sType = editingBooking.sessionType || 'painting';
-                      const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : 'painting';
+                      const slotKey: SlotSessionType = ['birthday-party','baby-shower-hen','corporate'].includes(sType) ? 'party' : sType === 'clay-imprints' ? 'baby-prints' : sType === 'sip-and-paint' ? 'sip-and-paint' : 'painting';
                       const dt: DayType = editingBooking.date ? ((d => d === 0 || d === 6)(getDay(parseISO(editingBooking.date))) ? 'weekend' : 'weekday') : 'weekday';
                       const slots = getSlots(slotKey, editingBooking.studio || 'Putney', dt);
                       const existing = editingBooking.time;
@@ -4863,8 +4863,8 @@ export default function AdminDashboardView({ staff, onLogout }: AdminDashboardPr
               </div>
             </div>
 
-            {(['painting', 'baby-prints', 'party'] as SlotSessionType[]).map((type) => {
-              const labels: Record<SlotSessionType, string> = { painting: 'Painting', 'baby-prints': 'Baby Prints', party: 'Party' };
+            {(['painting', 'sip-and-paint', 'baby-prints', 'party'] as SlotSessionType[]).map((type) => {
+              const labels: Record<SlotSessionType, string> = { painting: 'Painting', 'sip-and-paint': 'Sip & Paint', 'baby-prints': 'Baby Prints', party: 'Party' };
 
               const applySlotChange = (nextConfig: TimeSlotsData) => {
                 setTimeSlotConfig(nextConfig);

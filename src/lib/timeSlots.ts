@@ -1,6 +1,6 @@
 import { supabase, isSupabaseEnabled } from './supabase';
 
-export type SlotSessionType = 'painting' | 'baby-prints' | 'party';
+export type SlotSessionType = 'painting' | 'baby-prints' | 'party' | 'sip-and-paint';
 export type Studio = 'Putney' | 'Wimbledon';
 export type DayType = 'weekday' | 'weekend';
 
@@ -14,6 +14,10 @@ const SINGLE_STUDIO_DEFAULTS: StudioSlots = {
   painting: {
     weekday: ['10:00', '10:30', '12:00', '12:30', '14:00', '14:30', '16:00', '16:30'],
     weekend: ['10:00', '10:30', '12:00', '12:30', '14:00', '14:30', '16:00', '16:30'],
+  },
+  'sip-and-paint': {
+    weekday: ['18:00', '18:30', '19:00'],
+    weekend: ['18:00', '18:30', '19:00'],
   },
   'baby-prints': {
     weekday: ['10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'],
@@ -35,6 +39,7 @@ function isLegacySlots(value: unknown): value is Partial<Record<SlotSessionType,
   const v = value as Record<string, unknown>;
   return (
     Array.isArray(v.painting) ||
+    Array.isArray(v['sip-and-paint']) ||
     Array.isArray(v['baby-prints']) ||
     Array.isArray(v.party)
   );
@@ -71,6 +76,7 @@ function migrateOldSessionSlots(slots: unknown, defaults: string[]): Record<DayT
 function migrateOldStudioSlots(studio: Partial<Record<SlotSessionType, unknown>> | undefined, defaults: StudioSlots): StudioSlots {
   return {
     painting: migrateOldSessionSlots(studio?.painting, defaults.painting.weekday),
+    'sip-and-paint': migrateOldSessionSlots(studio?.['sip-and-paint'], defaults['sip-and-paint'].weekday),
     'baby-prints': migrateOldSessionSlots(studio?.['baby-prints'], defaults['baby-prints'].weekday),
     party: migrateOldSessionSlots(studio?.party, defaults.party.weekday),
   };
@@ -100,6 +106,7 @@ function loadAll(): TimeSlotsData {
       if (isLegacySlots(parsed)) {
         const merged: StudioSlots = {
           painting: migrateOldSessionSlots(parsed.painting, DEFAULT_SLOTS.Putney.painting.weekday),
+          'sip-and-paint': migrateOldSessionSlots(parsed['sip-and-paint'], DEFAULT_SLOTS.Putney['sip-and-paint'].weekday),
           'baby-prints': migrateOldSessionSlots(parsed['baby-prints'], DEFAULT_SLOTS.Putney['baby-prints'].weekday),
           party: migrateOldSessionSlots(parsed.party, DEFAULT_SLOTS.Putney.party.weekday),
         };
@@ -176,6 +183,7 @@ export async function loadSlotsFromSupabase(): Promise<TimeSlotsData> {
       if (isLegacySlots(parsed)) {
         const studioSlots: StudioSlots = {
           painting: migrateOldSessionSlots(parsed.painting, DEFAULT_SLOTS.Putney.painting.weekday),
+          'sip-and-paint': migrateOldSessionSlots(parsed['sip-and-paint'], DEFAULT_SLOTS.Putney['sip-and-paint'].weekday),
           'baby-prints': migrateOldSessionSlots(parsed['baby-prints'], DEFAULT_SLOTS.Putney['baby-prints'].weekday),
           party: migrateOldSessionSlots(parsed.party, DEFAULT_SLOTS.Putney.party.weekday),
         };

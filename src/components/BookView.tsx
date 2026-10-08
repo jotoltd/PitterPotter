@@ -44,16 +44,25 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
   'corporate': 'Corporate Event',
 };
 
-const SLOT_SESSION_KEY = (sessionType: SessionTypeValue): 'painting' | 'baby-prints' | 'party' => {
+const SLOT_SESSION_KEY = (sessionType: SessionTypeValue): 'painting' | 'baby-prints' | 'party' | 'sip-and-paint' => {
   if (['birthday-party', 'baby-shower-hen', 'corporate'].includes(sessionType)) return 'party';
   if (sessionType === 'clay-imprints') return 'baby-prints';
-  return 'painting'; // painting and sip-and-paint use painting slots
+  if (sessionType === 'sip-and-paint') return 'sip-and-paint';
+  return 'painting';
 };
 
 function getTimeSlots(date: Date, closures: ClosureDates, studio: Studio, sessionType: SessionTypeValue): string[] {
   const day = getDay(date);
   const dateStr = format(date, 'yyyy-MM-dd');
   const isHoliday = isDateInHolidayRange(dateStr, closures.schoolHolidays);
+
+  // Sip & Paint only runs Thursday / Friday / Saturday
+  if (sessionType === 'sip-and-paint') {
+    if (![4, 5, 6].includes(day)) return [];
+    const dayType: DayType = (day === 6) ? 'weekend' : 'weekday';
+    return filterPastSlots(getSlots(SLOT_SESSION_KEY(sessionType), studio, dayType), date);
+  }
+
   if (day >= 2 || day === 0 || (day === 1 && isHoliday)) {
     const dayType: DayType = (day === 0 || day === 6) ? 'weekend' : 'weekday';
     return filterPastSlots(getSlots(SLOT_SESSION_KEY(sessionType), studio, dayType), date);
@@ -113,10 +122,9 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
     if (!date) { setSlotCapacity({}); return; }
     const slots = getTimeSlots(date, closures, studio, sessionType);
     const dateStr = format(date, 'yyyy-MM-dd');
-    const capacitySessionType = sessionType; // sip-and-paint uses painting capacity
     Promise.all(slots.map(async (slot) => ({
       slot,
-      remaining: await getRemainingCapacity(studio, dateStr, slot, capacitySessionType === 'sip-and-paint' ? 'painting' : capacitySessionType),
+      remaining: await getRemainingCapacity(studio, dateStr, slot, sessionType),
     }))).then((results) => {
       const map: Record<string, number> = {};
       results.forEach(({ slot, remaining }) => { map[slot] = remaining; });
@@ -195,8 +203,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
 
     setSubmitting(true);
     try {
-      const capacityType = sessionType === 'sip-and-paint' ? 'painting' : sessionType;
-      const remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time, capacityType, seatsCount);
+      const remaining = await getRemainingCapacity(studio, format(date, 'yyyy-MM-dd'), time, sessionType, seatsCount);
       if (seatsCount > remaining) {
         setError(`This session only has room for ${remaining} more seat${remaining === 1 ? '' : 's'}. Please choose a different time.`);
         setSubmitting(false);
@@ -366,7 +373,7 @@ export default function BookView({ setCurrentPage, adminMode = false }: BookView
                     onMonthChange={setCalendarMonth}
                     disabled={[...busyDates, ...closedDatesAsDate]}
                     minDate={minDate}
-                    dayOfWeekDisabled={[1]}
+                    dayOfWeekDisabled={sessionType === 'sip-and-paint' ? [0, 1, 2, 3] : [1]}
                     schoolHolidayDates={closures.schoolHolidays}
                     marks={busyDates}
                   />

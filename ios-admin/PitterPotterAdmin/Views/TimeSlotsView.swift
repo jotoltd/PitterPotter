@@ -11,6 +11,7 @@ struct TimeSlotsView: View {
 
     private let sessionTypes: [(key: String, label: String)] = [
         ("painting", "Painting"),
+        ("sip-and-paint", "Sip & Paint"),
         ("baby-prints", "Baby Prints"),
         ("party", "Party"),
     ]
@@ -221,10 +222,12 @@ struct TimeSlotsData {
 
     static let `default`: TimeSlotsData = {
         let painting = ["10:00", "10:30", "12:00", "12:30", "14:00", "14:30", "16:00", "16:30"]
+        let sipAndPaint = ["18:00", "18:30", "19:00"]
         let babyPrints = ["10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00"]
         let party = ["10:00-12:00", "12:30-14:30", "15:00-17:00"]
         let studio: [String: [String: [String]]] = [
             "painting": ["weekday": painting, "weekend": painting],
+            "sip-and-paint": ["weekday": sipAndPaint, "weekend": sipAndPaint],
             "baby-prints": ["weekday": babyPrints, "weekend": babyPrints],
             "party": ["weekday": party, "weekend": party],
         ]
